@@ -20,25 +20,42 @@ class APIClient {
     static async handleResponse(response) {
         let data;
         
+        // Intentar parsear JSON
         try {
-            data = await response.json();
+            const text = await response.text();
+            data = text ? JSON.parse(text) : {};
         } catch (error) {
-            throw new Error('Error parsing response JSON');
+            console.error('Error parsing response:', error);
+            throw new Error(`Error del servidor (${response.status}): No se pudo procesar la respuesta`);
         }
         
-        if (response.status === 401) {
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('refresh_token');
-            localStorage.removeItem('user_data');
-            
-            if (window.location.pathname !== '/login') {
-                window.location.href = '/login';
+        // Manejar errores HTTP
+        if (!response.ok) {
+            if (response.status === 401) {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                localStorage.removeItem('user_data');
+                
+                if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
+                    window.location.href = '/login';
+                }
+                
+                throw new Error(data.error || 'Sesión expirada');
             }
             
-            throw new Error('Sesión expirada');
+            if (response.status === 404) {
+                throw new Error('Endpoint no encontrado. Verifica que el backend esté funcionando correctamente.');
+            }
+            
+            if (response.status === 500) {
+                throw new Error(data.error || 'Error interno del servidor');
+            }
+            
+            throw new Error(data.error || `Error ${response.status}: ${response.statusText}`);
         }
         
-        if (!data.success) {
+        // Verificar respuesta exitosa
+        if (data.success === false) {
             throw new Error(data.error || 'Error en la petición');
         }
         
