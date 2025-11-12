@@ -141,10 +141,6 @@ class APIClient {
     static async createCoalicion(data) {
         return this.post('/configuracion/coaliciones', data);
     }
-}
-
-window.APIClient = APIClient;
-
     // ==========================================
     // FORMULARIOS E-14
     // ==========================================
@@ -172,3 +168,26 @@ window.APIClient = APIClient;
     static async deleteFormularioE14(id) {
         return this.delete(`/formularios-e14/${id}`);
     }
+    
+    static async put(endpoint, data) {
+        const response = await fetch(`${this.baseURL}${endpoint}`, {
+            method: 'PUT',
+            headers: this.getAuthHeaders(),
+            body: JSON.stringify(data)
+        });
+        
+        return this.handleResponse(response);
+    }
+    
+    static async delete(endpoint) {
+        const response = await fetch(`${this.baseURL}${endpoint}`, {
+            method: 'DELETE',
+            headers: this.getAuthHeaders()
+        });
+        
+        return this.handleResponse(response);
+    }
+}
+
+// Exponer APIClient globalmente
+window.APIClient = APIClient;
