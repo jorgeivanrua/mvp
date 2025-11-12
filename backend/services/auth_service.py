@@ -32,15 +32,23 @@ class AuthService:
         # Buscar ubicación según jerarquía
         location = AuthService._find_location_by_hierarchy(rol, ubicacion_data)
         
-        if not location:
-            raise AuthenticationException("Ubicación no encontrada")
-        
-        # Buscar usuario por rol y ubicación
-        user = User.query.filter_by(
-            rol=rol,
-            ubicacion_id=location.id,
-            activo=True
-        ).first()
+        # Super admin no necesita ubicación
+        if rol == 'super_admin':
+            user = User.query.filter_by(
+                rol=rol,
+                ubicacion_id=None,
+                activo=True
+            ).first()
+        else:
+            if not location:
+                raise AuthenticationException("Ubicación no encontrada")
+            
+            # Buscar usuario por rol y ubicación
+            user = User.query.filter_by(
+                rol=rol,
+                ubicacion_id=location.id,
+                activo=True
+            ).first()
         
         if not user:
             raise AuthenticationException("Credenciales inválidas")
