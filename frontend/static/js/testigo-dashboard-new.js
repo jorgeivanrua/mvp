@@ -387,14 +387,30 @@ function updateFormsTable(forms) {
     forms.forEach(form => {
         const row = document.createElement('tr');
         const estadoLabel = getEstadoLabel(form.estado);
+        const puedeEditar = form.estado === 'borrador' || form.estado === 'pendiente';
+        
+        // Hacer la fila clickeable si puede editar
+        if (puedeEditar) {
+            row.style.cursor = 'pointer';
+            row.onclick = () => editForm(form.id);
+            row.onmouseover = () => row.style.backgroundColor = '#f8f9fa';
+            row.onmouseout = () => row.style.backgroundColor = '';
+        }
+        
         row.innerHTML = `
             <td>Mesa ${form.mesa_codigo || 'N/A'}</td>
             <td><span class="badge bg-${getStatusColor(form.estado)}">${estadoLabel}</span></td>
             <td>${Utils.formatNumber(form.total_votos)}</td>
             <td>${Utils.formatDate(form.created_at)}</td>
             <td>
-                <button class="btn btn-sm btn-outline-primary" onclick="viewForm(${form.id})">Ver</button>
-                ${form.estado === 'pendiente' ? `<button class="btn btn-sm btn-outline-warning" onclick="editForm(${form.id})">Editar</button>` : ''}
+                ${puedeEditar ? 
+                    `<button class="btn btn-sm btn-outline-warning" onclick="event.stopPropagation(); editForm(${form.id})">
+                        <i class="bi bi-pencil"></i> Editar
+                    </button>` : 
+                    `<button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); viewForm(${form.id})">
+                        <i class="bi bi-eye"></i> Ver
+                    </button>`
+                }
             </td>
         `;
         tbody.appendChild(row);
@@ -563,8 +579,64 @@ function viewForm(formId) {
     window.open(`/testigo/form/${formId}`, '_blank');
 }
 
-function editForm(formId) {
-    Utils.showInfo('Función de edición en desarrollo');
+async function editForm(formId) {
+    try {
+        // Cargar el formulario
+        const response = await APIClient.getFormularioE14(formId);
+        
+        if (!response.success) {
+            Utils.showError('Error al cargar formulario');
+            return;
+        }
+        
+        const formulario = response.data;
+        
+        // Abrir el modal
+        document.getElementById('e14Form').reset();
+        
+        // Cargar mesa
+        const mesaSelect = document.getElementById('mesaFormulario');
+        mesaSelect.value = formulario.mesa_id;
+        cambiarMesaFormulario();
+        
+        // Cargar tipo de elección
+        document.getElementById('tipoEleccion').value = formulario.tipo_eleccion_id;
+        await cargarPartidosYCandidatos();
+        
+        // Cargar datos de votación
+        document.getElementById('votosNulos').value = formulario.votos_nulos || 0;
+        document.getElementById('votosBlanco').value = formulario.votos_blanco || 0;
+        document.getElementById('tarjetasNoMarcadas').value = formulario.tarjetas_no_marcadas || 0;
+        
+        // Cargar votos por partido
+        if (formulario.votos_partidos) {
+            formulario.votos_partidos.forEach(vp => {
+                const input = document.getElementById(`partido_${vp.partido_id}`);
+                if (input) input.value = vp.votos;
+            });
+        }
+        
+        // Cargar votos por candidato
+        if (formulario.votos_candidatos) {
+            formulario.votos_candidatos.forEach(vc => {
+                const input = document.getElementById(`candidato_${vc.candidato_id}`);
+                if (input) input.value = vc.votos;
+            });
+        }
+        
+        // Cargar observaciones
+        document.querySelector('[name="observaciones"]').value = formulario.observaciones || '';
+        
+        // Recalcular totales
+        calcularTotales();
+        
+        // Mostrar modal
+        new bootstrap.Modal(document.getElementById('formModal')).show();
+        
+    } catch (error) {
+        console.error('Error loading form:', error);
+        Utils.showError('Error al cargar formulario: ' + error.message);
+    }
 }
 
 function setupImagePreview() {
