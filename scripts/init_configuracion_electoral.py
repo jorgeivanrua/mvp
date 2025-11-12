@@ -16,7 +16,8 @@ from backend.models.configuracion_electoral import (
 
 def init_configuracion():
     """Inicializar configuración electoral con datos de ejemplo"""
-    app = create_app('development')
+    config_name = os.getenv('FLASK_ENV', 'development')
+    app = create_app(config_name)
     
     with app.app_context():
         print("\n>> Creando tablas de configuración electoral...")

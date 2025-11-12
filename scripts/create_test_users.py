@@ -15,7 +15,8 @@ from backend.models.location import Location
 
 def create_test_users():
     """Crear usuarios de prueba para el sistema"""
-    app = create_app('development')
+    config_name = os.getenv('FLASK_ENV', 'development')
+    app = create_app(config_name)
     
     with app.app_context():
         print("\n>> Creando usuarios de prueba...")

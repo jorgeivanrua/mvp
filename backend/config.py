@@ -15,10 +15,11 @@ class Config:
     DEBUG = os.getenv('DEBUG', 'False') == 'True'
     
     # Database
-    SQLALCHEMY_DATABASE_URI = os.getenv(
-        'DATABASE_URL',
-        'sqlite:///electoral.db'
-    )
+    database_url = os.getenv('DATABASE_URL', 'sqlite:///electoral.db')
+    # Render usa postgres:// pero SQLAlchemy necesita postgresql://
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    SQLALCHEMY_DATABASE_URI = database_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # JWT

@@ -16,7 +16,8 @@ from backend.models.user import User
 
 def create_tables():
     """Crear las tablas de formularios E-14"""
-    app = create_app()
+    config_name = os.getenv('FLASK_ENV', 'development')
+    app = create_app(config_name)
     
     with app.app_context():
         print("🔧 Creando tablas de Formularios E-14...")

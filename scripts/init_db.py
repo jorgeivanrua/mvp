@@ -12,7 +12,9 @@ from backend.database import db
 
 def init_database():
     """Inicializar base de datos"""
-    app = create_app('development')
+    # Usar configuración del entorno
+    config_name = os.getenv('FLASK_ENV', 'development')
+    app = create_app(config_name)
     
     with app.app_context():
         # Crear todas las tablas

@@ -20,7 +20,8 @@ def load_divipola_from_csv(csv_path):
     Args:
         csv_path: Ruta al archivo CSV
     """
-    app = create_app('development')
+    config_name = os.getenv('FLASK_ENV', 'development')
+    app = create_app(config_name)
     
     with app.app_context():
         print(f">> Cargando datos desde: {csv_path}")
@@ -179,10 +180,24 @@ def load_divipola_from_csv(csv_path):
 
 
 if __name__ == '__main__':
-    csv_path = 'todos los datos/divipola.csv'
+    # Buscar el archivo CSV en diferentes ubicaciones posibles
+    possible_paths = [
+        'todos los datos/divipola.csv',
+        'divipola.csv',
+        'data/divipola.csv'
+    ]
     
-    if not os.path.exists(csv_path):
-        print(f"ERROR: No se encontro el archivo {csv_path}")
+    csv_path = None
+    for path in possible_paths:
+        if os.path.exists(path):
+            csv_path = path
+            break
+    
+    if not csv_path:
+        print(f"ERROR: No se encontró el archivo divipola.csv en ninguna de estas ubicaciones:")
+        for path in possible_paths:
+            print(f"  - {path}")
+        print("\nPor favor, asegúrate de que el archivo existe antes de ejecutar este script.")
         sys.exit(1)
     
     load_divipola_from_csv(csv_path)

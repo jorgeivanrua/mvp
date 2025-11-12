@@ -12,6 +12,12 @@ def index():
     return render_template('auth/login.html')
 
 
+@frontend_bp.route('/health')
+def health():
+    """Health check endpoint para Render"""
+    return {'status': 'ok', 'message': 'Sistema Electoral funcionando'}, 200
+
+
 @frontend_bp.route('/login')
 def login():
     """Página de login"""
