@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - Sistema Electoral</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>⚙️ Dashboard Administrador</h1>
+                <div class="user-info">
+                    <span id="userName"></span>
+                    <button onclick="logout()" class="btn-logout">Cerrar Sesión</button>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-info">
+                        <h3 id="totalUsers">0</h3>
+                        <p>Usuarios Activos</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">📋</div>
+                    <div class="stat-info">
+                        <h3 id="totalForms">0</h3>
+                        <p>Total Formularios</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">📍</div>
+                    <div class="stat-info">
+                        <h3 id="totalMesas">0</h3>
+                        <p>Mesas Registradas</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-info">
+                        <h3 id="approvalRate">0%</h3>
+                        <p>Tasa de Aprobación</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Charts Section -->
+            <div class="section">
+                <h2>Formularios por Estado</h2>
+                <div class="chart-container">
+                    <div class="chart-bar">
+                        <div class="bar-label">Borrador</div>
+                        <div class="bar-wrapper">
+                            <div id="barBorrador" class="bar bar-draft" style="width: 0%"></div>
+                            <span id="countBorrador" class="bar-count">0</span>
+                        </div>
+                    </div>
+                    <div class="chart-bar">
+                        <div class="bar-label">Enviado</div>
+                        <div class="bar-wrapper">
+                            <div id="barEnviado" class="bar bar-pending" style="width: 0%"></div>
+                            <span id="countEnviado" class="bar-count">0</span>
+                        </div>
+                    </div>
+                    <div class="chart-bar">
+                        <div class="bar-label">Aprobado</div>
+                        <div class="bar-wrapper">
+                            <div id="barAprobado" class="bar bar-approved" style="width: 0%"></div>
+                            <span id="countAprobado" class="bar-count">0</span>
+                        </div>
+                    </div>
+                    <div class="chart-bar">
+                        <div class="bar-label">Rechazado</div>
+                        <div class="bar-wrapper">
+                            <div id="barRechazado" class="bar bar-rejected" style="width: 0%"></div>
+                            <span id="countRechazado" class="bar-count">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Users Management -->
+            <div class="section">
+                <div class="section-header">
+                    <h2>Gestión de Usuarios</h2>
+                    <button onclick="createUser()" class="btn btn-primary">
+                        ➕ Crear Usuario
+                    </button>
+                </div>
+                
+                <div class="filters">
+                    <select id="roleFilter" onchange="loadUsers()">
+                        <option value="">Todos los roles</option>
+                        <option value="testigo_electoral">Testigos</option>
+                        <option value="coordinador_puesto">Coordinadores</option>
+                        <option value="sistemas">Sistemas</option>
+                    </select>
+                    
+                    <select id="statusFilter" onchange="loadUsers()">
+                        <option value="">Todos</option>
+                        <option value="true" selected>Activos</option>
+                        <option value="false">Inactivos</option>
+                    </select>
+                </div>
+                
+                <div id="usersList" class="table-container">
+                    <div class="loading">Cargando usuarios...</div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="section">
+                <h2>Actividad Reciente</h2>
+                <div id="activityList" class="activity-list">
+                    <div class="loading">Cargando actividad...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modal para crear/editar usuario -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeUserModal()">&times;</span>
+            <h2 id="userModalTitle">Crear Usuario</h2>
+            
+            <form id="userForm">
+                <div class="form-group">
+                    <label>Nombre Completo</label>
+                    <input type="text" id="userName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="userEmail" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Rol</label>
+                    <select id="userRole" required>
+                        <option value="">Seleccione...</option>
+                        <option value="testigo_electoral">Testigo Electoral</option>
+                        <option value="coordinador_puesto">Coordinador de Puesto</option>
+                        <option value="sistemas">Sistemas</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Ubicación</label>
+                    <select id="userLocation">
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <button type="button" onclick="closeUserModal()" class="btn btn-secondary">Cancelar</button>
+                </div>
+            </form>
+            
+            <div id="tempPassword" style="display: none; margin-top: 20px; padding: 15px; background: #e8f5e9; border-radius: 8px;">
+                <strong>Contraseña temporal:</strong>
+                <code id="tempPasswordValue" style="font-size: 16px; color: #2e7d32;"></code>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/dashboard-admin.js"></script>
+</body>
+</html>

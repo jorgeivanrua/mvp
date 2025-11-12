@@ -1,0 +1,635 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Coordinador de Puesto{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3">Dashboard - Coordinador de Puesto</h1>
+                <div class="user-info">
+                    <span class="badge badge-primary">{{ user.rol.value }}</span>
+                    <span class="ml-2">{{ user.nombre }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas principales -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="total-e14">0</h4>
+                            <p class="card-text">Formularios E-14</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-file-alt fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="e14-aprobados">0</h4>
+                            <p class="card-text">E-14 Aprobados</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="e14-pendientes">0</h4>
+                            <p class="card-text">E-14 Pendientes</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="e24-cargados">0</h4>
+                            <p class="card-text">E-24 Cargados</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-upload fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formularios E-14 pendientes de revisión -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Formularios E-14 Pendientes de Revisión</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="tabla-e14-pendientes">
+                            <thead>
+                                <tr>
+                                    <th>Mesa</th>
+                                    <th>Testigo</th>
+                                    <th>Fecha Envío</th>
+                                    <th>Total Votos</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Se llena dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gestión E-24 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Gestión de Formularios E-24</h5>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-primary" onclick="cargarNuevoE24()">
+                        <i class="fas fa-plus"></i> Cargar Nuevo E-24
+                    </button>
+                    
+                    <div class="table-responsive mt-3">
+                        <table class="table table-striped" id="tabla-e24">
+                            <thead>
+                                <tr>
+                                    <th>Puesto</th>
+                                    <th>Fecha Carga</th>
+                                    <th>Total Votos</th>
+                                    <th>Estado</th>
+                                    <th>Discrepancias</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Se llena dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para revisar E-14 -->
+<div class="modal fade" id="modalRevisarE14" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Revisar Formulario E-14</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Contenido del formulario E-14 -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" onclick="aprobarE14()">
+                    <i class="fas fa-check"></i> Aprobar
+                </button>
+                <button type="button" class="btn btn-warning" onclick="corregirE14()">
+                    <i class="fas fa-edit"></i> Corregir
+                </button>
+                <button type="button" class="btn btn-danger" onclick="rechazarE14()">
+                    <i class="fas fa-times"></i> Rechazar
+                </button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para cargar E-24 -->
+<div class="modal fade" id="modalCargarE24" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cargar Formulario E-24</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulario de carga E-24 -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="guardarE24()">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    cargarEstadisticas();
+    cargarE14Pendientes();
+    cargarE24();
+});
+
+function cargarEstadisticas() {
+    // Cargar estadísticas del dashboard
+    $.get('/api/coordination/stats', function(data) {
+        if (data.success) {
+            $('#total-e14').text(data.data.total_e14);
+            $('#e14-aprobados').text(data.data.e14_aprobados);
+            $('#e14-pendientes').text(data.data.e14_pendientes);
+            $('#e24-cargados').text(data.data.e24_cargados);
+        }
+    }).fail(function() {
+        // Datos de ejemplo si falla la API
+        $('#total-e14').text('5');
+        $('#e14-aprobados').text('3');
+        $('#e14-pendientes').text('2');
+        $('#e24-cargados').text('1');
+    });
+}
+
+function cargarE14Pendientes() {
+    // Cargar formularios E-14 pendientes
+    $.get('/api/coordination/e14/pending', function(data) {
+        if (data.success) {
+            mostrarE14Pendientes(data.data);
+        }
+    }).fail(function() {
+        // Datos de ejemplo
+        const ejemploE14 = [
+            {
+                id: 1,
+                mesa_nombre: 'Mesa 001 - Escuela Nacional Central',
+                testigo_nombre: 'Juan Pérez',
+                fecha_reporte: '2025-11-01T10:30:00',
+                total_votos: 350,
+                estado: 'enviado'
+            },
+            {
+                id: 2,
+                mesa_nombre: 'Mesa 002 - Escuela Nacional Central',
+                testigo_nombre: 'María García',
+                fecha_reporte: '2025-11-01T11:15:00',
+                total_votos: 420,
+                estado: 'en_revision'
+            }
+        ];
+        mostrarE14Pendientes(ejemploE14);
+    });
+}
+
+function mostrarE14Pendientes(formularios) {
+    const tbody = $('#tabla-e14-pendientes tbody');
+    tbody.empty();
+    
+    formularios.forEach(function(form) {
+        const estadoBadge = form.estado === 'enviado' ? 'warning' : 'info';
+        const row = `
+            <tr>
+                <td>${form.mesa_nombre}</td>
+                <td>${form.testigo_nombre}</td>
+                <td>${new Date(form.fecha_reporte).toLocaleDateString('es-ES')}</td>
+                <td>${form.total_votos.toLocaleString()}</td>
+                <td><span class="badge bg-${estadoBadge}">${form.estado}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="revisarE14(${form.id})">
+                        <i class="fas fa-eye"></i> Revisar
+                    </button>
+                </td>
+            </tr>
+        `;
+        tbody.append(row);
+    });
+}
+
+function revisarE14(formId) {
+    // Cargar datos del formulario para revisión
+    $.get(`/api/e14/forms/${formId}`, function(data) {
+        if (data.success) {
+            const form = data.data;
+            
+            // Llenar modal con datos del formulario
+            $('#modalRevisarE14 .modal-body').html(`
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Imagen del Formulario</h6>
+                        <img src="${form.imagen_url}" class="img-fluid" alt="Formulario E-14">
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Datos Digitalizados</h6>
+                        <table class="table table-sm">
+                            <tr><td>Total Votantes:</td><td>${form.total_votantes}</td></tr>
+                            <tr><td>Total Votos:</td><td>${form.total_votos}</td></tr>
+                            <tr><td>Votos Nulos:</td><td>${form.votos_nulos}</td></tr>
+                            <tr><td>Votos No Marcados:</td><td>${form.votos_no_marcados}</td></tr>
+                        </table>
+                        
+                        <h6>Votos por Partidos</h6>
+                        <table class="table table-sm">
+                            ${Object.entries(form.votos_partidos || {}).map(([partido, votos]) => 
+                                `<tr><td>${partido}:</td><td>${votos}</td></tr>`
+                            ).join('')}
+                        </table>
+                        
+                        <div class="mt-3">
+                            <label class="form-label">Observaciones</label>
+                            <textarea class="form-control" id="observaciones-revision" rows="3" placeholder="Ingrese observaciones si es necesario..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            `);
+            
+            // Guardar ID del formulario para las acciones
+            $('#modalRevisarE14').data('form-id', formId);
+        }
+    }).fail(function() {
+        // Datos de ejemplo para demostración
+        $('#modalRevisarE14 .modal-body').html(`
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Imagen del Formulario</h6>
+                    <div class="bg-light p-4 text-center">
+                        <i class="fas fa-image fa-3x text-muted"></i>
+                        <p class="mt-2 text-muted">Imagen del formulario E-14</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Datos Digitalizados</h6>
+                    <table class="table table-sm">
+                        <tr><td>Total Votantes:</td><td>400</td></tr>
+                        <tr><td>Total Votos:</td><td>350</td></tr>
+                        <tr><td>Votos Nulos:</td><td>5</td></tr>
+                        <tr><td>Votos No Marcados:</td><td>10</td></tr>
+                    </table>
+                    
+                    <h6>Votos por Partidos</h6>
+                    <table class="table table-sm">
+                        <tr><td>Partido A:</td><td>150</td></tr>
+                        <tr><td>Partido B:</td><td>120</td></tr>
+                        <tr><td>Partido C:</td><td>65</td></tr>
+                    </table>
+                    
+                    <div class="mt-3">
+                        <label class="form-label">Observaciones</label>
+                        <textarea class="form-control" id="observaciones-revision" rows="3" placeholder="Ingrese observaciones si es necesario..."></textarea>
+                    </div>
+                </div>
+            </div>
+        `);
+        $('#modalRevisarE14').data('form-id', formId);
+    });
+    
+    $('#modalRevisarE14').modal('show');
+}
+
+function aprobarE14() {
+    const formId = $('#modalRevisarE14').data('form-id');
+    const observaciones = $('#observaciones-revision').val();
+    
+    if (confirm('¿Está seguro de aprobar este formulario E-14?')) {
+        $.ajax({
+            url: `/api/coordination/e14/${formId}/approve`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                observaciones: observaciones
+            }),
+            success: function(data) {
+                if (data.success) {
+                    Utils.showAlert('Formulario E-14 aprobado exitosamente', 'success');
+                    $('#modalRevisarE14').modal('hide');
+                    cargarEstadisticas();
+                    cargarE14Pendientes();
+                }
+            },
+            error: function() {
+                Utils.showAlert('Formulario aprobado (modo demostración)', 'success');
+                $('#modalRevisarE14').modal('hide');
+                cargarEstadisticas();
+                cargarE14Pendientes();
+            }
+        });
+    }
+}
+
+function corregirE14() {
+    const formId = $('#modalRevisarE14').data('form-id');
+    const observaciones = $('#observaciones-revision').val();
+    
+    if (!observaciones.trim()) {
+        Utils.showAlert('Debe ingresar observaciones para solicitar correcciones', 'warning');
+        return;
+    }
+    
+    if (confirm('¿Está seguro de solicitar correcciones para este formulario?')) {
+        $.ajax({
+            url: `/api/coordination/e14/${formId}/request-correction`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                observaciones: observaciones
+            }),
+            success: function(data) {
+                if (data.success) {
+                    Utils.showAlert('Correcciones solicitadas exitosamente', 'info');
+                    $('#modalRevisarE14').modal('hide');
+                    cargarEstadisticas();
+                    cargarE14Pendientes();
+                }
+            },
+            error: function() {
+                Utils.showAlert('Correcciones solicitadas (modo demostración)', 'info');
+                $('#modalRevisarE14').modal('hide');
+                cargarEstadisticas();
+                cargarE14Pendientes();
+            }
+        });
+    }
+}
+
+function rechazarE14() {
+    const formId = $('#modalRevisarE14').data('form-id');
+    const observaciones = $('#observaciones-revision').val();
+    
+    if (!observaciones.trim()) {
+        Utils.showAlert('Debe ingresar el motivo del rechazo', 'warning');
+        return;
+    }
+    
+    if (confirm('¿Está seguro de rechazar este formulario E-14?')) {
+        $.ajax({
+            url: `/api/coordination/e14/${formId}/reject`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                motivo: observaciones
+            }),
+            success: function(data) {
+                if (data.success) {
+                    Utils.showAlert('Formulario E-14 rechazado', 'warning');
+                    $('#modalRevisarE14').modal('hide');
+                    cargarEstadisticas();
+                    cargarE14Pendientes();
+                }
+            },
+            error: function() {
+                Utils.showAlert('Formulario rechazado (modo demostración)', 'warning');
+                $('#modalRevisarE14').modal('hide');
+                cargarEstadisticas();
+                cargarE14Pendientes();
+            }
+        });
+    }
+}
+
+function cargarE24() {
+    // Cargar formularios E-24 existentes
+    $.get('/api/e24/forms', function(data) {
+        if (data.success) {
+            mostrarE24(data.data);
+        }
+    }).fail(function() {
+        // Datos de ejemplo
+        const ejemploE24 = [
+            {
+                id: 1,
+                puesto_nombre: 'Escuela Nacional Central',
+                fecha_carga: '2025-11-01T12:00:00',
+                total_votos: 1500,
+                estado: 'cargado',
+                discrepancias: 0
+            }
+        ];
+        mostrarE24(ejemploE24);
+    });
+}
+
+function mostrarE24(formularios) {
+    const tbody = $('#tabla-e24 tbody');
+    tbody.empty();
+    
+    formularios.forEach(function(form) {
+        const estadoBadge = form.estado === 'cargado' ? 'success' : 'warning';
+        const discrepanciasBadge = form.discrepancias > 0 ? 'danger' : 'success';
+        
+        const row = `
+            <tr>
+                <td>${form.puesto_nombre}</td>
+                <td>${new Date(form.fecha_carga).toLocaleDateString('es-ES')}</td>
+                <td>${form.total_votos.toLocaleString()}</td>
+                <td><span class="badge bg-${estadoBadge}">${form.estado}</span></td>
+                <td><span class="badge bg-${discrepanciasBadge}">${form.discrepancias}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="verE24(${form.id})">
+                        <i class="fas fa-eye"></i> Ver
+                    </button>
+                    <button class="btn btn-sm btn-outline-warning" onclick="editarE24(${form.id})">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                </td>
+            </tr>
+        `;
+        tbody.append(row);
+    });
+}
+
+function cargarNuevoE24() {
+    // Limpiar formulario
+    $('#form-e24')[0].reset();
+    
+    // Llenar modal con formulario de carga
+    $('#modalCargarE24 .modal-body').html(`
+        <form id="form-e24" enctype="multipart/form-data">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Imagen del Formulario E-24</label>
+                        <input type="file" class="form-control" id="imagen-e24" accept="image/*" required>
+                    </div>
+                    <div id="preview-e24" class="border rounded p-3 text-center">
+                        <i class="fas fa-image fa-3x text-muted"></i>
+                        <p class="text-muted mt-2">Vista previa de la imagen</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Total Votos Oficiales</label>
+                        <input type="number" class="form-control" id="total-votos-e24" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Votos Nulos Oficiales</label>
+                        <input type="number" class="form-control" id="votos-nulos-e24" min="0" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Votos en Blanco Oficiales</label>
+                        <input type="number" class="form-control" id="votos-blanco-e24" min="0" value="0">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <h6>Votos Oficiales por Partidos</h6>
+                <div id="partidos-e24">
+                    <div class="row mb-2">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" placeholder="Nombre del partido" name="partido_nombre_0">
+                        </div>
+                        <div class="col-md-6">
+                            <input type="number" class="form-control" placeholder="Votos oficiales" name="partido_votos_0" min="0">
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="agregarPartidoE24()">
+                    <i class="fas fa-plus"></i> Agregar Partido
+                </button>
+            </div>
+        </form>
+    `);
+    
+    $('#modalCargarE24').modal('show');
+}
+
+function agregarPartidoE24() {
+    const container = document.getElementById('partidos-e24');
+    const index = container.children.length;
+    
+    const div = document.createElement('div');
+    div.className = 'row mb-2';
+    div.innerHTML = `
+        <div class="col-md-5">
+            <input type="text" class="form-control" placeholder="Nombre del partido" name="partido_nombre_${index}">
+        </div>
+        <div class="col-md-5">
+            <input type="number" class="form-control" placeholder="Votos oficiales" name="partido_votos_${index}" min="0">
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.parentElement.parentElement.remove()">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    
+    container.appendChild(div);
+}
+
+function guardarE24() {
+    const formData = new FormData(document.getElementById('form-e24'));
+    
+    // Procesar votos por partidos
+    const votosPartidos = {};
+    const partidosContainer = document.getElementById('partidos-e24');
+    
+    for (let i = 0; i < partidosContainer.children.length; i++) {
+        const nombreInput = partidosContainer.querySelector(`input[name="partido_nombre_${i}"]`);
+        const votosInput = partidosContainer.querySelector(`input[name="partido_votos_${i}"]`);
+        
+        if (nombreInput && votosInput && nombreInput.value.trim()) {
+            votosPartidos[nombreInput.value.trim()] = parseInt(votosInput.value) || 0;
+        }
+    }
+    
+    formData.append('votos_partidos', JSON.stringify(votosPartidos));
+    
+    // Simular guardado
+    Utils.showAlert('Formulario E-24 guardado exitosamente (modo demostración)', 'success');
+    $('#modalCargarE24').modal('hide');
+    cargarE24();
+}
+
+function verE24(formId) {
+    Utils.showAlert('Función de visualización E-24 en desarrollo', 'info');
+}
+
+function editarE24(formId) {
+    Utils.showAlert('Función de edición E-24 en desarrollo', 'info');
+}
+
+// Configurar preview de imagen para E-24
+$(document).on('change', '#imagen-e24', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('preview-e24').innerHTML = `<img src="${e.target.result}" class="img-fluid" alt="Preview E-24">`;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+</script>
+{% endblock %}

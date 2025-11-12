@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Coordinador - Sistema Electoral{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">Dashboard Coordinador</h1>
+        <p class="dashboard-subtitle">Gestión y revisión de formularios E-14</p>
+    </div>
+    
+    <!-- Metrics Cards -->
+    <div class="metrics-grid" id="metrics-container">
+        <div class="metric-card metric-card--warning">
+            <div class="metric-card__icon">
+                <i class="bi bi-clock-history"></i>
+            </div>
+            <div class="metric-card__value" id="metric-pending">0</div>
+            <div class="metric-card__label">Pendientes de Revisión</div>
+        </div>
+        
+        <div class="metric-card metric-card--success">
+            <div class="metric-card__icon">
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="metric-card__value" id="metric-approved">0</div>
+            <div class="metric-card__label">Aprobados</div>
+        </div>
+        
+        <div class="metric-card metric-card--danger">
+            <div class="metric-card__icon">
+                <i class="bi bi-x-circle"></i>
+            </div>
+            <div class="metric-card__value" id="metric-rejected">0</div>
+            <div class="metric-card__label">Rechazados</div>
+        </div>
+        
+        <div class="metric-card metric-card--primary">
+            <div class="metric-card__icon">
+                <i class="bi bi-file-earmark-text"></i>
+            </div>
+            <div class="metric-card__value" id="metric-total">0</div>
+            <div class="metric-card__label">Total Formularios</div>
+        </div>
+    </div>
+    
+    <!-- Pending Forms Section -->
+    <div class="dashboard-card dashboard-card--highlighted">
+        <div class="dashboard-card__header">
+            <h3 class="dashboard-card__title">
+                <i class="bi bi-exclamation-circle text-warning"></i> 
+                Formularios Pendientes de Revisión
+            </h3>
+            <div class="dashboard-card__actions">
+                <button class="btn btn-sm btn-outline-primary" onclick="loadPendingForms()">
+                    <i class="bi bi-arrow-clockwise"></i> Actualizar
+                </button>
+            </div>
+        </div>
+        
+        <div class="dashboard-card__body">
+            <!-- Loading State -->
+            <div id="pending-loading" class="text-center py-3">
+                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+            </div>
+            
+            <!-- Pending Forms Table -->
+            <div id="pending-container" class="d-none">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Mesa</th>
+                                <th>Testigo</th>
+                                <th>Tiempo Esperando</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pending-tbody">
+                            <!-- Pending forms will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Empty State -->
+            <div id="pending-empty" class="empty-state d-none">
+                <div class="empty-state__icon">
+                    <i class="bi bi-check-circle text-success"></i>
+                </div>
+                <h3 class="empty-state__title">¡Todo al día!</h3>
+                <p class="empty-state__message">No hay formularios pendientes de revisión</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Map Section -->
+    <div class="dashboard-card">
+        <div class="dashboard-card__header">
+            <h3 class="dashboard-card__title">
+                <i class="bi bi-map"></i> Mapa del Puesto
+            </h3>
+            <div class="dashboard-card__actions">
+                <button class="btn btn-sm btn-outline-secondary" onclick="toggleMapView()">
+                    <i class="bi bi-arrows-fullscreen"></i> <span id="map-toggle-text">Expandir</span>
+                </button>
+            </div>
+        </div>
+        <div class="dashboard-card__body">
+            <div id="map-container" style="height: 400px; border-radius: var(--border-radius-md); overflow: hidden;">
+                <!-- Map will be initialized here -->
+            </div>
+            <div class="mt-3">
+                <div class="d-flex gap-3 flex-wrap">
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-success me-2">●</span>
+                        <small>Reportado</small>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-warning me-2">●</span>
+                        <small>Pendiente</small>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-danger me-2">●</span>
+                        <small>Sin Reportar</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- All Forms Section -->
+    <div class="dashboard-card">
+        <div class="dashboard-card__header">
+            <h3 class="dashboard-card__title">Todos los Formularios</h3>
+            <div class="dashboard-card__actions">
+                <div class="input-group input-group-sm" style="width: 250px;">
+                    <input type="text" class="form-control" id="search-input" placeholder="Buscar por ID o testigo...">
+                    <button class="btn btn-outline-secondary" type="button" onclick="searchForms()">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="dashboard-card__body">
+            <!-- Filters Row -->
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label class="form-label form-label-sm">Estado</label>
+                    <select class="form-select form-select-sm" id="filter-estado" onchange="loadAllForms()">
+                        <option value="">Todos los estados</option>
+                        <option value="borrador">Borrador</option>
+                        <option value="enviado">Enviado</option>
+                        <option value="aprobado">Aprobado</option>
+                        <option value="rechazado">Rechazado</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label form-label-sm">Mesa</label>
+                    <select class="form-select form-select-sm" id="filter-mesa" onchange="loadAllForms()">
+                        <option value="">Todas las mesas</option>
+                        <!-- Mesas will be loaded dynamically -->
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label form-label-sm">Fecha Desde</label>
+                    <input type="date" class="form-control form-control-sm" id="filter-fecha-desde" onchange="loadAllForms()">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label form-label-sm">Fecha Hasta</label>
+                    <input type="date" class="form-control form-control-sm" id="filter-fecha-hasta" onchange="loadAllForms()">
+                </div>
+            </div>
+        </div>
+        
+        <div class="dashboard-card__body">
+            <!-- Loading State -->
+            <div id="all-loading" class="text-center py-3">
+                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+            </div>
+            
+            <!-- All Forms Table -->
+            <div id="all-container" class="d-none">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Mesa</th>
+                                <th>Testigo</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="all-tbody">
+                            <!-- All forms will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <nav id="pagination-container" class="mt-3">
+                    <!-- Pagination will be loaded here -->
+                </nav>
+            </div>
+            
+            <!-- Empty State -->
+            <div id="all-empty" class="empty-state d-none">
+                <div class="empty-state__icon">
+                    <i class="bi bi-inbox"></i>
+                </div>
+                <h3 class="empty-state__title">No hay formularios</h3>
+                <p class="empty-state__message">No se encontraron formularios con los filtros seleccionados</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/modules/coordinador.js') }}"></script>
+{% endblock %}

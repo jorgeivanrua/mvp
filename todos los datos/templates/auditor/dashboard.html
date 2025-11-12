@@ -1,0 +1,779 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Auditor{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">Panel de Auditoría</h1>
+                    <p class="text-muted">Monitoreo y auditoría del sistema electoral</p>
+                </div>
+                <div class="user-info">
+                    <span class="badge bg-info">{{ user.rol.value }}</span>
+                    <span class="ms-2">{{ user.nombre }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Métricas de auditoría -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="total-actividades">0</h4>
+                            <p class="card-text">Actividades Hoy</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-activity fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="discrepancias-detectadas">0</h4>
+                            <p class="card-text">Discrepancias</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="integridad-datos">98.5%</h4>
+                            <p class="card-text">Integridad de Datos</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-shield-alt fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="usuarios-activos">0</h4>
+                            <p class="card-text">Usuarios Activos</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mapa Nacional -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-globe-americas"></i> Mapa Nacional de Actividad Electoral</h5>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" onclick="refreshNationalMap()">
+                            <i class="fas fa-sync-alt"></i> Actualizar
+                        </button>
+                        <button class="btn btn-outline-info" onclick="toggleMapLayers()">
+                            <i class="fas fa-layer-group"></i> Capas
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="auditorLocationMap" style="height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navegación por pestañas -->
+    <ul class="nav nav-tabs" id="auditorTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="actividad-tab" data-bs-toggle="tab" data-bs-target="#actividad" type="button" role="tab">
+                <i class="fas fa-history"></i> Registro de Actividad
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="discrepancias-tab" data-bs-toggle="tab" data-bs-target="#discrepancias" type="button" role="tab">
+                <i class="fas fa-search"></i> Discrepancias
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="usuarios-tab" data-bs-toggle="tab" data-bs-target="#usuarios" type="button" role="tab">
+                <i class="fas fa-user-shield"></i> Actividad de Usuarios
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="reportes-tab" data-bs-toggle="tab" data-bs-target="#reportes" type="button" role="tab">
+                <i class="fas fa-file-alt"></i> Reportes de Integridad
+            </button>
+        </li>
+    </ul>
+
+    <!-- Contenido de las pestañas -->
+    <div class="tab-content" id="auditorTabContent">
+        <!-- Registro de Actividad -->
+        <div class="tab-pane fade show active" id="actividad" role="tabpanel">
+            <div class="card mt-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Registro de Actividad del Sistema</h5>
+                    <div>
+                        <select class="form-select form-select-sm d-inline-block w-auto me-2" id="filtro-actividad">
+                            <option value="">Todas las actividades</option>
+                            <option value="login">Inicios de sesión</option>
+                            <option value="form_create">Creación de formularios</option>
+                            <option value="form_approve">Aprobaciones</option>
+                            <option value="form_reject">Rechazos</option>
+                            <option value="user_create">Creación de usuarios</option>
+                        </select>
+                        <button class="btn btn-sm btn-outline-primary" onclick="exportarActividad()">
+                            <i class="fas fa-download"></i> Exportar
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-sm" id="tabla-actividad">
+                            <thead>
+                                <tr>
+                                    <th>Fecha/Hora</th>
+                                    <th>Usuario</th>
+                                    <th>Acción</th>
+                                    <th>Recurso</th>
+                                    <th>IP</th>
+                                    <th>Detalles</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Se llena dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Discrepancias -->
+        <div class="tab-pane fade" id="discrepancias" role="tabpanel">
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Análisis de Discrepancias</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <select class="form-select" id="filtro-severidad">
+                                <option value="">Todas las severidades</option>
+                                <option value="alta">Alta</option>
+                                <option value="media">Media</option>
+                                <option value="baja">Baja</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-select" id="filtro-estado-discrepancia">
+                                <option value="">Todos los estados</option>
+                                <option value="pendiente">Pendiente</option>
+                                <option value="investigando">En investigación</option>
+                                <option value="resuelto">Resuelto</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="date" class="form-control" id="filtro-fecha-discrepancia">
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="tabla-discrepancias">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Severidad</th>
+                                    <th>Ubicación</th>
+                                    <th>Diferencia</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Se llena dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actividad de Usuarios -->
+        <div class="tab-pane fade" id="usuarios" role="tabpanel">
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Monitoreo de Usuarios</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="tabla-usuarios-actividad">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Rol</th>
+                                    <th>Último Acceso</th>
+                                    <th>Formularios Procesados</th>
+                                    <th>Intentos Fallidos</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Se llena dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reportes de Integridad -->
+        <div class="tab-pane fade" id="reportes" role="tabpanel">
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Reportes de Integridad del Sistema</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <canvas id="grafico-integridad"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <canvas id="grafico-discrepancias-tiempo"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h6>Generar Reportes</h6>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <button class="btn btn-outline-primary w-100 mb-2" onclick="generarReporteIntegridad()">
+                                        <i class="fas fa-shield-alt"></i> Reporte de Integridad
+                                    </button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button class="btn btn-outline-warning w-100 mb-2" onclick="generarReporteDiscrepancias()">
+                                        <i class="fas fa-exclamation-triangle"></i> Reporte de Discrepancias
+                                    </button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button class="btn btn-outline-info w-100 mb-2" onclick="generarReporteActividad()">
+                                        <i class="fas fa-history"></i> Reporte de Actividad
+                                    </button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button class="btn btn-outline-success w-100 mb-2" onclick="generarReporteCompleto()">
+                                        <i class="fas fa-file-pdf"></i> Reporte Completo
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para detalles de discrepancia -->
+<div class="modal fade" id="modalDiscrepancia" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalles de Discrepancia</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Se llena dinámicamente -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-warning" onclick="marcarEnInvestigacion()">Marcar en Investigación</button>
+                <button type="button" class="btn btn-success" onclick="marcarResuelto()">Marcar como Resuelto</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% b
+lock scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function() {
+    cargarMetricasAuditoria();
+    cargarRegistroActividad();
+    cargarDiscrepancias();
+    cargarActividadUsuarios();
+    inicializarGraficosAuditoria();
+    initAuditorMap();
+    
+    // Configurar filtros
+    $('#filtro-actividad').change(function() {
+        cargarRegistroActividad();
+    });
+    
+    $('#filtro-severidad, #filtro-estado-discrepancia, #filtro-fecha-discrepancia').change(function() {
+        cargarDiscrepancias();
+    });
+});
+
+async function initAuditorMap() {
+    try {
+        locationMap = new LocationMap('auditorLocationMap', {
+            height: '400px',
+            showControls: true,
+            showUserLocation: false,
+            showHierarchy: false
+        });
+        
+        await locationMap.init();
+        
+        // Escuchar eventos de selección de ubicación
+        document.addEventListener('locationSelected', function(event) {
+            const location = event.detail.location;
+            showAuditLocationDetails(location);
+        });
+        
+    } catch (error) {
+        console.error('Error inicializando mapa de auditoría:', error);
+    }
+}
+
+function showAuditLocationDetails(location) {
+    // Mostrar información de auditoría específica para la ubicación seleccionada
+    console.log('Detalles de auditoría para:', location);
+    
+    // Aquí se puede mostrar un modal con información específica de auditoría
+    Utils.showAlert(`Información de auditoría para ${location.nombre}`, 'info');
+}
+
+function refreshNationalMap() {
+    if (locationMap) {
+        locationMap.loadMapData().then(() => {
+            locationMap.loadMarkers();
+            Utils.showAlert('Mapa nacional actualizado', 'success');
+        });
+    }
+}
+
+function toggleMapLayers() {
+    Utils.showAlert('Función de capas del mapa en desarrollo', 'info');
+}
+
+function cargarMetricasAuditoria() {
+    $.get('/api/audit/metrics', function(data) {
+        if (data.success) {
+            $('#total-actividades').text(data.data.actividades_hoy || 0);
+            $('#discrepancias-detectadas').text(data.data.discrepancias_detectadas || 0);
+            $('#integridad-datos').text((data.data.integridad_datos || 98.5) + '%');
+            $('#usuarios-activos').text(data.data.usuarios_activos || 0);
+        }
+    }).fail(function() {
+        // Datos de ejemplo
+        $('#total-actividades').text('47');
+        $('#discrepancias-detectadas').text('3');
+        $('#integridad-datos').text('98.5%');
+        $('#usuarios-activos').text('12');
+    });
+}
+
+function cargarRegistroActividad() {
+    const filtro = $('#filtro-actividad').val();
+    let url = '/api/audit/activity';
+    if (filtro) url += `?type=${filtro}`;
+    
+    $.get(url, function(data) {
+        if (data.success) {
+            mostrarRegistroActividad(data.data);
+        }
+    }).fail(function() {
+        // Datos de ejemplo
+        const actividadEjemplo = [
+            {
+                id: 1,
+                fecha: '2025-11-01T15:30:00',
+                usuario: 'admin@sistema-electoral.gov',
+                accion: 'login',
+                recurso: 'Sistema',
+                ip: '192.168.1.100',
+                detalles: 'Inicio de sesión exitoso'
+            },
+            {
+                id: 2,
+                fecha: '2025-11-01T14:45:00',
+                usuario: 'testigo.001@sistema-electoral.gov',
+                accion: 'form_create',
+                recurso: 'Formulario E-14',
+                ip: '192.168.1.101',
+                detalles: 'Creación de formulario E-14 para Mesa 001'
+            },
+            {
+                id: 3,
+                fecha: '2025-11-01T14:20:00',
+                usuario: 'coord.puesto@sistema-electoral.gov',
+                accion: 'form_approve',
+                recurso: 'Formulario E-14',
+                ip: '192.168.1.102',
+                detalles: 'Aprobación de formulario E-14 ID: 15'
+            }
+        ];
+        mostrarRegistroActividad(actividadEjemplo);
+    });
+}
+
+function mostrarRegistroActividad(actividades) {
+    const tbody = $('#tabla-actividad tbody');
+    tbody.empty();
+    
+    actividades.forEach(function(actividad) {
+        const accionBadge = getAccionBadge(actividad.accion);
+        const row = `
+            <tr>
+                <td>${new Date(actividad.fecha).toLocaleString('es-ES')}</td>
+                <td>${actividad.usuario}</td>
+                <td>${accionBadge}</td>
+                <td>${actividad.recurso}</td>
+                <td><code>${actividad.ip}</code></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-info" onclick="verDetallesActividad(${actividad.id})">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+        tbody.append(row);
+    });
+}
+
+function getAccionBadge(accion) {
+    const badges = {
+        'login': '<span class="badge bg-success">Login</span>',
+        'logout': '<span class="badge bg-secondary">Logout</span>',
+        'form_create': '<span class="badge bg-primary">Crear Formulario</span>',
+        'form_approve': '<span class="badge bg-success">Aprobar</span>',
+        'form_reject': '<span class="badge bg-danger">Rechazar</span>',
+        'user_create': '<span class="badge bg-info">Crear Usuario</span>',
+        'user_modify': '<span class="badge bg-warning">Modificar Usuario</span>'
+    };
+    return badges[accion] || `<span class="badge bg-secondary">${accion}</span>`;
+}
+
+function cargarDiscrepancias() {
+    const severidad = $('#filtro-severidad').val();
+    const estado = $('#filtro-estado-discrepancia').val();
+    const fecha = $('#filtro-fecha-discrepancia').val();
+    
+    let url = '/api/audit/discrepancies?';
+    if (severidad) url += `severity=${severidad}&`;
+    if (estado) url += `status=${estado}&`;
+    if (fecha) url += `date=${fecha}&`;
+    
+    $.get(url, function(data) {
+        if (data.success) {
+            mostrarDiscrepancias(data.data);
+        }
+    }).fail(function() {
+        // Datos de ejemplo
+        const discrepanciasEjemplo = [
+            {
+                id: 1,
+                fecha: '2025-11-01T12:00:00',
+                tipo: 'E14_E24_MISMATCH',
+                severidad: 'alta',
+                ubicacion: 'Mesa 003 - Escuela Central',
+                diferencia: '15 votos',
+                estado: 'pendiente'
+            },
+            {
+                id: 2,
+                fecha: '2025-11-01T11:30:00',
+                tipo: 'TOTAL_MISMATCH',
+                severidad: 'media',
+                ubicacion: 'Mesa 007 - Colegio Nacional',
+                diferencia: '3 votos',
+                estado: 'investigando'
+            }
+        ];
+        mostrarDiscrepancias(discrepanciasEjemplo);
+    });
+}
+
+function mostrarDiscrepancias(discrepancias) {
+    const tbody = $('#tabla-discrepancias tbody');
+    tbody.empty();
+    
+    discrepancias.forEach(function(discrepancia) {
+        const severidadBadge = getSeveridadBadge(discrepancia.severidad);
+        const estadoBadge = getEstadoDiscrepanciaBadge(discrepancia.estado);
+        
+        const row = `
+            <tr>
+                <td>${new Date(discrepancia.fecha).toLocaleDateString('es-ES')}</td>
+                <td>${discrepancia.tipo}</td>
+                <td>${severidadBadge}</td>
+                <td>${discrepancia.ubicacion}</td>
+                <td><strong>${discrepancia.diferencia}</strong></td>
+                <td>${estadoBadge}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="verDiscrepancia(${discrepancia.id})">
+                        <i class="fas fa-search"></i> Investigar
+                    </button>
+                </td>
+            </tr>
+        `;
+        tbody.append(row);
+    });
+}
+
+function getSeveridadBadge(severidad) {
+    const badges = {
+        'alta': '<span class="badge bg-danger">Alta</span>',
+        'media': '<span class="badge bg-warning">Media</span>',
+        'baja': '<span class="badge bg-info">Baja</span>'
+    };
+    return badges[severidad] || '<span class="badge bg-secondary">Desconocida</span>';
+}
+
+function getEstadoDiscrepanciaBadge(estado) {
+    const badges = {
+        'pendiente': '<span class="badge bg-warning">Pendiente</span>',
+        'investigando': '<span class="badge bg-info">Investigando</span>',
+        'resuelto': '<span class="badge bg-success">Resuelto</span>'
+    };
+    return badges[estado] || '<span class="badge bg-secondary">Desconocido</span>';
+}
+
+function cargarActividadUsuarios() {
+    $.get('/api/audit/users-activity', function(data) {
+        if (data.success) {
+            mostrarActividadUsuarios(data.data);
+        }
+    }).fail(function() {
+        // Datos de ejemplo
+        const usuariosEjemplo = [
+            {
+                id: 1,
+                nombre: 'Administrador del Sistema',
+                email: 'admin@sistema-electoral.gov',
+                rol: 'sistemas',
+                ultimo_acceso: '2025-11-01T15:30:00',
+                formularios_procesados: 0,
+                intentos_fallidos: 0,
+                activo: true
+            },
+            {
+                id: 2,
+                nombre: 'Testigo Electoral Mesa 001',
+                email: 'testigo.001@sistema-electoral.gov',
+                rol: 'testigo_electoral',
+                ultimo_acceso: '2025-11-01T14:45:00',
+                formularios_procesados: 2,
+                intentos_fallidos: 0,
+                activo: true
+            }
+        ];
+        mostrarActividadUsuarios(usuariosEjemplo);
+    });
+}
+
+function mostrarActividadUsuarios(usuarios) {
+    const tbody = $('#tabla-usuarios-actividad tbody');
+    tbody.empty();
+    
+    usuarios.forEach(function(usuario) {
+        const estadoBadge = usuario.activo ? 
+            '<span class="badge bg-success">Activo</span>' : 
+            '<span class="badge bg-danger">Inactivo</span>';
+            
+        const intentosBadge = usuario.intentos_fallidos > 0 ? 
+            `<span class="badge bg-warning">${usuario.intentos_fallidos}</span>` : 
+            '<span class="badge bg-success">0</span>';
+            
+        const row = `
+            <tr>
+                <td>${usuario.nombre}<br><small class="text-muted">${usuario.email}</small></td>
+                <td><span class="badge bg-primary">${usuario.rol}</span></td>
+                <td>${new Date(usuario.ultimo_acceso).toLocaleString('es-ES')}</td>
+                <td><span class="badge bg-info">${usuario.formularios_procesados}</span></td>
+                <td>${intentosBadge}</td>
+                <td>${estadoBadge}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-info" onclick="verActividadUsuario(${usuario.id})">
+                        <i class="fas fa-history"></i> Ver Actividad
+                    </button>
+                </td>
+            </tr>
+        `;
+        tbody.append(row);
+    });
+}
+
+function inicializarGraficosAuditoria() {
+    // Gráfico de integridad
+    const ctxIntegridad = document.getElementById('grafico-integridad');
+    if (ctxIntegridad) {
+        new Chart(ctxIntegridad, {
+            type: 'doughnut',
+            data: {
+                labels: ['Datos Íntegros', 'Discrepancias Menores', 'Discrepancias Mayores'],
+                datasets: [{
+                    data: [95, 3, 2],
+                    backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Estado de Integridad de Datos'
+                    }
+                }
+            }
+        });
+    }
+    
+    // Gráfico de discrepancias en el tiempo
+    const ctxDiscrepancias = document.getElementById('grafico-discrepancias-tiempo');
+    if (ctxDiscrepancias) {
+        new Chart(ctxDiscrepancias, {
+            type: 'line',
+            data: {
+                labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+                datasets: [{
+                    label: 'Discrepancias Detectadas',
+                    data: [2, 1, 3, 0, 1, 0, 0],
+                    borderColor: '#dc3545',
+                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Discrepancias por Día'
+                    }
+                }
+            }
+        });
+    }
+}
+
+// Funciones de acciones
+function verDetallesActividad(actividadId) {
+    Utils.showAlert('Función de detalles de actividad en desarrollo', 'info');
+}
+
+function verDiscrepancia(discrepanciaId) {
+    // Cargar detalles de la discrepancia
+    $('#modalDiscrepancia .modal-body').html(`
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Información de la Discrepancia</h6>
+                <table class="table table-sm">
+                    <tr><td>ID:</td><td>${discrepanciaId}</td></tr>
+                    <tr><td>Tipo:</td><td>E14_E24_MISMATCH</td></tr>
+                    <tr><td>Severidad:</td><td><span class="badge bg-danger">Alta</span></td></tr>
+                    <tr><td>Ubicación:</td><td>Mesa 003 - Escuela Central</td></tr>
+                    <tr><td>Diferencia:</td><td>15 votos</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6>Detalles de la Comparación</h6>
+                <table class="table table-sm">
+                    <tr><td>Total E-14:</td><td>385 votos</td></tr>
+                    <tr><td>Total E-24:</td><td>400 votos</td></tr>
+                    <tr><td>Diferencia:</td><td class="text-danger">+15 votos</td></tr>
+                    <tr><td>Porcentaje:</td><td>3.9%</td></tr>
+                </table>
+            </div>
+        </div>
+        
+        <div class="mt-3">
+            <h6>Notas de Investigación</h6>
+            <textarea class="form-control" id="notas-investigacion" rows="3" placeholder="Agregar notas de investigación..."></textarea>
+        </div>
+    `);
+    
+    $('#modalDiscrepancia').data('discrepancia-id', discrepanciaId);
+    $('#modalDiscrepancia').modal('show');
+}
+
+function marcarEnInvestigacion() {
+    const discrepanciaId = $('#modalDiscrepancia').data('discrepancia-id');
+    const notas = $('#notas-investigacion').val();
+    
+    Utils.showAlert('Discrepancia marcada como en investigación', 'info');
+    $('#modalDiscrepancia').modal('hide');
+    cargarDiscrepancias();
+}
+
+function marcarResuelto() {
+    const discrepanciaId = $('#modalDiscrepancia').data('discrepancia-id');
+    const notas = $('#notas-investigacion').val();
+    
+    if (!notas.trim()) {
+        Utils.showAlert('Debe agregar notas explicando la resolución', 'warning');
+        return;
+    }
+    
+    Utils.showAlert('Discrepancia marcada como resuelta', 'success');
+    $('#modalDiscrepancia').modal('hide');
+    cargarDiscrepancias();
+}
+
+function verActividadUsuario(usuarioId) {
+    Utils.showAlert('Función de actividad de usuario en desarrollo', 'info');
+}
+
+// Funciones de exportación y reportes
+function exportarActividad() {
+    Utils.showAlert('Exportando registro de actividad...', 'info');
+}
+
+function generarReporteIntegridad() {
+    Utils.showAlert('Generando reporte de integridad...', 'info');
+}
+
+function generarReporteDiscrepancias() {
+    Utils.showAlert('Generando reporte de discrepancias...', 'info');
+}
+
+function generarReporteActividad() {
+    Utils.showAlert('Generando reporte de actividad...', 'info');
+}
+
+function generarReporteCompleto() {
+    Utils.showAlert('Generando reporte completo del sistema...', 'info');
+}
+</script>
+{% endblock %}

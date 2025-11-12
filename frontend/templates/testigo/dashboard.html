@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Testigo Electoral{% endblock %}
+
+{% block extra_css %}
+<style>
+.image-preview {
+    min-height: 200px;
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: #f8f9fa;
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 4px;
+}
+
+.form-section {
+    margin-bottom: 1.5rem;
+}
+
+.form-section h6 {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e9ecef;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <h2>Dashboard - Testigo Electoral</h2>
+            <p class="text-muted">Bienvenido al sistema de recolección de datos electorales</p>
+        </div>
+    </div>
+
+    <!-- Selector de Mesa -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label class="form-label">Mesa</label>
+                <select class="form-select" id="mesa" required onchange="cambiarMesa()">
+                    <option value="">Seleccione mesa...</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Tabla de Formularios -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Mis Formularios E-14</h5>
+                    <button class="btn btn-primary" onclick="showCreateForm()">
+                        <i class="bi bi-plus-circle"></i> Nuevo Formulario
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="formsTable">
+                            <thead>
+                                <tr>
+                                    <th>Mesa</th>
+                                    <th>Estado</th>
+                                    <th>Total Votos</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">
+                                        <p class="text-muted">No hay formularios registrados</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Panel Lateral -->
+        <div class="col-md-4">
+            <!-- Mesa Asignada -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Mi Mesa Asignada</h5>
+                </div>
+                <div class="card-body" id="assignedLocation">
+                    <p class="text-muted">Cargando...</p>
+                </div>
+            </div>
+            
+            <!-- Instrucciones -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Instrucciones</h5>
+                </div>
+                <div class="card-body">
+                    <ol>
+                        <li>Tome una foto clara del formulario E-14</li>
+                        <li>Digite todos los datos del formulario</li>
+                        <li>Verifique que los totales coincidan</li>
+                        <li>Envíe el formulario para revisión</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para crear/editar formulario -->
+<div class="modal fade" id="formModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Formulario E-14</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="e14Form" enctype="multipart/form-data">
+                    <!-- Información Básica -->
+                    <div class="form-section">
+                        <h6>📋 Información Básica</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tipo de Elección *</label>
+                                <select class="form-select" name="tipo_eleccion" required>
+                                    <option value="">Seleccione...</option>
+                                    <option value="senado">Senado</option>
+                                    <option value="camara">Cámara de Representantes</option>
+                                    <option value="asamblea">Asamblea Departamental</option>
+                                    <option value="concejo">Concejo Municipal</option>
+                                    <option value="jal">JAL (Juntas Administradoras Locales)</option>
+                                    <option value="ediles">Ediles</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Mesa Asignada</label>
+                                <input type="text" class="form-control" id="mesaAsignada" readonly>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Hora de Apertura *</label>
+                                <input type="time" class="form-control" name="hora_apertura" value="08:00" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Hora de Cierre *</label>
+                                <input type="time" class="form-control" name="hora_cierre" value="16:00" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Foto del Formulario -->
+                    <div class="form-section">
+                        <h6>📸 Foto del Formulario E-14</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <input type="file" class="form-control" id="imagen" name="imagen" accept="image/*" required>
+                                <small class="text-muted">Tome una foto clara del formulario completo</small>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="image-preview" id="imagePreview">
+                                    <p class="text-muted">Seleccione una imagen</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Datos de Votación -->
+                    <div class="form-section">
+                        <h6>🗳️ Datos de Votación</h6>
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Total Votantes Registrados *</label>
+                                <input type="number" class="form-control" name="total_votantes_registrados" min="0" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Total Votos *</label>
+                                <input type="number" class="form-control" name="total_votos" id="totalVotos" min="0" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Votos Válidos *</label>
+                                <input type="number" class="form-control" name="votos_validos" id="votosValidos" min="0" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Votos Nulos *</label>
+                                <input type="number" class="form-control" name="votos_nulos" min="0" value="0" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Votos en Blanco *</label>
+                                <input type="number" class="form-control" name="votos_blanco" min="0" value="0" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Tarjetas No Marcadas *</label>
+                                <input type="number" class="form-control" name="tarjetas_no_marcadas" min="0" value="0" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Total Tarjetas</label>
+                                <input type="number" class="form-control" name="total_tarjetas" id="totalTarjetas" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Votos por Partido -->
+                    <div class="form-section">
+                        <h6>🏛️ Votos Solo por Partido (Sin Candidato)</h6>
+                        <div id="partidosContainer">
+                            <!-- Se llena dinámicamente -->
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addPartido()">
+                            <i class="bi bi-plus-circle"></i> Agregar Partido
+                        </button>
+                    </div>
+
+                    <!-- Votos por Candidato -->
+                    <div class="form-section">
+                        <h6>👤 Votos por Candidato</h6>
+                        <div id="candidatosContainer">
+                            <!-- Se llena dinámicamente -->
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-success" onclick="addCandidato()">
+                            <i class="bi bi-person-plus"></i> Agregar Candidato
+                        </button>
+                    </div>
+
+                    <!-- Resumen Automático -->
+                    <div class="form-section">
+                        <h6>📊 Resumen Automático</h6>
+                        <div class="alert alert-info">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Total Votos por Partido:</strong> <span id="resumenPartidos">0</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Total Votos por Candidato:</strong> <span id="resumenCandidatos">0</span>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <strong>Total General:</strong> <span id="resumenTotal">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Observaciones -->
+                    <div class="form-section">
+                        <h6>📝 Observaciones</h6>
+                        <textarea class="form-control" name="observaciones" rows="3" placeholder="Ingrese cualquier observación relevante sobre el proceso de votación..."></textarea>
+                    </div>
+                    
+                    <div class="validation-errors" id="validationErrors"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveForm()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/testigo-dashboard.js') }}"></script>
+{% endblock %}

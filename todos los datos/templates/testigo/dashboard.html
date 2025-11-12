@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Testigo Electoral{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Dashboard - Testigo Electoral</h2>
+        <p class="text-muted">Bienvenido al sistema de recolección de datos electorales</p>
+    </div>
+</div>
+
+ <div class="form-group" id="mesaGroup" style="display: block;">
+                <label class="form-label">Mesa</label>
+                <select class="form-select" id="mesa" required="">
+                    <option value="">Seleccione mesa...</option>
+                </select>
+            </div>
+
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Mis Formularios E-14</h5>
+                <button class="btn btn-primary" onclick="showCreateForm()">
+                    <i class="fas fa-plus"></i> Nuevo Formulario
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="formsTable">
+                        <thead>
+                            <tr>
+                                <th>Mesa</th>
+                                <th>Estado</th>
+                                <th>Total Votos</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Se llena dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Mi Mesa Asignada</h5>
+            </div>
+            <div class="card-body" id="assignedLocation">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="fas fa-map-marker-alt"></i> Ubicación Geográfica</h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="testigoLocationMap"></div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>Instrucciones</h5>
+            </div>
+            <div class="card-body">
+                <ol>
+                    <li>Tome una foto clara del formulario E-14</li>
+                    <li>Digite todos los datos del formulario</li>
+                    <li>Verifique que los totales coincidan</li>
+                    <li>Envíe el formulario para revisión</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para crear/editar formulario -->
+<div class="modal fade" id="formModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Formulario E-14</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="e14Form" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-section">
+                                <h6>Imagen del Formulario</h6>
+                                <div class="mb-3">
+                                    <input type="file" class="form-control" id="imagen" name="imagen" accept="image/*,.pdf" required>
+                                </div>
+                                <div class="image-preview" id="imagePreview">
+                                    <p class="text-muted">Seleccione una imagen del formulario E-14</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-section">
+                                <h6>Datos Electorales</h6>
+                                <div class="mb-3">
+                                    <label class="form-label">Total Votantes Registrados</label>
+                                    <input type="number" class="form-control" name="total_votantes" min="0" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Total Votos</label>
+                                    <input type="number" class="form-control" name="total_votos" min="0" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Votos Nulos</label>
+                                    <input type="number" class="form-control" name="votos_nulos" min="0" value="0" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Votos No Marcados</label>
+                                    <input type="number" class="form-control" name="votos_no_marcados" min="0" value="0" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h6>Votos por Partidos</h6>
+                        <div id="partidosContainer">
+                            <!-- Se llena dinámicamente -->
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addPartido()">
+                            Agregar Partido
+                        </button>
+                    </div>
+                    
+                    <div class="validation-errors"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveForm()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentUser = null;
+let userLocation = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadUserProfile();
+    loadForms();
+    initLocationMap();
+    
+    // Configurar preview de imagen
+    FormHandler.setupImagePreview('imagen', 'imagePreview');
+});
+
+async function initLocationMap() {
+    try {
+        locationMap = new LocationMap('testigoLocationMap', {
+            height: '300px',
+            showControls: false,
+            showUserLocation: true,
+            showHierarchy: false
+        });
+        
+        await locationMap.init();
+    } catch (error) {
+        console.error('Error inicializando mapa:', error);
+    }
+}
+
+async function loadUserProfile() {
+    try {
+        const response = await APIClient.get('/auth/profile');
+        if (response.success) {
+            currentUser = response.data;
+            userLocation = currentUser.accessible_locations[0]; // Primera ubicación accesible
+            
+            // Mostrar información de la mesa asignada
+            if (userLocation) {
+                document.getElementById('assignedLocation').innerHTML = `
+                    <h6>${userLocation.nombre}</h6>
+                    <p class="text-muted">Código: ${userLocation.codigo}</p>
+                    <p>Votantes registrados: ${userLocation.total_votantes_registrados || 'N/A'}</p>
+                `;
+            }
+        }
+    } catch (error) {
+        Utils.showAlert('Error al cargar perfil: ' + error.message, 'danger');
+    }
+}
+
+async function loadForms() {
+    try {
+        const response = await APIClient.get('/e14/forms');
+        if (response.success) {
+            updateMetrics(response.data);
+            updateFormsTable(response.data);
+        }
+    } catch (error) {
+        Utils.showAlert('Error al cargar formularios: ' + error.message, 'danger');
+    }
+}
+
+function updateMetrics(forms) {
+    const total = forms.length;
+    const pending = forms.filter(f => ['enviado', 'en_revision'].includes(f.estado)).length;
+    const approved = forms.filter(f => f.estado === 'aprobado').length;
+    const rejected = forms.filter(f => f.estado === 'rechazado').length;
+    
+    document.getElementById('totalForms').textContent = total;
+    document.getElementById('pendingForms').textContent = pending;
+    document.getElementById('approvedForms').textContent = approved;
+    document.getElementById('rejectedForms').textContent = rejected;
+}
+
+function updateFormsTable(forms) {
+    const tbody = document.querySelector('#formsTable tbody');
+    tbody.innerHTML = '';
+    
+    forms.forEach(form => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${form.ubicacion_nombre || 'N/A'}</td>
+            <td><span class="badge bg-${getStatusColor(form.estado)}">${form.estado}</span></td>
+            <td>${Utils.formatNumber(form.total_votos)}</td>
+            <td>${Utils.formatDate(form.created_at)}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="viewForm(${form.id})">Ver</button>
+                ${form.estado === 'borrador' ? `<button class="btn btn-sm btn-outline-warning" onclick="editForm(${form.id})">Editar</button>` : ''}
+                ${form.estado === 'borrador' ? `<button class="btn btn-sm btn-success" onclick="submitForm(${form.id})">Enviar</button>` : ''}
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function getStatusColor(estado) {
+    const colors = {
+        'borrador': 'secondary',
+        'enviado': 'warning',
+        'en_revision': 'info',
+        'aprobado': 'success',
+        'rechazado': 'danger'
+    };
+    return colors[estado] || 'secondary';
+}
+
+function showCreateForm() {
+    document.getElementById('e14Form').reset();
+    document.getElementById('imagePreview').innerHTML = '<p class="text-muted">Seleccione una imagen del formulario E-14</p>';
+    
+    // Agregar campos básicos de partidos
+    const container = document.getElementById('partidosContainer');
+    container.innerHTML = '';
+    addPartido();
+    addPartido();
+    
+    new bootstrap.Modal(document.getElementById('formModal')).show();
+}
+
+function addPartido() {
+    const container = document.getElementById('partidosContainer');
+    const index = container.children.length;
+    
+    const div = document.createElement('div');
+    div.className = 'row mb-2';
+    div.innerHTML = `
+        <div class="col-md-6">
+            <input type="text" class="form-control" placeholder="Nombre del partido" name="partido_nombre_${index}">
+        </div>
+        <div class="col-md-4">
+            <input type="number" class="form-control" placeholder="Votos" name="partido_votos_${index}" min="0" value="0">
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.parentElement.parentElement.remove()">
+                Eliminar
+            </button>
+        </div>
+    `;
+    
+    container.appendChild(div);
+}
+
+async function saveForm() {
+    const form = document.getElementById('e14Form');
+    const formData = new FormData(form);
+    
+    // Procesar votos por partidos
+    const votosPartidos = {};
+    const partidosContainer = document.getElementById('partidosContainer');
+    
+    for (let i = 0; i < partidosContainer.children.length; i++) {
+        const nombreInput = partidosContainer.querySelector(`input[name="partido_nombre_${i}"]`);
+        const votosInput = partidosContainer.querySelector(`input[name="partido_votos_${i}"]`);
+        
+        if (nombreInput && votosInput && nombreInput.value.trim()) {
+            votosPartidos[nombreInput.value.trim()] = parseInt(votosInput.value) || 0;
+        }
+    }
+    
+    formData.append('votos_partidos', JSON.stringify(votosPartidos));
+    formData.append('votos_candidatos', JSON.stringify({})); // Por ahora vacío
+    formData.append('ubicacion_id', userLocation.id);
+    
+    try {
+        const response = await fetch('/api/e14/forms', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            },
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            Utils.showAlert('Formulario guardado exitosamente', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('formModal')).hide();
+            loadForms();
+        } else {
+            Utils.showAlert('Error: ' + result.message, 'danger');
+        }
+    } catch (error) {
+        Utils.showAlert('Error al guardar formulario: ' + error.message, 'danger');
+    }
+}
+
+async function submitForm(formId) {
+    if (!confirm('¿Está seguro de enviar este formulario para revisión? No podrá editarlo después.')) {
+        return;
+    }
+    
+    try {
+        const response = await APIClient.post(`/e14/forms/${formId}/submit`, {});
+        if (response.success) {
+            Utils.showAlert('Formulario enviado para revisión', 'success');
+            loadForms();
+        }
+    } catch (error) {
+        Utils.showAlert('Error al enviar formulario: ' + error.message, 'danger');
+    }
+}
+
+function viewForm(formId) {
+    // Implementar vista de formulario
+    window.open(`/testigo/form/${formId}`, '_blank');
+}
+
+function editForm(formId) {
+    // Implementar edición de formulario
+    Utils.showAlert('Función de edición en desarrollo', 'info');
+}
+</script>
+{% endblock %}

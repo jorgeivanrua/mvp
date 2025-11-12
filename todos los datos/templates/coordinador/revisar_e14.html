@@ -1,0 +1,695 @@
+{% extends "base.html" %}
+
+{% block title %}Revisar Formulario E-14 - Sistema Electoral{% endblock %}
+
+{% block extra_css %}
+<style>
+    .review-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    
+    .split-view {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .image-panel {
+        position: sticky;
+        top: 1rem;
+        height: fit-content;
+    }
+    
+    .image-viewer-review {
+        position: relative;
+        background: #000;
+        border-radius: 0.5rem;
+        overflow: auto;
+        min-height: 500px;
+        max-height: 700px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: grab;
+    }
+    
+    .image-viewer-review.panning {
+        cursor: grabbing;
+    }
+    
+    .image-viewer-review img {
+        max-width: 100%;
+        height: auto;
+        transition: transform 0.2s ease;
+        user-select: none;
+    }
+    
+    .image-controls-review {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        display: flex;
+        gap: 0.5rem;
+        z-index: 10;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    
+    .inconsistency-highlight {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        border-radius: 0.25rem;
+    }
+    
+    .inconsistency-highlight .data-value {
+        color: #856404;
+        font-weight: var(--font-weight-bold);
+    }
+    
+    .data-comparison {
+        background: var(--color-light);
+        padding: 1rem;
+        border-radius: var(--border-radius-md);
+        margin-bottom: 1rem;
+    }
+    
+    .data-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem;
+        border-bottom: 1px solid var(--color-gray-light);
+    }
+    
+    .data-row:last-child {
+        border-bottom: none;
+    }
+    
+    .data-label {
+        font-weight: var(--font-weight-medium);
+        color: var(--color-gray);
+    }
+    
+    .data-value {
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-dark);
+    }
+    
+    .review-actions {
+        position: sticky;
+        bottom: 0;
+        background: var(--color-white);
+        padding: 1.5rem;
+        border-top: 2px solid var(--color-gray-light);
+        box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+    }
+    
+    @media (max-width: 992px) {
+        .split-view {
+            grid-template-columns: 1fr;
+        }
+        
+        .image-panel {
+            position: relative;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="review-container">
+    <!-- Back Button -->
+    <div class="mb-3">
+        <a href="/coordinador/dashboard" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al Dashboard
+        </a>
+    </div>
+    
+    <!-- Loading State -->
+    <div id="loading-container" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2 text-muted">Cargando formulario...</p>
+    </div>
+    
+    <!-- Review Content -->
+    <div id="review-content" class="d-none">
+        <!-- Header -->
+        <div class="dashboard-card mb-3">
+            <div class="dashboard-card__header">
+                <div>
+                    <h1 class="dashboard-title mb-2">Revisar Formulario E-14 #<span id="form-id"></span></h1>
+                    <p class="dashboard-subtitle mb-0">
+                        <strong>Testigo:</strong> <span id="form-testigo"></span> • 
+                        <strong>Mesa:</strong> <span id="form-location"></span> • 
+                        <span id="form-date"></span>
+                    </p>
+                </div>
+                <div>
+                    <span id="form-status-badge"></span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Split View: Image and Data -->
+        <div class="split-view">
+            <!-- Left: Image -->
+            <div class="image-panel">
+                <div class="dashboard-card">
+                    <div class="dashboard-card__header">
+                        <h3 class="dashboard-card__title">Imagen del Formulario</h3>
+                    </div>
+                    <div class="dashboard-card__body p-0">
+                        <div class="image-viewer-review" id="image-viewer">
+                            <div class="image-controls-review">
+                                <button class="btn btn-sm btn-light" onclick="zoomIn()" title="Acercar">
+                                    <i class="bi bi-zoom-in"></i>
+                                </button>
+                                <button class="btn btn-sm btn-light" onclick="zoomOut()" title="Alejar">
+                                    <i class="bi bi-zoom-out"></i>
+                                </button>
+                                <button class="btn btn-sm btn-light" onclick="resetZoom()" title="Restablecer">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                                <button class="btn btn-sm btn-light" onclick="rotateImage()" title="Rotar">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            </div>
+                            <img id="form-image" src="" alt="Formulario E-14">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right: Data -->
+            <div class="data-panel">
+                <div class="dashboard-card">
+                    <div class="dashboard-card__header">
+                        <h3 class="dashboard-card__title">Datos Digitados</h3>
+                    </div>
+                    <div class="dashboard-card__body">
+                        <div class="data-comparison">
+                            <div class="data-row">
+                                <span class="data-label">Total Votantes Registrados</span>
+                                <span class="data-value" id="total-votantes">-</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="data-label">Total Votos</span>
+                                <span class="data-value" id="total-votos">-</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="data-label">Votos Nulos</span>
+                                <span class="data-value" id="votos-nulos">-</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="data-label">Votos No Marcados</span>
+                                <span class="data-value" id="votos-no-marcados">-</span>
+                            </div>
+                        </div>
+                        
+                        <h5 class="mt-4 mb-3">Votos por Partido</h5>
+                        <div id="votos-partidos-container" class="data-comparison">
+                            <!-- Party votes will be loaded here -->
+                        </div>
+                        
+                        <!-- Validation Summary -->
+                        <div id="validation-summary" class="mt-4">
+                            <!-- Validation results will be shown here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Comments Section -->
+                <div class="dashboard-card mt-3">
+                    <div class="dashboard-card__header">
+                        <h3 class="dashboard-card__title">Comentarios de Revisión</h3>
+                    </div>
+                    <div class="dashboard-card__body">
+                        <div class="form-group">
+                            <label for="review-comments" class="form-label">
+                                Comentarios <span class="text-muted">(obligatorio al rechazar)</span>
+                            </label>
+                            <textarea 
+                                class="form-control" 
+                                id="review-comments" 
+                                rows="4" 
+                                placeholder="Ingrese sus comentarios sobre el formulario..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Review Actions (Sticky Footer) -->
+    <div id="review-actions" class="review-actions d-none">
+        <button class="btn btn-secondary" onclick="cancelReview()">
+            <i class="bi bi-x-circle"></i> Cancelar
+        </button>
+        <button class="btn btn-danger" onclick="rejectForm()">
+            <i class="bi bi-x-circle-fill"></i> Rechazar
+        </button>
+        <button class="btn btn-success" onclick="approveForm()">
+            <i class="bi bi-check-circle-fill"></i> Aprobar
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const formId = {{ form_id }};
+    let formData = null;
+    
+    // Load form data on page load
+    document.addEventListener('DOMContentLoaded', async function() {
+        await loadFormData();
+    });
+    
+    /**
+     * Load form data
+     */
+    async function loadFormData() {
+        try {
+            const response = await APIClient.get(`/e14/forms/${formId}`);
+            
+            if (response.success && response.data) {
+                formData = response.data;
+                renderFormData(formData);
+                validateFormData(formData);
+                
+                // Hide loading, show content
+                document.getElementById('loading-container').classList.add('d-none');
+                document.getElementById('review-content').classList.remove('d-none');
+                document.getElementById('review-actions').classList.remove('d-none');
+            }
+        } catch (error) {
+            console.error('Error loading form:', error);
+            Utils.showAlert('Error al cargar formulario', 'danger');
+        }
+    }
+    
+    /**
+     * Render form data
+     */
+    function renderFormData(form) {
+        // Header
+        document.getElementById('form-id').textContent = form.id;
+        document.getElementById('form-testigo').textContent = form.testigo_nombre || 'N/A';
+        document.getElementById('form-location').textContent = form.ubicacion_nombre || 'N/A';
+        document.getElementById('form-date').textContent = Utils.formatDate(form.created_at, true);
+        document.getElementById('form-status-badge').innerHTML = 
+            `<span class="status-badge status-badge--${form.estado}">${form.estado.toUpperCase()}</span>`;
+        
+        // Image
+        document.getElementById('form-image').src = form.imagen_url;
+        
+        // Vote data
+        document.getElementById('total-votantes').textContent = Utils.formatNumber(form.total_votantes);
+        document.getElementById('total-votos').textContent = Utils.formatNumber(form.total_votos);
+        document.getElementById('votos-nulos').textContent = Utils.formatNumber(form.votos_nulos);
+        document.getElementById('votos-no-marcados').textContent = Utils.formatNumber(form.votos_no_marcados);
+        
+        // Party votes
+        const partidosContainer = document.getElementById('votos-partidos-container');
+        const partidos = form.votos_partidos || {};
+        
+        if (Object.keys(partidos).length > 0) {
+            partidosContainer.innerHTML = Object.entries(partidos).map(([partido, votos]) => `
+                <div class="data-row">
+                    <span class="data-label">${partido}</span>
+                    <span class="data-value">${Utils.formatNumber(votos)} votos</span>
+                </div>
+            `).join('');
+        } else {
+            partidosContainer.innerHTML = '<p class="text-muted p-3">No hay votos por partido registrados</p>';
+        }
+    }
+    
+    /**
+     * Validate form data and highlight inconsistencies
+     */
+    function validateFormData(form) {
+        const errors = FormHandler.validateVoteTotals(form);
+        const summaryEl = document.getElementById('validation-summary');
+        
+        // Check for unusual patterns
+        const warnings = checkUnusualPatterns(form);
+        
+        if (errors.length === 0 && warnings.length === 0) {
+            summaryEl.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <strong>Validación exitosa</strong><br>
+                    Los datos del formulario son consistentes.
+                </div>
+            `;
+        } else {
+            let html = '';
+            
+            if (errors.length > 0) {
+                html += `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <strong>Errores de validación:</strong>
+                        <ul class="mb-0 mt-2">
+                            ${errors.map(error => `<li>${error}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            if (warnings.length > 0) {
+                html += `
+                    <div class="alert alert-warning mt-2">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        <strong>Advertencias:</strong>
+                        <ul class="mb-0 mt-2">
+                            ${warnings.map(warning => `<li>${warning}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            summaryEl.innerHTML = html;
+        }
+        
+        // Highlight inconsistent fields
+        highlightInconsistencies(form, errors, warnings);
+    }
+    
+    /**
+     * Check for unusual patterns
+     */
+    function checkUnusualPatterns(form) {
+        const warnings = [];
+        
+        // Check participation rate
+        if (form.total_votantes > 0) {
+            const participationRate = (form.total_votos / form.total_votantes) * 100;
+            if (participationRate > 95) {
+                warnings.push(`Participación muy alta: ${participationRate.toFixed(1)}%`);
+            } else if (participationRate < 30) {
+                warnings.push(`Participación muy baja: ${participationRate.toFixed(1)}%`);
+            }
+        }
+        
+        // Check null votes percentage
+        if (form.total_votos > 0) {
+            const nullRate = (form.votos_nulos / form.total_votos) * 100;
+            if (nullRate > 20) {
+                warnings.push(`Porcentaje alto de votos nulos: ${nullRate.toFixed(1)}%`);
+            }
+        }
+        
+        // Check if one party has overwhelming majority
+        const partidos = form.votos_partidos || {};
+        const partidoVotos = Object.values(partidos);
+        if (partidoVotos.length > 0) {
+            const maxVotos = Math.max(...partidoVotos);
+            const totalPartidoVotos = partidoVotos.reduce((a, b) => a + b, 0);
+            if (totalPartidoVotos > 0) {
+                const maxPercentage = (maxVotos / totalPartidoVotos) * 100;
+                if (maxPercentage > 80) {
+                    warnings.push(`Un partido tiene más del 80% de los votos (${maxPercentage.toFixed(1)}%)`);
+                }
+            }
+        }
+        
+        return warnings;
+    }
+    
+    /**
+     * Highlight inconsistent fields
+     */
+    function highlightInconsistencies(form, errors, warnings) {
+        // Remove existing highlights
+        document.querySelectorAll('.inconsistency-highlight').forEach(el => {
+            el.classList.remove('inconsistency-highlight');
+        });
+        
+        // Add highlights based on errors and warnings
+        if (errors.length > 0 || warnings.length > 0) {
+            // Highlight total votos if there are validation errors
+            const totalVotosEl = document.getElementById('total-votos').closest('.data-row');
+            if (totalVotosEl) {
+                totalVotosEl.classList.add('inconsistency-highlight');
+            }
+        }
+    }
+    
+    /**
+     * Image zoom and pan functionality
+     */
+    let zoomLevel = 1;
+    let rotation = 0;
+    let isPanning = false;
+    let startX, startY, scrollLeft, scrollTop;
+    
+    function zoomIn() {
+        zoomLevel = Math.min(zoomLevel + 0.25, 3);
+        applyTransform();
+    }
+    
+    function zoomOut() {
+        zoomLevel = Math.max(zoomLevel - 0.25, 0.5);
+        applyTransform();
+    }
+    
+    function resetZoom() {
+        zoomLevel = 1;
+        rotation = 0;
+        applyTransform();
+        const viewer = document.getElementById('image-viewer');
+        viewer.scrollLeft = 0;
+        viewer.scrollTop = 0;
+    }
+    
+    function rotateImage() {
+        rotation = (rotation + 90) % 360;
+        applyTransform();
+    }
+    
+    function applyTransform() {
+        const img = document.getElementById('form-image');
+        img.style.transform = `scale(${zoomLevel}) rotate(${rotation}deg)`;
+    }
+    
+    // Setup image pan
+    document.addEventListener('DOMContentLoaded', function() {
+        const viewer = document.getElementById('image-viewer');
+        
+        viewer.addEventListener('mousedown', (e) => {
+            if (zoomLevel > 1) {
+                isPanning = true;
+                viewer.classList.add('panning');
+                startX = e.pageX - viewer.offsetLeft;
+                startY = e.pageY - viewer.offsetTop;
+                scrollLeft = viewer.scrollLeft;
+                scrollTop = viewer.scrollTop;
+            }
+        });
+        
+        viewer.addEventListener('mouseleave', () => {
+            isPanning = false;
+            viewer.classList.remove('panning');
+        });
+        
+        viewer.addEventListener('mouseup', () => {
+            isPanning = false;
+            viewer.classList.remove('panning');
+        });
+        
+        viewer.addEventListener('mousemove', (e) => {
+            if (!isPanning) return;
+            e.preventDefault();
+            const x = e.pageX - viewer.offsetLeft;
+            const y = e.pageY - viewer.offsetTop;
+            const walkX = (x - startX) * 2;
+            const walkY = (y - startY) * 2;
+            viewer.scrollLeft = scrollLeft - walkX;
+            viewer.scrollTop = scrollTop - walkY;
+        });
+    });
+    
+    /**
+     * Approve form with confirmation
+     */
+    async function approveForm() {
+        // Show confirmation modal
+        const confirmed = await showConfirmationModal(
+            'Aprobar Formulario',
+            '¿Está seguro de aprobar este formulario? Esta acción no se puede deshacer.',
+            'success'
+        );
+        
+        if (!confirmed) return;
+        
+        // Disable buttons to prevent double-click
+        disableActionButtons(true);
+        
+        try {
+            const comments = document.getElementById('review-comments').value.trim();
+            
+            const response = await APIClient.post(`/e14/forms/${formId}/approve`, {
+                comentarios: comments
+            });
+            
+            if (response.success) {
+                Utils.showAlert('Formulario aprobado exitosamente', 'success');
+                setTimeout(() => {
+                    window.location.href = '/coordinador/dashboard';
+                }, 1500);
+            }
+        } catch (error) {
+            console.error('Error approving form:', error);
+            Utils.showAlert(error.message || 'Error al aprobar formulario', 'danger');
+            disableActionButtons(false);
+        }
+    }
+    
+    /**
+     * Reject form with validation
+     */
+    async function rejectForm() {
+        const comments = document.getElementById('review-comments').value.trim();
+        
+        // Validate comments
+        if (!comments) {
+            Utils.showAlert('Debe ingresar comentarios para rechazar el formulario', 'warning');
+            document.getElementById('review-comments').focus();
+            document.getElementById('review-comments').classList.add('is-invalid');
+            return;
+        }
+        
+        if (comments.length < 10) {
+            Utils.showAlert('Los comentarios deben tener al menos 10 caracteres', 'warning');
+            document.getElementById('review-comments').focus();
+            return;
+        }
+        
+        // Show confirmation modal
+        const confirmed = await showConfirmationModal(
+            'Rechazar Formulario',
+            '¿Está seguro de rechazar este formulario? El testigo deberá corregirlo y reenviarlo.',
+            'danger'
+        );
+        
+        if (!confirmed) return;
+        
+        // Disable buttons to prevent double-click
+        disableActionButtons(true);
+        
+        try {
+            const response = await APIClient.post(`/e14/forms/${formId}/reject`, {
+                comentarios: comments
+            });
+            
+            if (response.success) {
+                Utils.showAlert('Formulario rechazado', 'success');
+                setTimeout(() => {
+                    window.location.href = '/coordinador/dashboard';
+                }, 1500);
+            }
+        } catch (error) {
+            console.error('Error rejecting form:', error);
+            Utils.showAlert(error.message || 'Error al rechazar formulario', 'danger');
+            disableActionButtons(false);
+        }
+    }
+    
+    /**
+     * Show confirmation modal
+     */
+    function showConfirmationModal(title, message, type) {
+        return new Promise((resolve) => {
+            const modalHtml = `
+                <div class="modal fade" id="confirmModal" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-${type} text-white">
+                                <h5 class="modal-title">${title}</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="mb-0">${message}</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="button" class="btn btn-${type}" id="confirm-btn">Confirmar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('confirmModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            
+            // Handle confirm button
+            document.getElementById('confirm-btn').addEventListener('click', () => {
+                modal.hide();
+                resolve(true);
+            });
+            
+            // Handle modal close
+            document.getElementById('confirmModal').addEventListener('hidden.bs.modal', () => {
+                document.getElementById('confirmModal').remove();
+                resolve(false);
+            });
+            
+            modal.show();
+        });
+    }
+    
+    /**
+     * Disable/enable action buttons
+     */
+    function disableActionButtons(disabled) {
+        const buttons = document.querySelectorAll('#review-actions button');
+        buttons.forEach(btn => {
+            btn.disabled = disabled;
+            if (disabled) {
+                btn.classList.add('loading');
+            } else {
+                btn.classList.remove('loading');
+            }
+        });
+    }
+    
+    /**
+     * Remove invalid class on input
+     */
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('review-comments').addEventListener('input', function() {
+            this.classList.remove('is-invalid');
+        });
+    });
+    
+    /**
+     * Cancel review
+     */
+    function cancelReview() {
+        if (Utils.confirm('¿Está seguro de cancelar la revisión?')) {
+            window.location.href = '/coordinador/dashboard';
+        }
+    }
+</script>
+{% endblock %}

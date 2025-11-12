@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema Electoral</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            color: #667eea;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        
+        .logo p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .alert-error {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+        
+        .alert-success {
+            background: #efe;
+            color: #3c3;
+            border: 1px solid #cfc;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 15px;
+            color: #666;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>🗳️ Sistema Electoral</h1>
+            <p>E-14/E-24 - Recolección y Alertas</p>
+        </div>
+        
+        <div id="alert" class="alert" style="display: none;"></div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Correo Electrónico</label>
+                <input type="email" id="email" name="email" required 
+                       placeholder="usuario@ejemplo.com" autocomplete="email">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Contraseña</label>
+                <input type="password" id="password" name="password" required 
+                       placeholder="••••••••" autocomplete="current-password">
+            </div>
+            
+            <button type="submit" class="btn" id="loginBtn">
+                Iniciar Sesión
+            </button>
+        </form>
+        
+        <div class="loading" id="loading">
+            Iniciando sesión...
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = '/api/auth/login';
+        
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
+            const loading = document.getElementById('loading');
+            const alert = document.getElementById('alert');
+            
+            // Deshabilitar botón y mostrar loading
+            loginBtn.disabled = true;
+            loading.classList.add('active');
+            alert.style.display = 'none';
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    // Guardar tokens y usuario
+                    localStorage.setItem('access_token', data.data.tokens.access_token);
+                    localStorage.setItem('refresh_token', data.data.tokens.refresh_token);
+                    localStorage.setItem('user', JSON.stringify(data.data.user));
+                    
+                    // Mostrar éxito
+                    showAlert('Inicio de sesión exitoso. Redirigiendo...', 'success');
+                    
+                    // Redirigir según rol
+                    setTimeout(() => {
+                        const rol = data.data.user.rol;
+                        if (rol === 'testigo_electoral') {
+                            window.location.href = '/dashboard/testigo';
+                        } else if (rol === 'coordinador_puesto') {
+                            window.location.href = '/dashboard/coordinador';
+                        } else if (rol === 'sistemas') {
+                            window.location.href = '/dashboard/admin';
+                        }
+                    }, 1000);
+                } else {
+                    showAlert(data.error || 'Error al iniciar sesión', 'error');
+                    loginBtn.disabled = false;
+                }
+            } catch (error) {
+                showAlert('Error de conexión. Intente nuevamente.', 'error');
+                loginBtn.disabled = false;
+            } finally {
+                loading.classList.remove('active');
+            }
+        });
+        
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.style.display = 'block';
+        }
+        
+        // Verificar si ya hay sesión activa
+        if (localStorage.getItem('access_token')) {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (user && user.rol) {
+                const rol = user.rol;
+                if (rol === 'testigo_electoral') {
+                    window.location.href = '/dashboard/testigo';
+                } else if (rol === 'coordinador_puesto') {
+                    window.location.href = '/dashboard/coordinador';
+                } else if (rol === 'sistemas') {
+                    window.location.href = '/dashboard/admin';
+                }
+            }
+        }
+    </script>
+</body>
+</html>

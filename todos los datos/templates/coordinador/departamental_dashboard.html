@@ -1,0 +1,397 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Coordinador Departamental{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Dashboard - Coordinador Departamental</h2>
+        <p class="text-muted">Supervisión y consolidación de datos electorales departamentales</p>
+    </div>
+</div>
+
+<!-- Métricas principales -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card dashboard-card">
+            <div class="card-body metric-card">
+                <div class="metric-number" id="totalMunicipios">0</div>
+                <div class="metric-label">Municipios</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card dashboard-card">
+            <div class="card-body metric-card">
+                <div class="metric-number" id="municipiosCompletos">0</div>
+                <div class="metric-label">Completos</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card dashboard-card">
+            <div class="card-body metric-card">
+                <div class="metric-number" id="alertasCriticas">0</div>
+                <div class="metric-label">Alertas Críticas</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card dashboard-card">
+            <div class="card-body metric-card">
+                <div class="metric-number" id="totalVotantes">0</div>
+                <div class="metric-label">Votantes</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card dashboard-card">
+            <div class="card-body metric-card">
+                <div class="metric-number" id="participacion">0%</div>
+                <div class="metric-label">Participación</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card dashboard-card">
+            <div class="card-body metric-card">
+                <div class="metric-number" id="totalVotos">0</div>
+                <div class="metric-label">Total Votos</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Mapa departamental -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-map"></i> Mapa Departamental</h5>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" onclick="refreshMapData()">
+                        <i class="fas fa-sync-alt"></i> Actualizar
+                    </button>
+                    <button class="btn btn-outline-info" onclick="toggleMapView()">
+                        <i class="fas fa-layer-group"></i> Vista
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div id="departamentalLocationMap" style="height: 500px;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Panel lateral con información -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Mi Departamento</h5>
+            </div>
+            <div class="card-body" id="departamentalInfo">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>Municipios por Estado</h5>
+            </div>
+            <div class="card-body">
+                <div class="progress-stacked" style="height: 20px;">
+                    <div class="progress-bar bg-success" id="progressCompletos" style="width: 0%"></div>
+                    <div class="progress-bar bg-warning" id="progressParciales" style="width: 0%"></div>
+                    <div class="progress-bar bg-danger" id="progressPendientes" style="width: 0%"></div>
+                </div>
+                <div class="mt-2">
+                    <small class="text-success">■ Completos</small>
+                    <small class="text-warning ms-2">■ Parciales</small>
+                    <small class="text-danger ms-2">■ Pendientes</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>Alertas Recientes</h5>
+            </div>
+            <div class="card-body" id="alertasRecientes">
+                <p class="text-muted">Cargando alertas...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de municipios -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Municipios del Departamento</h5>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-success" onclick="exportDepartamentalData()">
+                        <i class="fas fa-download"></i> Exportar
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="generateReport()">
+                        <i class="fas fa-file-alt"></i> Reporte
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="municipiosTable">
+                        <thead>
+                            <tr>
+                                <th>Municipio</th>
+                                <th>Puestos</th>
+                                <th>Mesas</th>
+                                <th>Estado</th>
+                                <th>Progreso</th>
+                                <th>Votantes</th>
+                                <th>Votos</th>
+                                <th>Participación</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Se llena dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentUser = null;
+let departamentalData = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadUserProfile();
+    loadDepartamentalData();
+    initLocationMap();
+});
+
+async function initLocationMap() {
+    try {
+        locationMap = new LocationMap('departamentalLocationMap', {
+            height: '500px',
+            showControls: true,
+            showUserLocation: true,
+            showHierarchy: false
+        });
+        
+        await locationMap.init();
+        
+        // Escuchar eventos de selección de ubicación
+        document.addEventListener('locationSelected', function(event) {
+            const location = event.detail.location;
+            showMunicipioDetails(location);
+        });
+        
+    } catch (error) {
+        console.error('Error inicializando mapa:', error);
+    }
+}
+
+async function loadUserProfile() {
+    try {
+        const response = await APIClient.get('/location/user-location');
+        if (response.success) {
+            currentUser = response.data.user;
+            const location = response.data.location;
+            
+            if (location) {
+                document.getElementById('departamentalInfo').innerHTML = `
+                    <h6>${location.nombre_completo}</h6>
+                    <p class="text-muted">${location.tipo.toUpperCase()}</p>
+                    <p><strong>Código:</strong> ${location.departamento_codigo}</p>
+                    ${location.total_votantes_registrados ? 
+                        `<p><i class="fas fa-users"></i> ${location.total_votantes_registrados.toLocaleString()} votantes registrados</p>` : ''}
+                    <hr>
+                    <div class="d-grid">
+                        <button class="btn btn-primary btn-sm" onclick="viewDepartamentalReport()">
+                            <i class="fas fa-chart-bar"></i> Ver Reporte Completo
+                        </button>
+                    </div>
+                `;
+                
+                // Cargar municipios del departamento
+                loadMunicipios(location.departamento_codigo);
+            }
+        }
+    } catch (error) {
+        Utils.showAlert('Error al cargar perfil: ' + error.message, 'danger');
+    }
+}
+
+async function loadMunicipios(departamentoCodigo) {
+    try {
+        const response = await APIClient.get(`/location/municipios/${departamentoCodigo}`);
+        if (response.success) {
+            const municipios = response.data;
+            document.getElementById('totalMunicipios').textContent = municipios.length;
+            
+            // Simular datos de progreso para cada municipio
+            const municipiosConDatos = municipios.map(municipio => ({
+                ...municipio,
+                puestos: Math.floor(Math.random() * 20) + 5,
+                mesas: Math.floor(Math.random() * 100) + 20,
+                estado: ['completo', 'parcial', 'pendiente'][Math.floor(Math.random() * 3)],
+                progreso: Math.floor(Math.random() * 100),
+                votos: Math.floor(Math.random() * 50000) + 10000,
+                participacion: Math.floor(Math.random() * 40) + 40
+            }));
+            
+            updateMunicipiosTable(municipiosConDatos);
+            updateDepartamentalMetrics(municipiosConDatos);
+        }
+    } catch (error) {
+        console.error('Error cargando municipios:', error);
+    }
+}
+
+function loadDepartamentalData() {
+    // Simular carga de datos departamentales
+    const mockData = {
+        alertasCriticas: 3,
+        totalVotantes: 2500000,
+        totalVotos: 1800000,
+        participacion: 72
+    };
+    
+    document.getElementById('alertasCriticas').textContent = mockData.alertasCriticas;
+    document.getElementById('totalVotantes').textContent = (mockData.totalVotantes / 1000000).toFixed(1) + 'M';
+    document.getElementById('totalVotos').textContent = (mockData.totalVotos / 1000000).toFixed(1) + 'M';
+    document.getElementById('participacion').textContent = mockData.participacion + '%';
+    
+    // Cargar alertas recientes
+    loadAlertasRecientes();
+}
+
+function updateMunicipiosTable(municipios) {
+    const tbody = document.querySelector('#municipiosTable tbody');
+    tbody.innerHTML = '';
+    
+    municipios.forEach(municipio => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <strong>${municipio.nombre}</strong>
+                <br><small class="text-muted">${municipio.codigo}</small>
+            </td>
+            <td>${municipio.puestos}</td>
+            <td>${municipio.mesas}</td>
+            <td><span class="badge bg-${getStatusColor(municipio.estado)}">${municipio.estado}</span></td>
+            <td>
+                <div class="progress" style="height: 15px;">
+                    <div class="progress-bar bg-${getProgressColor(municipio.progreso)}" 
+                         style="width: ${municipio.progreso}%"></div>
+                </div>
+                <small>${municipio.progreso}%</small>
+            </td>
+            <td>${municipio.total_votantes_registrados ? municipio.total_votantes_registrados.toLocaleString() : 'N/A'}</td>
+            <td>${municipio.votos.toLocaleString()}</td>
+            <td>${municipio.participacion}%</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="viewMunicipio(${municipio.id})">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-info" onclick="focusOnMunicipio(${municipio.latitud}, ${municipio.longitud})">
+                    <i class="fas fa-map-marker-alt"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function updateDepartamentalMetrics(municipios) {
+    const completos = municipios.filter(m => m.estado === 'completo').length;
+    const parciales = municipios.filter(m => m.estado === 'parcial').length;
+    const pendientes = municipios.filter(m => m.estado === 'pendiente').length;
+    const total = municipios.length;
+    
+    document.getElementById('municipiosCompletos').textContent = completos;
+    
+    // Actualizar barras de progreso
+    document.getElementById('progressCompletos').style.width = `${(completos / total) * 100}%`;
+    document.getElementById('progressParciales').style.width = `${(parciales / total) * 100}%`;
+    document.getElementById('progressPendientes').style.width = `${(pendientes / total) * 100}%`;
+}
+
+function loadAlertasRecientes() {
+    const alertas = [
+        { tipo: 'discrepancia', municipio: 'Medellín', mensaje: 'Diferencia significativa en totales E-14 vs E-24' },
+        { tipo: 'timeout', municipio: 'Bello', mensaje: 'Puesto sin reportar en 2 horas' },
+        { tipo: 'anomalia', municipio: 'Envigado', mensaje: 'Patrón de votación inusual detectado' }
+    ];
+    
+    const container = document.getElementById('alertasRecientes');
+    container.innerHTML = alertas.map(alerta => `
+        <div class="alert alert-warning alert-sm mb-2">
+            <small><strong>${alerta.municipio}:</strong> ${alerta.mensaje}</small>
+        </div>
+    `).join('');
+}
+
+function getStatusColor(estado) {
+    const colors = {
+        'completo': 'success',
+        'parcial': 'warning',
+        'pendiente': 'secondary'
+    };
+    return colors[estado] || 'secondary';
+}
+
+function getProgressColor(progreso) {
+    if (progreso >= 90) return 'success';
+    if (progreso >= 70) return 'info';
+    if (progreso >= 50) return 'warning';
+    return 'danger';
+}
+
+function showMunicipioDetails(location) {
+    console.log('Detalles del municipio seleccionado:', location);
+}
+
+function focusOnMunicipio(lat, lng) {
+    if (locationMap && locationMap.map && lat && lng) {
+        locationMap.map.setView([lat, lng], 12);
+    }
+}
+
+function refreshMapData() {
+    if (locationMap) {
+        locationMap.loadMapData().then(() => {
+            locationMap.loadMarkers();
+            Utils.showAlert('Mapa actualizado', 'success');
+        });
+    }
+}
+
+function toggleMapView() {
+    Utils.showAlert('Función de cambio de vista en desarrollo', 'info');
+}
+
+function viewMunicipio(municipioId) {
+    Utils.showAlert(`Ver detalles del municipio ${municipioId}`, 'info');
+}
+
+function exportDepartamentalData() {
+    Utils.showAlert('Función de exportación en desarrollo', 'info');
+}
+
+function generateReport() {
+    Utils.showAlert('Función de generación de reportes en desarrollo', 'info');
+}
+
+function viewDepartamentalReport() {
+    Utils.showAlert('Función de reporte departamental en desarrollo', 'info');
+}
+</script>
+{% endblock %}

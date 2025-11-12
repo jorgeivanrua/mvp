@@ -1,0 +1,731 @@
+{% extends "base.html" %}
+
+{% block title %}Crear Formulario E-24 - Sistema Electoral{% endblock %}
+
+{% block extra_css %}
+<style>
+    .e24-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .suggested-values {
+        background: #e7f3ff;
+        border-left: 4px solid #0d6efd;
+        padding: 1rem;
+        border-radius: 0.25rem;
+        margin-bottom: 1rem;
+    }
+    
+    .suggested-value {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+        background: white;
+        border-radius: 0.25rem;
+    }
+    
+    .suggested-value:last-child {
+        margin-bottom: 0;
+    }
+    
+    .value-label {
+        font-weight: 500;
+        color: #495057;
+    }
+    
+    .value-amount {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #0d6efd;
+    }
+    
+    .use-suggested-btn {
+        margin-left: 1rem;
+    }
+    
+    .comparison-indicator {
+        display: inline-block;
+        margin-left: 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .comparison-match {
+        color: #198754;
+    }
+    
+    .comparison-diff {
+        color: #dc3545;
+    }
+    
+    .image-upload-zone {
+        border: 2px dashed #dee2e6;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #f8f9fa;
+    }
+    
+    .image-upload-zone:hover {
+        border-color: #0d6efd;
+        background: #e7f3ff;
+    }
+    
+    .image-upload-zone.dragover {
+        border-color: #0d6efd;
+        background: #cfe2ff;
+    }
+    
+    .image-preview-container {
+        position: relative;
+        max-width: 100%;
+        margin-top: 1rem;
+    }
+    
+    .image-preview-container img {
+        max-width: 100%;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .remove-image-btn {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background: rgba(220, 53, 69, 0.9);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    
+    .remove-image-btn:hover {
+        background: #dc3545;
+    }
+    
+    .partido-input-group {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .partido-input-group input[type="text"] {
+        flex: 2;
+    }
+    
+    .partido-input-group input[type="number"] {
+        flex: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="e24-container">
+    <!-- Header -->
+    <div class="mb-4">
+        <a href="/coordinador/dashboard" class="btn btn-outline-secondary mb-3">
+            <i class="bi bi-arrow-left"></i> Volver al Dashboard
+        </a>
+        
+        <div class="dashboard-card">
+            <div class="dashboard-card__header">
+                <div>
+                    <h1 class="dashboard-title mb-2">Crear Formulario E-24</h1>
+                    <p class="dashboard-subtitle mb-0">
+                        Consolidación de resultados del puesto
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading State -->
+    <div id="loading-container" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando datos consolidados...</span>
+        </div>
+        <p class="mt-2 text-muted">Cargando datos de formularios E-14...</p>
+    </div>
+    
+    <!-- Form Content -->
+    <div id="form-content" class="d-none">
+        <form id="e24-form">
+            <div class="row">
+                <!-- Left Column: Image Upload -->
+                <div class="col-lg-5">
+                    <div class="dashboard-card mb-3">
+                        <div class="dashboard-card__header">
+                            <h3 class="dashboard-card__title">
+                                <i class="bi bi-image"></i> Imagen del Formulario E-24
+                            </h3>
+                        </div>
+                        <div class="dashboard-card__body">
+                            <div class="image-upload-zone" id="upload-zone">
+                                <i class="bi bi-cloud-upload" style="font-size: 3rem; color: #6c757d;"></i>
+                                <p class="mt-3 mb-2">
+                                    <strong>Haz clic o arrastra la imagen aquí</strong>
+                                </p>
+                                <p class="text-muted small mb-0">
+                                    Formatos: JPG, PNG (máx. 10MB)
+                                </p>
+                                <input type="file" id="image-input" accept="image/*" style="display: none;">
+                            </div>
+                            
+                            <div id="image-preview" class="image-preview-container" style="display: none;">
+                                <button type="button" class="remove-image-btn" onclick="removeImage()">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                                <img id="preview-img" src="" alt="Vista previa">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Suggested Values from E-14 -->
+                    <div class="dashboard-card">
+                        <div class="dashboard-card__header">
+                            <h3 class="dashboard-card__title">
+                                <i class="bi bi-calculator"></i> Valores Consolidados E-14
+                            </h3>
+                        </div>
+                        <div class="dashboard-card__body">
+                            <div class="suggested-values">
+                                <p class="mb-2">
+                                    <i class="bi bi-info-circle"></i>
+                                    <strong>Valores sugeridos</strong> basados en la suma de formularios E-14 aprobados
+                                </p>
+                                
+                                <div id="suggested-values-container">
+                                    <!-- Suggested values will be loaded here -->
+                                </div>
+                                
+                                <button type="button" class="btn btn-sm btn-primary w-100 mt-2" onclick="useAllSuggested()">
+                                    <i class="bi bi-check-all"></i> Usar Todos los Valores Sugeridos
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right Column: Form Data -->
+                <div class="col-lg-7">
+                    <div class="dashboard-card">
+                        <div class="dashboard-card__header">
+                            <h3 class="dashboard-card__title">Datos del Formulario E-24</h3>
+                        </div>
+                        <div class="dashboard-card__body">
+                            <!-- Basic Vote Data -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="total-votantes" class="form-label required">Total Votantes</label>
+                                    <input type="number" class="form-control" id="total-votantes" 
+                                           min="0" required>
+                                    <div class="invalid-feedback">Este campo es obligatorio</div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="total-votos" class="form-label required">Total Votos</label>
+                                    <input type="number" class="form-control" id="total-votos" 
+                                           min="0" required>
+                                    <div class="invalid-feedback">Este campo es obligatorio</div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="votos-nulos" class="form-label required">Votos Nulos</label>
+                                    <input type="number" class="form-control" id="votos-nulos" 
+                                           min="0" required>
+                                    <div class="invalid-feedback">Este campo es obligatorio</div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="votos-blancos" class="form-label required">Votos en Blanco</label>
+                                    <input type="number" class="form-control" id="votos-blancos" 
+                                           min="0" required>
+                                    <div class="invalid-feedback">Este campo es obligatorio</div>
+                                </div>
+                            </div>
+                            
+                            <hr class="my-4">
+                            
+                            <!-- Party Votes -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <label class="form-label mb-0">Votos por Partido</label>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addPartidoField()">
+                                        <i class="bi bi-plus-circle"></i> Agregar Partido
+                                    </button>
+                                </div>
+                                
+                                <div id="partidos-container">
+                                    <!-- Party fields will be added here -->
+                                </div>
+                            </div>
+                            
+                            <hr class="my-4">
+                            
+                            <!-- Validation Summary -->
+                            <div id="validation-summary" class="mb-3">
+                                <!-- Validation messages will appear here -->
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="d-flex gap-2 justify-content-end">
+                                <button type="button" class="btn btn-secondary" onclick="cancelForm()">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" onclick="saveDraft()">
+                                    <i class="bi bi-save"></i> Guardar Borrador
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-send"></i> Enviar Formulario
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let consolidatedData = null;
+    let uploadedImage = null;
+    let partidoCounter = 0;
+    
+    // Load consolidated data on page load
+    document.addEventListener('DOMContentLoaded', async function() {
+        await loadConsolidatedData();
+        setupImageUpload();
+        setupFormValidation();
+    });
+    
+    /**
+     * Load consolidated E-14 data
+     */
+    async function loadConsolidatedData() {
+        try {
+            const response = await APIClient.get('/coordination/e14-consolidation');
+            
+            if (response.success && response.data) {
+                consolidatedData = response.data;
+                renderSuggestedValues(consolidatedData);
+                initializePartidoFields(consolidatedData.votos_partidos || {});
+                
+                // Hide loading, show form
+                document.getElementById('loading-container').classList.add('d-none');
+                document.getElementById('form-content').classList.remove('d-none');
+            }
+        } catch (error) {
+            console.error('Error loading consolidated data:', error);
+            Utils.showAlert('Error al cargar datos consolidados', 'danger');
+        }
+    }
+    
+    /**
+     * Render suggested values
+     */
+    function renderSuggestedValues(data) {
+        const container = document.getElementById('suggested-values-container');
+        
+        container.innerHTML = `
+            <div class="suggested-value">
+                <span class="value-label">Total Votantes:</span>
+                <div>
+                    <span class="value-amount">${Utils.formatNumber(data.total_votantes || 0)}</span>
+                    <button type="button" class="btn btn-sm btn-outline-primary use-suggested-btn" 
+                            onclick="useSuggested('total-votantes', ${data.total_votantes || 0})">
+                        Usar
+                    </button>
+                </div>
+            </div>
+            <div class="suggested-value">
+                <span class="value-label">Total Votos:</span>
+                <div>
+                    <span class="value-amount">${Utils.formatNumber(data.total_votos || 0)}</span>
+                    <button type="button" class="btn btn-sm btn-outline-primary use-suggested-btn" 
+                            onclick="useSuggested('total-votos', ${data.total_votos || 0})">
+                        Usar
+                    </button>
+                </div>
+            </div>
+            <div class="suggested-value">
+                <span class="value-label">Votos Nulos:</span>
+                <div>
+                    <span class="value-amount">${Utils.formatNumber(data.votos_nulos || 0)}</span>
+                    <button type="button" class="btn btn-sm btn-outline-primary use-suggested-btn" 
+                            onclick="useSuggested('votos-nulos', ${data.votos_nulos || 0})">
+                        Usar
+                    </button>
+                </div>
+            </div>
+            <div class="suggested-value">
+                <span class="value-label">Votos en Blanco:</span>
+                <div>
+                    <span class="value-amount">${Utils.formatNumber(data.votos_blancos || 0)}</span>
+                    <button type="button" class="btn btn-sm btn-outline-primary use-suggested-btn" 
+                            onclick="useSuggested('votos-blancos', ${data.votos_blancos || 0})">
+                        Usar
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    /**
+     * Use suggested value
+     */
+    window.useSuggested = function(fieldId, value) {
+        const input = document.getElementById(fieldId);
+        input.value = value;
+        input.classList.add('is-valid');
+        validateForm();
+    };
+    
+    /**
+     * Use all suggested values
+     */
+    window.useAllSuggested = function() {
+        if (!consolidatedData) return;
+        
+        document.getElementById('total-votantes').value = consolidatedData.total_votantes || 0;
+        document.getElementById('total-votos').value = consolidatedData.total_votos || 0;
+        document.getElementById('votos-nulos').value = consolidatedData.votos_nulos || 0;
+        document.getElementById('votos-blancos').value = consolidatedData.votos_blancos || 0;
+        
+        // Update partido fields
+        const partidos = consolidatedData.votos_partidos || {};
+        Object.entries(partidos).forEach(([partido, votos]) => {
+            const partidoInputs = document.querySelectorAll('.partido-input-group');
+            partidoInputs.forEach(group => {
+                const nameInput = group.querySelector('input[type="text"]');
+                if (nameInput && nameInput.value === partido) {
+                    const votosInput = group.querySelector('input[type="number"]');
+                    if (votosInput) {
+                        votosInput.value = votos;
+                    }
+                }
+            });
+        });
+        
+        Utils.showAlert('Valores sugeridos aplicados', 'success');
+        validateForm();
+    };
+    
+    /**
+     * Initialize partido fields
+     */
+    function initializePartidoFields(partidos) {
+        const container = document.getElementById('partidos-container');
+        container.innerHTML = '';
+        
+        if (Object.keys(partidos).length > 0) {
+            Object.entries(partidos).forEach(([partido, votos]) => {
+                addPartidoField(partido, votos);
+            });
+        } else {
+            // Add at least one empty field
+            addPartidoField();
+        }
+    }
+    
+    /**
+     * Add partido field
+     */
+    window.addPartidoField = function(nombre = '', votos = '') {
+        const container = document.getElementById('partidos-container');
+        const fieldId = `partido-${partidoCounter++}`;
+        
+        const fieldHtml = `
+            <div class="partido-input-group" id="${fieldId}">
+                <input type="text" class="form-control" placeholder="Nombre del partido" 
+                       value="${nombre}" data-partido-name>
+                <input type="number" class="form-control" placeholder="Votos" 
+                       min="0" value="${votos}" data-partido-votos>
+                <button type="button" class="btn btn-outline-danger" onclick="removePartidoField('${fieldId}')">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        `;
+        
+        container.insertAdjacentHTML('beforeend', fieldHtml);
+    };
+    
+    /**
+     * Remove partido field
+     */
+    window.removePartidoField = function(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.remove();
+            validateForm();
+        }
+    };
+    
+    /**
+     * Setup image upload
+     */
+    function setupImageUpload() {
+        const uploadZone = document.getElementById('upload-zone');
+        const imageInput = document.getElementById('image-input');
+        
+        // Click to upload
+        uploadZone.addEventListener('click', () => imageInput.click());
+        
+        // File input change
+        imageInput.addEventListener('change', handleImageSelect);
+        
+        // Drag and drop
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+        
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+        
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleImageFile(files[0]);
+            }
+        });
+    }
+    
+    /**
+     * Handle image select
+     */
+    function handleImageSelect(e) {
+        const file = e.target.files[0];
+        if (file) {
+            handleImageFile(file);
+        }
+    }
+    
+    /**
+     * Handle image file
+     */
+    function handleImageFile(file) {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            Utils.showAlert('Por favor seleccione un archivo de imagen válido', 'warning');
+            return;
+        }
+        
+        // Validate file size (10MB max)
+        if (file.size > 10 * 1024 * 1024) {
+            Utils.showAlert('La imagen no debe superar los 10MB', 'warning');
+            return;
+        }
+        
+        uploadedImage = file;
+        
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            document.getElementById('preview-img').src = e.target.result;
+            document.getElementById('upload-zone').style.display = 'none';
+            document.getElementById('image-preview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+    
+    /**
+     * Remove image
+     */
+    window.removeImage = function() {
+        uploadedImage = null;
+        document.getElementById('image-input').value = '';
+        document.getElementById('upload-zone').style.display = 'block';
+        document.getElementById('image-preview').style.display = 'none';
+    };
+    
+    /**
+     * Setup form validation
+     */
+    function setupFormValidation() {
+        // Real-time validation on input
+        const inputs = document.querySelectorAll('#e24-form input[type="number"]');
+        inputs.forEach(input => {
+            input.addEventListener('input', validateForm);
+        });
+        
+        // Form submit
+        document.getElementById('e24-form').addEventListener('submit', handleSubmit);
+    }
+    
+    /**
+     * Validate form
+     */
+    function validateForm() {
+        const formData = getFormData();
+        const errors = FormHandler.validateVoteTotals(formData);
+        
+        const summaryEl = document.getElementById('validation-summary');
+        
+        if (errors.length === 0) {
+            summaryEl.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle-fill"></i>
+                    Los datos son consistentes
+                </div>
+            `;
+            return true;
+        } else {
+            summaryEl.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <strong>Errores de validación:</strong>
+                    <ul class="mb-0 mt-2">
+                        ${errors.map(error => `<li>${error}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+            return false;
+        }
+    }
+    
+    /**
+     * Get form data
+     */
+    function getFormData() {
+        const partidos = {};
+        document.querySelectorAll('.partido-input-group').forEach(group => {
+            const nombre = group.querySelector('[data-partido-name]').value.trim();
+            const votos = parseInt(group.querySelector('[data-partido-votos]').value) || 0;
+            if (nombre) {
+                partidos[nombre] = votos;
+            }
+        });
+        
+        return {
+            total_votantes: parseInt(document.getElementById('total-votantes').value) || 0,
+            total_votos: parseInt(document.getElementById('total-votos').value) || 0,
+            votos_nulos: parseInt(document.getElementById('votos-nulos').value) || 0,
+            votos_blancos: parseInt(document.getElementById('votos-blancos').value) || 0,
+            votos_partidos: partidos
+        };
+    }
+    
+    /**
+     * Handle form submit
+     */
+    async function handleSubmit(e) {
+        e.preventDefault();
+        
+        // Validate image
+        if (!uploadedImage) {
+            Utils.showAlert('Debe cargar la imagen del formulario E-24', 'warning');
+            return;
+        }
+        
+        // Validate form data
+        if (!validateForm()) {
+            Utils.showAlert('Por favor corrija los errores antes de enviar', 'warning');
+            return;
+        }
+        
+        // Confirm submission
+        if (!confirm('¿Está seguro de enviar el formulario E-24? Se realizará una comparación automática con los datos E-14.')) {
+            return;
+        }
+        
+        // Disable submit button
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.classList.add('loading');
+        
+        try {
+            // Upload image first
+            const imageUrl = await uploadImage();
+            
+            // Submit form data
+            const formData = getFormData();
+            formData.imagen_url = imageUrl;
+            
+            const response = await APIClient.post('/e24/forms', formData);
+            
+            if (response.success) {
+                Utils.showAlert('Formulario E-24 creado exitosamente', 'success');
+                setTimeout(() => {
+                    window.location.href = `/coordinador/comparar/${response.data.id}`;
+                }, 1500);
+            }
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            Utils.showAlert(error.message || 'Error al crear formulario', 'danger');
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('loading');
+        }
+    }
+    
+    /**
+     * Upload image
+     */
+    async function uploadImage() {
+        const formData = new FormData();
+        formData.append('image', uploadedImage);
+        
+        const response = await APIClient.upload('/e24/upload-image', formData);
+        
+        if (response.success && response.data.url) {
+            return response.data.url;
+        }
+        
+        throw new Error('Error al subir la imagen');
+    }
+    
+    /**
+     * Save draft
+     */
+    window.saveDraft = async function() {
+        if (!uploadedImage) {
+            Utils.showAlert('Debe cargar la imagen del formulario', 'warning');
+            return;
+        }
+        
+        try {
+            const imageUrl = await uploadImage();
+            const formData = getFormData();
+            formData.imagen_url = imageUrl;
+            formData.estado = 'borrador';
+            
+            const response = await APIClient.post('/e24/forms', formData);
+            
+            if (response.success) {
+                Utils.showAlert('Borrador guardado exitosamente', 'success');
+                setTimeout(() => {
+                    window.location.href = '/coordinador/dashboard';
+                }, 1500);
+            }
+        } catch (error) {
+            console.error('Error saving draft:', error);
+            Utils.showAlert(error.message || 'Error al guardar borrador', 'danger');
+        }
+    };
+    
+    /**
+     * Cancel form
+     */
+    window.cancelForm = function() {
+        if (confirm('¿Está seguro de cancelar? Se perderán los cambios no guardados.')) {
+            window.location.href = '/coordinador/dashboard';
+        }
+    };
+</script>
+{% endblock %}

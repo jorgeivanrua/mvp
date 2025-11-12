@@ -1,0 +1,537 @@
+{% extends "base.html" %}
+
+{% block title %}Iniciar Sesión - Sistema Electoral{% endblock %}
+
+{% block content %}
+<html lang="es"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema Electoral Caquetá</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 450px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-header .logo {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .login-header h2 {
+            color: #1e293b;
+            font-weight: 700;
+            margin-bottom: 5px;
+            font-size: 1.8rem;
+        }
+
+        .login-header p {
+            color: #64748b;
+            margin-bottom: 0;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: #f1f5f9;
+            padding: 5px;
+            border-radius: 12px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            padding: 12px 15px;
+            width: 100%;
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            outline: none;
+        }
+
+        .form-select {
+            background-color: #f8f9fa;
+        }
+
+        .form-select:disabled {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            border-radius: 10px;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .alert-custom {
+            border-radius: 10px;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert-custom.show {
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo">
+                <i class="fas fa-vote-yea"></i> Sistema Electoral
+            </div>
+            <p>Departamento</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tab-buttons">
+            <button class="tab-btn active" onclick="switchTab('registered')">
+                <i class="fas fa-user me-2"></i>Ya Registrado
+            </button>
+            <button class="tab-btn" onclick="switchTab('new')">
+                <i class="fas fa-user-plus me-2"></i>Nuevo Usuario
+            </button>
+        </div>
+
+        <!-- Alertas -->
+        <div id="alertSuccess" class="alert alert-success alert-custom">
+            <i class="fas fa-check-circle me-2"></i> <span id="successMessage"></span>
+        </div>
+        <div id="alertError" class="alert alert-danger alert-custom">
+            <i class="fas fa-exclamation-circle me-2"></i> <span id="errorMessage">Invalid credentials</span>
+        </div>
+
+        <!-- Formulario Ya Registrado -->
+        <form id="registeredForm" onsubmit="handleLogin(event)" style="display: block;">
+            <div class="form-group">
+                <label class="form-label">Rol</label>
+                <select class="form-select" id="rol" required="" onchange="loadUbicacionData()">
+                    <option value="">Seleccione rol...</option>
+                    <option value="super_admin">Super Admin</option>
+                    <option value="admin_departamental">Admin Departamental</option>
+                    <option value="admin_municipal">Admin Municipal</option>
+                    <option value="coordinador_departamental">Coordinador Departamental</option>
+                    <option value="coordinador_municipal">Coordinador Municipal</option>
+                    <option value="coordinador_puesto">Coordinador Puesto</option>
+                    <option value="testigo_mesa">Testigo Mesa</option>
+                    <option value="auditor_electoral">Auditor Electoral</option>
+                </select>
+            </div>
+
+            <!-- Campos condicionales según rol -->
+            <div class="form-group" id="departamentoGroup" style="display: block;">
+                <label class="form-label">Departamento</label>
+                <select class="form-select" id="departamento" onchange="loadMunicipios()" required="">
+                    <option value="">Seleccione departamento...</option>
+                    <option value="Caquetá">Caquetá</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="municipioGroup" style="display: block;">
+                <label class="form-label">Municipio</label>
+                <select class="form-select" id="municipio" onchange="loadZonas()" required="">
+                    <option value="">Seleccione municipio...</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="zonaGroup" style="display: block;">
+                <label class="form-label">Zona</label>
+                <select class="form-select" id="zona" onchange="loadPuestos()" required="">
+                    <option value="">Seleccione zona...</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="puestoGroup" style="display: block;">
+                <label class="form-label">Puesto de Votación</label>
+                <select class="form-select" id="puesto" onchange="loadMesas()" required="">
+                    <option value="">Seleccione puesto...</option>
+                </select>
+            </div>
+
+           
+            <div class="form-group">
+                <label class="form-label">Contraseña</label>
+                <input type="password" class="form-control" id="password" placeholder="Ingrese su contraseña" required="">
+            </div>
+
+            <button type="submit" class="btn-login">
+                <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
+            </button>
+        </form>
+
+        <!-- Formulario Nuevo Usuario (oculto por defecto) -->
+        <div id="newUserForm" style="display: none;">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Nota:</strong> Los usuarios son creados automáticamente por el administrador del sistema. 
+                Si no tienes credenciales, contacta al administrador.
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading" id="loading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-3 text-muted">Procesando...</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Cambiar entre tabs
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            if (tab === 'registered') {
+                document.querySelector('.tab-btn:first-child').classList.add('active');
+                document.getElementById('registeredForm').style.display = 'block';
+                document.getElementById('newUserForm').style.display = 'none';
+            } else {
+                document.querySelector('.tab-btn:last-child').classList.add('active');
+                document.getElementById('registeredForm').style.display = 'none';
+                document.getElementById('newUserForm').style.display = 'block';
+            }
+        }
+
+        // Cargar municipios
+        async function loadMunicipios() {
+            const departamento = document.getElementById('departamento').value;
+            const selectMunicipio = document.getElementById('municipio');
+            
+            if (!departamento) {
+                selectMunicipio.innerHTML = '<option value="">Primero seleccione departamento...</option>';
+                return;
+            }
+            
+            selectMunicipio.innerHTML = '<option value="">Cargando...</option>';
+            
+            try {
+                const response = await fetch('/api/ubicacion/municipios');
+                const data = await response.json();
+                
+                selectMunicipio.innerHTML = '<option value="">Seleccione municipio...</option>';
+                
+                if (data.success && data.municipios) {
+                    data.municipios.forEach(mun => {
+                        const option = document.createElement('option');
+                        option.value = mun.id;
+                        option.textContent = mun.nombre;
+                        selectMunicipio.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error cargando municipios:', error);
+                selectMunicipio.innerHTML = '<option value="">Error cargando municipios</option>';
+            }
+        }
+
+        // Cargar zonas
+        async function loadZonas() {
+            const municipioId = document.getElementById('municipio').value;
+            const selectZona = document.getElementById('zona');
+            
+            if (!municipioId) {
+                selectZona.innerHTML = '<option value="">Primero seleccione municipio...</option>';
+                return;
+            }
+            
+            selectZona.innerHTML = '<option value="">Cargando...</option>';
+            
+            try {
+                const response = await fetch(`/api/ubicacion/zonas/${municipioId}`);
+                const data = await response.json();
+                
+                selectZona.innerHTML = '<option value="">Seleccione zona...</option>';
+                
+                if (data.success && data.zonas) {
+                    data.zonas.forEach(zona => {
+                        const option = document.createElement('option');
+                        option.value = zona.id;
+                        // Mostrar nombre descriptivo o código
+                        const displayName = zona.nombre || `Zona ${zona.codigo}`;
+                        option.textContent = displayName;
+                        selectZona.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error cargando zonas:', error);
+                selectZona.innerHTML = '<option value="">Error cargando zonas</option>';
+            }
+        }
+
+        // Cargar puestos
+        async function loadPuestos() {
+            const zonaId = document.getElementById('zona').value;
+            const selectPuesto = document.getElementById('puesto');
+            
+            if (!zonaId) {
+                selectPuesto.innerHTML = '<option value="">Primero seleccione zona...</option>';
+                return;
+            }
+            
+            selectPuesto.innerHTML = '<option value="">Cargando...</option>';
+            
+            try {
+                const response = await fetch(`/api/ubicacion/puestos/${zonaId}`);
+                const data = await response.json();
+                
+                selectPuesto.innerHTML = '<option value="">Seleccione puesto...</option>';
+                
+                if (data.success && data.puestos) {
+                    data.puestos.forEach(puesto => {
+                        const option = document.createElement('option');
+                        option.value = puesto.id;
+                        option.textContent = puesto.nombre;
+                        selectPuesto.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error cargando puestos:', error);
+                selectPuesto.innerHTML = '<option value="">Error cargando puestos</option>';
+            }
+        }
+
+        // Cargar mesas
+        async function loadMesas() {
+            const puestoId = document.getElementById('puesto').value;
+            const selectMesa = document.getElementById('mesa');
+            
+            if (!puestoId) {
+                selectMesa.innerHTML = '<option value="">Primero seleccione puesto...</option>';
+                return;
+            }
+            
+            selectMesa.innerHTML = '<option value="">Cargando...</option>';
+            
+            try {
+                const response = await fetch(`/api/ubicacion/mesas/${puestoId}`);
+                const data = await response.json();
+                
+                selectMesa.innerHTML = '<option value="">Seleccione mesa...</option>';
+                
+                if (data.success && data.mesas) {
+                    data.mesas.forEach(mesa => {
+                        const option = document.createElement('option');
+                        option.value = mesa.id;
+                        option.textContent = `Mesa ${mesa.numero}`;
+                        selectMesa.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error cargando mesas:', error);
+                selectMesa.innerHTML = '<option value="">Error cargando mesas</option>';
+            }
+        }
+
+        // Cargar datos de ubicación según rol
+        function loadUbicacionData() {
+            const rol = document.getElementById('rol').value;
+            
+            // Ocultar todos los campos primero
+            document.getElementById('departamentoGroup').style.display = 'none';
+            document.getElementById('municipioGroup').style.display = 'none';
+            document.getElementById('zonaGroup').style.display = 'none';
+            document.getElementById('puestoGroup').style.display = 'none';
+            document.getElementById('mesaGroup').style.display = 'none';
+            
+            // Remover required de todos
+            document.getElementById('departamento').required = false;
+            document.getElementById('municipio').required = false;
+            document.getElementById('zona').required = false;
+            document.getElementById('puesto').required = false;
+            document.getElementById('mesa').required = false;
+            
+            // Mostrar campos según el rol
+            switch(rol) {
+                case 'super_admin':
+                    // Super admin no necesita ubicación
+                    break;
+                    
+                case 'admin_departamental':
+                case 'coordinador_departamental':
+                case 'auditor_electoral':
+                    // Solo departamento
+                    document.getElementById('departamentoGroup').style.display = 'block';
+                    document.getElementById('departamento').required = true;
+                    break;
+                    
+                case 'admin_municipal':
+                case 'coordinador_municipal':
+                    // Departamento + Municipio
+                    document.getElementById('departamentoGroup').style.display = 'block';
+                    document.getElementById('municipioGroup').style.display = 'block';
+                    document.getElementById('departamento').required = true;
+                    document.getElementById('municipio').required = true;
+                    break;
+                    
+                case 'coordinador_puesto':
+                    // Departamento + Municipio + Zona + Puesto
+                    document.getElementById('departamentoGroup').style.display = 'block';
+                    document.getElementById('municipioGroup').style.display = 'block';
+                    document.getElementById('zonaGroup').style.display = 'block';
+                    document.getElementById('puestoGroup').style.display = 'block';
+                    document.getElementById('departamento').required = true;
+                    document.getElementById('municipio').required = true;
+                    document.getElementById('zona').required = true;
+                    document.getElementById('puesto').required = true;
+                    break;
+                    
+                case 'testigo_mesa':
+                    // Todos los campos
+                    document.getElementById('departamentoGroup').style.display = 'block';
+                    document.getElementById('municipioGroup').style.display = 'block';
+                    document.getElementById('zonaGroup').style.display = 'block';
+                    document.getElementById('puestoGroup').style.display = 'block';
+                    document.getElementById('mesaGroup').style.display = 'block';
+                    document.getElementById('departamento').required = true;
+                    document.getElementById('municipio').required = true;
+                    document.getElementById('zona').required = true;
+                    document.getElementById('puesto').required = true;
+                    document.getElementById('mesa').required = true;
+                    break;
+            }
+        }
+
+        // Mostrar alerta
+        function showAlert(type, message) {
+            const alertId = type === 'success' ? 'alertSuccess' : 'alertError';
+            const messageId = type === 'success' ? 'successMessage' : 'errorMessage';
+            
+            document.getElementById(messageId).textContent = message;
+            document.getElementById(alertId).classList.add('show');
+            
+            setTimeout(() => {
+                document.getElementById(alertId).classList.remove('show');
+            }, 5000);
+        }
+
+        // Manejar login
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const formData = {
+                rol: document.getElementById('rol').value,
+                departamento: document.getElementById('departamento').value,
+                municipio_id: document.getElementById('municipio').value,
+                zona_id: document.getElementById('zona').value,
+                puesto_id: document.getElementById('puesto').value,
+                mesa_id: document.getElementById('mesa').value,
+                password: document.getElementById('password').value
+            };
+            
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('registeredForm').style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.access_token) {
+                    localStorage.setItem('token', data.access_token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    showAlert('success', '¡Inicio de sesión exitoso! Redirigiendo...');
+                    
+                    setTimeout(() => {
+                        window.location.href = `/dashboard/${data.user.rol}`;
+                    }, 1500);
+                } else {
+                    showAlert('error', data.error || 'Credenciales incorrectas');
+                    document.getElementById('loading').classList.remove('show');
+                    document.getElementById('registeredForm').style.display = 'block';
+                }
+            } catch (error) {
+                showAlert('error', 'Error de conexión. Intenta nuevamente.');
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('registeredForm').style.display = 'block';
+            }
+        }
+    </script>
+
+</body></html>

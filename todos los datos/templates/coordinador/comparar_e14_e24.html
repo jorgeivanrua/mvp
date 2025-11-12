@@ -1,0 +1,797 @@
+{% extends "base.html" %}
+
+{% block title %}Comparación E-14/E-24 - Sistema Electoral{% endblock %}
+
+{% block extra_css %}
+<style>
+    .comparison-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    
+    .comparison-table {
+        width: 100%;
+        margin-bottom: 1.5rem;
+    }
+    
+    .comparison-table th {
+        background: var(--color-light);
+        font-weight: var(--font-weight-semibold);
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 2px solid var(--color-gray-light);
+    }
+    
+    .comparison-table td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--color-gray-light);
+    }
+    
+    .comparison-table tbody tr:hover {
+        background: var(--color-light);
+    }
+    
+    .field-name {
+        font-weight: var(--font-weight-medium);
+        color: var(--color-dark);
+    }
+    
+    .value-cell {
+        text-align: right;
+        font-size: 1.125rem;
+        font-weight: var(--font-weight-semibold);
+    }
+    
+    .difference-cell {
+        text-align: right;
+        font-weight: var(--font-weight-bold);
+    }
+    
+    .difference-positive {
+        color: #198754;
+    }
+    
+    .difference-negative {
+        color: #dc3545;
+    }
+    
+    .difference-zero {
+        color: #6c757d;
+    }
+    
+    .percentage-cell {
+        text-align: right;
+        font-size: 0.875rem;
+    }
+    
+    .percentage-high {
+        color: #dc3545;
+        font-weight: var(--font-weight-bold);
+    }
+    
+    .percentage-medium {
+        color: #ffc107;
+        font-weight: var(--font-weight-semibold);
+    }
+    
+    .percentage-low {
+        color: #198754;
+    }
+    
+    .alert-banner {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 400px;
+        margin-bottom: 2rem;
+    }
+    
+    .discrepancy-item {
+        padding: 1rem;
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        margin-bottom: 0.75rem;
+        border-radius: 0.25rem;
+    }
+    
+    .discrepancy-item.critical {
+        background: #f8d7da;
+        border-left-color: #dc3545;
+    }
+    
+    .resolution-form {
+        background: var(--color-light);
+        padding: 1.5rem;
+        border-radius: var(--border-radius-md);
+        margin-top: 1.5rem;
+    }
+    
+    .summary-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: var(--border-radius-lg);
+        margin-bottom: 1.5rem;
+    }
+    
+    .summary-stat {
+        text-align: center;
+        padding: 1rem;
+    }
+    
+    .summary-stat-value {
+        font-size: 2.5rem;
+        font-weight: var(--font-weight-bold);
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+    
+    .summary-stat-label {
+        font-size: 0.875rem;
+        opacity: 0.9;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="comparison-container">
+    <!-- Back Button -->
+    <div class="mb-3">
+        <a href="/coordinador/dashboard" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al Dashboard
+        </a>
+    </div>
+    
+    <!-- Loading State -->
+    <div id="loading-container" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando comparación...</span>
+        </div>
+        <p class="mt-2 text-muted">Analizando datos...</p>
+    </div>
+    
+    <!-- Comparison Content -->
+    <div id="comparison-content" class="d-none">
+        <!-- Alert Banner -->
+        <div id="alert-banner" class="alert-banner">
+            <!-- Alert will be shown here if there are critical discrepancies -->
+        </div>
+        
+        <!-- Header -->
+        <div class="dashboard-card mb-4">
+            <div class="dashboard-card__header">
+                <div>
+                    <h1 class="dashboard-title mb-2">Comparación E-14 / E-24</h1>
+                    <p class="dashboard-subtitle mb-0">
+                        Formulario E-24 #<span id="e24-id"></span> • 
+                        <span id="comparison-date"></span>
+                    </p>
+                </div>
+                <div>
+                    <button class="btn btn-primary" onclick="generateReport()">
+                        <i class="bi bi-file-pdf"></i> Generar Reporte
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Summary Cards -->
+        <div class="summary-card">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="summary-stat">
+                        <div class="summary-stat-value" id="total-discrepancies">0</div>
+                        <div class="summary-stat-label">Discrepancias Totales</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="summary-stat">
+                        <div class="summary-stat-value" id="critical-discrepancies">0</div>
+                        <div class="summary-stat-label">Críticas (>5%)</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="summary-stat">
+                        <div class="summary-stat-value" id="max-difference">0%</div>
+                        <div class="summary-stat-label">Diferencia Máxima</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="summary-stat">
+                        <div class="summary-stat-value" id="match-percentage">100%</div>
+                        <div class="summary-stat-label">Coincidencia</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Comparison Table -->
+        <div class="dashboard-card mb-4">
+            <div class="dashboard-card__header">
+                <h3 class="dashboard-card__title">
+                    <i class="bi bi-table"></i> Tabla de Comparación
+                </h3>
+            </div>
+            <div class="dashboard-card__body">
+                <div class="table-responsive">
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Campo</th>
+                                <th style="text-align: right;">E-14 Total</th>
+                                <th style="text-align: right;">E-24 Total</th>
+                                <th style="text-align: right;">Diferencia</th>
+                                <th style="text-align: right;">Porcentaje</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparison-tbody">
+                            <!-- Comparison rows will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts -->
+        <div class="row mb-4">
+            <div class="col-lg-6">
+                <div class="dashboard-card">
+                    <div class="dashboard-card__header">
+                        <h3 class="dashboard-card__title">
+                            <i class="bi bi-bar-chart"></i> Comparación Visual
+                        </h3>
+                    </div>
+                    <div class="dashboard-card__body">
+                        <div class="chart-container">
+                            <canvas id="comparison-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="dashboard-card">
+                    <div class="dashboard-card__header">
+                        <h3 class="dashboard-card__title">
+                            <i class="bi bi-pie-chart"></i> Distribución de Votos
+                        </h3>
+                    </div>
+                    <div class="dashboard-card__body">
+                        <div class="chart-container">
+                            <canvas id="distribution-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Discrepancies List -->
+        <div id="discrepancies-section" class="dashboard-card mb-4" style="display: none;">
+            <div class="dashboard-card__header">
+                <h3 class="dashboard-card__title">
+                    <i class="bi bi-exclamation-triangle"></i> Discrepancias Detectadas
+                </h3>
+            </div>
+            <div class="dashboard-card__body">
+                <div id="discrepancies-list">
+                    <!-- Discrepancy items will be loaded here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Resolution Form -->
+        <div id="resolution-section" class="dashboard-card" style="display: none;">
+            <div class="dashboard-card__header">
+                <h3 class="dashboard-card__title">
+                    <i class="bi bi-clipboard-check"></i> Resolver Discrepancias
+                </h3>
+            </div>
+            <div class="dashboard-card__body">
+                <div class="resolution-form">
+                    <div class="mb-3">
+                        <label for="resolution-justification" class="form-label required">
+                            Justificación de las Discrepancias
+                        </label>
+                        <textarea 
+                            class="form-control" 
+                            id="resolution-justification" 
+                            rows="4" 
+                            placeholder="Explique las razones de las diferencias encontradas..."></textarea>
+                        <div class="form-text">
+                            Mínimo 20 caracteres. Sea específico sobre cada discrepancia.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="resolution-action" class="form-label required">
+                            Acción a Tomar
+                        </label>
+                        <select class="form-select" id="resolution-action">
+                            <option value="">Seleccione una acción...</option>
+                            <option value="aceptar">Aceptar Discrepancias (Justificadas)</option>
+                            <option value="corregir_e24">Corregir Formulario E-24</option>
+                            <option value="revisar_e14">Revisar Formularios E-14</option>
+                            <option value="escalar">Escalar a Nivel Superior</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-flex gap-2 justify-content-end">
+                        <button class="btn btn-secondary" onclick="cancelResolution()">
+                            Cancelar
+                        </button>
+                        <button class="btn btn-primary" onclick="submitResolution()">
+                            <i class="bi bi-check-circle"></i> Guardar Resolución
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+    const e24Id = {{ e24_id }};
+    let comparisonData = null;
+    let comparisonChart = null;
+    let distributionChart = null;
+    
+    // Load comparison data on page load
+    document.addEventListener('DOMContentLoaded', async function() {
+        await loadComparisonData();
+    });
+    
+    /**
+     * Load comparison data
+     */
+    async function loadComparisonData() {
+        try {
+            const response = await APIClient.get(`/e24/forms/${e24Id}/comparison`);
+            
+            if (response.success && response.data) {
+                comparisonData = response.data;
+                renderComparison(comparisonData);
+                
+                // Hide loading, show content
+                document.getElementById('loading-container').classList.add('d-none');
+                document.getElementById('comparison-content').classList.remove('d-none');
+            }
+        } catch (error) {
+            console.error('Error loading comparison:', error);
+            Utils.showAlert('Error al cargar comparación', 'danger');
+        }
+    }
+    
+    /**
+     * Render comparison
+     */
+    function renderComparison(data) {
+        // Update header
+        document.getElementById('e24-id').textContent = data.e24_id;
+        document.getElementById('comparison-date').textContent = Utils.formatDate(data.fecha_comparacion, true);
+        
+        // Calculate statistics
+        const stats = calculateStatistics(data);
+        
+        // Update summary cards
+        document.getElementById('total-discrepancies').textContent = stats.totalDiscrepancies;
+        document.getElementById('critical-discrepancies').textContent = stats.criticalDiscrepancies;
+        document.getElementById('max-difference').textContent = stats.maxDifference.toFixed(1) + '%';
+        document.getElementById('match-percentage').textContent = stats.matchPercentage.toFixed(1) + '%';
+        
+        // Show alert banner if critical discrepancies
+        if (stats.criticalDiscrepancies > 0) {
+            showAlertBanner(stats.criticalDiscrepancies);
+        }
+        
+        // Render comparison table
+        renderComparisonTable(data);
+        
+        // Render charts
+        renderComparisonChart(data);
+        renderDistributionChart(data);
+        
+        // Show discrepancies if any
+        if (stats.totalDiscrepancies > 0) {
+            renderDiscrepancies(data, stats);
+            document.getElementById('discrepancies-section').style.display = 'block';
+            document.getElementById('resolution-section').style.display = 'block';
+        }
+    }
+    
+    /**
+     * Calculate statistics
+     */
+    function calculateStatistics(data) {
+        const fields = ['total_votantes', 'total_votos', 'votos_nulos', 'votos_blancos'];
+        let totalDiscrepancies = 0;
+        let criticalDiscrepancies = 0;
+        let maxDifference = 0;
+        let totalFields = fields.length;
+        let matchingFields = 0;
+        
+        // Check basic fields
+        fields.forEach(field => {
+            const e14Value = data.e14_consolidado[field] || 0;
+            const e24Value = data.e24[field] || 0;
+            const diff = Math.abs(e14Value - e24Value);
+            const percentage = e14Value > 0 ? (diff / e14Value) * 100 : 0;
+            
+            if (diff > 0) {
+                totalDiscrepancies++;
+                if (percentage > 5) {
+                    criticalDiscrepancies++;
+                }
+            } else {
+                matchingFields++;
+            }
+            
+            maxDifference = Math.max(maxDifference, percentage);
+        });
+        
+        // Check party votes
+        const e14Partidos = data.e14_consolidado.votos_partidos || {};
+        const e24Partidos = data.e24.votos_partidos || {};
+        const allPartidos = new Set([...Object.keys(e14Partidos), ...Object.keys(e24Partidos)]);
+        
+        allPartidos.forEach(partido => {
+            totalFields++;
+            const e14Value = e14Partidos[partido] || 0;
+            const e24Value = e24Partidos[partido] || 0;
+            const diff = Math.abs(e14Value - e24Value);
+            const percentage = e14Value > 0 ? (diff / e14Value) * 100 : 0;
+            
+            if (diff > 0) {
+                totalDiscrepancies++;
+                if (percentage > 5) {
+                    criticalDiscrepancies++;
+                }
+            } else {
+                matchingFields++;
+            }
+            
+            maxDifference = Math.max(maxDifference, percentage);
+        });
+        
+        const matchPercentage = (matchingFields / totalFields) * 100;
+        
+        return {
+            totalDiscrepancies,
+            criticalDiscrepancies,
+            maxDifference,
+            matchPercentage
+        };
+    }
+    
+    /**
+     * Show alert banner
+     */
+    function showAlertBanner(count) {
+        const banner = document.getElementById('alert-banner');
+        banner.innerHTML = `
+            <div class="alert alert-danger mb-0">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle-fill me-3" style="font-size: 2rem;"></i>
+                    <div>
+                        <h4 class="alert-heading mb-1">Discrepancias Críticas Detectadas</h4>
+                        <p class="mb-0">
+                            Se encontraron <strong>${count}</strong> discrepancias con diferencias mayores al 5%. 
+                            Por favor revise y justifique estas diferencias.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    /**
+     * Render comparison table
+     */
+    function renderComparisonTable(data) {
+        const tbody = document.getElementById('comparison-tbody');
+        const rows = [];
+        
+        // Basic fields
+        const fields = [
+            { key: 'total_votantes', label: 'Total Votantes' },
+            { key: 'total_votos', label: 'Total Votos' },
+            { key: 'votos_nulos', label: 'Votos Nulos' },
+            { key: 'votos_blancos', label: 'Votos en Blanco' }
+        ];
+        
+        fields.forEach(field => {
+            const e14Value = data.e14_consolidado[field.key] || 0;
+            const e24Value = data.e24[field.key] || 0;
+            rows.push(createComparisonRow(field.label, e14Value, e24Value));
+        });
+        
+        // Party votes
+        const e14Partidos = data.e14_consolidado.votos_partidos || {};
+        const e24Partidos = data.e24.votos_partidos || {};
+        const allPartidos = new Set([...Object.keys(e14Partidos), ...Object.keys(e24Partidos)]);
+        
+        allPartidos.forEach(partido => {
+            const e14Value = e14Partidos[partido] || 0;
+            const e24Value = e24Partidos[partido] || 0;
+            rows.push(createComparisonRow(partido, e14Value, e24Value));
+        });
+        
+        tbody.innerHTML = rows.join('');
+    }
+    
+    /**
+     * Create comparison row
+     */
+    function createComparisonRow(label, e14Value, e24Value) {
+        const diff = e24Value - e14Value;
+        const absDiff = Math.abs(diff);
+        const percentage = e14Value > 0 ? (absDiff / e14Value) * 100 : 0;
+        
+        const diffClass = diff > 0 ? 'difference-positive' : diff < 0 ? 'difference-negative' : 'difference-zero';
+        const diffSign = diff > 0 ? '+' : '';
+        
+        let percentageClass = 'percentage-low';
+        if (percentage > 5) {
+            percentageClass = 'percentage-high';
+        } else if (percentage > 2) {
+            percentageClass = 'percentage-medium';
+        }
+        
+        return `
+            <tr>
+                <td class="field-name">${label}</td>
+                <td class="value-cell">${Utils.formatNumber(e14Value)}</td>
+                <td class="value-cell">${Utils.formatNumber(e24Value)}</td>
+                <td class="difference-cell ${diffClass}">
+                    ${diffSign}${Utils.formatNumber(absDiff)}
+                </td>
+                <td class="percentage-cell ${percentageClass}">
+                    ${percentage.toFixed(2)}%
+                </td>
+            </tr>
+        `;
+    }
+    
+    /**
+     * Render comparison chart
+     */
+    function renderComparisonChart(data) {
+        const ctx = document.getElementById('comparison-chart').getContext('2d');
+        
+        const labels = ['Total Votantes', 'Total Votos', 'Votos Nulos', 'Votos en Blanco'];
+        const e14Data = [
+            data.e14_consolidado.total_votantes || 0,
+            data.e14_consolidado.total_votos || 0,
+            data.e14_consolidado.votos_nulos || 0,
+            data.e14_consolidado.votos_blancos || 0
+        ];
+        const e24Data = [
+            data.e24.total_votantes || 0,
+            data.e24.total_votos || 0,
+            data.e24.votos_nulos || 0,
+            data.e24.votos_blancos || 0
+        ];
+        
+        comparisonChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'E-14 Consolidado',
+                        data: e14Data,
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'E-24 Oficial',
+                        data: e24Data,
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+    
+    /**
+     * Render distribution chart
+     */
+    function renderDistributionChart(data) {
+        const ctx = document.getElementById('distribution-chart').getContext('2d');
+        
+        const partidos = Object.keys(data.e24.votos_partidos || {});
+        const votos = Object.values(data.e24.votos_partidos || {});
+        
+        const colors = [
+            'rgba(255, 99, 132, 0.7)',
+            'rgba(54, 162, 235, 0.7)',
+            'rgba(255, 206, 86, 0.7)',
+            'rgba(75, 192, 192, 0.7)',
+            'rgba(153, 102, 255, 0.7)',
+            'rgba(255, 159, 64, 0.7)'
+        ];
+        
+        distributionChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: partidos,
+                datasets: [{
+                    data: votos,
+                    backgroundColor: colors.slice(0, partidos.length),
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    },
+                    title: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+    
+    /**
+     * Render discrepancies
+     */
+    function renderDiscrepancies(data, stats) {
+        const container = document.getElementById('discrepancies-list');
+        const discrepancies = [];
+        
+        // Check all fields
+        const fields = [
+            { key: 'total_votantes', label: 'Total Votantes' },
+            { key: 'total_votos', label: 'Total Votos' },
+            { key: 'votos_nulos', label: 'Votos Nulos' },
+            { key: 'votos_blancos', label: 'Votos en Blanco' }
+        ];
+        
+        fields.forEach(field => {
+            const e14Value = data.e14_consolidado[field.key] || 0;
+            const e24Value = data.e24[field.key] || 0;
+            const diff = Math.abs(e14Value - e24Value);
+            const percentage = e14Value > 0 ? (diff / e14Value) * 100 : 0;
+            
+            if (diff > 0) {
+                discrepancies.push({
+                    field: field.label,
+                    e14: e14Value,
+                    e24: e24Value,
+                    diff: diff,
+                    percentage: percentage,
+                    critical: percentage > 5
+                });
+            }
+        });
+        
+        // Render discrepancy items
+        container.innerHTML = discrepancies.map(d => `
+            <div class="discrepancy-item ${d.critical ? 'critical' : ''}">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <strong>${d.field}</strong>
+                        <div class="mt-1">
+                            <small>E-14: ${Utils.formatNumber(d.e14)} | E-24: ${Utils.formatNumber(d.e24)}</small>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="badge ${d.critical ? 'bg-danger' : 'bg-warning'}">
+                            ${d.percentage.toFixed(2)}% diferencia
+                        </div>
+                        <div class="mt-1">
+                            <small>${Utils.formatNumber(d.diff)} votos</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    /**
+     * Submit resolution
+     */
+    async function submitResolution() {
+        const justification = document.getElementById('resolution-justification').value.trim();
+        const action = document.getElementById('resolution-action').value;
+        
+        // Validate
+        if (!justification || justification.length < 20) {
+            Utils.showAlert('La justificación debe tener al menos 20 caracteres', 'warning');
+            return;
+        }
+        
+        if (!action) {
+            Utils.showAlert('Debe seleccionar una acción', 'warning');
+            return;
+        }
+        
+        try {
+            const response = await APIClient.post(`/e24/forms/${e24Id}/resolve-discrepancies`, {
+                justificacion: justification,
+                accion: action
+            });
+            
+            if (response.success) {
+                Utils.showAlert('Resolución guardada exitosamente', 'success');
+                setTimeout(() => {
+                    window.location.href = '/coordinador/dashboard';
+                }, 1500);
+            }
+        } catch (error) {
+            console.error('Error submitting resolution:', error);
+            Utils.showAlert(error.message || 'Error al guardar resolución', 'danger');
+        }
+    }
+    
+    /**
+     * Cancel resolution
+     */
+    function cancelResolution() {
+        if (confirm('¿Está seguro de cancelar? Deberá resolver las discrepancias más tarde.')) {
+            window.location.href = '/coordinador/dashboard';
+        }
+    }
+    
+    /**
+     * Generate report
+     */
+    async function generateReport() {
+        try {
+            Utils.showAlert('Generando reporte...', 'info');
+            
+            const response = await APIClient.get(`/e24/forms/${e24Id}/report`, { responseType: 'blob' });
+            
+            if (response) {
+                const url = window.URL.createObjectURL(response);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `comparacion-e14-e24-${e24Id}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                Utils.showAlert('Reporte descargado exitosamente', 'success');
+            }
+        } catch (error) {
+            console.error('Error generating report:', error);
+            Utils.showAlert('Error al generar reporte', 'danger');
+        }
+    }
+</script>
+{% endblock %}

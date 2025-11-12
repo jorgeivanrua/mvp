@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Sistema Electoral{% endblock %}
+
+{% block extra_css %}
+<style>
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.login-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    width: 100%;
+    max-width: 500px;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.login-header h1 {
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.login-header p {
+    color: #666;
+    margin: 0;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.form-select, .form-control {
+    border-radius: 8px;
+    border: 2px solid #e1e5e9;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-select:focus, .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.btn-login {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 2rem;
+    font-weight: 500;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.alert {
+    border-radius: 8px;
+    border: none;
+}
+
+.location-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.location-section h6 {
+    color: #495057;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <h1>Sistema Electoral</h1>
+            <p>E-14/E-24 - Caquetá</p>
+        </div>
+        
+        <div id="alert-container"></div>
+        
+        <form id="loginForm">
+            <!-- Rol -->
+            <div class="form-group">
+                <label for="rol" class="form-label">Rol</label>
+                <select class="form-select" id="rol" name="rol" required>
+                    <option value="">Seleccione su rol</option>
+                    <option value="super_admin">Super Administrador</option>
+                    <option value="admin_departamental">Admin Departamental</option>
+                    <option value="admin_municipal">Admin Municipal</option>
+                    <option value="coordinador_departamental">Coordinador Departamental</option>
+                    <option value="coordinador_municipal">Coordinador Municipal</option>
+                    <option value="coordinador_puesto">Coordinador de Puesto</option>
+                    <option value="testigo_electoral">Testigo Electoral</option>
+                    <option value="auditor_electoral">Auditor Electoral</option>
+                </select>
+            </div>
+            
+            <!-- Ubicación Jerárquica -->
+            <div class="location-section" id="locationSection" style="display: none;">
+                <h6>Ubicación</h6>
+                
+                <!-- Departamento -->
+                <div class="form-group" id="departamentoGroup" style="display: none;">
+                    <label for="departamento" class="form-label">Departamento</label>
+                    <select class="form-select" id="departamento" name="departamento">
+                        <option value="">Cargando...</option>
+                    </select>
+                </div>
+                
+                <!-- Municipio -->
+                <div class="form-group" id="municipioGroup" style="display: none;">
+                    <label for="municipio" class="form-label">Municipio</label>
+                    <select class="form-select disabled" id="municipio" name="municipio">
+                        <option value="">Seleccione departamento primero</option>
+                    </select>
+                </div>
+                
+                <!-- Zona -->
+                <div class="form-group" id="zonaGroup" style="display: none;">
+                    <label for="zona" class="form-label">Zona</label>
+                    <select class="form-select disabled" id="zona" name="zona">
+                        <option value="">Seleccione municipio primero</option>
+                    </select>
+                </div>
+                
+                <!-- Puesto -->
+                <div class="form-group" id="puestoGroup" style="display: none;">
+                    <label for="puesto" class="form-label">Puesto Electoral</label>
+                    <select class="form-select disabled" id="puesto" name="puesto">
+                        <option value="">Seleccione zona primero</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Contraseña -->
+            <div class="form-group">
+                <label for="password" class="form-label">Contraseña</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            
+            <!-- Botón Login -->
+            <button type="submit" class="btn btn-primary btn-login" id="loginBtn">
+                <span id="loginText">Iniciar Sesión</span>
+                <span id="loginSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+            </button>
+        </form>
+        
+        <!-- Información de Credenciales -->
+        <div class="mt-4">
+            <small class="text-muted">
+                <strong>Credenciales de prueba:</strong><br>
+                • Super Admin: SuperAdmin123!<br>
+                • Admin Departamental: AdminDept123!<br>
+                • Admin Municipal: AdminMuni123!<br>
+                • Coordinador Departamental: CoordDept123!<br>
+                • Coordinador Municipal: CoordMuni123!<br>
+                • Coordinador Puesto: CoordPuesto123!<br>
+                • Testigo Electoral: Testigo123!<br>
+                • Auditor Electoral: Auditor123!
+            </small>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/login.js') }}"></script>
+{% endblock %}

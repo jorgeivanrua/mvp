@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Coordinador - Sistema Electoral</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>👔 Dashboard Coordinador de Puesto</h1>
+                <div class="user-info">
+                    <span id="userName"></span>
+                    <button onclick="logout()" class="btn-logout">Cerrar Sesión</button>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card urgent">
+                    <div class="stat-icon">⏰</div>
+                    <div class="stat-info">
+                        <h3 id="pendingCount">0</h3>
+                        <p>Pendientes de Aprobación</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card success">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-info">
+                        <h3 id="approvedToday">0</h3>
+                        <p>Aprobados Hoy</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card warning">
+                    <div class="stat-icon">❌</div>
+                    <div class="stat-info">
+                        <h3 id="rejectedToday">0</h3>
+                        <p>Rechazados Hoy</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-info">
+                        <h3 id="totalMesas">0</h3>
+                        <p>Mesas Asignadas</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Filters -->
+            <div class="filters">
+                <select id="statusFilter" onchange="loadForms()">
+                    <option value="">Todos los estados</option>
+                    <option value="enviado" selected>Pendientes</option>
+                    <option value="aprobado">Aprobados</option>
+                    <option value="rechazado">Rechazados</option>
+                </select>
+                
+                <button onclick="loadForms()" class="btn btn-secondary">
+                    🔄 Actualizar
+                </button>
+            </div>
+            
+            <!-- Forms List -->
+            <div class="section">
+                <h2>Formularios E-14 para Revisión</h2>
+                <div id="formsList" class="forms-list">
+                    <div class="loading">Cargando formularios...</div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modal para aprobar/rechazar -->
+    <div id="reviewModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle">Revisar Formulario E-14</h2>
+            
+            <div id="formDetails" class="form-details"></div>
+            
+            <div class="modal-actions">
+                <button onclick="approveForm()" class="btn btn-success">
+                    ✅ Aprobar
+                </button>
+                <button onclick="showRejectForm()" class="btn btn-danger">
+                    ❌ Rechazar
+                </button>
+                <button onclick="closeModal()" class="btn btn-secondary">
+                    Cancelar
+                </button>
+            </div>
+            
+            <div id="rejectForm" style="display: none;">
+                <h3>Justificación de Rechazo</h3>
+                <textarea id="rejectReason" rows="4" placeholder="Ingrese la razón del rechazo..."></textarea>
+                <button onclick="confirmReject()" class="btn btn-danger">
+                    Confirmar Rechazo
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/dashboard-coordinador.js"></script>
+</body>
+</html>

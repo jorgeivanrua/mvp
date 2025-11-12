@@ -1,0 +1,710 @@
+{% extends "base.html" %}
+
+{% block title %}Alertas - Sistema Electoral{% endblock %}
+
+{% block extra_css %}
+<style>
+    .alerts-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .alert-item {
+        background: white;
+        border-radius: var(--border-radius-md);
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .alert-item:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+    }
+    
+    .alert-item--critica {
+        border-left-color: #dc3545;
+        background: #fff5f5;
+    }
+    
+    .alert-item--alta {
+        border-left-color: #fd7e14;
+        background: #fff8f0;
+    }
+    
+    .alert-item--media {
+        border-left-color: #ffc107;
+        background: #fffbf0;
+    }
+    
+    .alert-item--baja {
+        border-left-color: #0dcaf0;
+        background: #f0fbff;
+    }
+    
+    .alert-item--resuelta {
+        opacity: 0.6;
+        border-left-color: #6c757d;
+        background: #f8f9fa;
+    }
+    
+    .alert-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 0.75rem;
+    }
+    
+    .alert-title {
+        font-weight: var(--font-weight-semibold);
+        font-size: 1.125rem;
+        color: var(--color-dark);
+        margin: 0;
+    }
+    
+    .alert-badges {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .alert-body {
+        color: var(--color-gray);
+        margin-bottom: 0.75rem;
+        line-height: 1.6;
+    }
+    
+    .alert-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.875rem;
+        color: var(--color-gray);
+    }
+    
+    .alert-meta {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .alert-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .severity-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: var(--border-radius-full);
+        font-size: 0.75rem;
+        font-weight: var(--font-weight-semibold);
+        text-transform: uppercase;
+    }
+    
+    .severity-badge--critica {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .severity-badge--alta {
+        background: #fd7e14;
+        color: white;
+    }
+    
+    .severity-badge--media {
+        background: #ffc107;
+        color: #000;
+    }
+    
+    .severity-badge--baja {
+        background: #0dcaf0;
+        color: #000;
+    }
+    
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: var(--border-radius-full);
+        font-size: 0.75rem;
+        font-weight: var(--font-weight-semibold);
+    }
+    
+    .status-badge--activa {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-badge--reconocida {
+        background: #cfe2ff;
+        color: #084298;
+    }
+    
+    .status-badge--resuelta {
+        background: #d1e7dd;
+        color: #0f5132;
+    }
+    
+    .filters-panel {
+        background: white;
+        border-radius: var(--border-radius-md);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .alert-dropdown {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: white;
+        border-radius: var(--border-radius-md);
+        box-shadow: var(--shadow-lg);
+        min-width: 350px;
+        max-width: 400px;
+        max-height: 500px;
+        overflow-y: auto;
+        z-index: var(--z-dropdown);
+        display: none;
+    }
+    
+    .alert-dropdown.show {
+        display: block;
+    }
+    
+    .alert-dropdown-header {
+        padding: 1rem;
+        border-bottom: 1px solid var(--color-gray-light);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .alert-dropdown-body {
+        padding: 0.5rem;
+    }
+    
+    .alert-dropdown-item {
+        padding: 0.75rem;
+        border-bottom: 1px solid var(--color-gray-light);
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    
+    .alert-dropdown-item:hover {
+        background: var(--color-light);
+    }
+    
+    .alert-dropdown-item:last-child {
+        border-bottom: none;
+    }
+    
+    .alert-dropdown-footer {
+        padding: 0.75rem;
+        border-top: 1px solid var(--color-gray-light);
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="alerts-container">
+    <!-- Header -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="dashboard-title mb-2">Alertas del Sistema</h1>
+                <p class="dashboard-subtitle mb-0">
+                    Gestión de alertas y notificaciones
+                </p>
+            </div>
+            <div>
+                <button class="btn btn-outline-secondary" onclick="refreshAlerts()">
+                    <i class="bi bi-arrow-clockwise"></i> Actualizar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filters Panel -->
+    <div class="filters-panel">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label form-label-sm">Tipo</label>
+                <select class="form-select form-select-sm" id="filter-tipo" onchange="applyFilters()">
+                    <option value="">Todos</option>
+                    <option value="discrepancia">Discrepancia</option>
+                    <option value="retraso">Retraso</option>
+                    <option value="error_validacion">Error de Validación</option>
+                    <option value="sistema">Sistema</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label form-label-sm">Severidad</label>
+                <select class="form-select form-select-sm" id="filter-severidad" onchange="applyFilters()">
+                    <option value="">Todas</option>
+                    <option value="critica">Crítica</option>
+                    <option value="alta">Alta</option>
+                    <option value="media">Media</option>
+                    <option value="baja">Baja</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label form-label-sm">Estado</label>
+                <select class="form-select form-select-sm" id="filter-estado" onchange="applyFilters()">
+                    <option value="">Todos</option>
+                    <option value="activa">Activa</option>
+                    <option value="reconocida">Reconocida</option>
+                    <option value="resuelta">Resuelta</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label form-label-sm">Buscar</label>
+                <input type="text" class="form-control form-control-sm" id="filter-search" 
+                       placeholder="Buscar..." onkeyup="applyFilters()">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading State -->
+    <div id="loading-container" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando alertas...</span>
+        </div>
+    </div>
+    
+    <!-- Alerts List -->
+    <div id="alerts-list" class="d-none">
+        <!-- Alert items will be loaded here -->
+    </div>
+    
+    <!-- Empty State -->
+    <div id="empty-state" class="text-center py-5 d-none">
+        <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
+        <h3 class="mt-3">No hay alertas</h3>
+        <p class="text-muted">No se encontraron alertas con los filtros seleccionados</p>
+    </div>
+    
+    <!-- Pagination -->
+    <nav id="pagination-container" class="mt-4">
+        <!-- Pagination will be loaded here -->
+    </nav>
+</div>
+
+<!-- Alert Detail Modal -->
+<div class="modal fade" id="alertDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalle de Alerta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="alert-detail-body">
+                <!-- Alert details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-warning" id="btn-acknowledge" onclick="acknowledgeAlert()">
+                    <i class="bi bi-check"></i> Reconocer
+                </button>
+                <button type="button" class="btn btn-success" id="btn-resolve" onclick="showResolveForm()">
+                    <i class="bi bi-check-circle"></i> Resolver
+                </button>
+                <button type="button" class="btn btn-danger" id="btn-escalate" onclick="escalateAlert()">
+                    <i class="bi bi-arrow-up-circle"></i> Escalar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resolve Alert Modal -->
+<div class="modal fade" id="resolveAlertModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Resolver Alerta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="resolution-comments" class="form-label required">
+                        Comentarios de Resolución
+                    </label>
+                    <textarea class="form-control" id="resolution-comments" rows="4" 
+                              placeholder="Describa cómo se resolvió la alerta..."></textarea>
+                    <div class="form-text">Mínimo 10 caracteres</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="submitResolution()">
+                    <i class="bi bi-check-circle"></i> Confirmar Resolución
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentPage = 1;
+    let currentAlertId = null;
+    let allAlerts = [];
+    
+    // Load alerts on page load
+    document.addEventListener('DOMContentLoaded', async function() {
+        await loadAlerts();
+        setupWebSocketListeners();
+    });
+    
+    /**
+     * Load alerts
+     */
+    async function loadAlerts(page = 1) {
+        currentPage = page;
+        
+        const loadingEl = document.getElementById('loading-container');
+        const listEl = document.getElementById('alerts-list');
+        const emptyEl = document.getElementById('empty-state');
+        
+        loadingEl.classList.remove('d-none');
+        listEl.classList.add('d-none');
+        emptyEl.classList.add('d-none');
+        
+        try {
+            const filters = getFilters();
+            filters.page = currentPage;
+            
+            const response = await APIClient.get('/coordination/alerts', filters);
+            
+            if (response.success && response.data) {
+                allAlerts = response.data;
+                
+                if (allAlerts.length === 0) {
+                    loadingEl.classList.add('d-none');
+                    emptyEl.classList.remove('d-none');
+                } else {
+                    renderAlerts(allAlerts);
+                    loadingEl.classList.add('d-none');
+                    listEl.classList.remove('d-none');
+                    
+                    // Render pagination if available
+                    if (response.pagination) {
+                        renderPagination(response.pagination);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error loading alerts:', error);
+            Utils.showAlert('Error al cargar alertas', 'danger');
+            loadingEl.classList.add('d-none');
+        }
+    }
+    
+    /**
+     * Get current filters
+     */
+    function getFilters() {
+        return {
+            tipo: document.getElementById('filter-tipo').value,
+            severidad: document.getElementById('filter-severidad').value,
+            estado: document.getElementById('filter-estado').value,
+            search: document.getElementById('filter-search').value
+        };
+    }
+    
+    /**
+     * Apply filters
+     */
+    window.applyFilters = Utils.debounce(function() {
+        loadAlerts(1);
+    }, 300);
+    
+    /**
+     * Refresh alerts
+     */
+    window.refreshAlerts = function() {
+        loadAlerts(currentPage);
+    };
+    
+    /**
+     * Render alerts
+     */
+    function renderAlerts(alerts) {
+        const container = document.getElementById('alerts-list');
+        
+        container.innerHTML = alerts.map(alert => `
+            <div class="alert-item alert-item--${alert.severidad} ${alert.estado === 'resuelta' ? 'alert-item--resuelta' : ''}" 
+                 onclick="showAlertDetail(${alert.id})">
+                <div class="alert-header">
+                    <h3 class="alert-title">${alert.titulo}</h3>
+                    <div class="alert-badges">
+                        <span class="severity-badge severity-badge--${alert.severidad}">
+                            ${alert.severidad}
+                        </span>
+                        <span class="status-badge status-badge--${alert.estado}">
+                            ${alert.estado}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="alert-body">
+                    ${alert.mensaje}
+                </div>
+                
+                <div class="alert-footer">
+                    <div class="alert-meta">
+                        <span>
+                            <i class="bi bi-tag"></i> ${alert.tipo}
+                        </span>
+                        <span>
+                            <i class="bi bi-clock"></i> ${Utils.formatDate(alert.fecha_creacion, true)}
+                        </span>
+                        ${alert.ubicacion_nombre ? `
+                            <span>
+                                <i class="bi bi-geo-alt"></i> ${alert.ubicacion_nombre}
+                            </span>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    /**
+     * Show alert detail
+     */
+    window.showAlertDetail = async function(alertId) {
+        currentAlertId = alertId;
+        
+        try {
+            const response = await APIClient.get(`/coordination/alerts/${alertId}`);
+            
+            if (response.success && response.data) {
+                const alert = response.data;
+                renderAlertDetail(alert);
+                
+                // Show/hide action buttons based on state
+                document.getElementById('btn-acknowledge').style.display = 
+                    alert.estado === 'activa' ? 'inline-block' : 'none';
+                document.getElementById('btn-resolve').style.display = 
+                    alert.estado !== 'resuelta' ? 'inline-block' : 'none';
+                document.getElementById('btn-escalate').style.display = 
+                    alert.estado !== 'resuelta' ? 'inline-block' : 'none';
+                
+                const modal = new bootstrap.Modal(document.getElementById('alertDetailModal'));
+                modal.show();
+            }
+        } catch (error) {
+            console.error('Error loading alert detail:', error);
+            Utils.showAlert('Error al cargar detalle de alerta', 'danger');
+        }
+    };
+    
+    /**
+     * Render alert detail
+     */
+    function renderAlertDetail(alert) {
+        const container = document.getElementById('alert-detail-body');
+        
+        container.innerHTML = `
+            <div class="mb-3">
+                <div class="d-flex gap-2 mb-3">
+                    <span class="severity-badge severity-badge--${alert.severidad}">${alert.severidad}</span>
+                    <span class="status-badge status-badge--${alert.estado}">${alert.estado}</span>
+                    <span class="badge bg-secondary">${alert.tipo}</span>
+                </div>
+                
+                <h4>${alert.titulo}</h4>
+                <p class="text-muted">${alert.mensaje}</p>
+            </div>
+            
+            ${alert.detalles ? `
+                <div class="mb-3">
+                    <h6>Detalles:</h6>
+                    <pre class="bg-light p-3 rounded">${JSON.stringify(alert.detalles, null, 2)}</pre>
+                </div>
+            ` : ''}
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <small class="text-muted">Fecha de Creación:</small>
+                    <p>${Utils.formatDate(alert.fecha_creacion, true)}</p>
+                </div>
+                ${alert.fecha_reconocimiento ? `
+                    <div class="col-md-6">
+                        <small class="text-muted">Fecha de Reconocimiento:</small>
+                        <p>${Utils.formatDate(alert.fecha_reconocimiento, true)}</p>
+                    </div>
+                ` : ''}
+                ${alert.fecha_resolucion ? `
+                    <div class="col-md-6">
+                        <small class="text-muted">Fecha de Resolución:</small>
+                        <p>${Utils.formatDate(alert.fecha_resolucion, true)}</p>
+                    </div>
+                ` : ''}
+            </div>
+            
+            ${alert.comentarios_resolucion ? `
+                <div class="mb-3">
+                    <h6>Comentarios de Resolución:</h6>
+                    <p class="bg-light p-3 rounded">${alert.comentarios_resolucion}</p>
+                </div>
+            ` : ''}
+        `;
+    }
+    
+    /**
+     * Acknowledge alert
+     */
+    window.acknowledgeAlert = async function() {
+        if (!currentAlertId) return;
+        
+        try {
+            const response = await APIClient.post(`/coordination/alerts/${currentAlertId}/acknowledge`);
+            
+            if (response.success) {
+                Utils.showAlert('Alerta reconocida', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('alertDetailModal')).hide();
+                loadAlerts(currentPage);
+            }
+        } catch (error) {
+            console.error('Error acknowledging alert:', error);
+            Utils.showAlert(error.message || 'Error al reconocer alerta', 'danger');
+        }
+    };
+    
+    /**
+     * Show resolve form
+     */
+    window.showResolveForm = function() {
+        bootstrap.Modal.getInstance(document.getElementById('alertDetailModal')).hide();
+        const modal = new bootstrap.Modal(document.getElementById('resolveAlertModal'));
+        modal.show();
+    };
+    
+    /**
+     * Submit resolution
+     */
+    window.submitResolution = async function() {
+        const comments = document.getElementById('resolution-comments').value.trim();
+        
+        if (!comments || comments.length < 10) {
+            Utils.showAlert('Los comentarios deben tener al menos 10 caracteres', 'warning');
+            return;
+        }
+        
+        try {
+            const response = await APIClient.post(`/coordination/alerts/${currentAlertId}/resolve`, {
+                comentarios: comments
+            });
+            
+            if (response.success) {
+                Utils.showAlert('Alerta resuelta exitosamente', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('resolveAlertModal')).hide();
+                document.getElementById('resolution-comments').value = '';
+                loadAlerts(currentPage);
+            }
+        } catch (error) {
+            console.error('Error resolving alert:', error);
+            Utils.showAlert(error.message || 'Error al resolver alerta', 'danger');
+        }
+    };
+    
+    /**
+     * Escalate alert
+     */
+    window.escalateAlert = async function() {
+        if (!confirm('¿Está seguro de escalar esta alerta al nivel superior?')) {
+            return;
+        }
+        
+        try {
+            const response = await APIClient.post(`/coordination/alerts/${currentAlertId}/escalate`);
+            
+            if (response.success) {
+                Utils.showAlert('Alerta escalada exitosamente', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('alertDetailModal')).hide();
+                loadAlerts(currentPage);
+            }
+        } catch (error) {
+            console.error('Error escalating alert:', error);
+            Utils.showAlert(error.message || 'Error al escalar alerta', 'danger');
+        }
+    };
+    
+    /**
+     * Render pagination
+     */
+    function renderPagination(pagination) {
+        const container = document.getElementById('pagination-container');
+        
+        if (pagination.total_pages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+        
+        let html = '<ul class="pagination justify-content-center">';
+        
+        html += `
+            <li class="page-item ${!pagination.has_prev ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="loadAlerts(${pagination.page - 1}); return false;">
+                    Anterior
+                </a>
+            </li>
+        `;
+        
+        for (let i = 1; i <= pagination.total_pages; i++) {
+            if (i === 1 || i === pagination.total_pages || (i >= pagination.page - 2 && i <= pagination.page + 2)) {
+                html += `
+                    <li class="page-item ${i === pagination.page ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="loadAlerts(${i}); return false;">
+                            ${i}
+                        </a>
+                    </li>
+                `;
+            } else if (i === pagination.page - 3 || i === pagination.page + 3) {
+                html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+            }
+        }
+        
+        html += `
+            <li class="page-item ${!pagination.has_next ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="loadAlerts(${pagination.page + 1}); return false;">
+                    Siguiente
+                </a>
+            </li>
+        `;
+        
+        html += '</ul>';
+        container.innerHTML = html;
+    }
+    
+    /**
+     * Setup WebSocket listeners
+     */
+    function setupWebSocketListeners() {
+        if (typeof wsManager !== 'undefined') {
+            // Listen for new alerts
+            wsManager.on('new_alert', (data) => {
+                console.log('New alert received via WebSocket:', data);
+                // Refresh alerts list
+                loadAlerts(currentPage);
+            });
+            
+            // Listen for alert updates
+            wsManager.on('alert_updated', (data) => {
+                console.log('Alert updated via WebSocket:', data);
+                // Refresh alerts list
+                loadAlerts(currentPage);
+            });
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,929 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Administrador{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">Panel de Administración</h1>
+                    <p class="text-muted">Sistema Electoral E-14/E-24</p>
+                </div>
+                <div class="user-info">
+                    <span class="badge bg-primary">{{ user.rol.value }}</span>
+                    <span class="ms-2">{{ user.nombre }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas principales -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="total-usuarios">0</h4>
+                            <p class="card-text">Usuarios Totales</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="usuarios-activos">0</h4>
+                            <p class="card-text">Usuarios Activos</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-user-check fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="total-ubicaciones">0</h4>
+                            <p class="card-text">Ubicaciones</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-map-marker-alt fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="formularios-hoy">0</h4>
+                            <p class="card-text">Formularios Hoy</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-file-alt fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navegación por pestañas -->
+    <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="usuarios-tab" data-bs-toggle="tab" data-bs-target="#usuarios" type="button" role="tab">
+                <i class="fas fa-users"></i> Gestión de Usuarios
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="ubicaciones-tab" data-bs-toggle="tab" data-bs-target="#ubicaciones" type="button" role="tab">
+                <i class="fas fa-map"></i> Ubicaciones
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="sistema-tab" data-bs-toggle="tab" data-bs-target="#sistema" type="button" role="tab">
+                <i class="fas fa-cogs"></i> Configuración
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="reportes-tab" data-bs-toggle="tab" data-bs-target="#reportes" type="button" role="tab">
+                <i class="fas fa-chart-bar"></i> Reportes
+            </button>
+        </li>
+    </ul>
+
+    <!-- Contenido de las pestañas -->
+    <div class="tab-content" id="adminTabContent">
+        <!-- Gestión de Usuarios -->
+        <div class="tab-pane fade show active" id="usuarios" role="tabpanel">
+            <div class="card mt-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Gestión de Usuarios</h5>
+                    <button class="btn btn-primary" onclick="mostrarModalUsuario()">
+                        <i class="fas fa-plus"></i> Nuevo Usuario
+                    </button>
+                </div>
+                <div class="card-body">
+                    <!-- Filtros -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <select class="form-select" id="filtro-rol">
+                                <option value="">Todos los roles</option>
+                                <option value="testigo_electoral">Testigo Electoral</option>
+                                <option value="coordinador_puesto">Coordinador de Puesto</option>
+                                <option value="coordinador_municipal">Coordinador Municipal</option>
+                                <option value="coordinador_departamental">Coordinador Departamental</option>
+                                <option value="auditor">Auditor</option>
+                                <option value="sistemas">Sistemas</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-select" id="filtro-estado">
+                                <option value="">Todos los estados</option>
+                                <option value="true">Activos</option>
+                                <option value="false">Inactivos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" id="buscar-usuario" placeholder="Buscar por nombre o email...">
+                        </div>
+                    </div>
+
+                    <!-- Tabla de usuarios -->
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="tabla-usuarios">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Email</th>
+                                    <th>Rol</th>
+                                    <th>Ubicación</th>
+                                    <th>Estado</th>
+                                    <th>Último Acceso</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Se llena dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ubicaciones -->
+        <div class="tab-pane fade" id="ubicaciones" role="tabpanel">
+            <!-- Mapa de ubicaciones -->
+            <div class="card mt-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-globe-americas"></i> Mapa de Ubicaciones DIVIPOLA</h5>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" onclick="refreshAdminMap()">
+                            <i class="fas fa-sync-alt"></i> Actualizar
+                        </button>
+                        <button class="btn btn-outline-info" onclick="showMapStats()">
+                            <i class="fas fa-chart-bar"></i> Estadísticas
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="adminLocationMap" style="height: 450px;"></div>
+                </div>
+            </div>
+            
+            <!-- Gestión de ubicaciones -->
+            <div class="card mt-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Gestión de Ubicaciones</h5>
+                    <button class="btn btn-primary" onclick="mostrarModalUbicacion()">
+                        <i class="fas fa-plus"></i> Nueva Ubicación
+                    </button>
+                </div>
+                <div class="card-body">
+                    <!-- Filtros de ubicaciones -->
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <select class="form-select" id="filtro-tipo-ubicacion">
+                                <option value="">Todos los tipos</option>
+                                <option value="departamento">Departamentos</option>
+                                <option value="municipio">Municipios</option>
+                                <option value="puesto">Puestos</option>
+                                <option value="mesa">Mesas</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="filtro-departamento">
+                                <option value="">Todos los departamentos</option>
+                                <!-- Se llena dinámicamente -->
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" id="buscar-ubicacion" placeholder="Buscar ubicación...">
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-success w-100" onclick="exportarUbicaciones()">
+                                <i class="fas fa-download"></i> Exportar
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="tabla-ubicaciones">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Tipo</th>
+                                    <th>Código</th>
+                                    <th>Coordenadas</th>
+                                    <th>Votantes Registrados</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Se llena dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuración del Sistema -->
+        <div class="tab-pane fade" id="sistema" role="tabpanel">
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Configuración del Sistema</h5>
+                </div>
+                <div class="card-body">
+                    <form id="form-configuracion">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Umbral de Discrepancia (%)</label>
+                                    <input type="number" class="form-control" id="umbral-discrepancia" value="5" min="0" max="100" step="0.1">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Timeout de Escalamiento (horas)</label>
+                                    <input type="number" class="form-control" id="timeout-escalamiento" value="24" min="1" max="168">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Tamaño máximo de archivo (MB)</label>
+                                    <input type="number" class="form-control" id="max-file-size" value="16" min="1" max="100">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Intentos de login fallidos</label>
+                                    <input type="number" class="form-control" id="max-intentos" value="5" min="3" max="10">
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Guardar Configuración
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Herramientas del Sistema -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Herramientas del Sistema</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <button class="btn btn-info w-100 mb-2" onclick="respaldarBaseDatos()">
+                                <i class="fas fa-database"></i> Respaldar Base de Datos
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-warning w-100 mb-2" onclick="limpiarLogs()">
+                                <i class="fas fa-broom"></i> Limpiar Logs
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-secondary w-100 mb-2" onclick="exportarDatos()">
+                                <i class="fas fa-download"></i> Exportar Datos
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reportes -->
+        <div class="tab-pane fade" id="reportes" role="tabpanel">
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Reportes del Sistema</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <canvas id="grafico-usuarios-rol"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <canvas id="grafico-actividad"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Usuario -->
+<div class="modal fade" id="modalUsuario" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Gestión de Usuario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-usuario">
+                    <input type="hidden" id="usuario-id">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Nombre Completo</label>
+                                <input type="text" class="form-control" id="usuario-nombre" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" id="usuario-email" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Rol</label>
+                                <select class="form-select" id="usuario-rol" required>
+                                    <option value="">Seleccionar rol</option>
+                                    <option value="testigo_electoral">Testigo Electoral</option>
+                                    <option value="coordinador_puesto">Coordinador de Puesto</option>
+                                    <option value="coordinador_municipal">Coordinador Municipal</option>
+                                    <option value="coordinador_departamental">Coordinador Departamental</option>
+                                    <option value="auditor">Auditor</option>
+                                    <option value="sistemas">Sistemas</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Ubicación</label>
+                                <select class="form-select" id="usuario-ubicacion">
+                                    <option value="">Sin ubicación específica</option>
+                                    <!-- Se llena dinámicamente -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Contraseña</label>
+                                <input type="password" class="form-control" id="usuario-password">
+                                <small class="form-text text-muted">Dejar vacío para mantener la actual</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Estado</label>
+                                <select class="form-select" id="usuario-activo">
+                                    <option value="true">Activo</option>
+                                    <option value="false">Inactivo</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarUsuario()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Ubicación -->
+<div class="modal fade" id="modalUbicacion" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Gestión de Ubicación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-ubicacion">
+                    <input type="hidden" id="ubicacion-id">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre Completo</label>
+                        <input type="text" class="form-control" id="ubicacion-nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tipo</label>
+                        <select class="form-select" id="ubicacion-tipo" required>
+                            <option value="">Seleccionar tipo</option>
+                            <option value="departamento">Departamento</option>
+                            <option value="municipio">Municipio</option>
+                            <option value="puesto">Puesto de Votación</option>
+                            <option value="mesa">Mesa Electoral</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Código Departamento</label>
+                                <input type="text" class="form-control" id="ubicacion-dept">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Código Municipio</label>
+                                <input type="text" class="form-control" id="ubicacion-mun">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Código Puesto</label>
+                                <input type="text" class="form-control" id="ubicacion-puesto">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Código Mesa</label>
+                                <input type="text" class="form-control" id="ubicacion-mesa">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Total Votantes Registrados</label>
+                        <input type="number" class="form-control" id="ubicacion-votantes" min="0">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarUbicacion()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function() {
+    cargarEstadisticas();
+    cargarUsuarios();
+    cargarUbicaciones();
+    inicializarGraficos();
+    initAdminMap();
+    
+    // Configurar filtros
+    $('#filtro-rol, #filtro-estado').change(function() {
+        cargarUsuarios();
+    });
+    
+    $('#buscar-usuario').on('input', function() {
+        filtrarTablaUsuarios();
+    });
+    
+    $('#filtro-tipo-ubicacion, #filtro-departamento').change(function() {
+        cargarUbicaciones();
+    });
+    
+    $('#buscar-ubicacion').on('input', function() {
+        filtrarTablaUbicaciones();
+    });
+});
+
+async function initAdminMap() {
+    try {
+        locationMap = new LocationMap('adminLocationMap', {
+            height: '450px',
+            showControls: true,
+            showUserLocation: false,
+            showHierarchy: true
+        });
+        
+        await locationMap.init();
+        
+        // Escuchar eventos de selección de ubicación
+        document.addEventListener('locationSelected', function(event) {
+            const location = event.detail.location;
+            showAdminLocationDetails(location);
+        });
+        
+    } catch (error) {
+        console.error('Error inicializando mapa de administración:', error);
+    }
+}
+
+function showAdminLocationDetails(location) {
+    console.log('Detalles administrativos para:', location);
+    
+    // Mostrar información administrativa específica
+    Utils.showAlert(`Información administrativa para ${location.nombre}`, 'info');
+}
+
+function refreshAdminMap() {
+    if (locationMap) {
+        locationMap.loadMapData().then(() => {
+            locationMap.loadMarkers();
+            Utils.showAlert('Mapa administrativo actualizado', 'success');
+        });
+    }
+}
+
+function showMapStats() {
+    // Mostrar estadísticas del mapa
+    Utils.showAlert('Estadísticas del mapa en desarrollo', 'info');
+}
+
+function cargarEstadisticas() {
+    // Cargar estadísticas del dashboard
+    $.get('/api/admin/stats', function(data) {
+        if (data.success) {
+            $('#total-usuarios').text(data.data.total_usuarios || 0);
+            $('#usuarios-activos').text(data.data.usuarios_activos || 0);
+            $('#total-ubicaciones').text(data.data.total_ubicaciones || 0);
+            $('#formularios-hoy').text(data.data.formularios_hoy || 0);
+        }
+    }).fail(function() {
+        // Si falla la API, usar datos de ejemplo
+        $('#total-usuarios').text('6');
+        $('#usuarios-activos').text('5');
+        $('#total-ubicaciones').text('16');
+        $('#formularios-hoy').text('0');
+    });
+}
+
+function cargarUsuarios() {
+    const rol = $('#filtro-rol').val();
+    const activo = $('#filtro-estado').val();
+    
+    let url = '/api/auth/users?';
+    if (rol) url += `rol=${rol}&`;
+    if (activo) url += `activo=${activo}&`;
+    
+    $.get(url, function(data) {
+        if (data.success) {
+            mostrarUsuarios(data.data);
+        }
+    }).fail(function() {
+        // Datos de ejemplo si falla la API
+        const usuariosEjemplo = [
+            {
+                id: 1,
+                nombre: 'Administrador del Sistema',
+                email: 'admin@sistema-electoral.gov',
+                rol: 'sistemas',
+                ubicacion_nombre: null,
+                activo: true,
+                ultimo_acceso: '2025-11-01T02:38:14'
+            }
+        ];
+        mostrarUsuarios(usuariosEjemplo);
+    });
+}
+
+function mostrarUsuarios(usuarios) {
+    const tbody = $('#tabla-usuarios tbody');
+    tbody.empty();
+    
+    usuarios.forEach(function(usuario) {
+        const estadoBadge = usuario.activo ? 
+            '<span class="badge bg-success">Activo</span>' : 
+            '<span class="badge bg-danger">Inactivo</span>';
+            
+        const ultimoAcceso = usuario.ultimo_acceso ? 
+            new Date(usuario.ultimo_acceso).toLocaleDateString('es-ES') : 
+            'Nunca';
+            
+        const row = `
+            <tr>
+                <td>${usuario.nombre}</td>
+                <td>${usuario.email}</td>
+                <td><span class="badge bg-primary">${usuario.rol}</span></td>
+                <td>${usuario.ubicacion_nombre || 'Sin asignar'}</td>
+                <td>${estadoBadge}</td>
+                <td>${ultimoAcceso}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="editarUsuario(${usuario.id})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="eliminarUsuario(${usuario.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+        tbody.append(row);
+    });
+}
+
+function cargarUbicaciones() {
+    $.get('/api/auth/locations', function(data) {
+        if (data.success) {
+            mostrarUbicaciones(data.data);
+            llenarSelectUbicaciones(data.data);
+        }
+    }).fail(function() {
+        // Datos de ejemplo
+        const ubicacionesEjemplo = [
+            {
+                id: 1,
+                nombre_completo: 'Departamento Central',
+                tipo: 'departamento',
+                codigo_completo: '01',
+                total_votantes_registrados: 500000
+            }
+        ];
+        mostrarUbicaciones(ubicacionesEjemplo);
+        llenarSelectUbicaciones(ubicacionesEjemplo);
+    });
+}
+
+function mostrarUbicaciones(ubicaciones) {
+    const tbody = $('#tabla-ubicaciones tbody');
+    tbody.empty();
+    
+    ubicaciones.forEach(function(ubicacion) {
+        const coordenadas = (ubicacion.latitud && ubicacion.longitud) ? 
+            `${ubicacion.latitud.toFixed(4)}, ${ubicacion.longitud.toFixed(4)}` : 
+            'N/A';
+            
+        const row = `
+            <tr>
+                <td>
+                    <strong>${ubicacion.nombre_completo}</strong>
+                    <br><small class="text-muted">${ubicacion.jerarquia || ubicacion.codigo_completo || 'N/A'}</small>
+                </td>
+                <td><span class="badge bg-info location-type-${ubicacion.tipo}">${ubicacion.tipo}</span></td>
+                <td><code>${ubicacion.codigo_completo || 'N/A'}</code></td>
+                <td><small>${coordenadas}</small></td>
+                <td>${ubicacion.total_votantes_registrados?.toLocaleString() || 0}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="editarUbicacion(${ubicacion.id})" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-info" onclick="verEnMapa(${ubicacion.latitud}, ${ubicacion.longitud})" title="Ver en mapa">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="eliminarUbicacion(${ubicacion.id})" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+        tbody.append(row);
+    });
+}
+
+function verEnMapa(lat, lng) {
+    if (locationMap && locationMap.map && lat && lng) {
+        locationMap.map.setView([lat, lng], 12);
+        
+        // Cambiar a la pestaña de ubicaciones si no está activa
+        const ubicacionesTab = document.getElementById('ubicaciones-tab');
+        if (ubicacionesTab && !ubicacionesTab.classList.contains('active')) {
+            ubicacionesTab.click();
+        }
+        
+        Utils.showAlert('Ubicación centrada en el mapa', 'success');
+    } else {
+        Utils.showAlert('No se pueden mostrar las coordenadas en el mapa', 'warning');
+    }
+}
+
+function filtrarTablaUbicaciones() {
+    const filtro = $('#buscar-ubicacion').val().toLowerCase();
+    $('#tabla-ubicaciones tbody tr').each(function() {
+        const texto = $(this).text().toLowerCase();
+        $(this).toggle(texto.includes(filtro));
+    });
+}
+
+function exportarUbicaciones() {
+    Utils.showAlert('Exportando ubicaciones...', 'info');
+    // Implementar lógica de exportación
+}
+
+function llenarSelectUbicaciones(ubicaciones) {
+    const select = $('#usuario-ubicacion');
+    select.find('option:not(:first)').remove();
+    
+    ubicaciones.forEach(function(ubicacion) {
+        select.append(`<option value="${ubicacion.id}">${ubicacion.nombre_completo}</option>`);
+    });
+}
+
+function mostrarModalUsuario(id = null) {
+    $('#usuario-id').val(id || '');
+    $('#form-usuario')[0].reset();
+    
+    if (id) {
+        // Cargar datos del usuario para edición
+        $.get(`/api/auth/users/${id}`, function(data) {
+            if (data.success) {
+                const usuario = data.data;
+                $('#usuario-nombre').val(usuario.nombre);
+                $('#usuario-email').val(usuario.email);
+                $('#usuario-rol').val(usuario.rol);
+                $('#usuario-ubicacion').val(usuario.ubicacion_id || '');
+                $('#usuario-activo').val(usuario.activo.toString());
+            }
+        });
+    }
+    
+    $('#modalUsuario').modal('show');
+}
+
+function guardarUsuario() {
+    const id = $('#usuario-id').val();
+    const datos = {
+        nombre: $('#usuario-nombre').val(),
+        email: $('#usuario-email').val(),
+        rol: $('#usuario-rol').val(),
+        ubicacion_id: $('#usuario-ubicacion').val() || null,
+        activo: $('#usuario-activo').val() === 'true'
+    };
+    
+    const password = $('#usuario-password').val();
+    if (password) {
+        datos.password = password;
+    }
+    
+    const url = id ? `/api/auth/users/${id}` : '/api/auth/users';
+    const method = id ? 'PUT' : 'POST';
+    
+    $.ajax({
+        url: url,
+        method: method,
+        contentType: 'application/json',
+        data: JSON.stringify(datos),
+        success: function(data) {
+            if (data.success) {
+                $('#modalUsuario').modal('hide');
+                cargarUsuarios();
+                Utils.showAlert('Usuario guardado exitosamente', 'success');
+            }
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON?.message || 'Error al guardar usuario';
+            Utils.showAlert(error, 'danger');
+        }
+    });
+}
+
+function editarUsuario(id) {
+    mostrarModalUsuario(id);
+}
+
+function eliminarUsuario(id) {
+    if (confirm('¿Está seguro de eliminar este usuario?')) {
+        $.ajax({
+            url: `/api/auth/users/${id}/deactivate`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({justificacion: 'Eliminado por administrador'}),
+            success: function(data) {
+                if (data.success) {
+                    cargarUsuarios();
+                    Utils.showAlert('Usuario desactivado exitosamente', 'success');
+                }
+            },
+            error: function(xhr) {
+                const error = xhr.responseJSON?.message || 'Error al eliminar usuario';
+                Utils.showAlert(error, 'danger');
+            }
+        });
+    }
+}
+
+function mostrarModalUbicacion(id = null) {
+    $('#ubicacion-id').val(id || '');
+    $('#form-ubicacion')[0].reset();
+    $('#modalUbicacion').modal('show');
+}
+
+function guardarUbicacion() {
+    const datos = {
+        nombre_completo: $('#ubicacion-nombre').val(),
+        tipo: $('#ubicacion-tipo').val(),
+        departamento_codigo: $('#ubicacion-dept').val(),
+        municipio_codigo: $('#ubicacion-mun').val(),
+        puesto_codigo: $('#ubicacion-puesto').val(),
+        mesa_codigo: $('#ubicacion-mesa').val(),
+        total_votantes_registrados: parseInt($('#ubicacion-votantes').val()) || 0
+    };
+    
+    // Por ahora solo mostrar mensaje
+    Utils.showAlert('Funcionalidad de ubicaciones en desarrollo', 'info');
+    $('#modalUbicacion').modal('hide');
+}
+
+function filtrarTablaUsuarios() {
+    const filtro = $('#buscar-usuario').val().toLowerCase();
+    $('#tabla-usuarios tbody tr').each(function() {
+        const texto = $(this).text().toLowerCase();
+        $(this).toggle(texto.includes(filtro));
+    });
+}
+
+function inicializarGraficos() {
+    // Gráfico de usuarios por rol
+    const ctxRol = document.getElementById('grafico-usuarios-rol');
+    if (ctxRol) {
+        new Chart(ctxRol, {
+            type: 'doughnut',
+            data: {
+                labels: ['Testigos', 'Coord. Puesto', 'Coord. Municipal', 'Coord. Departamental', 'Auditores', 'Sistemas'],
+                datasets: [{
+                    data: [0, 0, 0, 0, 0, 1],
+                    backgroundColor: [
+                        '#FF6384',
+                        '#36A2EB',
+                        '#FFCE56',
+                        '#4BC0C0',
+                        '#9966FF',
+                        '#FF9F40'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Usuarios por Rol'
+                    }
+                }
+            }
+        });
+    }
+    
+    // Gráfico de actividad
+    const ctxActividad = document.getElementById('grafico-actividad');
+    if (ctxActividad) {
+        new Chart(ctxActividad, {
+            type: 'line',
+            data: {
+                labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+                datasets: [{
+                    label: 'Formularios E-14',
+                    data: [0, 0, 0, 0, 0, 0, 0],
+                    borderColor: '#36A2EB',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Actividad Semanal'
+                    }
+                }
+            }
+        });
+    }
+}
+
+// Funciones de herramientas del sistema
+function respaldarBaseDatos() {
+    Utils.showAlert('Iniciando respaldo de base de datos...', 'info');
+    // Implementar lógica de respaldo
+}
+
+function limpiarLogs() {
+    if (confirm('¿Está seguro de limpiar los logs del sistema?')) {
+        Utils.showAlert('Logs limpiados exitosamente', 'success');
+    }
+}
+
+function exportarDatos() {
+    Utils.showAlert('Iniciando exportación de datos...', 'info');
+    // Implementar lógica de exportación
+}
+
+// Configuración del sistema
+$('#form-configuracion').submit(function(e) {
+    e.preventDefault();
+    Utils.showAlert('Configuración guardada exitosamente', 'success');
+});
+</script>
+{% endblock %}

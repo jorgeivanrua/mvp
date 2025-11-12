@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Coordinador Municipal{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Dashboard - Coordinador Municipal</h2>
+        <p class="text-muted">Consolidación y supervisión de datos electorales municipales</p>
+    </div>
+</div>
+
+<!-- Métricas principales -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card dashboard-card">
+            <div class="card-body metric-card">
+                <div class="metric-number" id="totalPuestos">0</div>
+                <div class="metric-label">Puestos de Votación</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card dashboard-card">
+            <div class="card-body metric-card">
+                <div class="metric-number" id="puestosReportados">0</div>
+                <div class="metric-label">Puestos Reportados</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card dashboard-card">
+            <div class="card-body metric-card">
+                <div class="metric-number" id="discrepancias">0</div>
+                <div class="metric-label">Discrepancias</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card dashboard-card">
+            <div class="card-body metric-card">
+                <div class="metric-number" id="totalVotos">0</div>
+                <div class="metric-label">Total Votos</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Panel principal de datos -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Puestos de Votación</h5>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> Actualizar
+                    </button>
+                    <button class="btn btn-outline-success" onclick="exportData()">
+                        <i class="fas fa-download"></i> Exportar
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="puestosTable">
+                        <thead>
+                            <tr>
+                                <th>Puesto</th>
+                                <th>Mesas</th>
+                                <th>Estado</th>
+                                <th>Progreso</th>
+                                <th>Votos</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Se llena dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Panel lateral con mapa y información -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-map-marked-alt"></i> Mapa Municipal</h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="municipalLocationMap"></div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>Mi Municipio</h5>
+            </div>
+            <div class="card-body" id="municipalInfo">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>Alertas Activas</h5>
+            </div>
+            <div class="card-body" id="alertasActivas">
+                <p class="text-muted">No hay alertas activas</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentUser = null;
+let municipalData = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadUserProfile();
+    loadMunicipalData();
+    initLocationMap();
+});
+
+async function initLocationMap() {
+    try {
+        locationMap = new LocationMap('municipalLocationMap', {
+            height: '350px',
+            showControls: true,
+            showUserLocation: true,
+            showHierarchy: true
+        });
+        
+        await locationMap.init();
+        
+        // Escuchar eventos de selección de ubicación
+        document.addEventListener('locationSelected', function(event) {
+            const location = event.detail.location;
+            showLocationDetails(location);
+        });
+        
+    } catch (error) {
+        console.error('Error inicializando mapa:', error);
+    }
+}
+
+async function loadUserProfile() {
+    try {
+        const response = await APIClient.get('/location/user-location');
+        if (response.success) {
+            currentUser = response.data.user;
+            const location = response.data.location;
+            
+            if (location) {
+                document.getElementById('municipalInfo').innerHTML = `
+                    <h6>${location.nombre_completo}</h6>
+                    <p class="text-muted">${location.tipo.toUpperCase()}</p>
+                    <p><strong>Código:</strong> ${location.jerarquia}</p>
+                    ${location.total_votantes_registrados ? 
+                        `<p><i class="fas fa-users"></i> ${location.total_votantes_registrados.toLocaleString()} votantes registrados</p>` : ''}
+                    ${location.latitud && location.longitud ? 
+                        `<p><i class="fas fa-map-marker-alt"></i> ${location.latitud.toFixed(4)}, ${location.longitud.toFixed(4)}</p>` : ''}
+                `;
+            }
+        }
+    } catch (error) {
+        Utils.showAlert('Error al cargar perfil: ' + error.message, 'danger');
+    }
+}
+
+async function loadMunicipalData() {
+    try {
+        // Simular carga de datos municipales
+        // En implementación real, esto vendría de la API
+        const mockData = {
+            totalPuestos: 15,
+            puestosReportados: 12,
+            discrepancias: 2,
+            totalVotos: 45678,
+            puestos: [
+                {
+                    id: 1,
+                    nombre: "Escuela Central",
+                    mesas: 8,
+                    estado: "completo",
+                    progreso: 100,
+                    votos: 3200
+                },
+                {
+                    id: 2,
+                    nombre: "Colegio San José",
+                    mesas: 6,
+                    estado: "parcial",
+                    progreso: 75,
+                    votos: 2400
+                },
+                {
+                    id: 3,
+                    nombre: "Centro Comunitario",
+                    mesas: 4,
+                    estado: "pendiente",
+                    progreso: 25,
+                    votos: 800
+                }
+            ]
+        };
+        
+        updateMetrics(mockData);
+        updatePuestosTable(mockData.puestos);
+        
+    } catch (error) {
+        Utils.showAlert('Error al cargar datos municipales: ' + error.message, 'danger');
+    }
+}
+
+function updateMetrics(data) {
+    document.getElementById('totalPuestos').textContent = data.totalPuestos;
+    document.getElementById('puestosReportados').textContent = data.puestosReportados;
+    document.getElementById('discrepancias').textContent = data.discrepancias;
+    document.getElementById('totalVotos').textContent = data.totalVotos.toLocaleString();
+}
+
+function updatePuestosTable(puestos) {
+    const tbody = document.querySelector('#puestosTable tbody');
+    tbody.innerHTML = '';
+    
+    puestos.forEach(puesto => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${puesto.nombre}</td>
+            <td>${puesto.mesas}</td>
+            <td><span class="badge bg-${getStatusColor(puesto.estado)}">${puesto.estado}</span></td>
+            <td>
+                <div class="progress" style="height: 20px;">
+                    <div class="progress-bar bg-${getProgressColor(puesto.progreso)}" 
+                         style="width: ${puesto.progreso}%">${puesto.progreso}%</div>
+                </div>
+            </td>
+            <td>${puesto.votos.toLocaleString()}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="viewPuesto(${puesto.id})">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-warning" onclick="reviewPuesto(${puesto.id})">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function getStatusColor(estado) {
+    const colors = {
+        'completo': 'success',
+        'parcial': 'warning',
+        'pendiente': 'secondary',
+        'error': 'danger'
+    };
+    return colors[estado] || 'secondary';
+}
+
+function getProgressColor(progreso) {
+    if (progreso >= 90) return 'success';
+    if (progreso >= 70) return 'info';
+    if (progreso >= 50) return 'warning';
+    return 'danger';
+}
+
+function showLocationDetails(location) {
+    console.log('Detalles de ubicación seleccionada:', location);
+    // Aquí se puede mostrar información adicional de la ubicación seleccionada
+}
+
+function refreshData() {
+    loadMunicipalData();
+    Utils.showAlert('Datos actualizados', 'success');
+}
+
+function exportData() {
+    Utils.showAlert('Función de exportación en desarrollo', 'info');
+}
+
+function viewPuesto(puestoId) {
+    Utils.showAlert(`Ver detalles del puesto ${puestoId}`, 'info');
+}
+
+function reviewPuesto(puestoId) {
+    Utils.showAlert(`Revisar puesto ${puestoId}`, 'info');
+}
+</script>
+{% endblock %}
