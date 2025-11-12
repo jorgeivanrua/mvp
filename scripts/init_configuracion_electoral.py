@@ -77,17 +77,64 @@ def init_configuracion():
         db.session.commit()
         print(f"✓ {len(partidos)} partidos creados")
         
-        # Crear candidatos de ejemplo
+        # Crear candidatos de ejemplo para diferentes tipos de elección
         print("\n>> Creando candidatos de ejemplo...")
-        tipo_concejo = TipoEleccion.query.filter_by(codigo='concejo').first()
         
-        candidatos_data = [
-            {'codigo': 'CAND001', 'nombre_completo': 'Juan Pérez García', 'numero_lista': 1, 'partido_id': partidos[0].id, 'tipo_eleccion_id': tipo_concejo.id, 'orden': 1},
-            {'codigo': 'CAND002', 'nombre_completo': 'María López Rodríguez', 'numero_lista': 2, 'partido_id': partidos[0].id, 'tipo_eleccion_id': tipo_concejo.id, 'orden': 2},
-            {'codigo': 'CAND003', 'nombre_completo': 'Carlos Martínez Silva', 'numero_lista': 1, 'partido_id': partidos[1].id, 'tipo_eleccion_id': tipo_concejo.id, 'orden': 3},
-            {'codigo': 'CAND004', 'nombre_completo': 'Ana Gómez Torres', 'numero_lista': 2, 'partido_id': partidos[1].id, 'tipo_eleccion_id': tipo_concejo.id, 'orden': 4},
-            {'codigo': 'CAND005', 'nombre_completo': 'Pedro Sánchez Díaz', 'es_independiente': True, 'tipo_eleccion_id': tipo_concejo.id, 'orden': 5},
-        ]
+        tipo_senado = TipoEleccion.query.filter_by(codigo='senado').first()
+        tipo_camara = TipoEleccion.query.filter_by(codigo='camara').first()
+        tipo_concejo = TipoEleccion.query.filter_by(codigo='concejo').first()
+        tipo_asamblea = TipoEleccion.query.filter_by(codigo='asamblea').first()
+        
+        candidatos_data = []
+        
+        # Candidatos para CONCEJO MUNICIPAL (más común)
+        if tipo_concejo:
+            # Partido Liberal - Concejo
+            candidatos_data.extend([
+                {'codigo': 'CONC-LIB-001', 'nombre_completo': 'Juan Pérez García', 'numero_lista': 1, 'partido_id': partidos[0].id, 'tipo_eleccion_id': tipo_concejo.id, 'orden': 1},
+                {'codigo': 'CONC-LIB-002', 'nombre_completo': 'María López Rodríguez', 'numero_lista': 2, 'partido_id': partidos[0].id, 'tipo_eleccion_id': tipo_concejo.id, 'orden': 2},
+                {'codigo': 'CONC-LIB-003', 'nombre_completo': 'Carlos Ramírez Soto', 'numero_lista': 3, 'partido_id': partidos[0].id, 'tipo_eleccion_id': tipo_concejo.id, 'orden': 3},
+                {'codigo': 'CONC-LIB-004', 'nombre_completo': 'Ana María Gutiérrez', 'numero_lista': 4, 'partido_id': partidos[0].id, 'tipo_eleccion_id': tipo_concejo.id, 'orden': 4},
+                {'codigo': 'CONC-LIB-005', 'nombre_completo': 'Luis Fernando Castro', 'numero_lista': 5, 'partido_id': partidos[0].id, 'tipo_eleccion_id': tipo_concejo.id, 'orden': 5},
+            ])
+            
+            # Partido Conservador - Concejo
+            candidatos_data.extend([
+                {'codigo': 'CONC-CON-001', 'nombre_completo': 'Pedro Martínez Silva', 'numero_lista': 1, 'partido_id': partidos[1].id, 'tipo_eleccion_id': tipo_concejo.id, 'orden': 6},
+                {'codigo': 'CONC-CON-002', 'nombre_completo': 'Sandra Gómez Torres', 'numero_lista': 2, 'partido_id': partidos[1].id, 'tipo_eleccion_id': tipo_concejo.id, 'orden': 7},
+                {'codigo': 'CONC-CON-003', 'nombre_completo': 'Roberto Díaz Moreno', 'numero_lista': 3, 'partido_id': partidos[1].id, 'tipo_eleccion_id': tipo_concejo.id, 'orden': 8},
+                {'codigo': 'CONC-CON-004', 'nombre_completo': 'Patricia Ruiz Vargas', 'numero_lista': 4, 'partido_id': partidos[1].id, 'tipo_eleccion_id': tipo_concejo.id, 'orden': 9},
+            ])
+            
+            # Partido Verde - Concejo
+            candidatos_data.extend([
+                {'codigo': 'CONC-VER-001', 'nombre_completo': 'Andrés Sánchez Díaz', 'numero_lista': 1, 'partido_id': partidos[2].id, 'tipo_eleccion_id': tipo_concejo.id, 'orden': 10},
+                {'codigo': 'CONC-VER-002', 'nombre_completo': 'Laura Fernández Ríos', 'numero_lista': 2, 'partido_id': partidos[2].id, 'tipo_eleccion_id': tipo_concejo.id, 'orden': 11},
+                {'codigo': 'CONC-VER-003', 'nombre_completo': 'Miguel Ángel Rojas', 'numero_lista': 3, 'partido_id': partidos[2].id, 'tipo_eleccion_id': tipo_concejo.id, 'orden': 12},
+            ])
+            
+            # Cambio Radical - Concejo
+            candidatos_data.extend([
+                {'codigo': 'CONC-CR-001', 'nombre_completo': 'Diana Carolina Méndez', 'numero_lista': 1, 'partido_id': partidos[3].id, 'tipo_eleccion_id': tipo_concejo.id, 'orden': 13},
+                {'codigo': 'CONC-CR-002', 'nombre_completo': 'Jorge Enrique Parra', 'numero_lista': 2, 'partido_id': partidos[3].id, 'tipo_eleccion_id': tipo_concejo.id, 'orden': 14},
+            ])
+        
+        # Candidatos para CÁMARA DE REPRESENTANTES
+        if tipo_camara:
+            candidatos_data.extend([
+                {'codigo': 'CAM-LIB-001', 'nombre_completo': 'Gloria Inés Ramírez', 'numero_lista': 1, 'partido_id': partidos[0].id, 'tipo_eleccion_id': tipo_camara.id, 'orden': 20},
+                {'codigo': 'CAM-LIB-002', 'nombre_completo': 'Hernando José Gómez', 'numero_lista': 2, 'partido_id': partidos[0].id, 'tipo_eleccion_id': tipo_camara.id, 'orden': 21},
+                {'codigo': 'CAM-CON-001', 'nombre_completo': 'Marta Lucía Ospina', 'numero_lista': 1, 'partido_id': partidos[1].id, 'tipo_eleccion_id': tipo_camara.id, 'orden': 22},
+                {'codigo': 'CAM-VER-001', 'nombre_completo': 'Iván Darío Agudelo', 'numero_lista': 1, 'partido_id': partidos[2].id, 'tipo_eleccion_id': tipo_camara.id, 'orden': 23},
+            ])
+        
+        # Candidatos para ASAMBLEA DEPARTAMENTAL
+        if tipo_asamblea:
+            candidatos_data.extend([
+                {'codigo': 'ASA-LIB-001', 'nombre_completo': 'Fabio Hernán Trujillo', 'numero_lista': 1, 'partido_id': partidos[0].id, 'tipo_eleccion_id': tipo_asamblea.id, 'orden': 30},
+                {'codigo': 'ASA-LIB-002', 'nombre_completo': 'Claudia Patricia Muñoz', 'numero_lista': 2, 'partido_id': partidos[0].id, 'tipo_eleccion_id': tipo_asamblea.id, 'orden': 31},
+                {'codigo': 'ASA-CON-001', 'nombre_completo': 'Álvaro Uribe Vélez Jr', 'numero_lista': 1, 'partido_id': partidos[1].id, 'tipo_eleccion_id': tipo_asamblea.id, 'orden': 32},
+            ])
         
         for data in candidatos_data:
             candidato = Candidato(**data)
