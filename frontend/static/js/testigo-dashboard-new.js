@@ -240,8 +240,6 @@ function calcularTotales() {
     let totalGeneral = 0;
     let maxVotosPartido = 0;
     let partidoGanador = null;
-    let maxVotosCandidato = 0;
-    let candidatoGanador = null;
     
     // Calcular por cada partido
     Object.keys(votosData).forEach(partidoId => {
@@ -259,15 +257,9 @@ function calcularTotales() {
             const votos = parseInt(inputCandidato?.value || 0);
             candidato.votos = votos;
             votosCandidatos += votos;
-            
-            // Verificar candidato ganador
-            if (votos > maxVotosCandidato) {
-                maxVotosCandidato = votos;
-                candidatoGanador = candidato;
-            }
         });
         
-        // Total del partido
+        // Total del partido (votos partido + votos candidatos)
         data.total = votosPartido + votosCandidatos;
         totalGeneral += data.total;
         
@@ -277,7 +269,7 @@ function calcularTotales() {
             totalSpan.textContent = Utils.formatNumber(data.total);
         }
         
-        // Verificar partido ganador
+        // Verificar partido con más votos en esta mesa
         if (data.total > maxVotosPartido) {
             maxVotosPartido = data.total;
             partidoGanador = data.partido;
@@ -288,8 +280,6 @@ function calcularTotales() {
     document.getElementById('resumenTotal').textContent = Utils.formatNumber(totalGeneral);
     document.getElementById('partidoGanador').textContent = partidoGanador ? 
         `${partidoGanador.nombre_corto} (${Utils.formatNumber(maxVotosPartido)} votos)` : '-';
-    document.getElementById('candidatoGanador').textContent = candidatoGanador ? 
-        `${candidatoGanador.nombre_completo} (${Utils.formatNumber(maxVotosCandidato)} votos)` : '-';
     
     // Actualizar total de votos válidos
     const votosValidosInput = document.getElementById('votosValidos');
