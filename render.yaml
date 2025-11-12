@@ -1,7 +1,7 @@
 services:
   - type: web
     name: testigos-electorales
-    env: python
+    runtime: python
     plan: free
     buildCommand: "chmod +x build.sh && ./build.sh"
     startCommand: "gunicorn run:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
@@ -14,3 +14,5 @@ services:
         generateValue: true
       - key: DATABASE_URL
         value: sqlite:///electoral.db
+      - key: PYTHON_VERSION
+        value: 3.11.9
