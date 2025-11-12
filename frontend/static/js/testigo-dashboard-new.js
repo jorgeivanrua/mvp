@@ -169,6 +169,12 @@ function renderVotacionForm(partidos, candidatosPorPartido) {
     
     votosData = {};
     
+    // Verificar si es elección uninominal
+    const tipoEleccionSelect = document.getElementById('tipoEleccion');
+    const selectedOption = tipoEleccionSelect.options[tipoEleccionSelect.selectedIndex];
+    const tipoEleccion = tiposEleccion.find(t => t.id == tipoEleccionSelect.value);
+    const esUninominal = tipoEleccion?.es_uninominal || false;
+    
     partidos.forEach(partido => {
         const partidoDiv = document.createElement('div');
         partidoDiv.className = 'card mb-3';
@@ -176,51 +182,78 @@ function renderVotacionForm(partidos, candidatosPorPartido) {
         
         const candidatos = candidatosPorPartido[partido.id] || [];
         
-        partidoDiv.innerHTML = `
-            <div class="card-header" style="background-color: ${partido.color}20;">
-                <div class="row align-items-center">
-                    <div class="col-md-8">
-                        <h6 class="mb-0">${partido.nombre}</h6>
-                        <small class="text-muted">${partido.nombre_corto}</small>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label mb-1 small">Votos solo partido</label>
-                        <input type="number" 
-                               class="form-control form-control-sm" 
-                               id="partido_${partido.id}" 
-                               min="0" 
-                               value="0"
-                               onchange="calcularTotales()"
-                               placeholder="0">
-                    </div>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    ${candidatos.map((candidato, idx) => `
-                        <div class="col-md-6 mb-2">
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text">${candidato.numero_lista || idx + 1}</span>
-                                <input type="text" class="form-control form-control-sm" value="${candidato.nombre_completo}" readonly>
-                                <input type="number" 
-                                       class="form-control form-control-sm" 
-                                       id="candidato_${candidato.id}" 
-                                       min="0" 
-                                       value="0"
-                                       onchange="calcularTotales()"
-                                       placeholder="Votos"
-                                       style="max-width: 100px;">
-                            </div>
+        if (esUninominal) {
+            // Elección uninominal: un candidato por partido, sin votos de partido
+            const candidato = candidatos[0];
+            
+            partidoDiv.innerHTML = `
+                <div class="card-header" style="background-color: ${partido.color}20;">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="mb-0">${partido.nombre}</h6>
+                            ${candidato ? `<p class="mb-0 small"><strong>Candidato:</strong> ${candidato.nombre_completo}</p>` : '<p class="mb-0 small text-muted">Sin candidato</p>'}
                         </div>
-                    `).join('')}
+                        <div class="col-md-4">
+                            <label class="form-label mb-1 small">Votos</label>
+                            <input type="number" 
+                                   class="form-control form-control-sm" 
+                                   id="${candidato ? `candidato_${candidato.id}` : `partido_${partido.id}`}" 
+                                   min="0" 
+                                   value="0"
+                                   onchange="calcularTotales()"
+                                   placeholder="0">
+                        </div>
+                    </div>
                 </div>
-                ${candidatos.length === 0 ? '<p class="text-muted mb-0 small">No hay candidatos registrados para este partido</p>' : ''}
-                <div class="mt-2 pt-2 border-top">
-                    <strong>Total ${partido.nombre_corto}:</strong> 
-                    <span id="total_partido_${partido.id}" class="badge bg-primary">0</span>
+            `;
+        } else {
+            // Elección por listas: múltiples candidatos + votos de partido
+            partidoDiv.innerHTML = `
+                <div class="card-header" style="background-color: ${partido.color}20;">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="mb-0">${partido.nombre}</h6>
+                            <small class="text-muted">${partido.nombre_corto}</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label mb-1 small">Votos solo partido</label>
+                            <input type="number" 
+                                   class="form-control form-control-sm" 
+                                   id="partido_${partido.id}" 
+                                   min="0" 
+                                   value="0"
+                                   onchange="calcularTotales()"
+                                   placeholder="0">
+                        </div>
+                    </div>
                 </div>
-            </div>
-        `;
+                <div class="card-body">
+                    <div class="row">
+                        ${candidatos.map((candidato, idx) => `
+                            <div class="col-md-6 mb-2">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">${candidato.numero_lista || idx + 1}</span>
+                                    <input type="text" class="form-control form-control-sm" value="${candidato.nombre_completo}" readonly>
+                                    <input type="number" 
+                                           class="form-control form-control-sm" 
+                                           id="candidato_${candidato.id}" 
+                                           min="0" 
+                                           value="0"
+                                           onchange="calcularTotales()"
+                                           placeholder="Votos"
+                                           style="max-width: 100px;">
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ${candidatos.length === 0 ? '<p class="text-muted mb-0 small">No hay candidatos registrados para este partido</p>' : ''}
+                    <div class="mt-2 pt-2 border-top">
+                        <strong>Total ${partido.nombre_corto}:</strong> 
+                        <span id="total_partido_${partido.id}" class="badge bg-primary">0</span>
+                    </div>
+                </div>
+            `;
+        }
         
         container.appendChild(partidoDiv);
         
@@ -229,9 +262,36 @@ function renderVotacionForm(partidos, candidatosPorPartido) {
             partido: partido,
             votosPartido: 0,
             candidatos: candidatos.map(c => ({ ...c, votos: 0 })),
-            total: 0
+            total: 0,
+            esUninominal: esUninominal
         };
     });
+    
+    // Agregar opción de voto en blanco
+    const votoBlancoDiv = document.createElement('div');
+    votoBlancoDiv.className = 'card mb-3';
+    votoBlancoDiv.style.borderLeft = '4px solid #6c757d';
+    votoBlancoDiv.innerHTML = `
+        <div class="card-header" style="background-color: #f8f9fa;">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h6 class="mb-0">Voto en Blanco</h6>
+                    <small class="text-muted">Votos sin candidato específico</small>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label mb-1 small">Votos</label>
+                    <input type="number" 
+                           class="form-control form-control-sm" 
+                           id="voto_blanco" 
+                           min="0" 
+                           value="0"
+                           onchange="calcularTotales()"
+                           placeholder="0">
+                </div>
+            </div>
+        </div>
+    `;
+    container.appendChild(votoBlancoDiv);
     
     calcularTotales();
 }

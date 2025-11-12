@@ -39,12 +39,20 @@ def init_configuracion():
         # Crear tipos de elección
         print("\n>> Creando tipos de elección...")
         tipos = [
-            TipoEleccion(codigo='senado', nombre='Senado de la República', orden=1),
-            TipoEleccion(codigo='camara', nombre='Cámara de Representantes', orden=2),
-            TipoEleccion(codigo='asamblea', nombre='Asamblea Departamental', orden=3),
-            TipoEleccion(codigo='concejo', nombre='Concejo Municipal', orden=4),
-            TipoEleccion(codigo='jal', nombre='Juntas Administradoras Locales (JAL)', orden=5),
-            TipoEleccion(codigo='ediles', nombre='Ediles', orden=6),
+            # Elecciones uninominales (un candidato por partido)
+            TipoEleccion(codigo='presidencia', nombre='Presidencia de la República', orden=1, es_uninominal=True),
+            TipoEleccion(codigo='gobernacion', nombre='Gobernación Departamental', orden=2, es_uninominal=True),
+            TipoEleccion(codigo='alcaldia', nombre='Alcaldía Municipal', orden=3, es_uninominal=True),
+            
+            # Elecciones por listas
+            TipoEleccion(codigo='senado', nombre='Senado de la República', orden=4, es_uninominal=False),
+            TipoEleccion(codigo='camara', nombre='Cámara de Representantes', orden=5, es_uninominal=False),
+            TipoEleccion(codigo='asamblea', nombre='Asamblea Departamental', orden=6, es_uninominal=False),
+            TipoEleccion(codigo='concejo', nombre='Concejo Municipal', orden=7, es_uninominal=False),
+            TipoEleccion(codigo='jal', nombre='Juntas Administradoras Locales (JAL)', orden=8, es_uninominal=False),
+            TipoEleccion(codigo='ediles', nombre='Ediles', orden=9, es_uninominal=False),
+            TipoEleccion(codigo='concejos_juventud', nombre='Concejos de Juventud', orden=10, es_uninominal=False),
+            TipoEleccion(codigo='consulta', nombre='Consultas Partidistas', orden=11, es_uninominal=False),
         ]
         
         for tipo in tipos:
@@ -134,6 +142,26 @@ def init_configuracion():
                 {'codigo': 'ASA-LIB-001', 'nombre_completo': 'Fabio Hernán Trujillo', 'numero_lista': 1, 'partido_id': partidos[0].id, 'tipo_eleccion_id': tipo_asamblea.id, 'orden': 30},
                 {'codigo': 'ASA-LIB-002', 'nombre_completo': 'Claudia Patricia Muñoz', 'numero_lista': 2, 'partido_id': partidos[0].id, 'tipo_eleccion_id': tipo_asamblea.id, 'orden': 31},
                 {'codigo': 'ASA-CON-001', 'nombre_completo': 'Álvaro Uribe Vélez Jr', 'numero_lista': 1, 'partido_id': partidos[1].id, 'tipo_eleccion_id': tipo_asamblea.id, 'orden': 32},
+            ])
+        
+        # Candidatos para ALCALDÍA (uninominal - un candidato por partido)
+        tipo_alcaldia = TipoEleccion.query.filter_by(codigo='alcaldia').first()
+        if tipo_alcaldia:
+            candidatos_data.extend([
+                {'codigo': 'ALC-LIB-001', 'nombre_completo': 'José María Rodríguez Pérez', 'numero_lista': None, 'partido_id': partidos[0].id, 'tipo_eleccion_id': tipo_alcaldia.id, 'orden': 40},
+                {'codigo': 'ALC-CON-001', 'nombre_completo': 'Martha Elena Gómez Vargas', 'numero_lista': None, 'partido_id': partidos[1].id, 'tipo_eleccion_id': tipo_alcaldia.id, 'orden': 41},
+                {'codigo': 'ALC-VER-001', 'nombre_completo': 'Carlos Andrés Sánchez Díaz', 'numero_lista': None, 'partido_id': partidos[2].id, 'tipo_eleccion_id': tipo_alcaldia.id, 'orden': 42},
+                {'codigo': 'ALC-CR-001', 'nombre_completo': 'Diana Carolina Méndez Torres', 'numero_lista': None, 'partido_id': partidos[3].id, 'tipo_eleccion_id': tipo_alcaldia.id, 'orden': 43},
+                {'codigo': 'ALC-IND-001', 'nombre_completo': 'Roberto Independiente Ciudadano', 'numero_lista': None, 'es_independiente': True, 'tipo_eleccion_id': tipo_alcaldia.id, 'orden': 44},
+            ])
+        
+        # Candidatos para GOBERNACIÓN (uninominal)
+        tipo_gobernacion = TipoEleccion.query.filter_by(codigo='gobernacion').first()
+        if tipo_gobernacion:
+            candidatos_data.extend([
+                {'codigo': 'GOB-LIB-001', 'nombre_completo': 'Hernando José Turbay Ayala', 'numero_lista': None, 'partido_id': partidos[0].id, 'tipo_eleccion_id': tipo_gobernacion.id, 'orden': 50},
+                {'codigo': 'GOB-CON-001', 'nombre_completo': 'Marta Lucía Ramírez Blanco', 'numero_lista': None, 'partido_id': partidos[1].id, 'tipo_eleccion_id': tipo_gobernacion.id, 'orden': 51},
+                {'codigo': 'GOB-VER-001', 'nombre_completo': 'Claudia López Hernández', 'numero_lista': None, 'partido_id': partidos[2].id, 'tipo_eleccion_id': tipo_gobernacion.id, 'orden': 52},
             ])
         
         for data in candidatos_data:
