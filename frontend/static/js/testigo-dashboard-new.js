@@ -290,32 +290,6 @@ function renderVotacionForm(partidos, candidatosPorPartido) {
         };
     });
     
-    // Agregar opción de voto en blanco
-    const votoBlancoDiv = document.createElement('div');
-    votoBlancoDiv.className = 'card mb-3';
-    votoBlancoDiv.style.borderLeft = '4px solid #6c757d';
-    votoBlancoDiv.innerHTML = `
-        <div class="card-header" style="background-color: #f8f9fa;">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h6 class="mb-0">Voto en Blanco</h6>
-                    <small class="text-muted">Votos sin candidato específico</small>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label mb-1 small">Votos</label>
-                    <input type="number" 
-                           class="form-control form-control-sm" 
-                           id="voto_blanco" 
-                           min="0" 
-                           value="0"
-                           onchange="calcularTotales()"
-                           placeholder="0">
-                </div>
-            </div>
-        </div>
-    `;
-    container.appendChild(votoBlancoDiv);
-    
     calcularTotales();
 }
 
