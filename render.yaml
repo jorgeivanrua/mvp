@@ -8,8 +8,6 @@ services:
     envVars:
       - key: FLASK_ENV
         value: production
-      - key: PYTHON_VERSION
-        value: 3.11.0
       - key: SECRET_KEY
         generateValue: true
       - key: JWT_SECRET_KEY
