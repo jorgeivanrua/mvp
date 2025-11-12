@@ -65,7 +65,7 @@ El Sistema Electoral E-14/E-24 es una aplicación web diseñada para la recolecc
 
 1. WHEN un usuario ingresa email y contraseña válidos, THE Sistema Electoral SHALL generar tokens JWT de acceso y actualización
 2. WHEN un usuario ingresa credenciales inválidas, THE Sistema Electoral SHALL incrementar el contador de intentos fallidos
-3. IF un usuario alcanza 5 intentos fallidos de inicio de sesión, THEN THE Sistema Electoral SHALL bloquear la cuenta por 30 minutos
+3. IF un usuario alcanza 5 intentos fallidos de inicio de sesión, THEN THE Sistema Electoral SHALL bloquear la cuenta por 10 minutos
 4. WHEN un usuario cierra sesión, THE Sistema Electoral SHALL invalidar el token de acceso actual
 5. WHILE un token de acceso está vigente, THE Sistema Electoral SHALL permitir acceso a recursos autorizados
 
