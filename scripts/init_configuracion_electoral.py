@@ -20,21 +20,24 @@ def init_configuracion():
     app = create_app(config_name)
     
     with app.app_context():
-        print("\n>> Creando tablas de configuración electoral...")
+        print("\n>> Recreando tablas de configuración electoral...")
         
-        # Crear tablas
+        # Eliminar tablas existentes
+        try:
+            db.session.execute(db.text('DROP TABLE IF EXISTS candidatos'))
+            db.session.execute(db.text('DROP TABLE IF EXISTS partidos_coaliciones'))
+            db.session.execute(db.text('DROP TABLE IF EXISTS coaliciones'))
+            db.session.execute(db.text('DROP TABLE IF EXISTS partidos'))
+            db.session.execute(db.text('DROP TABLE IF EXISTS tipos_eleccion'))
+            db.session.commit()
+            print("✓ Tablas antiguas eliminadas")
+        except Exception as e:
+            print(f"⚠️  Error eliminando tablas: {e}")
+            db.session.rollback()
+        
+        # Crear tablas nuevas
         db.create_all()
-        print("✓ Tablas creadas")
-        
-        # Limpiar datos existentes
-        print("\n>> Limpiando datos existentes...")
-        Candidato.query.delete()
-        PartidoCoalicion.query.delete()
-        Coalicion.query.delete()
-        Partido.query.delete()
-        TipoEleccion.query.delete()
-        db.session.commit()
-        print("✓ Datos limpiados")
+        print("✓ Tablas nuevas creadas")
         
         # Crear tipos de elección
         print("\n>> Creando tipos de elección...")
