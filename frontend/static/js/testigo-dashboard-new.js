@@ -221,45 +221,58 @@ function renderVotacionForm(partidos, candidatosPorPartido) {
             partidoDiv.innerHTML = `
                 <div class="card-header" style="background-color: ${partido.color}20;">
                     <div class="row align-items-center">
-                        <div class="col-md-8">
+                        <div class="col-8">
                             <h6 class="mb-0">${partido.nombre}</h6>
                             <small class="text-muted">${partido.nombre_corto}</small>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label mb-1 small">Votos solo partido</label>
+                        <div class="col-4 text-end">
+                            <label class="form-label mb-1 small d-block">Votos solo partido</label>
                             <input type="number" 
-                                   class="form-control form-control-sm" 
+                                   class="form-control form-control-sm text-center" 
                                    id="partido_${partido.id}" 
                                    min="0" 
                                    value="0"
                                    onchange="calcularTotales()"
-                                   placeholder="0">
+                                   placeholder="0"
+                                   style="max-width: 80px; margin-left: auto;">
                         </div>
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="row">
+                    <div class="row g-2">
                         ${candidatos.map((candidato, idx) => `
-                            <div class="col-md-6 mb-2">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text">${candidato.numero_lista || idx + 1}</span>
-                                    <input type="text" class="form-control form-control-sm" value="${candidato.nombre_completo}" readonly>
-                                    <input type="number" 
-                                           class="form-control form-control-sm" 
-                                           id="candidato_${candidato.id}" 
-                                           min="0" 
-                                           value="0"
-                                           onchange="calcularTotales()"
-                                           placeholder="Votos"
-                                           style="max-width: 100px;">
+                            <div class="col-12 mb-1">
+                                <div class="row align-items-center">
+                                    <div class="col-1 text-center">
+                                        <span class="badge bg-secondary">${candidato.numero_lista || idx + 1}</span>
+                                    </div>
+                                    <div class="col-8">
+                                        <small class="fw-medium">${candidato.nombre_completo}</small>
+                                    </div>
+                                    <div class="col-3 text-end">
+                                        <input type="number" 
+                                               class="form-control form-control-sm text-center" 
+                                               id="candidato_${candidato.id}" 
+                                               min="0" 
+                                               value="0"
+                                               onchange="calcularTotales()"
+                                               placeholder="0"
+                                               style="max-width: 80px; margin-left: auto;">
+                                    </div>
                                 </div>
                             </div>
                         `).join('')}
                     </div>
                     ${candidatos.length === 0 ? '<p class="text-muted mb-0 small">No hay candidatos registrados para este partido</p>' : ''}
                     <div class="mt-2 pt-2 border-top">
-                        <strong>Total ${partido.nombre_corto}:</strong> 
-                        <span id="total_partido_${partido.id}" class="badge bg-primary">0</span>
+                        <div class="row align-items-center">
+                            <div class="col-8">
+                                <strong>Total ${partido.nombre_corto}:</strong>
+                            </div>
+                            <div class="col-4 text-end">
+                                <span id="total_partido_${partido.id}" class="badge bg-primary fs-6">0</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
