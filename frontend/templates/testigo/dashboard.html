@@ -182,15 +182,17 @@
                         <h6>📋 Información Básica</h6>
                         <div class="row">
                             <div class="col-md-6 mb-3">
+                                <label class="form-label">Mesa *</label>
+                                <select class="form-select" id="mesaFormulario" name="mesa_id" required onchange="cambiarMesaFormulario()">
+                                    <option value="">Seleccione mesa...</option>
+                                </select>
+                                <small class="text-muted">Puedes cambiar de mesa si cubres varias</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Tipo de Elección *</label>
                                 <select class="form-select" id="tipoEleccion" name="tipo_eleccion" required onchange="cargarPartidosYCandidatos()">
                                     <option value="">Seleccione...</option>
                                 </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Mesa Asignada</label>
-                                <input type="text" class="form-control" id="mesaAsignada" readonly>
-                                <input type="hidden" id="mesaId" name="mesa_id">
                             </div>
                         </div>
                     </div>
@@ -315,7 +317,12 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="saveForm()">Guardar</button>
+                <button type="button" class="btn btn-warning" onclick="saveForm('borrador')">
+                    <i class="bi bi-save"></i> Guardar Borrador
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveForm('enviar')">
+                    <i class="bi bi-send"></i> Enviar para Revisión
+                </button>
             </div>
         </div>
     </div>

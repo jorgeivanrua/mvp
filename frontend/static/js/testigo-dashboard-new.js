@@ -420,22 +420,38 @@ function getEstadoLabel(estado) {
 }
 
 function showCreateForm() {
-    // Verificar que haya una mesa seleccionada
-    if (!selectedMesa) {
-        Utils.showWarning('Por favor selecciona una mesa primero');
-        return;
-    }
-    
     document.getElementById('e14Form').reset();
     document.getElementById('imagePreview').innerHTML = '<p class="text-muted">Toque el botón para tomar una foto</p>';
     
-    // Establecer mesa asignada
-    document.getElementById('mesaAsignada').value = `Mesa ${selectedMesa.mesa_codigo} - ${selectedMesa.puesto_nombre}`;
-    document.getElementById('mesaId').value = selectedMesa.id;
+    // Cargar mesas en el selector del formulario
+    const mesaSelect = document.getElementById('mesaFormulario');
+    mesaSelect.innerHTML = '<option value="">Seleccione mesa...</option>';
     
-    // Cargar votantes registrados de la mesa
-    const votantesRegistrados = selectedMesa.total_votantes_registrados || 0;
-    document.getElementById('votantesRegistrados').value = votantesRegistrados;
+    // Obtener todas las mesas del puesto
+    const params = {
+        puesto_codigo: userLocation.puesto_codigo,
+        zona_codigo: userLocation.zona_codigo,
+        municipio_codigo: userLocation.municipio_codigo,
+        departamento_codigo: userLocation.departamento_codigo
+    };
+    
+    APIClient.get('/locations/mesas', params).then(response => {
+        if (response.success) {
+            response.data.forEach(mesa => {
+                const option = document.createElement('option');
+                option.value = mesa.id;
+                option.textContent = `Mesa ${mesa.mesa_codigo} - ${mesa.puesto_nombre}`;
+                option.dataset.votantes = mesa.total_votantes_registrados || 0;
+                mesaSelect.appendChild(option);
+            });
+            
+            // Si hay una mesa seleccionada, preseleccionarla
+            if (selectedMesa) {
+                mesaSelect.value = selectedMesa.id;
+                cambiarMesaFormulario();
+            }
+        }
+    });
     
     // Cargar tipos de elección si no están cargados
     if (tiposEleccion.length === 0) {
@@ -448,16 +464,28 @@ function showCreateForm() {
     new bootstrap.Modal(document.getElementById('formModal')).show();
 }
 
-async function saveForm() {
+function cambiarMesaFormulario() {
+    const mesaSelect = document.getElementById('mesaFormulario');
+    const selectedOption = mesaSelect.options[mesaSelect.selectedIndex];
+    
+    if (selectedOption && selectedOption.value) {
+        const votantes = selectedOption.dataset.votantes || 0;
+        document.getElementById('votantesRegistrados').value = votantes;
+    }
+}
+
+async function saveForm(accion = 'borrador') {
     const form = document.getElementById('e14Form');
     
-    if (!form.checkValidity()) {
+    // Solo validar si se va a enviar
+    if (accion === 'enviar' && !form.checkValidity()) {
         form.reportValidity();
         return;
     }
     
-    if (!selectedMesa) {
-        Utils.showError('No hay mesa seleccionada');
+    const mesaId = document.getElementById('mesaFormulario').value;
+    if (!mesaId) {
+        Utils.showError('Selecciona una mesa');
         return;
     }
     
@@ -492,7 +520,7 @@ async function saveForm() {
         
         // Construir objeto de datos
         const data = {
-            mesa_id: selectedMesa.id,
+            mesa_id: parseInt(mesaId),
             tipo_eleccion_id: parseInt(formData.get('tipo_eleccion')),
             total_votantes_registrados: parseInt(formData.get('total_votantes_registrados')),
             total_votos: parseInt(formData.get('total_votos')),
@@ -502,6 +530,7 @@ async function saveForm() {
             tarjetas_no_marcadas: parseInt(formData.get('tarjetas_no_marcadas')),
             total_tarjetas: parseInt(formData.get('total_tarjetas')),
             observaciones: formData.get('observaciones') || '',
+            estado: accion === 'enviar' ? 'pendiente' : 'borrador',
             votos_partidos: votosPartidos,
             votos_candidatos: votosCandidatos
         };
@@ -514,7 +543,10 @@ async function saveForm() {
         const response = await APIClient.createFormularioE14(data);
         
         if (response.success) {
-            Utils.showSuccess('Formulario E-14 guardado exitosamente');
+            const mensaje = accion === 'enviar' ? 
+                'Formulario E-14 enviado para revisión' : 
+                'Borrador guardado exitosamente';
+            Utils.showSuccess(mensaje);
             bootstrap.Modal.getInstance(document.getElementById('formModal')).hide();
             loadForms();
         } else {
@@ -571,3 +603,12 @@ async function logout() {
         window.location.href = '/login';
     }
 }
+
+// Agregar evento para seleccionar todo el texto en inputs numéricos al hacer focus
+document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('focus', function(e) {
+        if (e.target.type === 'number') {
+            e.target.select();
+        }
+    }, true);
+});
