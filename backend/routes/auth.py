@@ -86,6 +86,8 @@ def logout():
 def profile():
     """Obtener perfil del usuario actual"""
     try:
+        from backend.models.location import Location
+        
         user_id = get_jwt_identity()
         user = User.query.get(int(user_id))
         
@@ -94,6 +96,28 @@ def profile():
                 'success': False,
                 'error': 'Usuario no encontrado'
             }), 404
+        
+        # Obtener información de ubicación si existe
+        ubicacion = None
+        if user.ubicacion_id:
+            location = Location.query.get(user.ubicacion_id)
+            if location:
+                ubicacion = {
+                    'id': location.id,
+                    'tipo': location.tipo,
+                    'nombre_completo': location.nombre_completo,
+                    'departamento_codigo': location.departamento_codigo,
+                    'departamento_nombre': location.departamento_nombre,
+                    'municipio_codigo': location.municipio_codigo,
+                    'municipio_nombre': location.municipio_nombre,
+                    'zona_codigo': location.zona_codigo,
+                    'puesto_codigo': location.puesto_codigo,
+                    'puesto_nombre': location.puesto_nombre,
+                    'mesa_codigo': location.mesa_codigo,
+                    'mesa_nombre': location.mesa_nombre,
+                    'direccion': location.direccion,
+                    'total_votantes_registrados': location.total_votantes_registrados
+                }
         
         return jsonify({
             'success': True,
@@ -105,7 +129,8 @@ def profile():
                     'ubicacion_id': user.ubicacion_id,
                     'activo': user.activo,
                     'ultimo_acceso': user.ultimo_acceso.isoformat() if user.ultimo_acceso else None
-                }
+                },
+                'ubicacion': ubicacion
             }
         }), 200
         

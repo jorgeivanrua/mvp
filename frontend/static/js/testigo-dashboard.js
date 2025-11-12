@@ -17,10 +17,13 @@ async function loadUserProfile() {
     try {
         const response = await APIClient.getProfile();
         if (response.success) {
-            currentUser = response.data;
+            currentUser = response.data.user;
             userLocation = response.data.ubicacion;
             
-            // Cargar mesas disponibles
+            console.log('User profile loaded:', currentUser);
+            console.log('User location:', userLocation);
+            
+            // Cargar mesas disponibles del puesto
             if (userLocation && userLocation.puesto_codigo) {
                 await loadMesas(userLocation.puesto_codigo);
             }
@@ -31,6 +34,10 @@ async function loadUserProfile() {
                     <h6>${userLocation.puesto_nombre || userLocation.nombre_completo}</h6>
                     <p class="text-muted mb-1">Código: ${userLocation.puesto_codigo || 'N/A'}</p>
                     <p class="mb-0">Dirección: ${userLocation.direccion || 'N/A'}</p>
+                `;
+            } else {
+                document.getElementById('assignedLocation').innerHTML = `
+                    <p class="text-muted">No hay ubicación asignada</p>
                 `;
             }
         }

@@ -102,8 +102,18 @@ def get_mesas():
     """Obtener mesas filtradas"""
     try:
         puesto_codigo = request.args.get('puesto_codigo')
+        departamento_codigo = request.args.get('departamento_codigo')
+        municipio_codigo = request.args.get('municipio_codigo')
+        zona_codigo = request.args.get('zona_codigo')
+        
         query = Location.query.filter_by(tipo='mesa')
         
+        if departamento_codigo:
+            query = query.filter_by(departamento_codigo=departamento_codigo)
+        if municipio_codigo:
+            query = query.filter_by(municipio_codigo=municipio_codigo)
+        if zona_codigo:
+            query = query.filter_by(zona_codigo=zona_codigo)
         if puesto_codigo:
             query = query.filter_by(puesto_codigo=puesto_codigo)
         
@@ -113,9 +123,20 @@ def get_mesas():
             'success': True,
             'data': [{
                 'id': m.id,
-                'codigo': m.mesa_codigo,
-                'nombre': m.mesa_nombre,
-                'total_votantes_registrados': m.total_votantes_registrados
+                'mesa_codigo': m.mesa_codigo,
+                'mesa_nombre': m.mesa_nombre,
+                'puesto_codigo': m.puesto_codigo,
+                'puesto_nombre': m.puesto_nombre,
+                'zona_codigo': m.zona_codigo,
+                'municipio_codigo': m.municipio_codigo,
+                'municipio_nombre': m.municipio_nombre,
+                'departamento_codigo': m.departamento_codigo,
+                'departamento_nombre': m.departamento_nombre,
+                'nombre_completo': m.nombre_completo,
+                'total_votantes_registrados': m.total_votantes_registrados,
+                'hombres': m.hombres,
+                'mujeres': m.mujeres,
+                'direccion': m.direccion
             } for m in mesas]
         }), 200
     except Exception as e:
