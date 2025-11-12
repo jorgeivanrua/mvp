@@ -49,8 +49,20 @@ async function loadUserProfile() {
 
 async function loadMesas(puestoCodigo) {
     try {
-        const response = await APIClient.getMesas(puestoCodigo);
+        // Construir parámetros con todos los códigos de la ubicación
+        const params = {
+            puesto_codigo: userLocation.puesto_codigo,
+            zona_codigo: userLocation.zona_codigo,
+            municipio_codigo: userLocation.municipio_codigo,
+            departamento_codigo: userLocation.departamento_codigo
+        };
+        
+        console.log('Loading mesas with params:', params);
+        
+        const response = await APIClient.get('/locations/mesas', params);
         const mesas = response.data;
+        
+        console.log('Mesas loaded:', mesas);
         
         const selector = document.getElementById('mesa');
         selector.innerHTML = '<option value="">Seleccione mesa...</option>';
@@ -58,7 +70,7 @@ async function loadMesas(puestoCodigo) {
         mesas.forEach(mesa => {
             const option = document.createElement('option');
             option.value = mesa.id;
-            option.textContent = `Mesa ${mesa.mesa_codigo} - ${mesa.mesa_nombre || 'Sin nombre'}`;
+            option.textContent = `Mesa ${mesa.mesa_codigo} - ${mesa.puesto_nombre}`;
             option.dataset.mesa = JSON.stringify(mesa);
             selector.appendChild(option);
         });

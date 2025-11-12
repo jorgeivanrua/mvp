@@ -122,8 +122,12 @@ class APIClient {
         return this.get('/locations/puestos', { zona_codigo: zonaId });
     }
     
-    static async getMesas(puestoId) {
-        return this.get('/locations/mesas', { puesto_codigo: puestoId });
+    static async getMesas(params = {}) {
+        // Si params es un string, asumimos que es el puesto_codigo (retrocompatibilidad)
+        if (typeof params === 'string') {
+            params = { puesto_codigo: params };
+        }
+        return this.get('/locations/mesas', params);
     }
     
     // Métodos de configuración electoral
