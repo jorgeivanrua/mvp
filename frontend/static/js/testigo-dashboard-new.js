@@ -438,6 +438,11 @@ function showCreateForm() {
     document.getElementById('mesaAsignada').value = `Mesa ${selectedMesa.mesa_codigo} - ${selectedMesa.puesto_nombre}`;
     document.getElementById('mesaId').value = selectedMesa.id;
     
+    // Cargar tipos de elección si no están cargados
+    if (tiposEleccion.length === 0) {
+        loadTiposEleccion();
+    }
+    
     // Limpiar contenedor de votación
     document.getElementById('votacionContainer').innerHTML = '<p class="text-muted">Seleccione un tipo de elección para cargar los partidos y candidatos</p>';
     
