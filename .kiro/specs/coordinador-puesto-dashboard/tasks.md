@@ -80,6 +80,8 @@
     - Cambiar estado a "validado"
     - Registrar en historial
     - _Requirements: 2.4, 2.7, 3.1, 3.3, 3.5_
+
+
   
   - [ ] 4.4 Crear endpoint PUT `/api/formularios/:id/rechazar`
     - Validar permisos del coordinador
@@ -91,13 +93,17 @@
   - [ ] 4.5 Crear endpoint GET `/api/formularios/consolidado`
     - Calcular consolidado del puesto
     - Incluir solo formularios validados
+
     - Retornar votos por partido con porcentajes
+
+
     - Incluir estadísticas generales
     - _Requirements: 4.1, 4.2, 4.3, 4.6_
   
   - [ ] 4.6 Crear endpoint GET `/api/formularios/mesas`
     - Obtener lista de mesas del puesto
     - Incluir estado de reporte de cada mesa
+
     - Incluir información del testigo asignado
     - _Requirements: 5.1, 5.2, 5.3, 5.5_
 
@@ -106,18 +112,21 @@
   - Implementar estructura base con Bootstrap
   - Crear header con información del puesto y estadísticas
   - Crear tabla de formularios con columnas: mesa, testigo, estado, votos, fecha, acciones
+
   - Crear filtros por estado (todos, pendiente, validado, rechazado)
   - Crear modal de validación con vista dividida (imagen + datos)
   - Crear modal de rechazo con campo de motivo
   - Crear panel de consolidado con gráfico y tabla
   - Crear panel de lista de mesas con indicadores de estado
   - Optimizar para responsive design (móvil, tablet, desktop)
+
   - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 4.1, 4.2, 5.1, 5.2, 8.1, 8.2_
 
 - [ ] 6. Implementar JavaScript del dashboard coordinador
   - [ ] 6.1 Crear archivo `frontend/static/js/coordinador-puesto.js`
     - Función para cargar perfil del coordinador
     - Función para cargar lista de formularios con filtros
+
     - Función para renderizar tabla de formularios
     - Función para aplicar filtros y ordenamiento
     - Implementar auto-refresh cada 30 segundos
