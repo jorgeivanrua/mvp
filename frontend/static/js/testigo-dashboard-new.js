@@ -320,7 +320,7 @@ function renderVotacionForm(partidos, candidatosPorPartido) {
 }
 
 function calcularTotales() {
-    let totalGeneral = 0;
+    let votosValidos = 0;
     let maxVotosPartido = 0;
     let partidoGanador = null;
     
@@ -344,7 +344,7 @@ function calcularTotales() {
         
         // Total del partido (votos partido + votos candidatos)
         data.total = votosPartido + votosCandidatos;
-        totalGeneral += data.total;
+        votosValidos += data.total;
         
         // Actualizar display del total del partido
         const totalSpan = document.getElementById(`total_partido_${partidoId}`);
@@ -359,16 +359,24 @@ function calcularTotales() {
         }
     });
     
+    // Obtener otros valores
+    const votosNulos = parseInt(document.getElementById('votosNulos')?.value || 0);
+    const votosBlanco = parseInt(document.getElementById('votosBlanco')?.value || 0);
+    const tarjetasNoMarcadas = parseInt(document.getElementById('tarjetasNoMarcadas')?.value || 0);
+    
+    // Calcular totales
+    const totalVotos = votosValidos + votosNulos + votosBlanco;
+    const totalTarjetas = totalVotos + tarjetasNoMarcadas;
+    
+    // Actualizar campos automáticos
+    document.getElementById('votosValidos').value = votosValidos;
+    document.getElementById('totalVotos').value = totalVotos;
+    document.getElementById('totalTarjetas').value = totalTarjetas;
+    
     // Actualizar resumen
-    document.getElementById('resumenTotal').textContent = Utils.formatNumber(totalGeneral);
+    document.getElementById('resumenTotal').textContent = Utils.formatNumber(votosValidos);
     document.getElementById('partidoGanador').textContent = partidoGanador ? 
         `${partidoGanador.nombre_corto} (${Utils.formatNumber(maxVotosPartido)} votos)` : '-';
-    
-    // Actualizar total de votos válidos
-    const votosValidosInput = document.getElementById('votosValidos');
-    if (votosValidosInput) {
-        votosValidosInput.value = totalGeneral;
-    }
 }
 
 async function loadForms() {
@@ -450,6 +458,10 @@ function showCreateForm() {
     // Establecer mesa asignada
     document.getElementById('mesaAsignada').value = `Mesa ${selectedMesa.mesa_codigo} - ${selectedMesa.puesto_nombre}`;
     document.getElementById('mesaId').value = selectedMesa.id;
+    
+    // Cargar votantes registrados de la mesa
+    const votantesRegistrados = selectedMesa.total_votantes_registrados || 0;
+    document.getElementById('votantesRegistrados').value = votantesRegistrados;
     
     // Cargar tipos de elección si no están cargados
     if (tiposEleccion.length === 0) {
