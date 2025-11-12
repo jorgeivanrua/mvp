@@ -51,7 +51,7 @@ def register_blueprints(app):
     from backend.routes.locations import locations_bp
     from backend.routes.frontend import frontend_bp
     from backend.routes.configuracion import configuracion_bp
-    from backend.routes.formularios_e14 import bp as formularios_bp
+    from backend.routes.formularios_e14 import formularios_bp
     
     # API routes
     app.register_blueprint(auth_bp, url_prefix='/api/auth')

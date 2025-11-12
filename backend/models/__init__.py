@@ -1,1 +1,19 @@
 # Models package
+from backend.models.user import User
+from backend.models.location import Location
+from backend.models.configuracion_electoral import TipoEleccion, Partido, Coalicion, PartidoCoalicion, Candidato
+from backend.models.formulario_e14 import FormularioE14, VotoPartido, VotoCandidato, HistorialFormulario
+
+__all__ = [
+    'User',
+    'Location',
+    'TipoEleccion',
+    'Partido',
+    'Coalicion',
+    'PartidoCoalicion',
+    'Candidato',
+    'FormularioE14',
+    'VotoPartido',
+    'VotoCandidato',
+    'HistorialFormulario'
+]

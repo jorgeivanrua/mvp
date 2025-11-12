@@ -1,6 +1,8 @@
 # Implementation Plan - Dashboard Coordinador de Puesto
 
-- [ ] 1. Crear modelos de base de datos para formularios E-14
+- [x] 1. Crear modelos de base de datos para formularios E-14
+
+
   - Crear modelo `FormularioE14` con campos de votación, estado y validación
   - Crear modelo `VotoPartido` para registrar votos por partido
   - Crear modelo `VotoCandidato` para registrar votos por candidato
@@ -8,34 +10,51 @@
   - Agregar relaciones entre modelos (formulario → votos, formulario → historial)
   - _Requirements: 1.1, 2.1, 10.2_
 
+
+
+
 - [ ] 2. Crear migraciones y scripts de base de datos
   - Crear migración para tablas de formularios E-14
   - Crear migración para tablas de votos (partidos y candidatos)
+
+
   - Crear migración para tabla de historial
+
+
   - Agregar índices para optimización (mesa_id, estado, created_at)
   - _Requirements: 1.1, 2.1_
 
 - [ ] 3. Implementar servicios de backend para formularios
-  - [ ] 3.1 Crear `FormularioService` con métodos CRUD
+  - [x] 3.1 Crear `FormularioService` con métodos CRUD
+
+
     - Método para crear formulario E-14
     - Método para obtener formularios por puesto
     - Método para obtener formulario por ID con detalles completos
     - Método para actualizar formulario
     - _Requirements: 1.1, 2.1_
   
+
+
   - [ ] 3.2 Crear `ValidacionService` para lógica de validación
     - Método para validar coherencia de totales
+
+
     - Método para calcular discrepancias
+
+
     - Método para validar formulario (cambiar estado a validado)
     - Método para rechazar formulario con motivo
     - Método para registrar cambios en historial
     - _Requirements: 2.3, 2.4, 2.5, 2.7, 3.3_
   
+
   - [ ] 3.3 Crear `ConsolidadoService` para cálculos agregados
     - Método para calcular consolidado por puesto
     - Método para obtener votos por partido consolidados
     - Método para calcular estadísticas (participación, totales)
     - _Requirements: 4.1, 4.2, 4.3, 4.5_
+
 
 - [ ] 4. Implementar rutas API para formularios
   - [ ] 4.1 Crear endpoint GET `/api/formularios/puesto`
@@ -43,18 +62,21 @@
     - Implementar filtros por estado
     - Implementar paginación
     - Incluir estadísticas en respuesta
+
     - _Requirements: 1.1, 1.3, 1.5_
   
   - [ ] 4.2 Crear endpoint GET `/api/formularios/:id`
     - Obtener detalles completos del formulario
     - Incluir votos por partido y candidato
     - Incluir validaciones automáticas
+
     - Incluir historial de cambios
     - _Requirements: 2.1, 2.2, 2.3, 10.4_
   
   - [ ] 4.3 Crear endpoint PUT `/api/formularios/:id/validar`
     - Validar permisos del coordinador
     - Permitir cambios opcionales en datos
+
     - Cambiar estado a "validado"
     - Registrar en historial
     - _Requirements: 2.4, 2.7, 3.1, 3.3, 3.5_
