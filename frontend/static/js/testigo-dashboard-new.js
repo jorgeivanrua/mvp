@@ -137,13 +137,22 @@ async function cargarPartidosYCandidatos() {
     }
     
     try {
+        console.log('Cargando datos para tipo de elección:', tipoEleccionId);
+        
         // Cargar partidos
         const partidosResponse = await APIClient.getPartidos();
         partidosData = partidosResponse.success ? partidosResponse.data : [];
+        console.log('Partidos cargados:', partidosData);
         
         // Cargar candidatos del tipo de elección
         const candidatosResponse = await APIClient.getCandidatos({ tipo_eleccion_id: tipoEleccionId });
+        console.log('Respuesta de candidatos:', candidatosResponse);
         candidatosData = candidatosResponse.success ? candidatosResponse.data : [];
+        console.log('Candidatos cargados:', candidatosData);
+        
+        if (candidatosData.length === 0) {
+            console.warn('No se encontraron candidatos para el tipo de elección:', tipoEleccionId);
+        }
         
         // Agrupar candidatos por partido
         const candidatosPorPartido = {};
@@ -153,13 +162,14 @@ async function cargarPartidosYCandidatos() {
             }
             candidatosPorPartido[candidato.partido_id].push(candidato);
         });
+        console.log('Candidatos agrupados por partido:', candidatosPorPartido);
         
         // Renderizar formulario de votación
         renderVotacionForm(partidosData, candidatosPorPartido);
         
     } catch (error) {
         console.error('Error loading partidos y candidatos:', error);
-        Utils.showError('Error cargando datos de votación');
+        Utils.showError('Error cargando datos de votación: ' + error.message);
     }
 }
 

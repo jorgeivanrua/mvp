@@ -217,36 +217,54 @@
                     <!-- Datos de Votación -->
                     <div class="form-section">
                         <h6>🗳️ Datos de Votación</h6>
-                        <div class="row g-2">
-                            <div class="col-6 col-md-3">
-                                <label class="form-label small">Votantes Registrados *</label>
-                                <input type="number" class="form-control form-control-sm" name="total_votantes_registrados" min="0" required>
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <label class="form-label small">Total Votos *</label>
-                                <input type="number" class="form-control form-control-sm" name="total_votos" id="totalVotos" min="0" required>
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <label class="form-label small">Votos Válidos *</label>
-                                <input type="number" class="form-control form-control-sm" name="votos_validos" id="votosValidos" min="0" required>
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <label class="form-label small">Votos Nulos *</label>
-                                <input type="number" class="form-control form-control-sm" name="votos_nulos" min="0" value="0" required>
-                            </div>
-                        </div>
-                        <div class="row g-2 mt-1">
-                            <div class="col-6 col-md-4">
-                                <label class="form-label small">Votos en Blanco *</label>
-                                <input type="number" class="form-control form-control-sm" name="votos_blanco" min="0" value="0" required>
-                            </div>
-                            <div class="col-6 col-md-4">
-                                <label class="form-label small">Tarjetas No Marcadas *</label>
-                                <input type="number" class="form-control form-control-sm" name="tarjetas_no_marcadas" min="0" value="0" required>
-                            </div>
-                            <div class="col-12 col-md-4">
-                                <label class="form-label small">Total Tarjetas</label>
-                                <input type="number" class="form-control form-control-sm" name="total_tarjetas" id="totalTarjetas" readonly>
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body p-2">
+                                <div class="row g-2">
+                                    <div class="col-6 col-md-3">
+                                        <div class="p-2 bg-primary bg-opacity-10 rounded">
+                                            <label class="form-label small mb-1 text-primary fw-bold">📊 Votantes Registrados</label>
+                                            <input type="number" class="form-control form-control-sm border-primary" name="total_votantes_registrados" min="0" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <div class="p-2 bg-info bg-opacity-10 rounded">
+                                            <label class="form-label small mb-1 text-info fw-bold">📈 Total Votos</label>
+                                            <input type="number" class="form-control form-control-sm border-info" name="total_votos" id="totalVotos" min="0" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <div class="p-2 bg-success bg-opacity-10 rounded">
+                                            <label class="form-label small mb-1 text-success fw-bold">✅ Votos Válidos</label>
+                                            <input type="number" class="form-control form-control-sm border-success" name="votos_validos" id="votosValidos" min="0" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-3">
+                                        <div class="p-2 bg-danger bg-opacity-10 rounded">
+                                            <label class="form-label small mb-1 text-danger fw-bold">❌ Votos Nulos</label>
+                                            <input type="number" class="form-control form-control-sm border-danger" name="votos_nulos" min="0" value="0" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row g-2 mt-1">
+                                    <div class="col-6 col-md-4">
+                                        <div class="p-2 bg-secondary bg-opacity-10 rounded">
+                                            <label class="form-label small mb-1 text-secondary fw-bold">⬜ Votos en Blanco</label>
+                                            <input type="number" class="form-control form-control-sm border-secondary" name="votos_blanco" min="0" value="0" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <div class="p-2 bg-warning bg-opacity-10 rounded">
+                                            <label class="form-label small mb-1 text-warning fw-bold">📄 Tarjetas No Marcadas</label>
+                                            <input type="number" class="form-control form-control-sm border-warning" name="tarjetas_no_marcadas" min="0" value="0" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-md-4">
+                                        <div class="p-2 bg-dark bg-opacity-10 rounded">
+                                            <label class="form-label small mb-1 text-dark fw-bold">📋 Total Tarjetas</label>
+                                            <input type="number" class="form-control form-control-sm border-dark" name="total_tarjetas" id="totalTarjetas" readonly>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
