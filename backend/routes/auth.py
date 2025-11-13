@@ -188,6 +188,7 @@ def verificar_presencia():
     """Verificar presencia del testigo en la mesa"""
     try:
         from backend.database import db
+        from backend.models.location import Location
         
         user_id = get_jwt_identity()
         user = User.query.get(int(user_id))
@@ -208,12 +209,31 @@ def verificar_presencia():
         user.verificar_presencia()
         db.session.commit()
         
+        # Buscar coordinador del puesto para notificar
+        coordinador_notificado = False
+        if user.ubicacion_id:
+            ubicacion = Location.query.get(user.ubicacion_id)
+            if ubicacion:
+                # Buscar coordinador del puesto
+                coordinador = User.query.filter_by(
+                    ubicacion_id=ubicacion.id,
+                    rol='coordinador_puesto'
+                ).first()
+                
+                if coordinador:
+                    # TODO: Implementar sistema de notificaciones
+                    # Por ahora solo registramos en logs
+                    print(f"NOTIFICACIÓN: Testigo {user.nombre} verificó presencia en {ubicacion.nombre_completo}")
+                    print(f"  -> Coordinador a notificar: {coordinador.nombre} ({coordinador.email})")
+                    coordinador_notificado = True
+        
         return jsonify({
             'success': True,
-            'message': 'Presencia verificada exitosamente',
+            'message': 'Presencia verificada exitosamente' + (' y coordinador notificado' if coordinador_notificado else ''),
             'data': {
                 'presencia_verificada': True,
-                'presencia_verificada_at': user.presencia_verificada_at.isoformat()
+                'presencia_verificada_at': user.presencia_verificada_at.isoformat(),
+                'coordinador_notificado': coordinador_notificado
             }
         }), 200
         

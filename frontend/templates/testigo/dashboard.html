@@ -86,105 +86,225 @@
     <!-- Contenedor de alertas -->
     <div id="alert-container" class="mb-3"></div>
     
-    <div class="row">
-        <div class="col-12">
-            <h2>Dashboard - Testigo Electoral</h2>
-            <p class="text-muted">Bienvenido al sistema de recolección de datos electorales</p>
+    <div class="row mb-3">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <div>
+                <h2>Dashboard - Testigo Electoral</h2>
+                <p class="text-muted mb-0">Bienvenido al sistema de recolección de datos electorales</p>
+            </div>
+            <button class="btn btn-outline-danger" onclick="logout()">
+                <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+            </button>
         </div>
     </div>
 
-    <!-- Selector de Mesa y Verificación de Presencia -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="form-group">
-                <label class="form-label">Mesa</label>
-                <select class="form-select" id="mesa" required onchange="cambiarMesa()">
-                    <option value="">Seleccione mesa...</option>
-                </select>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="form-group">
-                <label class="form-label">Verificación de Presencia</label>
-                <div id="presenciaContainer">
-                    <button class="btn btn-success w-100" id="btnVerificarPresencia" onclick="verificarPresencia()">
-                        <i class="bi bi-check-circle"></i> Verificar Mi Presencia en la Mesa
-                    </button>
-                    <div class="alert alert-success mt-2 d-none" id="alertaPresenciaVerificada">
-                        <i class="bi bi-check-circle-fill"></i> Presencia verificada
-                        <br><small id="presenciaFecha"></small>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Pestañas de navegación -->
+    <ul class="nav nav-tabs mb-4" id="testigoTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="formularios-tab" data-bs-toggle="tab" data-bs-target="#formularios" type="button" role="tab">
+                <i class="bi bi-file-earmark-text"></i> Formularios E-14
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="incidentes-tab" data-bs-toggle="tab" data-bs-target="#incidentes" type="button" role="tab">
+                <i class="bi bi-exclamation-triangle"></i> Incidentes y Problemas
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="delitos-tab" data-bs-toggle="tab" data-bs-target="#delitos" type="button" role="tab">
+                <i class="bi bi-shield-exclamation"></i> Reporte de Delitos
+            </button>
+        </li>
+    </ul>
 
-    <div class="row">
-        <!-- Tabla de Formularios -->
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Mis Formularios E-14</h5>
-                    <button class="btn btn-primary" onclick="showCreateForm()">
-                        <i class="bi bi-plus-circle"></i> Nuevo Formulario
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped" id="formsTable">
-                            <thead>
-                                <tr>
-                                    <th>Mesa</th>
-                                    <th>Estado</th>
-                                    <th>Total Votos</th>
-                                    <th>Fecha</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="5" class="text-center py-4">
-                                        <p class="text-muted">No hay formularios registrados</p>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Contenido de las pestañas -->
+    <div class="tab-content" id="testigoTabsContent">
         
-        <!-- Panel Lateral -->
-        <div class="col-md-4">
-            <!-- Mesa Asignada -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Mi Mesa Asignada</h5>
+        <!-- Tab 1: Formularios E-14 -->
+        <div class="tab-pane fade show active" id="formularios" role="tabpanel">
+            <!-- Selector de Mesa y Verificación de Presencia -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Mesa</label>
+                        <select class="form-select" id="mesa" required onchange="cambiarMesa()">
+                            <option value="">Seleccione mesa...</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="card-body" id="assignedLocation">
-                    <p class="text-muted">Cargando...</p>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Verificación de Presencia</label>
+                        <div id="presenciaContainer">
+                            <button class="btn btn-success w-100" id="btnVerificarPresencia" onclick="verificarPresencia()">
+                                <i class="bi bi-check-circle"></i> Verificar Mi Presencia en la Mesa
+                            </button>
+                            <div class="alert alert-success mt-2 d-none" id="alertaPresenciaVerificada">
+                                <i class="bi bi-check-circle-fill"></i> Presencia verificada
+                                <br><small id="presenciaFecha"></small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
-            <!-- Instrucciones -->
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h5 class="mb-0">Instrucciones</h5>
+
+            <div class="row">
+                <!-- Tabla de Formularios -->
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Mis Formularios E-14</h5>
+                            <button class="btn btn-primary" onclick="showCreateForm()">
+                                <i class="bi bi-plus-circle"></i> Nuevo Formulario
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped" id="formsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Mesa</th>
+                                            <th>Estado</th>
+                                            <th>Total Votos</th>
+                                            <th>Fecha</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td colspan="5" class="text-center py-4">
+                                                <p class="text-muted">No hay formularios registrados</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <ol>
-                        <li>Tome una foto clara del formulario E-14</li>
-                        <li>Digite todos los datos del formulario</li>
-                        <li>Verifique que los totales coincidan</li>
-                        <li>Envíe el formulario para revisión</li>
-                    </ol>
+                
+                <!-- Panel Lateral -->
+                <div class="col-md-4">
+                    <!-- Mesa Asignada -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Mi Mesa Asignada</h5>
+                        </div>
+                        <div class="card-body" id="assignedLocation">
+                            <p class="text-muted">Cargando...</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Instrucciones -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">Instrucciones</h5>
+                        </div>
+                        <div class="card-body">
+                            <ol>
+                                <li>Tome una foto clara del formulario E-14</li>
+                                <li>Digite todos los datos del formulario</li>
+                                <li>Verifique que los totales coincidan</li>
+                                <li>Envíe el formulario para revisión</li>
+                            </ol>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+        <!-- Fin Tab Formularios -->
+
+        <!-- Tab 2: Incidentes y Problemas -->
+        <div class="tab-pane fade" id="incidentes" role="tabpanel">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Incidentes Reportados</h5>
+                            <button class="btn btn-warning" onclick="reportarIncidente()">
+                                <i class="bi bi-plus-circle"></i> Reportar Incidente
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="incidentesLista">
+                                <p class="text-muted text-center py-4">No hay incidentes reportados</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Tipos de Incidentes</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="bi bi-check-circle text-warning"></i> Retraso en apertura</li>
+                                <li class="mb-2"><i class="bi bi-check-circle text-warning"></i> Falta de material electoral</li>
+                                <li class="mb-2"><i class="bi bi-check-circle text-warning"></i> Problemas técnicos</li>
+                                <li class="mb-2"><i class="bi bi-check-circle text-warning"></i> Irregularidades en el proceso</li>
+                                <li class="mb-2"><i class="bi bi-check-circle text-warning"></i> Otros</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Fin Tab Incidentes -->
+
+        <!-- Tab 3: Reporte de Delitos -->
+        <div class="tab-pane fade" id="delitos" role="tabpanel">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Delitos Electorales Reportados</h5>
+                            <button class="btn btn-danger" onclick="reportarDelito()">
+                                <i class="bi bi-plus-circle"></i> Reportar Delito
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <strong>Importante:</strong> Los delitos electorales son graves. Reporte solo situaciones que constituyan una violación clara de la ley electoral.
+                            </div>
+                            <div id="delitosLista">
+                                <p class="text-muted text-center py-4">No hay delitos reportados</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Tipos de Delitos</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="bi bi-x-circle text-danger"></i> Compra de votos</li>
+                                <li class="mb-2"><i class="bi bi-x-circle text-danger"></i> Coacción al votante</li>
+                                <li class="mb-2"><i class="bi bi-x-circle text-danger"></i> Fraude electoral</li>
+                                <li class="mb-2"><i class="bi bi-x-circle text-danger"></i> Suplantación de identidad</li>
+                                <li class="mb-2"><i class="bi bi-x-circle text-danger"></i> Alteración de resultados</li>
+                                <li class="mb-2"><i class="bi bi-x-circle text-danger"></i> Otros delitos</li>
+                            </ul>
+                            <hr>
+                            <p class="small text-muted">
+                                <i class="bi bi-info-circle"></i>
+                                Si presencia un delito electoral, repórtelo inmediatamente y contacte a las autoridades competentes.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Fin Tab Delitos -->
+
     </div>
+    <!-- Fin Tab Content -->
 </div>
 
-<!-- Modal para crear/editar formulario -->
+<!-- Modal para crear/editar formulario E-14 -->
 <div class="modal fade" id="formModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -344,6 +464,95 @@
         </div>
     </div>
 </div>
+
+<!-- Modal para reportar incidente -->
+<div class="modal fade" id="incidenteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reportar Incidente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="incidenteForm">
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de Incidente *</label>
+                        <select class="form-select" name="tipo_incidente" required>
+                            <option value="">Seleccione...</option>
+                            <option value="retraso_apertura">Retraso en apertura</option>
+                            <option value="falta_material">Falta de material electoral</option>
+                            <option value="problemas_tecnicos">Problemas técnicos</option>
+                            <option value="irregularidades">Irregularidades en el proceso</option>
+                            <option value="otros">Otros</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción *</label>
+                        <textarea class="form-control" name="descripcion" rows="4" required placeholder="Describa el incidente con el mayor detalle posible..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Foto (opcional)</label>
+                        <input type="file" class="form-control" name="foto" accept="image/*" capture="environment">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" onclick="guardarIncidente()">
+                    <i class="bi bi-send"></i> Reportar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para reportar delito -->
+<div class="modal fade" id="delitoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Reportar Delito Electoral</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Advertencia:</strong> Este reporte será enviado a las autoridades electorales competentes.
+                </div>
+                <form id="delitoForm">
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de Delito *</label>
+                        <select class="form-select" name="tipo_delito" required>
+                            <option value="">Seleccione...</option>
+                            <option value="compra_votos">Compra de votos</option>
+                            <option value="coaccion">Coacción al votante</option>
+                            <option value="fraude">Fraude electoral</option>
+                            <option value="suplantacion">Suplantación de identidad</option>
+                            <option value="alteracion">Alteración de resultados</option>
+                            <option value="otros">Otros delitos</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción Detallada *</label>
+                        <textarea class="form-control" name="descripcion" rows="5" required placeholder="Describa el delito con el mayor detalle posible: qué ocurrió, quiénes estuvieron involucrados, cuándo sucedió, etc."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Evidencia Fotográfica (opcional)</label>
+                        <input type="file" class="form-control" name="evidencia" accept="image/*" capture="environment">
+                        <small class="text-muted">Si es posible, tome fotos como evidencia</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="guardarDelito()">
+                    <i class="bi bi-send"></i> Reportar Delito
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}

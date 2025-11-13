@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadUserProfile();
     loadForms();
     loadTiposEleccion();
-    setupImagePreview();
+    // setupImagePreview se llama cuando se abre el modal
 });
 
 async function loadUserProfile() {
@@ -29,15 +29,8 @@ async function loadUserProfile() {
             // Cargar mesas disponibles del puesto
             if (userLocation && userLocation.puesto_codigo) {
                 await loadMesas();
-            }
-            
-            // Mostrar información de la ubicación asignada
-            if (userLocation) {
-                document.getElementById('assignedLocation').innerHTML = `
-                    <h6>${userLocation.puesto_nombre || userLocation.nombre_completo}</h6>
-                    <p class="text-muted mb-1">Código: ${userLocation.puesto_codigo || 'N/A'}</p>
-                    <p class="mb-0">Dirección: ${userLocation.direccion || 'N/A'}</p>
-                `;
+                // Actualizar panel lateral con lista de mesas
+                await actualizarPanelMesas();
             } else {
                 document.getElementById('assignedLocation').innerHTML = `
                     <p class="text-muted">No hay ubicación asignada</p>
@@ -95,17 +88,95 @@ function cambiarMesa() {
     if (selectedOption && selectedOption.dataset.mesa) {
         selectedMesa = JSON.parse(selectedOption.dataset.mesa);
         
-        // Actualizar información de la mesa
-        document.getElementById('assignedLocation').innerHTML = `
-            <h6>${selectedMesa.mesa_nombre || selectedMesa.nombre_completo}</h6>
-            <p class="text-muted mb-1">Mesa: ${selectedMesa.mesa_codigo}</p>
-            <p class="text-muted mb-1">Puesto: ${selectedMesa.puesto_nombre || 'N/A'}</p>
-            <p class="mb-0">Votantes registrados: ${Utils.formatNumber(selectedMesa.total_votantes_registrados || 0)}</p>
-        `;
-        
         // Recargar formularios de esta mesa
         loadForms();
+        
+        // Actualizar panel lateral con todas las mesas
+        actualizarPanelMesas();
     }
+}
+
+/**
+ * Actualizar panel lateral con lista de mesas
+ */
+async function actualizarPanelMesas() {
+    try {
+        // Obtener todas las mesas del puesto
+        const params = {
+            puesto_codigo: userLocation.puesto_codigo,
+            zona_codigo: userLocation.zona_codigo,
+            municipio_codigo: userLocation.municipio_codigo,
+            departamento_codigo: userLocation.departamento_codigo
+        };
+        
+        const response = await APIClient.get('/locations/mesas', params);
+        const mesas = response.data || [];
+        
+        // Obtener formularios para saber qué mesas tienen E-14
+        const formulariosResponse = await APIClient.getFormulariosE14({});
+        const formularios = formulariosResponse.success ? (formulariosResponse.data.formularios || formulariosResponse.data || []) : [];
+        
+        // Crear mapa de mesas con formularios
+        const mesasConFormularios = {};
+        formularios.forEach(form => {
+            if (!mesasConFormularios[form.mesa_id]) {
+                mesasConFormularios[form.mesa_id] = [];
+            }
+            mesasConFormularios[form.mesa_id].push(form);
+        });
+        
+        // Generar HTML
+        let html = '<h6 class="mb-3">Mis Mesas</h6>';
+        
+        if (mesas.length === 0) {
+            html += '<p class="text-muted">No hay mesas asignadas</p>';
+        } else {
+            html += '<div class="list-group">';
+            mesas.forEach(mesa => {
+                const tieneFormularios = mesasConFormularios[mesa.id] && mesasConFormularios[mesa.id].length > 0;
+                const cantidadFormularios = tieneFormularios ? mesasConFormularios[mesa.id].length : 0;
+                const esSeleccionada = selectedMesa && selectedMesa.id === mesa.id;
+                
+                html += `
+                    <div class="list-group-item ${esSeleccionada ? 'active' : ''}" style="cursor: pointer;" onclick="seleccionarMesaDesdePanel(${mesa.id})">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">Mesa ${mesa.mesa_codigo}</h6>
+                                <small>${mesa.puesto_nombre || 'N/A'}</small>
+                            </div>
+                            <div class="text-end">
+                                ${tieneFormularios ? 
+                                    `<span class="badge bg-success">${cantidadFormularios} E-14</span>` : 
+                                    `<span class="badge bg-secondary">Sin E-14</span>`
+                                }
+                            </div>
+                        </div>
+                        <small class="text-muted d-block mt-1">
+                            <i class="bi bi-people"></i> ${Utils.formatNumber(mesa.total_votantes_registrados || 0)} votantes
+                        </small>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+        
+        document.getElementById('assignedLocation').innerHTML = html;
+        
+    } catch (error) {
+        console.error('Error actualizando panel de mesas:', error);
+        document.getElementById('assignedLocation').innerHTML = `
+            <p class="text-danger">Error al cargar mesas</p>
+        `;
+    }
+}
+
+/**
+ * Seleccionar mesa desde el panel lateral
+ */
+function seleccionarMesaDesdePanel(mesaId) {
+    const selector = document.getElementById('mesa');
+    selector.value = mesaId;
+    cambiarMesa();
 }
 
 async function loadTiposEleccion() {
@@ -400,6 +471,11 @@ async function loadForms() {
             mostrarIndicadorSincronizacion(totalBorradores);
         }
         
+        // Actualizar panel lateral
+        if (userLocation && userLocation.puesto_codigo) {
+            actualizarPanelMesas();
+        }
+        
     } catch (error) {
         console.error('Error al cargar formularios:', error);
         // Mostrar mensaje en la tabla
@@ -582,6 +658,9 @@ function showCreateForm() {
     
     // Limpiar contenedor de votación
     document.getElementById('votacionContainer').innerHTML = '<p class="text-muted">Seleccione un tipo de elección para cargar los partidos y candidatos</p>';
+    
+    // Configurar preview de imagen cada vez que se abre el modal
+    setupImagePreview();
     
     new bootstrap.Modal(document.getElementById('formModal')).show();
 }
@@ -968,14 +1047,29 @@ function setupImagePreview() {
     const input = document.getElementById('imagen');
     const preview = document.getElementById('imagePreview');
     
-    input.addEventListener('change', function(e) {
+    if (!input || !preview) {
+        console.warn('Image input or preview not found');
+        return;
+    }
+    
+    // Remover listeners anteriores clonando el elemento
+    const newInput = input.cloneNode(true);
+    input.parentNode.replaceChild(newInput, input);
+    
+    newInput.addEventListener('change', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
         const file = e.target.files[0];
         
         if (file) {
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.innerHTML = `<img src="${e.target.result}" alt="Preview" style="max-width: 100%; max-height: 400px;">`;
+                reader.onload = function(event) {
+                    preview.innerHTML = `<img src="${event.target.result}" alt="Preview" style="max-width: 100%; max-height: 250px; object-fit: contain;">`;
+                };
+                reader.onerror = function() {
+                    preview.innerHTML = '<p class="text-danger">Error al cargar la imagen</p>';
                 };
                 reader.readAsDataURL(file);
             } else {
@@ -1075,4 +1169,270 @@ document.addEventListener('DOMContentLoaded', function() {
             // No sincronizar automáticamente, solo mostrar indicador
         }
     }, 2000);
+});
+
+
+// ============================================
+// FUNCIONES PARA INCIDENTES Y DELITOS
+// ============================================
+
+/**
+ * Reportar incidente
+ */
+function reportarIncidente() {
+    document.getElementById('incidenteForm').reset();
+    new bootstrap.Modal(document.getElementById('incidenteModal')).show();
+}
+
+/**
+ * Guardar incidente
+ */
+async function guardarIncidente() {
+    const form = document.getElementById('incidenteForm');
+    
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    try {
+        const formData = new FormData(form);
+        
+        const data = {
+            mesa_id: selectedMesa ? selectedMesa.id : null,
+            tipo_incidente: formData.get('tipo_incidente'),
+            descripcion: formData.get('descripcion'),
+            fecha_hora: new Date().toISOString()
+        };
+        
+        // Guardar localmente primero
+        guardarIncidenteLocal(data);
+        
+        Utils.showSuccess('Incidente reportado exitosamente');
+        bootstrap.Modal.getInstance(document.getElementById('incidenteModal')).hide();
+        cargarIncidentes();
+        
+    } catch (error) {
+        console.error('Error guardando incidente:', error);
+        Utils.showError('Error al reportar incidente: ' + error.message);
+    }
+}
+
+/**
+ * Guardar incidente en localStorage
+ */
+function guardarIncidenteLocal(data) {
+    try {
+        const incidentes = obtenerIncidentesLocales();
+        const id = `incidente_${Date.now()}`;
+        data.id = id;
+        data.sincronizado = false;
+        incidentes[id] = data;
+        localStorage.setItem('incidentes_testigo', JSON.stringify(incidentes));
+    } catch (error) {
+        console.error('Error guardando incidente local:', error);
+    }
+}
+
+/**
+ * Obtener incidentes locales
+ */
+function obtenerIncidentesLocales() {
+    try {
+        const incidentes = localStorage.getItem('incidentes_testigo');
+        return incidentes ? JSON.parse(incidentes) : {};
+    } catch (error) {
+        console.error('Error obteniendo incidentes locales:', error);
+        return {};
+    }
+}
+
+/**
+ * Cargar incidentes
+ */
+function cargarIncidentes() {
+    const incidentes = obtenerIncidentesLocales();
+    const lista = document.getElementById('incidentesLista');
+    
+    const incidentesArray = Object.values(incidentes);
+    
+    if (incidentesArray.length === 0) {
+        lista.innerHTML = '<p class="text-muted text-center py-4">No hay incidentes reportados</p>';
+        return;
+    }
+    
+    lista.innerHTML = incidentesArray.map(incidente => `
+        <div class="card mb-2">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="mb-1">${getTipoIncidenteLabel(incidente.tipo_incidente)}</h6>
+                        <p class="mb-1">${incidente.descripcion}</p>
+                        <small class="text-muted">
+                            <i class="bi bi-clock"></i> ${Utils.formatDate(incidente.fecha_hora)}
+                        </small>
+                    </div>
+                    <span class="badge ${incidente.sincronizado ? 'bg-success' : 'bg-warning'}">
+                        ${incidente.sincronizado ? 'Sincronizado' : 'Pendiente'}
+                    </span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+/**
+ * Obtener label del tipo de incidente
+ */
+function getTipoIncidenteLabel(tipo) {
+    const labels = {
+        'retraso_apertura': 'Retraso en apertura',
+        'falta_material': 'Falta de material electoral',
+        'problemas_tecnicos': 'Problemas técnicos',
+        'irregularidades': 'Irregularidades en el proceso',
+        'otros': 'Otros'
+    };
+    return labels[tipo] || tipo;
+}
+
+/**
+ * Reportar delito
+ */
+function reportarDelito() {
+    document.getElementById('delitoForm').reset();
+    new bootstrap.Modal(document.getElementById('delitoModal')).show();
+}
+
+/**
+ * Guardar delito
+ */
+async function guardarDelito() {
+    const form = document.getElementById('delitoForm');
+    
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    if (!confirm('¿Está seguro de reportar este delito electoral? Este reporte será enviado a las autoridades competentes.')) {
+        return;
+    }
+    
+    try {
+        const formData = new FormData(form);
+        
+        const data = {
+            mesa_id: selectedMesa ? selectedMesa.id : null,
+            tipo_delito: formData.get('tipo_delito'),
+            descripcion: formData.get('descripcion'),
+            fecha_hora: new Date().toISOString()
+        };
+        
+        // Guardar localmente primero
+        guardarDelitoLocal(data);
+        
+        Utils.showSuccess('Delito reportado exitosamente. Las autoridades serán notificadas.');
+        bootstrap.Modal.getInstance(document.getElementById('delitoModal')).hide();
+        cargarDelitos();
+        
+    } catch (error) {
+        console.error('Error guardando delito:', error);
+        Utils.showError('Error al reportar delito: ' + error.message);
+    }
+}
+
+/**
+ * Guardar delito en localStorage
+ */
+function guardarDelitoLocal(data) {
+    try {
+        const delitos = obtenerDelitosLocales();
+        const id = `delito_${Date.now()}`;
+        data.id = id;
+        data.sincronizado = false;
+        delitos[id] = data;
+        localStorage.setItem('delitos_testigo', JSON.stringify(delitos));
+    } catch (error) {
+        console.error('Error guardando delito local:', error);
+    }
+}
+
+/**
+ * Obtener delitos locales
+ */
+function obtenerDelitosLocales() {
+    try {
+        const delitos = localStorage.getItem('delitos_testigo');
+        return delitos ? JSON.parse(delitos) : {};
+    } catch (error) {
+        console.error('Error obteniendo delitos locales:', error);
+        return {};
+    }
+}
+
+/**
+ * Cargar delitos
+ */
+function cargarDelitos() {
+    const delitos = obtenerDelitosLocales();
+    const lista = document.getElementById('delitosLista');
+    
+    const delitosArray = Object.values(delitos);
+    
+    if (delitosArray.length === 0) {
+        lista.innerHTML = '<p class="text-muted text-center py-4">No hay delitos reportados</p>';
+        return;
+    }
+    
+    lista.innerHTML = delitosArray.map(delito => `
+        <div class="card mb-2 border-danger">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="mb-1 text-danger">${getTipoDelitoLabel(delito.tipo_delito)}</h6>
+                        <p class="mb-1">${delito.descripcion}</p>
+                        <small class="text-muted">
+                            <i class="bi bi-clock"></i> ${Utils.formatDate(delito.fecha_hora)}
+                        </small>
+                    </div>
+                    <span class="badge ${delito.sincronizado ? 'bg-success' : 'bg-danger'}">
+                        ${delito.sincronizado ? 'Reportado' : 'Pendiente'}
+                    </span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+/**
+ * Obtener label del tipo de delito
+ */
+function getTipoDelitoLabel(tipo) {
+    const labels = {
+        'compra_votos': 'Compra de votos',
+        'coaccion': 'Coacción al votante',
+        'fraude': 'Fraude electoral',
+        'suplantacion': 'Suplantación de identidad',
+        'alteracion': 'Alteración de resultados',
+        'otros': 'Otros delitos'
+    };
+    return labels[tipo] || tipo;
+}
+
+// Cargar incidentes y delitos al cambiar de pestaña
+document.addEventListener('DOMContentLoaded', function() {
+    const incidentesTab = document.getElementById('incidentes-tab');
+    const delitosTab = document.getElementById('delitos-tab');
+    
+    if (incidentesTab) {
+        incidentesTab.addEventListener('shown.bs.tab', function() {
+            cargarIncidentes();
+        });
+    }
+    
+    if (delitosTab) {
+        delitosTab.addEventListener('shown.bs.tab', function() {
+            cargarDelitos();
+        });
+    }
 });

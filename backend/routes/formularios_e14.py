@@ -528,3 +528,59 @@ def actualizar_formulario(formulario_id):
             'success': False,
             'error': str(e)
         }), 500
+
+
+
+@formularios_bp.route('/testigos-puesto', methods=['GET'])
+@jwt_required()
+def obtener_testigos_puesto():
+    """
+    Obtener lista de testigos del puesto con su estado de presencia
+    Solo para coordinadores de puesto
+    """
+    try:
+        from backend.models.location import Location
+        
+        user_id = get_jwt_identity()
+        coordinador = User.query.get(int(user_id))
+        
+        if not coordinador or coordinador.rol != 'coordinador_puesto':
+            return jsonify({
+                'success': False,
+                'error': 'Solo coordinadores de puesto pueden acceder'
+            }), 403
+        
+        if not coordinador.ubicacion_id:
+            return jsonify({
+                'success': False,
+                'error': 'Coordinador sin ubicación asignada'
+            }), 400
+        
+        # Obtener testigos del mismo puesto
+        testigos = User.query.filter_by(
+            ubicacion_id=coordinador.ubicacion_id,
+            rol='testigo_electoral'
+        ).all()
+        
+        testigos_data = []
+        for testigo in testigos:
+            testigos_data.append({
+                'id': testigo.id,
+                'nombre': testigo.nombre,
+                'telefono': testigo.telefono,
+                'email': testigo.email,
+                'presencia_verificada': testigo.presencia_verificada,
+                'presencia_verificada_at': testigo.presencia_verificada_at.isoformat() if testigo.presencia_verificada_at else None,
+                'last_login': testigo.last_login.isoformat() if testigo.last_login else None
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': testigos_data
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
