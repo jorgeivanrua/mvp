@@ -356,17 +356,107 @@ function calcularTotales() {
 async function loadForms() {
     try {
         const params = selectedMesa ? { mesa_id: selectedMesa.id } : {};
-        const response = await APIClient.getFormulariosE14(params);
         
-        if (response.success) {
-            updateFormsTable(response.data);
-        } else {
-            Utils.showError('Error al cargar formularios');
+        // Obtener formularios del servidor
+        let formulariosServidor = [];
+        try {
+            const response = await APIClient.getFormulariosE14(params);
+            if (response.success) {
+                formulariosServidor = response.data.formularios || response.data || [];
+            }
+        } catch (error) {
+            console.error('Error al cargar formularios del servidor:', error);
+            // Continuar para mostrar al menos los borradores locales
         }
+        
+        // Obtener borradores locales
+        const borradoresLocales = obtenerBorradoresLocales();
+        const formulariosLocales = Object.values(borradoresLocales).map(borrador => {
+            return {
+                id: borrador.local_id,
+                mesa_id: borrador.mesa_id,
+                mesa_codigo: getMesaCodigoById(borrador.mesa_id),
+                estado: 'local',
+                total_votos: borrador.total_votos,
+                created_at: borrador.saved_at,
+                es_local: true
+            };
+        });
+        
+        // Filtrar borradores locales por mesa si es necesario
+        let formulariosLocalesFiltrados = formulariosLocales;
+        if (selectedMesa) {
+            formulariosLocalesFiltrados = formulariosLocales.filter(f => f.mesa_id === selectedMesa.id);
+        }
+        
+        // Combinar formularios del servidor y locales
+        const todosFormularios = [...formulariosServidor, ...formulariosLocalesFiltrados];
+        
+        updateFormsTable(todosFormularios);
+        
+        // Mostrar indicador si hay borradores pendientes de sincronizar
+        const totalBorradores = formulariosLocales.length;
+        if (totalBorradores > 0) {
+            mostrarIndicadorSincronizacion(totalBorradores);
+        }
+        
     } catch (error) {
         console.error('Error al cargar formularios:', error);
-        // No mostrar error si es porque no hay endpoint aún
+        // Mostrar mensaje en la tabla
+        const tbody = document.querySelector('#formsTable tbody');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center py-4">
+                    <p class="text-muted">Error al cargar formularios</p>
+                </td>
+            </tr>
+        `;
     }
+}
+
+/**
+ * Obtener código de mesa por ID
+ */
+function getMesaCodigoById(mesaId) {
+    const mesaSelect = document.getElementById('mesa');
+    for (let i = 0; i < mesaSelect.options.length; i++) {
+        const option = mesaSelect.options[i];
+        if (option.value == mesaId && option.dataset.mesa) {
+            const mesa = JSON.parse(option.dataset.mesa);
+            return mesa.mesa_codigo;
+        }
+    }
+    return 'N/A';
+}
+
+/**
+ * Mostrar indicador de sincronización pendiente
+ */
+function mostrarIndicadorSincronizacion(cantidad) {
+    // Buscar o crear contenedor de indicador
+    let indicador = document.getElementById('indicadorSincronizacion');
+    
+    if (!indicador) {
+        indicador = document.createElement('div');
+        indicador.id = 'indicadorSincronizacion';
+        indicador.className = 'alert alert-warning d-flex justify-content-between align-items-center';
+        indicador.style.position = 'fixed';
+        indicador.style.bottom = '20px';
+        indicador.style.right = '20px';
+        indicador.style.zIndex = '1050';
+        indicador.style.minWidth = '300px';
+        document.body.appendChild(indicador);
+    }
+    
+    indicador.innerHTML = `
+        <div>
+            <i class="bi bi-cloud-upload"></i>
+            <strong>${cantidad}</strong> formulario(s) pendiente(s) de sincronizar
+        </div>
+        <button class="btn btn-sm btn-warning" onclick="sincronizarBorradoresLocales()">
+            <i class="bi bi-arrow-repeat"></i> Sincronizar
+        </button>
+    `;
 }
 
 function updateFormsTable(forms) {
@@ -387,12 +477,19 @@ function updateFormsTable(forms) {
     forms.forEach(form => {
         const row = document.createElement('tr');
         const estadoLabel = getEstadoLabel(form.estado);
-        const puedeEditar = form.estado === 'borrador' || form.estado === 'pendiente';
+        const puedeEditar = form.estado === 'borrador' || form.estado === 'pendiente' || form.estado === 'local';
+        const esLocal = form.es_local || form.estado === 'local';
         
         // Hacer la fila clickeable si puede editar
         if (puedeEditar) {
             row.style.cursor = 'pointer';
-            row.onclick = () => editForm(form.id);
+            row.onclick = () => {
+                if (esLocal) {
+                    editarBorradorLocal(form.id);
+                } else {
+                    editForm(form.id);
+                }
+            };
             row.onmouseover = () => row.style.backgroundColor = '#f8f9fa';
             row.onmouseout = () => row.style.backgroundColor = '';
         }
@@ -404,9 +501,14 @@ function updateFormsTable(forms) {
             <td>${Utils.formatDate(form.created_at)}</td>
             <td>
                 ${puedeEditar ? 
-                    `<button class="btn btn-sm btn-outline-warning" onclick="event.stopPropagation(); editForm(${form.id})">
+                    `<button class="btn btn-sm btn-outline-warning" onclick="event.stopPropagation(); ${esLocal ? `editarBorradorLocal('${form.id}')` : `editForm(${form.id})`}">
                         <i class="bi bi-pencil"></i> Editar
-                    </button>` : 
+                    </button>
+                    ${esLocal ? 
+                        `<button class="btn btn-sm btn-outline-danger ms-1" onclick="event.stopPropagation(); eliminarBorradorLocalPorId('${form.id}')">
+                            <i class="bi bi-trash"></i>
+                        </button>` : ''
+                    }` : 
                     `<button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); viewForm(${form.id})">
                         <i class="bi bi-eye"></i> Ver
                     </button>`
@@ -421,7 +523,9 @@ function getStatusColor(estado) {
     const colors = {
         'pendiente': 'warning',
         'validado': 'success',
-        'rechazado': 'danger'
+        'rechazado': 'danger',
+        'borrador': 'secondary',
+        'local': 'info'
     };
     return colors[estado] || 'secondary';
 }
@@ -430,7 +534,9 @@ function getEstadoLabel(estado) {
     const labels = {
         'pendiente': 'Pendiente',
         'validado': 'Validado',
-        'rechazado': 'Rechazado'
+        'rechazado': 'Rechazado',
+        'borrador': 'Borrador',
+        'local': 'Guardado Localmente'
     };
     return labels[estado] || estado;
 }
@@ -553,25 +659,244 @@ async function saveForm(accion = 'borrador') {
         
         console.log('Saving form data:', data);
         
-        // TODO: Implementar upload de imagen
-        // Por ahora solo guardamos los datos
-        
-        const response = await APIClient.createFormularioE14(data);
-        
-        if (response.success) {
-            const mensaje = accion === 'enviar' ? 
-                'Formulario E-14 enviado para revisión' : 
-                'Borrador guardado exitosamente';
-            Utils.showSuccess(mensaje);
+        // Si es borrador, guardar en localStorage
+        if (accion === 'borrador') {
+            guardarBorradorLocal(data);
+            Utils.showSuccess('Borrador guardado localmente');
             bootstrap.Modal.getInstance(document.getElementById('formModal')).hide();
             loadForms();
-        } else {
-            Utils.showError('Error: ' + (response.error || 'Error desconocido'));
+            return;
+        }
+        
+        // Si es enviar, intentar enviar al servidor
+        try {
+            const response = await APIClient.createFormularioE14(data);
+            
+            if (response.success) {
+                // Si se envió exitosamente, eliminar borrador local si existe
+                eliminarBorradorLocal(data.mesa_id, data.tipo_eleccion_id);
+                
+                Utils.showSuccess('Formulario E-14 enviado para revisión');
+                bootstrap.Modal.getInstance(document.getElementById('formModal')).hide();
+                loadForms();
+            } else {
+                Utils.showError('Error: ' + (response.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error enviando formulario:', error);
+            
+            // Si falla el envío, ofrecer guardar como borrador local
+            if (confirm('No se pudo enviar el formulario. ¿Desea guardarlo localmente para enviarlo después?')) {
+                guardarBorradorLocal(data);
+                Utils.showSuccess('Formulario guardado localmente. Se enviará cuando haya conexión.');
+                bootstrap.Modal.getInstance(document.getElementById('formModal')).hide();
+                loadForms();
+            } else {
+                Utils.showError('Error al enviar formulario: ' + error.message);
+            }
         }
         
     } catch (error) {
         console.error('Error saving form:', error);
         Utils.showError('Error al guardar formulario: ' + error.message);
+    }
+}
+
+/**
+ * Guardar borrador en localStorage
+ */
+function guardarBorradorLocal(data) {
+    try {
+        // Obtener borradores existentes
+        const borradores = obtenerBorradoresLocales();
+        
+        // Crear clave única para el borrador
+        const key = `${data.mesa_id}_${data.tipo_eleccion_id}`;
+        
+        // Agregar timestamp
+        data.saved_at = new Date().toISOString();
+        data.local_id = key;
+        
+        // Guardar o actualizar borrador
+        borradores[key] = data;
+        
+        localStorage.setItem('formularios_e14_borradores', JSON.stringify(borradores));
+        
+        console.log('Borrador guardado localmente:', key);
+    } catch (error) {
+        console.error('Error guardando borrador local:', error);
+        throw new Error('No se pudo guardar el borrador localmente');
+    }
+}
+
+/**
+ * Obtener todos los borradores locales
+ */
+function obtenerBorradoresLocales() {
+    try {
+        const borradores = localStorage.getItem('formularios_e14_borradores');
+        return borradores ? JSON.parse(borradores) : {};
+    } catch (error) {
+        console.error('Error obteniendo borradores locales:', error);
+        return {};
+    }
+}
+
+/**
+ * Eliminar borrador local
+ */
+function eliminarBorradorLocal(mesaId, tipoEleccionId) {
+    try {
+        const borradores = obtenerBorradoresLocales();
+        const key = `${mesaId}_${tipoEleccionId}`;
+        
+        if (borradores[key]) {
+            delete borradores[key];
+            localStorage.setItem('formularios_e14_borradores', JSON.stringify(borradores));
+            console.log('Borrador local eliminado:', key);
+        }
+    } catch (error) {
+        console.error('Error eliminando borrador local:', error);
+    }
+}
+
+/**
+ * Sincronizar borradores locales con el servidor
+ */
+async function sincronizarBorradoresLocales() {
+    try {
+        const borradores = obtenerBorradoresLocales();
+        const keys = Object.keys(borradores);
+        
+        if (keys.length === 0) {
+            console.log('No hay borradores locales para sincronizar');
+            Utils.showInfo('No hay formularios pendientes de sincronizar');
+            return;
+        }
+        
+        console.log(`Sincronizando ${keys.length} borradores locales...`);
+        
+        let sincronizados = 0;
+        let errores = 0;
+        
+        for (const key of keys) {
+            const borrador = borradores[key];
+            
+            try {
+                // Cambiar estado a pendiente para enviar
+                borrador.estado = 'pendiente';
+                
+                const response = await APIClient.createFormularioE14(borrador);
+                
+                if (response.success) {
+                    eliminarBorradorLocal(borrador.mesa_id, borrador.tipo_eleccion_id);
+                    sincronizados++;
+                    console.log('Borrador sincronizado:', key);
+                } else {
+                    errores++;
+                    console.error('Error sincronizando borrador:', key, response.error);
+                }
+            } catch (error) {
+                errores++;
+                console.error('Error sincronizando borrador:', key, error);
+            }
+        }
+        
+        if (sincronizados > 0) {
+            Utils.showSuccess(`${sincronizados} formulario(s) sincronizado(s) exitosamente`);
+            loadForms();
+        }
+        
+        if (errores > 0) {
+            Utils.showWarning(`${errores} formulario(s) no se pudieron sincronizar`);
+        }
+        
+    } catch (error) {
+        console.error('Error en sincronización de borradores:', error);
+    }
+}
+
+/**
+ * Editar borrador local
+ */
+async function editarBorradorLocal(localId) {
+    try {
+        const borradores = obtenerBorradoresLocales();
+        const borrador = borradores[localId];
+        
+        if (!borrador) {
+            Utils.showError('Borrador no encontrado');
+            return;
+        }
+        
+        // Abrir el modal
+        document.getElementById('e14Form').reset();
+        
+        // Cargar mesa
+        const mesaSelect = document.getElementById('mesaFormulario');
+        mesaSelect.value = borrador.mesa_id;
+        cambiarMesaFormulario();
+        
+        // Cargar tipo de elección
+        document.getElementById('tipoEleccion').value = borrador.tipo_eleccion_id;
+        await cargarPartidosYCandidatos();
+        
+        // Cargar datos de votación
+        document.getElementById('votosNulos').value = borrador.votos_nulos || 0;
+        document.getElementById('votosBlanco').value = borrador.votos_blanco || 0;
+        document.getElementById('tarjetasNoMarcadas').value = borrador.tarjetas_no_marcadas || 0;
+        
+        // Cargar votos por partido
+        if (borrador.votos_partidos) {
+            borrador.votos_partidos.forEach(vp => {
+                const input = document.getElementById(`partido_${vp.partido_id}`);
+                if (input) input.value = vp.votos;
+            });
+        }
+        
+        // Cargar votos por candidato
+        if (borrador.votos_candidatos) {
+            borrador.votos_candidatos.forEach(vc => {
+                const input = document.getElementById(`candidato_${vc.candidato_id}`);
+                if (input) input.value = vc.votos;
+            });
+        }
+        
+        // Cargar observaciones
+        document.querySelector('[name="observaciones"]').value = borrador.observaciones || '';
+        
+        // Recalcular totales
+        calcularTotales();
+        
+        // Mostrar modal
+        new bootstrap.Modal(document.getElementById('formModal')).show();
+        
+    } catch (error) {
+        console.error('Error loading local draft:', error);
+        Utils.showError('Error al cargar borrador: ' + error.message);
+    }
+}
+
+/**
+ * Eliminar borrador local por ID
+ */
+function eliminarBorradorLocalPorId(localId) {
+    if (!confirm('¿Está seguro de eliminar este borrador local?')) {
+        return;
+    }
+    
+    try {
+        const borradores = obtenerBorradoresLocales();
+        
+        if (borradores[localId]) {
+            delete borradores[localId];
+            localStorage.setItem('formularios_e14_borradores', JSON.stringify(borradores));
+            Utils.showSuccess('Borrador eliminado');
+            loadForms();
+        }
+    } catch (error) {
+        console.error('Error eliminando borrador:', error);
+        Utils.showError('Error al eliminar borrador');
     }
 }
 
@@ -741,4 +1066,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Verificar estado de presencia al cargar
     verificarEstadoPresencia();
+    
+    // Intentar sincronizar borradores locales al cargar (silenciosamente)
+    setTimeout(() => {
+        const borradores = obtenerBorradoresLocales();
+        if (Object.keys(borradores).length > 0) {
+            console.log('Hay borradores locales pendientes de sincronizar');
+            // No sincronizar automáticamente, solo mostrar indicador
+        }
+    }, 2000);
 });

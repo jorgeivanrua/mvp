@@ -167,27 +167,37 @@ class APIClient {
     // ==========================================
     
     static async getFormulariosE14(params = {}) {
-        return this.get('/formularios-e14', params);
+        // Para testigos, usar endpoint específico
+        return this.get('/formularios/mis-formularios', params);
+    }
+    
+    static async getFormulariosPuesto(params = {}) {
+        // Para coordinadores de puesto
+        return this.get('/formularios/puesto', params);
     }
     
     static async getFormularioE14(id) {
-        return this.get(`/formularios-e14/${id}`);
+        return this.get(`/formularios/${id}`);
     }
     
     static async createFormularioE14(data) {
-        return this.post('/formularios-e14', data);
+        return this.post('/formularios', data);
     }
     
     static async updateFormularioE14(id, data) {
-        return this.put(`/formularios-e14/${id}`, data);
+        return this.put(`/formularios/${id}`, data);
     }
     
-    static async validarFormularioE14(id, estado, observaciones = '') {
-        return this.post(`/formularios-e14/${id}/validar`, { estado, observaciones });
+    static async validarFormularioE14(id, cambios = null, comentario = '') {
+        return this.put(`/formularios/${id}/validar`, { cambios, comentario });
+    }
+    
+    static async rechazarFormularioE14(id, motivo) {
+        return this.put(`/formularios/${id}/rechazar`, { motivo });
     }
     
     static async deleteFormularioE14(id) {
-        return this.delete(`/formularios-e14/${id}`);
+        return this.delete(`/formularios/${id}`);
     }
     
     static async put(endpoint, data) {

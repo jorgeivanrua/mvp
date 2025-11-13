@@ -291,11 +291,22 @@ def obtener_mesas_puesto():
                 'error': 'Coordinador no asignado a un puesto válido'
             }), 400
         
-        # Obtener todas las mesas del puesto
+        # Obtener todas las mesas del puesto (filtrar por jerarquía completa)
+        print(f"DEBUG - Filtrando mesas con:")
+        print(f"  puesto_codigo: {ubicacion.puesto_codigo}")
+        print(f"  departamento_codigo: {ubicacion.departamento_codigo}")
+        print(f"  municipio_codigo: {ubicacion.municipio_codigo}")
+        print(f"  zona_codigo: {ubicacion.zona_codigo}")
+        
         mesas = Location.query.filter_by(
             puesto_codigo=ubicacion.puesto_codigo,
-            tipo='mesa'
+            tipo='mesa',
+            departamento_codigo=ubicacion.departamento_codigo,
+            municipio_codigo=ubicacion.municipio_codigo,
+            zona_codigo=ubicacion.zona_codigo
         ).all()
+        
+        print(f"DEBUG - Mesas encontradas: {len(mesas)}")
         
         # Para cada mesa, obtener información del testigo y estado del formulario
         resultado = []
@@ -303,7 +314,7 @@ def obtener_mesas_puesto():
             # Buscar testigo asignado a esta mesa
             testigo = User.query.filter_by(
                 ubicacion_id=mesa.id,
-                rol='testigo'
+                rol='testigo_electoral'
             ).first()
             
             # Buscar formulario más reciente de esta mesa
@@ -337,6 +348,82 @@ def obtener_mesas_puesto():
         return jsonify({
             'success': True,
             'data': resultado
+        }), 200
+        
+    except BaseAPIException as e:
+        return jsonify(e.to_dict()), e.status_code
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@formularios_bp.route('/mis-formularios', methods=['GET'])
+@jwt_required()
+@role_required(['testigo'])
+def obtener_mis_formularios():
+    """
+    Obtener formularios del testigo actual
+    
+    Query params:
+        mesa_id: Filtrar por mesa (opcional)
+        estado: Filtrar por estado (opcional)
+        page: Número de página (default: 1)
+        per_page: Resultados por página (default: 20)
+    """
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(int(user_id))
+        
+        if not user:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no encontrado'
+            }), 404
+        
+        # Obtener parámetros de query
+        mesa_id = request.args.get('mesa_id', type=int)
+        estado = request.args.get('estado')
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        
+        # Construir filtros
+        filtros = {'testigo_id': int(user_id)}
+        if mesa_id:
+            filtros['mesa_id'] = mesa_id
+        if estado:
+            filtros['estado'] = estado
+        
+        # Obtener formularios del testigo
+        from backend.models.formulario_e14 import FormularioE14
+        query = FormularioE14.query.filter_by(testigo_id=int(user_id))
+        
+        if mesa_id:
+            query = query.filter_by(mesa_id=mesa_id)
+        if estado:
+            query = query.filter_by(estado=estado)
+        
+        # Paginar
+        pagination = query.order_by(FormularioE14.created_at.desc()).paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False
+        )
+        
+        formularios = [f.to_dict(include_votos=False) for f in pagination.items]
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'formularios': formularios,
+                'pagination': {
+                    'page': pagination.page,
+                    'per_page': pagination.per_page,
+                    'total': pagination.total,
+                    'pages': pagination.pages
+                }
+            }
         }), 200
         
     except BaseAPIException as e:

@@ -45,7 +45,7 @@ def coordinador_puesto():
 @frontend_bp.route('/coordinador/municipal')
 def coordinador_municipal():
     """Dashboard del coordinador municipal"""
-    return render_template('admin/dashboard.html')  # Usa el mismo template del admin por ahora
+    return render_template('coordinador/municipal.html')
 
 
 @frontend_bp.route('/coordinador/departamental')

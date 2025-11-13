@@ -198,7 +198,7 @@ def verificar_presencia():
                 'error': 'Usuario no encontrado'
             }), 404
         
-        if user.rol != 'testigo':
+        if user.rol != 'testigo_electoral':
             return jsonify({
                 'success': False,
                 'error': 'Solo los testigos pueden verificar presencia'

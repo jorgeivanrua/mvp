@@ -76,11 +76,13 @@ El Dashboard del Coordinador de Puesto es una interfaz web que permite a los coo
 
 #### Acceptance Criteria
 
-1. THE Sistema SHALL mostrar una lista de todas las mesas asignadas al puesto del coordinador
-2. THE Sistema SHALL indicar para cada mesa: código, testigo asignado, estado del reporte, y última actualización
+1. THE Sistema SHALL mostrar una lista de todas las mesas asignadas al puesto del coordinador sincronizadas con la base de datos
+2. THE Sistema SHALL indicar para cada mesa: código, testigo asignado, estado del reporte, verificación de presencia del testigo, y última actualización
 3. THE Sistema SHALL resaltar visualmente las mesas que no han enviado formularios
 4. THE Sistema SHALL mostrar un indicador de progreso general (mesas reportadas vs total de mesas)
 5. THE Sistema SHALL permitir al coordinador ver los detalles de contacto del testigo asignado a cada mesa
+6. THE Sistema SHALL mostrar un ícono de verificación cuando el testigo ha confirmado su presencia en la mesa
+7. THE Sistema SHALL sincronizar la cantidad de mesas mostradas con las mesas reales del puesto en la base de datos
 
 ### Requirement 6: Generación de E-24 de Puesto
 
@@ -143,3 +145,16 @@ El Dashboard del Coordinador de Puesto es una interfaz web que permite a los coo
 3. THE Sistema SHALL registrar las modificaciones realizadas por el coordinador con valores anteriores y nuevos
 4. THE Sistema SHALL permitir al coordinador ver el historial completo de un formulario
 5. THE Sistema SHALL mostrar comentarios y motivos de rechazo en el historial
+
+### Requirement 11: Verificación de Presencia de Testigos
+
+**User Story:** Como coordinador de puesto, quiero ver qué testigos han verificado su presencia en las mesas, para asegurar que todos los testigos estén en sus puestos asignados.
+
+#### Acceptance Criteria
+
+1. THE Sistema SHALL mostrar un indicador visual de presencia verificada para cada testigo en la lista de mesas
+2. WHEN un testigo verifica su presencia, THE Sistema SHALL actualizar inmediatamente el estado en el dashboard del coordinador
+3. THE Sistema SHALL mostrar la fecha y hora de verificación de presencia cuando el coordinador pasa el cursor sobre el indicador
+4. THE Sistema SHALL resaltar las mesas cuyos testigos no han verificado su presencia
+5. THE Sistema SHALL sincronizar el estado de presencia desde la base de datos cada 30 segundos
+6. THE Sistema SHALL mostrar un contador de testigos presentes vs total de testigos asignados

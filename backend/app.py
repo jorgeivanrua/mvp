@@ -52,12 +52,14 @@ def register_blueprints(app):
     from backend.routes.frontend import frontend_bp
     from backend.routes.configuracion import configuracion_bp
     from backend.routes.formularios_e14 import formularios_bp
+    from backend.routes.coordinador_municipal import coordinador_municipal_bp
     
     # API routes
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(locations_bp, url_prefix='/api/locations')
     app.register_blueprint(configuracion_bp, url_prefix='/api/configuracion')
     app.register_blueprint(formularios_bp)
+    app.register_blueprint(coordinador_municipal_bp)
     
     # Frontend routes
     app.register_blueprint(frontend_bp)
