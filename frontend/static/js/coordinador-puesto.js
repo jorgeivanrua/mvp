@@ -15,12 +15,14 @@ document.addEventListener('DOMContentLoaded', function() {
     loadFormularios();
     loadConsolidado();
     loadMesas();
+    loadTestigos();
     
     // Auto-refresh cada 30 segundos
     autoRefreshInterval = setInterval(() => {
         loadFormularios();
         loadConsolidado();
         loadMesas();
+        loadTestigos();
     }, 30000);
 });
 
@@ -626,8 +628,15 @@ function renderMesas(mesas) {
             icon = '⏸️';
             estadoText = 'Sin reporte';
             badgeClass = 'bg-secondary';
-            const presenciaIcon = mesa.testigo_presente ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-person"></i>';
-            testigoInfo = `<small class="text-muted">${presenciaIcon} ${mesa.testigo_nombre}</small>`;
+            let presenciaInfo = '';
+            if (mesa.testigo_presente) {
+                const tiempoPresencia = mesa.testigo_presente_desde ? 
+                    ` desde ${Utils.formatDate(mesa.testigo_presente_desde)}` : '';
+                presenciaInfo = `<i class="bi bi-check-circle-fill text-success" title="Presente${tiempoPresencia}"></i>`;
+            } else {
+                presenciaInfo = '<i class="bi bi-person text-warning" title="No ha verificado presencia"></i>';
+            }
+            testigoInfo = `<small class="text-muted">${presenciaInfo} ${mesa.testigo_nombre}</small>`;
         } else if (mesa.estado_formulario === 'validado') {
             icon = '✅';
             estadoText = 'Validado';
@@ -635,10 +644,15 @@ function renderMesas(mesas) {
             testigoInfo = `<small class="text-muted"><i class="bi bi-person-check"></i> ${mesa.testigo_nombre}</small>`;
         } else if (mesa.estado_formulario === 'pendiente') {
             icon = '⏳';
-            estadoText = 'Pendiente';
+            estadoText = 'Pendiente Validación';
             badgeClass = 'bg-warning text-dark';
-            const presenciaIcon = mesa.testigo_presente ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-person"></i>';
-            testigoInfo = `<small class="text-muted">${presenciaIcon} ${mesa.testigo_nombre}</small>`;
+            let presenciaInfo = '';
+            if (mesa.testigo_presente) {
+                presenciaInfo = '<i class="bi bi-check-circle-fill text-success" title="Testigo presente"></i>';
+            } else {
+                presenciaInfo = '<i class="bi bi-person text-muted"></i>';
+            }
+            testigoInfo = `<small class="text-muted">${presenciaInfo} ${mesa.testigo_nombre} - <strong>Formulario enviado</strong></small>`;
         } else if (mesa.estado_formulario === 'rechazado') {
             icon = '🔄';
             estadoText = 'Rechazado';
@@ -648,8 +662,13 @@ function renderMesas(mesas) {
             icon = '📋';
             estadoText = 'Borrador';
             badgeClass = 'bg-info';
-            const presenciaIcon = mesa.testigo_presente ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-person"></i>';
-            testigoInfo = `<small class="text-muted">${presenciaIcon} ${mesa.testigo_nombre}</small>`;
+            let presenciaInfo = '';
+            if (mesa.testigo_presente) {
+                presenciaInfo = '<i class="bi bi-check-circle-fill text-success" title="Testigo presente"></i>';
+            } else {
+                presenciaInfo = '<i class="bi bi-person text-muted"></i>';
+            }
+            testigoInfo = `<small class="text-muted">${presenciaInfo} ${mesa.testigo_nombre}</small>`;
         }
         
         html += `
@@ -954,4 +973,110 @@ async function logout() {
         localStorage.removeItem('user_data');
         window.location.href = '/login';
     }
+}
+
+
+/**
+ * Cargar lista de testigos del puesto
+ */
+async function loadTestigos() {
+    try {
+        const response = await APIClient.get('/formularios/testigos-puesto');
+        
+        if (response.success) {
+            renderTestigos(response.data || []);
+        } else {
+            throw new Error(response.error || 'Error al cargar testigos');
+        }
+    } catch (error) {
+        console.error('Error loading testigos:', error);
+        document.getElementById('testigosPanel').innerHTML = `
+            <div class="text-center py-2">
+                <p class="text-muted mb-2">Error al cargar testigos</p>
+                <button class="btn btn-sm btn-outline-primary" onclick="loadTestigos()">
+                    <i class="bi bi-arrow-clockwise"></i> Reintentar
+                </button>
+            </div>
+        `;
+    }
+}
+
+/**
+ * Renderizar lista de testigos
+ */
+function renderTestigos(testigos) {
+    const container = document.getElementById('testigosPanel');
+    
+    if (!testigos || testigos.length === 0) {
+        container.innerHTML = '<p class="text-muted">No hay testigos asignados a este puesto</p>';
+        return;
+    }
+    
+    // Separar testigos presentes y ausentes
+    const testigosPresentes = testigos.filter(t => t.presencia_verificada);
+    const testigosAusentes = testigos.filter(t => !t.presencia_verificada);
+    
+    let html = `
+        <div class="mb-2">
+            <small class="text-muted">
+                <i class="bi bi-check-circle-fill text-success"></i> ${testigosPresentes.length} presente(s) | 
+                <i class="bi bi-circle text-secondary"></i> ${testigosAusentes.length} ausente(s)
+            </small>
+        </div>
+        <div class="list-group list-group-flush">
+    `;
+    
+    // Mostrar testigos presentes primero
+    testigosPresentes.forEach(testigo => {
+        const tiempoPresencia = testigo.presencia_verificada_at ? 
+            Utils.formatDate(testigo.presencia_verificada_at) : '';
+        
+        html += `
+            <div class="list-group-item px-2 py-2 border-start border-success border-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <strong>${testigo.nombre}</strong>
+                        <br>
+                        <small class="text-muted">
+                            <i class="bi bi-telephone"></i> ${testigo.telefono || 'Sin teléfono'}
+                        </small>
+                        ${tiempoPresencia ? 
+                            `<br><small class="text-success">Presente desde ${tiempoPresencia}</small>` : 
+                            ''
+                        }
+                    </div>
+                    <span class="badge bg-success">Presente</span>
+                </div>
+            </div>
+        `;
+    });
+    
+    // Mostrar testigos ausentes
+    testigosAusentes.forEach(testigo => {
+        const ultimoAcceso = testigo.last_login ? 
+            `Último acceso: ${Utils.formatDate(testigo.last_login)}` : 
+            'Nunca ha ingresado';
+        
+        html += `
+            <div class="list-group-item px-2 py-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="bi bi-circle text-secondary"></i>
+                        <strong>${testigo.nombre}</strong>
+                        <br>
+                        <small class="text-muted">
+                            <i class="bi bi-telephone"></i> ${testigo.telefono || 'Sin teléfono'}
+                        </small>
+                        <br>
+                        <small class="text-muted">${ultimoAcceso}</small>
+                    </div>
+                    <span class="badge bg-secondary">Ausente</span>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
 }
