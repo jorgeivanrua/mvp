@@ -28,18 +28,26 @@ def token_required(fn):
     return wrapper
 
 
-def role_required(*allowed_roles):
+def role_required(allowed_roles):
     """
     Decorador que requiere un rol específico
     
     Args:
-        *allowed_roles: Roles permitidos
+        allowed_roles: Lista de roles permitidos o un solo rol como string
         
     Usage:
-        @role_required('admin', 'coordinador_puesto')
+        @role_required(['admin', 'coordinador_puesto'])
         def admin_route():
             pass
+            
+        @role_required('admin')
+        def admin_only_route():
+            pass
     """
+    # Convertir a lista si es un string
+    if isinstance(allowed_roles, str):
+        allowed_roles = [allowed_roles]
+    
     def decorator(fn):
         @wraps(fn)
         def wrapper(*args, **kwargs):

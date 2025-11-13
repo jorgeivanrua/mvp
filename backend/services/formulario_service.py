@@ -118,13 +118,38 @@ class FormularioService:
         Returns:
             dict: Diccionario con formularios y metadatos de paginación
         """
+        # Obtener el puesto
+        puesto = Location.query.get(puesto_id)
+        if not puesto or puesto.tipo != 'puesto':
+            raise NotFoundException('Puesto no encontrado')
+        
         # Obtener todas las mesas del puesto
         mesas = Location.query.filter_by(
-            puesto_codigo=Location.query.get(puesto_id).puesto_codigo,
+            puesto_codigo=puesto.puesto_codigo,
             tipo='mesa'
         ).all()
         
         mesa_ids = [mesa.id for mesa in mesas]
+        
+        if not mesa_ids:
+            # No hay mesas, retornar estructura vacía
+            return {
+                'formularios': [],
+                'pagination': {
+                    'page': page,
+                    'per_page': per_page,
+                    'total': 0,
+                    'pages': 0
+                },
+                'estadisticas': {
+                    'total': 0,
+                    'pendientes': 0,
+                    'validados': 0,
+                    'rechazados': 0,
+                    'mesas_reportadas': 0,
+                    'total_mesas': 0
+                }
+            }
         
         # Construir query base
         query = FormularioE14.query.filter(FormularioE14.mesa_id.in_(mesa_ids))

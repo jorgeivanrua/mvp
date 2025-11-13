@@ -70,23 +70,35 @@ async function loadFormularios() {
         const response = await APIClient.get('/formularios/puesto', params);
         
         if (response.success) {
-            formularios = response.data.formularios;
-            const stats = response.data.estadisticas;
+            formularios = response.data.formularios || [];
+            const stats = response.data.estadisticas || {
+                total: 0,
+                pendientes: 0,
+                validados: 0,
+                rechazados: 0,
+                mesas_reportadas: 0,
+                total_mesas: 0
+            };
             
             // Actualizar estadísticas
             updateEstadisticas(stats);
             
             // Renderizar tabla
             renderFormulariosTable(formularios);
+        } else {
+            throw new Error(response.error || 'Error desconocido');
         }
     } catch (error) {
         console.error('Error loading formularios:', error);
         const tbody = document.querySelector('#formulariosTable tbody');
+        const errorMsg = error.message || 'Error al cargar formularios';
         tbody.innerHTML = `
             <tr>
                 <td colspan="6" class="text-center py-4">
-                    <p class="text-danger">Error al cargar formularios</p>
-                    <small>${error.message}</small>
+                    <p class="text-danger">❌ ${errorMsg}</p>
+                    <button class="btn btn-sm btn-outline-primary mt-2" onclick="loadFormularios()">
+                        <i class="bi bi-arrow-clockwise"></i> Reintentar
+                    </button>
                 </td>
             </tr>
         `;
@@ -442,11 +454,20 @@ async function loadConsolidado() {
         
         if (response.success) {
             renderConsolidado(response.data);
+        } else {
+            throw new Error(response.error || 'Error al cargar consolidado');
         }
     } catch (error) {
         console.error('Error loading consolidado:', error);
-        document.getElementById('consolidadoPanel').innerHTML = 
-            '<p class="text-danger">Error al cargar consolidado</p>';
+        const errorMsg = error.message || 'Error al cargar consolidado';
+        document.getElementById('consolidadoPanel').innerHTML = `
+            <div class="text-center py-3">
+                <p class="text-danger mb-2">❌ ${errorMsg}</p>
+                <button class="btn btn-sm btn-outline-primary" onclick="loadConsolidado()">
+                    <i class="bi bi-arrow-clockwise"></i> Reintentar
+                </button>
+            </div>
+        `;
     }
 }
 
@@ -506,12 +527,21 @@ async function loadMesas() {
         const response = await APIClient.get('/formularios/mesas');
         
         if (response.success) {
-            renderMesas(response.data);
+            renderMesas(response.data || []);
+        } else {
+            throw new Error(response.error || 'Error al cargar mesas');
         }
     } catch (error) {
         console.error('Error loading mesas:', error);
-        document.getElementById('mesasPanel').innerHTML = 
-            '<p class="text-danger">Error al cargar mesas</p>';
+        const errorMsg = error.message || 'Error al cargar mesas';
+        document.getElementById('mesasPanel').innerHTML = `
+            <div class="text-center py-3">
+                <p class="text-danger mb-2">❌ ${errorMsg}</p>
+                <button class="btn btn-sm btn-outline-primary" onclick="loadMesas()">
+                    <i class="bi bi-arrow-clockwise"></i> Reintentar
+                </button>
+            </div>
+        `;
     }
 }
 

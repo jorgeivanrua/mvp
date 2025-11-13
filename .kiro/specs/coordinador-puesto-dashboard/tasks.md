@@ -94,6 +94,7 @@
     - Calcular consolidado del puesto
     - Incluir solo formularios validados
 
+
     - Retornar votos por partido con porcentajes
 
 

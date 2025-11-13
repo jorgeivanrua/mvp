@@ -23,11 +23,13 @@ class ConsolidadoService:
         Returns:
             dict: Diccionario con datos consolidados del puesto
         """
+        from backend.utils.exceptions import NotFoundException
+        
         # Obtener el puesto
         puesto = Location.query.get(puesto_id)
         
         if not puesto or puesto.tipo != 'puesto':
-            return None
+            raise NotFoundException('Puesto no encontrado')
         
         # Obtener todas las mesas del puesto
         mesas = Location.query.filter_by(
