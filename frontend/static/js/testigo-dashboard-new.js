@@ -642,8 +642,12 @@ function showCreateForm() {
     document.getElementById('e14Form').reset();
     document.getElementById('imagePreview').innerHTML = '<p class="text-muted">Toque el botón para tomar una foto</p>';
     
-    // Cargar mesas en el selector del formulario
+    // HABILITAR selectores para nuevo formulario
     const mesaSelect = document.getElementById('mesaFormulario');
+    const tipoEleccionSelect = document.getElementById('tipoEleccion');
+    mesaSelect.disabled = false;
+    tipoEleccionSelect.disabled = false;
+    
     mesaSelect.innerHTML = '<option value="">Seleccione mesa...</option>';
     
     // Obtener todas las mesas del puesto
@@ -656,16 +660,39 @@ function showCreateForm() {
     
     APIClient.get('/locations/mesas', params).then(response => {
         if (response.success) {
+            // Obtener mesas que ya tienen formularios
+            const mesasConFormularios = new Set();
+            formularios.forEach(form => {
+                if (form.estado !== 'rechazado') { // Permitir reenviar si fue rechazado
+                    mesasConFormularios.add(form.mesa_id);
+                }
+            });
+            
+            // Agregar borradores locales
+            const borradoresLocales = obtenerBorradoresLocales();
+            Object.values(borradoresLocales).forEach(borrador => {
+                mesasConFormularios.add(borrador.mesa_id);
+            });
+            
             response.data.forEach(mesa => {
                 const option = document.createElement('option');
                 option.value = mesa.id;
-                option.textContent = `Mesa ${mesa.mesa_codigo} - ${mesa.puesto_nombre}`;
+                
+                // Marcar mesas que ya tienen formulario
+                if (mesasConFormularios.has(mesa.id)) {
+                    option.textContent = `Mesa ${mesa.mesa_codigo} - ${mesa.puesto_nombre} (Ya tiene formulario)`;
+                    option.disabled = true;
+                    option.style.color = '#999';
+                } else {
+                    option.textContent = `Mesa ${mesa.mesa_codigo} - ${mesa.puesto_nombre}`;
+                }
+                
                 option.dataset.votantes = mesa.total_votantes_registrados || 0;
                 mesaSelect.appendChild(option);
             });
             
-            // Si hay una mesa seleccionada, preseleccionarla
-            if (selectedMesa) {
+            // Si hay una mesa seleccionada y no tiene formulario, preseleccionarla
+            if (selectedMesa && !mesasConFormularios.has(selectedMesa.id)) {
                 mesaSelect.value = selectedMesa.id;
                 cambiarMesaFormulario();
             }
@@ -976,13 +1003,16 @@ async function editarBorradorLocal(localId) {
         // Abrir el modal
         document.getElementById('e14Form').reset();
         
-        // Cargar mesa
+        // Cargar mesa y DESHABILITAR selector (no se puede cambiar)
         const mesaSelect = document.getElementById('mesaFormulario');
         mesaSelect.value = borrador.mesa_id;
+        mesaSelect.disabled = true; // NO PERMITIR CAMBIAR MESA
         cambiarMesaFormulario();
         
-        // Cargar tipo de elección
-        document.getElementById('tipoEleccion').value = borrador.tipo_eleccion_id;
+        // Cargar tipo de elección y DESHABILITAR (no se puede cambiar)
+        const tipoEleccionSelect = document.getElementById('tipoEleccion');
+        tipoEleccionSelect.value = borrador.tipo_eleccion_id;
+        tipoEleccionSelect.disabled = true; // NO PERMITIR CAMBIAR TIPO DE ELECCIÓN
         await cargarPartidosYCandidatos();
         
         // Cargar datos de votación
@@ -1063,13 +1093,16 @@ async function editForm(formId) {
         // Abrir el modal
         document.getElementById('e14Form').reset();
         
-        // Cargar mesa
+        // Cargar mesa y DESHABILITAR selector (no se puede cambiar)
         const mesaSelect = document.getElementById('mesaFormulario');
         mesaSelect.value = formulario.mesa_id;
+        mesaSelect.disabled = true; // NO PERMITIR CAMBIAR MESA
         cambiarMesaFormulario();
         
-        // Cargar tipo de elección
-        document.getElementById('tipoEleccion').value = formulario.tipo_eleccion_id;
+        // Cargar tipo de elección y DESHABILITAR (no se puede cambiar)
+        const tipoEleccionSelect = document.getElementById('tipoEleccion');
+        tipoEleccionSelect.value = formulario.tipo_eleccion_id;
+        tipoEleccionSelect.disabled = true; // NO PERMITIR CAMBIAR TIPO DE ELECCIÓN
         await cargarPartidosYCandidatos();
         
         // Cargar datos de votación
