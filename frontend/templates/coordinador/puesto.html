@@ -174,19 +174,36 @@
         </div>
     </div>
 
-    <div class="row">
-        <!-- Tabla de Formularios -->
-        <div class="col-lg-8 mb-4">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Formularios E-14</h5>
-                    <div class="btn-group btn-group-sm" role="group" id="filterButtons">
-                        <button type="button" class="btn btn-outline-primary active" onclick="filtrarPorEstado('')">Todos</button>
-                        <button type="button" class="btn btn-outline-warning" onclick="filtrarPorEstado('pendiente')">Pendientes</button>
-                        <button type="button" class="btn btn-outline-success" onclick="filtrarPorEstado('validado')">Validados</button>
-                        <button type="button" class="btn btn-outline-danger" onclick="filtrarPorEstado('rechazado')">Rechazados</button>
-                    </div>
-                </div>
+    <!-- Pestañas -->
+    <ul class="nav nav-tabs mb-3" id="dashboardTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="formularios-tab" data-bs-toggle="tab" data-bs-target="#formularios" type="button" role="tab">
+                <i class="bi bi-file-earmark-text"></i> Formularios E-14
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="e24-tab" data-bs-toggle="tab" data-bs-target="#e24" type="button" role="tab">
+                <i class="bi bi-table"></i> Consolidado E-24 Puesto
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="dashboardTabContent">
+        <!-- Tab Formularios -->
+        <div class="tab-pane fade show active" id="formularios" role="tabpanel">
+            <div class="row">
+                <!-- Tabla de Formularios -->
+                <div class="col-lg-8 mb-4">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Formularios E-14</h5>
+                            <div class="btn-group btn-group-sm" role="group" id="filterButtons">
+                                <button type="button" class="btn btn-outline-primary active" onclick="filtrarPorEstado('')">Todos</button>
+                                <button type="button" class="btn btn-outline-warning" onclick="filtrarPorEstado('pendiente')">Pendientes</button>
+                                <button type="button" class="btn btn-outline-success" onclick="filtrarPorEstado('validado')">Validados</button>
+                                <button type="button" class="btn btn-outline-danger" onclick="filtrarPorEstado('rechazado')">Rechazados</button>
+                            </div>
+                        </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-hover" id="formulariosTable">
@@ -216,25 +233,122 @@
             </div>
         </div>
 
-        <!-- Panel Lateral -->
-        <div class="col-lg-4">
-            <!-- Consolidado -->
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h5 class="mb-0">Consolidado del Puesto</h5>
-                </div>
-                <div class="card-body" id="consolidadoPanel">
-                    <p class="text-muted">Cargando consolidado...</p>
+                <!-- Panel Lateral -->
+                <div class="col-lg-4">
+                    <!-- Consolidado -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">Consolidado del Puesto</h5>
+                        </div>
+                        <div class="card-body" id="consolidadoPanel">
+                            <p class="text-muted">Cargando consolidado...</p>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Mesas -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Estado de Mesas</h5>
+                        </div>
+                        <div class="card-body" id="mesasPanel">
+                            <p class="text-muted">Cargando mesas...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Lista de Mesas -->
+        <!-- Tab E-24 Consolidado -->
+        <div class="tab-pane fade" id="e24" role="tabpanel">
             <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Estado de Mesas</h5>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Consolidado E-24 del Puesto</h5>
+                    <button class="btn btn-primary btn-sm" onclick="generarPDFE24()">
+                        <i class="bi bi-file-pdf"></i> Generar PDF
+                    </button>
                 </div>
-                <div class="card-body" id="mesasPanel">
-                    <p class="text-muted">Cargando mesas...</p>
+                <div class="card-body">
+                    <!-- Resumen General -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6 class="text-muted mb-2">Total Mesas</h6>
+                                    <h3 id="e24TotalMesas">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success bg-opacity-10">
+                                <div class="card-body text-center">
+                                    <h6 class="text-muted mb-2">Mesas Validadas</h6>
+                                    <h3 id="e24MesasValidadas">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info bg-opacity-10">
+                                <div class="card-body text-center">
+                                    <h6 class="text-muted mb-2">Total Votos</h6>
+                                    <h3 id="e24TotalVotos">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-primary bg-opacity-10">
+                                <div class="card-body text-center">
+                                    <h6 class="text-muted mb-2">Participación</h6>
+                                    <h3 id="e24Participacion">0%</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Mesas con Votos -->
+                    <h6 class="mb-3">Detalle por Mesa</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered" id="e24Table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Mesa</th>
+                                    <th>Testigo</th>
+                                    <th>Estado</th>
+                                    <th class="text-end">Votantes</th>
+                                    <th class="text-end">Votos</th>
+                                    <th class="text-end">Válidos</th>
+                                    <th class="text-end">Nulos</th>
+                                    <th class="text-end">Blanco</th>
+                                    <th class="text-end">%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="9" class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="table-secondary fw-bold">
+                                <tr>
+                                    <td colspan="3">TOTALES</td>
+                                    <td class="text-end" id="e24FooterVotantes">0</td>
+                                    <td class="text-end" id="e24FooterVotos">0</td>
+                                    <td class="text-end" id="e24FooterValidos">0</td>
+                                    <td class="text-end" id="e24FooterNulos">0</td>
+                                    <td class="text-end" id="e24FooterBlanco">0</td>
+                                    <td class="text-end" id="e24FooterParticipacion">0%</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- Consolidado por Partido -->
+                    <h6 class="mb-3 mt-4">Votos por Partido (Solo Mesas Validadas)</h6>
+                    <div id="e24VotosPartidos">
+                        <p class="text-muted">Cargando datos...</p>
+                    </div>
                 </div>
             </div>
         </div>

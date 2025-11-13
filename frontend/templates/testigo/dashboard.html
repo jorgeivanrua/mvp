@@ -90,7 +90,7 @@
         </div>
     </div>
 
-    <!-- Selector de Mesa -->
+    <!-- Selector de Mesa y Verificación de Presencia -->
     <div class="row mb-4">
         <div class="col-md-6">
             <div class="form-group">
@@ -98,6 +98,20 @@
                 <select class="form-select" id="mesa" required onchange="cambiarMesa()">
                     <option value="">Seleccione mesa...</option>
                 </select>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label class="form-label">Verificación de Presencia</label>
+                <div id="presenciaContainer">
+                    <button class="btn btn-success w-100" id="btnVerificarPresencia" onclick="verificarPresencia()">
+                        <i class="bi bi-check-circle"></i> Verificar Mi Presencia en la Mesa
+                    </button>
+                    <div class="alert alert-success mt-2 d-none" id="alertaPresenciaVerificada">
+                        <i class="bi bi-check-circle-fill"></i> Presencia verificada
+                        <br><small id="presenciaFecha"></small>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

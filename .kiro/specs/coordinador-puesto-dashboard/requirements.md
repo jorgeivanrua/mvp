@@ -82,17 +82,19 @@ El Dashboard del Coordinador de Puesto es una interfaz web que permite a los coo
 4. THE Sistema SHALL mostrar un indicador de progreso general (mesas reportadas vs total de mesas)
 5. THE Sistema SHALL permitir al coordinador ver los detalles de contacto del testigo asignado a cada mesa
 
-### Requirement 6: Generación de Reportes
+### Requirement 6: Generación de E-24 de Puesto
 
-**User Story:** Como coordinador de puesto, quiero generar reportes consolidados de mi puesto, para enviar a los coordinadores municipales.
+**User Story:** Como coordinador de puesto, quiero generar el E-24 de Puesto consolidado, para enviar a los coordinadores municipales.
 
 #### Acceptance Criteria
 
-1. THE Sistema SHALL proporcionar un botón para generar reporte consolidado del puesto
-2. WHEN el Coordinador de Puesto solicita un reporte, THE Sistema SHALL generar un documento PDF con los resultados consolidados
-3. THE Sistema SHALL incluir en el reporte: datos del puesto, total de mesas, votos por partido, votos nulos y en blanco, y firma digital del coordinador
-4. THE Sistema SHALL permitir descargar el reporte en formato PDF
-5. THE Sistema SHALL registrar la fecha y hora de generación de cada reporte
+1. THE Sistema SHALL proporcionar un botón para generar el E-24 de Puesto
+2. WHEN el Coordinador de Puesto solicita el E-24 de Puesto, THE Sistema SHALL generar un documento PDF con los resultados consolidados
+3. THE Sistema SHALL incluir en el E-24 de Puesto: datos del puesto, total de mesas, votos por partido, votos nulos y en blanco, y firma digital del coordinador
+4. THE Sistema SHALL permitir descargar el E-24 de Puesto en formato PDF
+5. THE Sistema SHALL registrar la fecha y hora de generación de cada E-24 de Puesto
+
+**Nota:** El E-24 de Puesto consolida todos los E-14 validados del puesto. No confundir con el E-24 Municipal que consolida todos los puestos del municipio.
 
 ### Requirement 7: Notificaciones y Alertas
 

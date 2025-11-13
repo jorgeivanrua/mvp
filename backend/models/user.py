@@ -21,6 +21,11 @@ class User(db.Model):
     ultimo_acceso = db.Column(db.DateTime, nullable=True)
     intentos_fallidos = db.Column(db.Integer, default=0, nullable=False)
     bloqueado_hasta = db.Column(db.DateTime, nullable=True)
+    
+    # Verificación de presencia (para testigos)
+    presencia_verificada = db.Column(db.Boolean, default=False, nullable=False)
+    presencia_verificada_at = db.Column(db.DateTime, nullable=True)
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     
@@ -97,6 +102,11 @@ class User(db.Model):
         self.intentos_fallidos = 0
         self.bloqueado_hasta = None
         self.ultimo_acceso = datetime.utcnow()
+    
+    def verificar_presencia(self):
+        """Marcar presencia del testigo en la mesa"""
+        self.presencia_verificada = True
+        self.presencia_verificada_at = datetime.utcnow()
     
     def to_dict(self, include_sensitive=False):
         """

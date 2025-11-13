@@ -626,7 +626,8 @@ function renderMesas(mesas) {
             icon = '⏸️';
             estadoText = 'Sin reporte';
             badgeClass = 'bg-secondary';
-            testigoInfo = `<small class="text-muted"><i class="bi bi-person"></i> ${mesa.testigo_nombre}</small>`;
+            const presenciaIcon = mesa.testigo_presente ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-person"></i>';
+            testigoInfo = `<small class="text-muted">${presenciaIcon} ${mesa.testigo_nombre}</small>`;
         } else if (mesa.estado_formulario === 'validado') {
             icon = '✅';
             estadoText = 'Validado';
@@ -636,7 +637,8 @@ function renderMesas(mesas) {
             icon = '⏳';
             estadoText = 'Pendiente';
             badgeClass = 'bg-warning text-dark';
-            testigoInfo = `<small class="text-muted"><i class="bi bi-person"></i> ${mesa.testigo_nombre}</small>`;
+            const presenciaIcon = mesa.testigo_presente ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-person"></i>';
+            testigoInfo = `<small class="text-muted">${presenciaIcon} ${mesa.testigo_nombre}</small>`;
         } else if (mesa.estado_formulario === 'rechazado') {
             icon = '🔄';
             estadoText = 'Rechazado';
@@ -646,7 +648,8 @@ function renderMesas(mesas) {
             icon = '📋';
             estadoText = 'Borrador';
             badgeClass = 'bg-info';
-            testigoInfo = `<small class="text-muted"><i class="bi bi-person"></i> ${mesa.testigo_nombre}</small>`;
+            const presenciaIcon = mesa.testigo_presente ? '<i class="bi bi-check-circle-fill text-success"></i>' : '<i class="bi bi-person"></i>';
+            testigoInfo = `<small class="text-muted">${presenciaIcon} ${mesa.testigo_nombre}</small>`;
         }
         
         html += `
@@ -771,6 +774,171 @@ async function validarConCambios() {
         Utils.showError('Error al validar formulario: ' + error.message);
     }
 }
+
+/**
+ * Cargar datos del E-24
+ */
+async function loadE24Data() {
+    try {
+        // Cargar mesas y consolidado
+        const [mesasResponse, consolidadoResponse] = await Promise.all([
+            APIClient.get('/formularios/mesas'),
+            APIClient.get('/formularios/consolidado')
+        ]);
+        
+        if (mesasResponse.success && consolidadoResponse.success) {
+            renderE24Table(mesasResponse.data, consolidadoResponse.data);
+        }
+    } catch (error) {
+        console.error('Error loading E-24 data:', error);
+        const tbody = document.querySelector('#e24Table tbody');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center py-4">
+                    <p class="text-danger">Error al cargar datos del E-24</p>
+                    <button class="btn btn-sm btn-outline-primary" onclick="loadE24Data()">
+                        <i class="bi bi-arrow-clockwise"></i> Reintentar
+                    </button>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+/**
+ * Renderizar tabla E-24
+ */
+function renderE24Table(mesas, consolidado) {
+    const tbody = document.querySelector('#e24Table tbody');
+    
+    if (!mesas || mesas.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4">No hay mesas en este puesto</td></tr>';
+        return;
+    }
+    
+    // Calcular totales
+    let totalVotantes = 0;
+    let totalVotos = 0;
+    let totalValidos = 0;
+    let totalNulos = 0;
+    let totalBlanco = 0;
+    let mesasValidadas = 0;
+    
+    // Renderizar filas
+    tbody.innerHTML = mesas.map(mesa => {
+        const votantes = mesa.total_votantes_registrados || 0;
+        totalVotantes += votantes;
+        
+        let votos = mesa.total_votos || 0;
+        let validos = mesa.votos_validos || 0;
+        let nulos = mesa.votos_nulos || 0;
+        let blanco = mesa.votos_blanco || 0;
+        let participacion = 0;
+        let estadoBadge = '<span class="badge bg-secondary">Sin reporte</span>';
+        
+        if (mesa.tiene_formulario && mesa.estado_formulario === 'validado') {
+            estadoBadge = '<span class="badge bg-success">Validado</span>';
+            mesasValidadas++;
+        } else if (mesa.tiene_formulario && mesa.estado_formulario === 'pendiente') {
+            estadoBadge = '<span class="badge bg-warning text-dark">Pendiente</span>';
+        } else if (mesa.tiene_formulario && mesa.estado_formulario === 'rechazado') {
+            estadoBadge = '<span class="badge bg-danger">Rechazado</span>';
+        }
+        
+        if (votantes > 0 && votos > 0) {
+            participacion = ((votos / votantes) * 100).toFixed(2);
+        }
+        
+        totalVotos += votos;
+        totalValidos += validos;
+        totalNulos += nulos;
+        totalBlanco += blanco;
+        
+        return `
+            <tr>
+                <td><strong>${mesa.mesa_codigo}</strong></td>
+                <td><small>${mesa.testigo_nombre || 'Sin asignar'}</small></td>
+                <td>${estadoBadge}</td>
+                <td class="text-end">${Utils.formatNumber(votantes)}</td>
+                <td class="text-end">${votos > 0 ? Utils.formatNumber(votos) : '-'}</td>
+                <td class="text-end">${validos > 0 ? Utils.formatNumber(validos) : '-'}</td>
+                <td class="text-end">${nulos > 0 ? Utils.formatNumber(nulos) : '-'}</td>
+                <td class="text-end">${blanco > 0 ? Utils.formatNumber(blanco) : '-'}</td>
+                <td class="text-end">${participacion > 0 ? participacion + '%' : '-'}</td>
+            </tr>
+        `;
+    }).join('');
+    
+    // Actualizar totales
+    const participacionTotal = totalVotantes > 0 ? ((totalVotos / totalVotantes) * 100).toFixed(2) : 0;
+    
+    document.getElementById('e24TotalMesas').textContent = mesas.length;
+    document.getElementById('e24MesasValidadas').textContent = mesasValidadas;
+    document.getElementById('e24TotalVotos').textContent = Utils.formatNumber(totalVotos);
+    document.getElementById('e24Participacion').textContent = participacionTotal + '%';
+    
+    document.getElementById('e24FooterVotantes').textContent = Utils.formatNumber(totalVotantes);
+    document.getElementById('e24FooterVotos').textContent = Utils.formatNumber(totalVotos);
+    document.getElementById('e24FooterValidos').textContent = Utils.formatNumber(totalValidos);
+    document.getElementById('e24FooterNulos').textContent = Utils.formatNumber(totalNulos);
+    document.getElementById('e24FooterBlanco').textContent = Utils.formatNumber(totalBlanco);
+    document.getElementById('e24FooterParticipacion').textContent = participacionTotal + '%';
+    
+    // Renderizar votos por partido
+    if (consolidado && consolidado.votos_por_partido) {
+        renderE24VotosPartidos(consolidado.votos_por_partido);
+    }
+}
+
+/**
+ * Renderizar votos por partido en E-24
+ */
+function renderE24VotosPartidos(votosPartidos) {
+    const container = document.getElementById('e24VotosPartidos');
+    
+    if (!votosPartidos || votosPartidos.length === 0) {
+        container.innerHTML = '<p class="text-muted">No hay votos consolidados aún</p>';
+        return;
+    }
+    
+    let html = '<div class="table-responsive"><table class="table table-bordered">';
+    html += '<thead class="table-light"><tr><th>Partido</th><th class="text-end">Votos</th><th class="text-end">Porcentaje</th></tr></thead>';
+    html += '<tbody>';
+    
+    votosPartidos.forEach(partido => {
+        html += `
+            <tr>
+                <td>
+                    <span style="display: inline-block; width: 12px; height: 12px; background-color: ${partido.partido_color}; border-radius: 2px; margin-right: 8px;"></span>
+                    <strong>${partido.partido_nombre}</strong>
+                </td>
+                <td class="text-end">${Utils.formatNumber(partido.total_votos)}</td>
+                <td class="text-end">${partido.porcentaje.toFixed(2)}%</td>
+            </tr>
+        `;
+    });
+    
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+}
+
+/**
+ * Generar PDF del E-24
+ */
+function generarPDFE24() {
+    Utils.showInfo('Funcionalidad de generación de PDF en desarrollo');
+    // TODO: Implementar generación de PDF
+}
+
+// Event listener para cambio de pestaña
+document.addEventListener('DOMContentLoaded', function() {
+    const e24Tab = document.getElementById('e24-tab');
+    if (e24Tab) {
+        e24Tab.addEventListener('shown.bs.tab', function() {
+            loadE24Data();
+        });
+    }
+});
 
 /**
  * Función global para logout

@@ -128,7 +128,9 @@ def profile():
                     'rol': user.rol,
                     'ubicacion_id': user.ubicacion_id,
                     'activo': user.activo,
-                    'ultimo_acceso': user.ultimo_acceso.isoformat() if user.ultimo_acceso else None
+                    'ultimo_acceso': user.ultimo_acceso.isoformat() if user.ultimo_acceso else None,
+                    'presencia_verificada': user.presencia_verificada if user.rol == 'testigo' else None,
+                    'presencia_verificada_at': user.presencia_verificada_at.isoformat() if user.presencia_verificada_at else None
                 },
                 'ubicacion': ubicacion
             }
@@ -173,6 +175,48 @@ def change_password():
         
     except BaseAPIException as e:
         return jsonify(e.to_dict()), e.status_code
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@auth_bp.route('/verificar-presencia', methods=['POST'])
+@jwt_required()
+def verificar_presencia():
+    """Verificar presencia del testigo en la mesa"""
+    try:
+        from backend.database import db
+        
+        user_id = get_jwt_identity()
+        user = User.query.get(int(user_id))
+        
+        if not user:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no encontrado'
+            }), 404
+        
+        if user.rol != 'testigo':
+            return jsonify({
+                'success': False,
+                'error': 'Solo los testigos pueden verificar presencia'
+            }), 403
+        
+        # Verificar presencia
+        user.verificar_presencia()
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Presencia verificada exitosamente',
+            'data': {
+                'presencia_verificada': True,
+                'presencia_verificada_at': user.presencia_verificada_at.isoformat()
+            }
+        }), 200
+        
     except Exception as e:
         return jsonify({
             'success': False,

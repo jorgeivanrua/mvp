@@ -662,6 +662,61 @@ function setupImagePreview() {
     });
 }
 
+/**
+ * Verificar presencia del testigo en la mesa
+ */
+async function verificarPresencia() {
+    if (!confirm('¿Confirma que está presente en la mesa asignada?')) {
+        return;
+    }
+    
+    try {
+        const response = await APIClient.post('/auth/verificar-presencia', {});
+        
+        if (response.success) {
+            Utils.showSuccess('Presencia verificada exitosamente');
+            
+            // Ocultar botón y mostrar alerta de verificación
+            document.getElementById('btnVerificarPresencia').classList.add('d-none');
+            document.getElementById('alertaPresenciaVerificada').classList.remove('d-none');
+            
+            // Mostrar fecha de verificación
+            const fecha = new Date(response.data.presencia_verificada_at);
+            document.getElementById('presenciaFecha').textContent = 
+                `Verificado el ${fecha.toLocaleDateString()} a las ${fecha.toLocaleTimeString()}`;
+        }
+    } catch (error) {
+        console.error('Error verificando presencia:', error);
+        Utils.showError('Error al verificar presencia: ' + error.message);
+    }
+}
+
+/**
+ * Verificar estado de presencia al cargar
+ */
+async function verificarEstadoPresencia() {
+    try {
+        const response = await APIClient.getProfile();
+        if (response.success && response.data.user) {
+            const user = response.data.user;
+            
+            // Si ya verificó presencia, mostrar alerta
+            if (user.presencia_verificada) {
+                document.getElementById('btnVerificarPresencia').classList.add('d-none');
+                document.getElementById('alertaPresenciaVerificada').classList.remove('d-none');
+                
+                if (user.presencia_verificada_at) {
+                    const fecha = new Date(user.presencia_verificada_at);
+                    document.getElementById('presenciaFecha').textContent = 
+                        `Verificado el ${fecha.toLocaleDateString()} a las ${fecha.toLocaleTimeString()}`;
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error verificando estado de presencia:', error);
+    }
+}
+
 // Función global para logout
 async function logout() {
     try {
@@ -683,4 +738,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.target.select();
         }
     }, true);
+    
+    // Verificar estado de presencia al cargar
+    verificarEstadoPresencia();
 });

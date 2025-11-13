@@ -68,18 +68,20 @@ El Dashboard del Coordinador Municipal es una interfaz web que permite a los coo
 4. THE Sistema SHALL mostrar un indicador visual (badge) en puestos con discrepancias significativas
 5. THE Sistema SHALL permitir filtrar la lista de puestos para mostrar solo aquellos con discrepancias
 
-### Requirement 5: Generación de Formulario E-24
+### Requirement 5: Generación de Formulario E-24 Municipal
 
 **User Story:** Como coordinador municipal, quiero generar el formulario E-24 consolidado de mi municipio, para reportar oficialmente los resultados.
 
 #### Acceptance Criteria
 
-1. THE Sistema SHALL proporcionar un botón para generar el formulario E-24 del municipio
-2. WHEN el Coordinador Municipal solicita el E-24, THE Sistema SHALL validar que al menos el 80% de los puestos tengan datos completos
-3. THE Sistema SHALL generar un documento PDF con el formato oficial del E-24
-4. THE Sistema SHALL incluir en el E-24: datos del municipio, votos por partido consolidados, total de mesas, firma digital del coordinador
-5. THE Sistema SHALL registrar la fecha y hora de generación del E-24
-6. THE Sistema SHALL permitir regenerar el E-24 si se actualizan datos después de la primera generación
+1. THE Sistema SHALL proporcionar un botón para generar el formulario E-24 Municipal del municipio
+2. WHEN el Coordinador Municipal solicita el E-24 Municipal, THE Sistema SHALL validar que al menos el 80% de los puestos tengan datos completos
+3. THE Sistema SHALL generar un documento PDF con el formato oficial del E-24 Municipal
+4. THE Sistema SHALL incluir en el E-24 Municipal: datos del municipio, votos por partido consolidados, total de mesas, firma digital del coordinador
+5. THE Sistema SHALL registrar la fecha y hora de generación del E-24 Municipal
+6. THE Sistema SHALL permitir regenerar el E-24 Municipal si se actualizan datos después de la primera generación
+
+**Nota:** El E-24 Municipal consolida todos los E-24 de Puesto del municipio.
 
 ### Requirement 6: Comunicación con Coordinadores de Puesto
 

@@ -319,9 +319,17 @@ def obtener_mesas_puesto():
                 'total_votantes_registrados': mesa.total_votantes_registrados,
                 'testigo_id': testigo.id if testigo else None,
                 'testigo_nombre': testigo.nombre if testigo else None,
+                'testigo_presente': testigo.presencia_verificada if testigo else False,
+                'testigo_presente_desde': testigo.presencia_verificada_at.isoformat() if testigo and testigo.presencia_verificada_at else None,
                 'tiene_formulario': formulario is not None,
                 'estado_formulario': formulario.estado if formulario else None,
-                'ultima_actualizacion': formulario.updated_at.isoformat() if formulario else None
+                'ultima_actualizacion': formulario.updated_at.isoformat() if formulario else None,
+                # Datos del formulario para E-24
+                'formulario_id': formulario.id if formulario else None,
+                'total_votos': formulario.total_votos if formulario and formulario.estado == 'validado' else 0,
+                'votos_validos': formulario.votos_validos if formulario and formulario.estado == 'validado' else 0,
+                'votos_nulos': formulario.votos_nulos if formulario and formulario.estado == 'validado' else 0,
+                'votos_blanco': formulario.votos_blanco if formulario and formulario.estado == 'validado' else 0
             }
             
             resultado.append(mesa_data)
