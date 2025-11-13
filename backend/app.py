@@ -53,6 +53,7 @@ def register_blueprints(app):
     from backend.routes.configuracion import configuracion_bp
     from backend.routes.formularios_e14 import formularios_bp
     from backend.routes.coordinador_municipal import coordinador_municipal_bp
+    from backend.routes.coordinador_departamental import bp as coordinador_departamental_bp
     
     # API routes
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -60,6 +61,7 @@ def register_blueprints(app):
     app.register_blueprint(configuracion_bp, url_prefix='/api/configuracion')
     app.register_blueprint(formularios_bp)
     app.register_blueprint(coordinador_municipal_bp)
+    app.register_blueprint(coordinador_departamental_bp)
     
     # Frontend routes
     app.register_blueprint(frontend_bp)

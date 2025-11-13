@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Coordinador Departamental{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-3">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <div>
+                <h2>Dashboard - Coordinador Departamental</h2>
+                <p class="text-muted mb-0" id="departamentoNombre">Cargando...</p>
+            </div>
+            <button class="btn btn-outline-danger" onclick="logout()">
+                <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+            </button>
+        </div>
+    </div>
+
+    <!-- Pestañas -->
+    <ul class="nav nav-tabs mb-4" id="departamentalTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="municipios-tab" data-bs-toggle="tab" data-bs-target="#municipios" type="button" role="tab">
+                <i class="bi bi-building"></i> Municipios
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="consolidado-tab" data-bs-toggle="tab" data-bs-target="#consolidado" type="button" role="tab">
+                <i class="bi bi-bar-chart"></i> Consolidado
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="discrepancias-tab" data-bs-toggle="tab" data-bs-target="#discrepancias" type="button" role="tab">
+                <i class="bi bi-exclamation-triangle"></i> Discrepancias
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="reportes-tab" data-bs-toggle="tab" data-bs-target="#reportes" type="button" role="tab">
+                <i class="bi bi-file-earmark-pdf"></i> Reportes
+            </button>
+        </li>
+    </ul>
+
+    <!-- Contenido de pestañas -->
+    <div class="tab-content" id="departamentalTabsContent">
+        
+        <!-- Tab Municipios -->
+        <div class="tab-pane fade show active" id="municipios" role="tabpanel">
+            <!-- Filtros -->
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <select class="form-select" id="filtroEstado" onchange="filtrarMunicipios()">
+                        <option value="">Todos los municipios</option>
+                        <option value="completo">Completos</option>
+                        <option value="incompleto">Incompletos</option>
+                        <option value="con_discrepancias">Con discrepancias</option>
+                    </select>
+                </div>
+                <div class="col-md-8 text-end">
+                    <button class="btn btn-outline-primary" onclick="actualizarDatos()">
+                        <i class="bi bi-arrow-clockwise"></i> Actualizar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Estadísticas generales -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="text-muted">Total Municipios</h6>
+                            <h3 id="totalMunicipios">0</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-success">
+                        <div class="card-body">
+                            <h6 class="text-success">Completos</h6>
+                            <h3 id="municipiosCompletos">0</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-warning">
+                        <div class="card-body">
+                            <h6 class="text-warning">Incompletos</h6>
+                            <h3 id="municipiosIncompletos">0</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-danger">
+                        <div class="card-body">
+                            <h6 class="text-danger">Con Discrepancias</h6>
+                            <h3 id="municipiosConDiscrepancias">0</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de municipios -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Municipios del Departamento</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="municipiosTable">
+                            <thead>
+                                <tr>
+                                    <th>Municipio</th>
+                                    <th>Coordinador</th>
+                                    <th>Puestos</th>
+                                    <th>Avance</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Consolidado -->
+        <div class="tab-pane fade" id="consolidado" role="tabpanel">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">Resultados por Partido</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="chartPartidos" height="80"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">Resumen Departamental</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="resumenDepartamental">
+                                <p class="text-muted">Cargando...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Discrepancias -->
+        <div class="tab-pane fade" id="discrepancias" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Discrepancias Detectadas</h5>
+                </div>
+                <div class="card-body">
+                    <div id="discrepanciasLista">
+                        <p class="text-muted">Cargando...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Reportes -->
+        <div class="tab-pane fade" id="reportes" role="tabpanel">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Reportes Generados</h5>
+                            <button class="btn btn-primary" onclick="generarReporte()">
+                                <i class="bi bi-file-earmark-pdf"></i> Generar Reporte
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="reportesLista">
+                                <p class="text-muted">Cargando...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Requisitos</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="requisitosReporte">
+                                <p class="text-muted">Cargando...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal Detalle Municipio -->
+<div class="modal fade" id="municipioModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalle del Municipio</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="municipioDetalle">
+                    <p class="text-muted">Cargando...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script src="{{ url_for('static', filename='js/coordinador-departamental.js') }}"></script>
+{% endblock %}
