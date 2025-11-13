@@ -101,6 +101,14 @@ function cambiarMesa() {
  */
 async function actualizarPanelMesas() {
     try {
+        // Verificar que userLocation esté definido
+        if (!userLocation || !userLocation.puesto_codigo) {
+            document.getElementById('assignedLocation').innerHTML = `
+                <p class="text-muted">Cargando información de mesas...</p>
+            `;
+            return;
+        }
+        
         // Obtener todas las mesas del puesto
         const params = {
             puesto_codigo: userLocation.puesto_codigo,
@@ -113,8 +121,13 @@ async function actualizarPanelMesas() {
         const mesas = response.data || [];
         
         // Obtener formularios para saber qué mesas tienen E-14
-        const formulariosResponse = await APIClient.getFormulariosE14({});
-        const formularios = formulariosResponse.success ? (formulariosResponse.data.formularios || formulariosResponse.data || []) : [];
+        let formularios = [];
+        try {
+            const formulariosResponse = await APIClient.getFormulariosE14({});
+            formularios = formulariosResponse.success ? (formulariosResponse.data.formularios || formulariosResponse.data || []) : [];
+        } catch (error) {
+            console.warn('No se pudieron cargar formularios:', error);
+        }
         
         // Crear mapa de mesas con formularios
         const mesasConFormularios = {};
@@ -165,7 +178,13 @@ async function actualizarPanelMesas() {
     } catch (error) {
         console.error('Error actualizando panel de mesas:', error);
         document.getElementById('assignedLocation').innerHTML = `
-            <p class="text-danger">Error al cargar mesas</p>
+            <h6 class="mb-3">Mis Mesas</h6>
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i> Error al cargar mesas. 
+                <button class="btn btn-sm btn-outline-warning mt-2" onclick="actualizarPanelMesas()">
+                    Reintentar
+                </button>
+            </div>
         `;
     }
 }
@@ -553,8 +572,10 @@ function updateFormsTable(forms) {
     forms.forEach(form => {
         const row = document.createElement('tr');
         const estadoLabel = getEstadoLabel(form.estado);
-        const puedeEditar = form.estado === 'borrador' || form.estado === 'pendiente' || form.estado === 'local';
+        // Solo se pueden editar borradores y formularios locales
+        const puedeEditar = form.estado === 'borrador' || form.estado === 'local';
         const esLocal = form.es_local || form.estado === 'local';
+        const esEnviado = form.estado === 'pendiente' || form.estado === 'validado';
         
         // Hacer la fila clickeable si puede editar
         if (puedeEditar) {
@@ -597,22 +618,22 @@ function updateFormsTable(forms) {
 
 function getStatusColor(estado) {
     const colors = {
-        'pendiente': 'warning',
-        'validado': 'success',
-        'rechazado': 'danger',
-        'borrador': 'secondary',
-        'local': 'info'
+        'pendiente': 'info',        // Azul para enviado/pendiente
+        'validado': 'success',      // Verde para validado
+        'rechazado': 'danger',      // Rojo para rechazado
+        'borrador': 'secondary',    // Gris para borrador
+        'local': 'warning'          // Amarillo para guardado local
     };
     return colors[estado] || 'secondary';
 }
 
 function getEstadoLabel(estado) {
     const labels = {
-        'pendiente': 'Pendiente',
-        'validado': 'Validado',
-        'rechazado': 'Rechazado',
-        'borrador': 'Borrador',
-        'local': 'Guardado Localmente'
+        'pendiente': '📤 Enviado - Pendiente Revisión',
+        'validado': '✅ Validado',
+        'rechazado': '❌ Rechazado',
+        'borrador': '📝 Borrador',
+        'local': '💾 Guardado Localmente'
     };
     return labels[estado] || estado;
 }
@@ -690,6 +711,15 @@ async function saveForm(accion = 'borrador') {
         return;
     }
     
+    // Deshabilitar botones para prevenir doble envío
+    const btnGuardar = document.querySelector('.btn-warning[onclick*="saveForm"]');
+    const btnEnviar = document.querySelector('.btn-primary[onclick*="saveForm"]');
+    const btnCancelar = document.querySelector('.btn-secondary[data-bs-dismiss="modal"]');
+    
+    if (btnGuardar) btnGuardar.disabled = true;
+    if (btnEnviar) btnEnviar.disabled = true;
+    if (btnCancelar) btnCancelar.disabled = true;
+    
     try {
         const formData = new FormData(form);
         
@@ -741,23 +771,41 @@ async function saveForm(accion = 'borrador') {
         // Si es borrador, guardar en localStorage
         if (accion === 'borrador') {
             guardarBorradorLocal(data);
-            Utils.showSuccess('Borrador guardado localmente');
-            bootstrap.Modal.getInstance(document.getElementById('formModal')).hide();
-            loadForms();
+            Utils.showSuccess('✓ Borrador guardado localmente');
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('formModal'));
+            if (modal) modal.hide();
+            
+            // Actualizar vistas
+            await loadForms();
+            await actualizarPanelMesas();
             return;
         }
         
         // Si es enviar, intentar enviar al servidor
         try {
+            Utils.showInfo('Enviando formulario...');
             const response = await APIClient.createFormularioE14(data);
             
             if (response.success) {
                 // Si se envió exitosamente, eliminar borrador local si existe
                 eliminarBorradorLocal(data.mesa_id, data.tipo_eleccion_id);
                 
-                Utils.showSuccess('Formulario E-14 enviado para revisión');
-                bootstrap.Modal.getInstance(document.getElementById('formModal')).hide();
-                loadForms();
+                Utils.showSuccess('✓ Formulario E-14 enviado exitosamente');
+                
+                // Cerrar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('formModal'));
+                if (modal) modal.hide();
+                
+                // Limpiar formulario
+                form.reset();
+                document.getElementById('imagePreview').innerHTML = '<p class="text-muted">Toque el botón para tomar una foto</p>';
+                votosData = {};
+                
+                // Actualizar vistas
+                await loadForms();
+                await actualizarPanelMesas();
             } else {
                 Utils.showError('Error: ' + (response.error || 'Error desconocido'));
             }
@@ -768,8 +816,12 @@ async function saveForm(accion = 'borrador') {
             if (confirm('No se pudo enviar el formulario. ¿Desea guardarlo localmente para enviarlo después?')) {
                 guardarBorradorLocal(data);
                 Utils.showSuccess('Formulario guardado localmente. Se enviará cuando haya conexión.');
-                bootstrap.Modal.getInstance(document.getElementById('formModal')).hide();
-                loadForms();
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('formModal'));
+                if (modal) modal.hide();
+                
+                await loadForms();
+                await actualizarPanelMesas();
             } else {
                 Utils.showError('Error al enviar formulario: ' + error.message);
             }
@@ -778,6 +830,11 @@ async function saveForm(accion = 'borrador') {
     } catch (error) {
         console.error('Error saving form:', error);
         Utils.showError('Error al guardar formulario: ' + error.message);
+    } finally {
+        // Rehabilitar botones
+        if (btnGuardar) btnGuardar.disabled = false;
+        if (btnEnviar) btnEnviar.disabled = false;
+        if (btnCancelar) btnCancelar.disabled = false;
     }
 }
 
