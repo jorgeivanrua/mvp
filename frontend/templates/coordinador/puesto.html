@@ -276,44 +276,60 @@
                         </div>
 
                         <!-- Datos de votación -->
-                        <h6 class="mb-2">Datos de Votación</h6>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">Datos de Votación</h6>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="btnEditarDatos" onclick="habilitarEdicion()">
+                                <i class="bi bi-pencil"></i> Editar
+                            </button>
+                        </div>
                         <div class="row g-2 mb-3">
                             <div class="col-6">
                                 <div class="data-field">
                                     <label>Votantes Registrados</label>
                                     <div class="value" id="valVotantesRegistrados">0</div>
+                                    <input type="number" class="form-control form-control-sm d-none" id="editVotantesRegistrados" min="0" readonly>
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="data-field">
                                     <label>Total Votos</label>
                                     <div class="value" id="valTotalVotos">0</div>
+                                    <input type="number" class="form-control form-control-sm d-none" id="editTotalVotos" min="0">
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="data-field">
                                     <label>Votos Válidos</label>
                                     <div class="value" id="valVotosValidos">0</div>
+                                    <input type="number" class="form-control form-control-sm d-none" id="editVotosValidos" min="0">
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="data-field">
                                     <label>Votos Nulos</label>
                                     <div class="value" id="valVotosNulos">0</div>
+                                    <input type="number" class="form-control form-control-sm d-none" id="editVotosNulos" min="0">
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="data-field">
                                     <label>Votos en Blanco</label>
                                     <div class="value" id="valVotosBlanco">0</div>
+                                    <input type="number" class="form-control form-control-sm d-none" id="editVotosBlanco" min="0">
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="data-field">
                                     <label>Tarjetas No Marcadas</label>
                                     <div class="value" id="valTarjetasNoMarcadas">0</div>
+                                    <input type="number" class="form-control form-control-sm d-none" id="editTarjetasNoMarcadas" min="0">
                                 </div>
                             </div>
+                        </div>
+                        
+                        <!-- Alerta de edición -->
+                        <div class="alert alert-warning py-2 d-none" id="alertaEdicion">
+                            <small><i class="bi bi-info-circle"></i> Modo de edición activado. Los cambios se registrarán en el historial.</small>
                         </div>
 
                         <!-- Validaciones automáticas -->
@@ -340,11 +356,17 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-danger" onclick="mostrarModalRechazo()">
+                <button type="button" class="btn btn-danger" id="btnRechazar" onclick="mostrarModalRechazo()">
                     <i class="bi bi-x-circle"></i> Rechazar
                 </button>
-                <button type="button" class="btn btn-success" onclick="validarFormulario()">
+                <button type="button" class="btn btn-warning d-none" id="btnCancelarEdicion" onclick="cancelarEdicion()">
+                    <i class="bi bi-x"></i> Cancelar Edición
+                </button>
+                <button type="button" class="btn btn-success" id="btnValidar" onclick="validarFormulario()">
                     <i class="bi bi-check-circle"></i> Validar
+                </button>
+                <button type="button" class="btn btn-primary d-none" id="btnValidarConCambios" onclick="validarConCambios()">
+                    <i class="bi bi-check-circle-fill"></i> Validar con Cambios
                 </button>
             </div>
         </div>
