@@ -768,54 +768,60 @@ async function saveForm(accion = 'borrador') {
         
         console.log('Saving form data:', data);
         
-        // Si es borrador, guardar en localStorage
-        if (accion === 'borrador') {
-            guardarBorradorLocal(data);
-            Utils.showSuccess('✓ Borrador guardado localmente');
-            
-            // Cerrar modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('formModal'));
-            if (modal) modal.hide();
-            
-            // Actualizar vistas
-            await loadForms();
-            await actualizarPanelMesas();
-            return;
-        }
-        
-        // Si es enviar, intentar enviar al servidor
+        // Intentar guardar en el servidor (tanto borrador como envío)
         try {
-            Utils.showInfo('Enviando formulario...');
+            Utils.showInfo(accion === 'borrador' ? 'Guardando borrador...' : 'Enviando formulario...');
             const response = await APIClient.createFormularioE14(data);
             
             if (response.success) {
-                // Si se envió exitosamente, eliminar borrador local si existe
+                // Eliminar borrador local si existe (ya está en BD)
                 eliminarBorradorLocal(data.mesa_id, data.tipo_eleccion_id);
                 
-                Utils.showSuccess('✓ Formulario E-14 enviado exitosamente');
+                const mensaje = accion === 'borrador' ? 
+                    '✓ Borrador guardado en el servidor' : 
+                    '✓ Formulario E-14 enviado exitosamente';
+                Utils.showSuccess(mensaje);
                 
                 // Cerrar modal
                 const modal = bootstrap.Modal.getInstance(document.getElementById('formModal'));
                 if (modal) modal.hide();
                 
-                // Limpiar formulario
-                form.reset();
-                document.getElementById('imagePreview').innerHTML = '<p class="text-muted">Toque el botón para tomar una foto</p>';
-                votosData = {};
+                // Limpiar formulario si fue envío
+                if (accion === 'enviar') {
+                    form.reset();
+                    document.getElementById('imagePreview').innerHTML = '<p class="text-muted">Toque el botón para tomar una foto</p>';
+                    votosData = {};
+                }
                 
                 // Actualizar vistas
                 await loadForms();
                 await actualizarPanelMesas();
+                return;
             } else {
-                Utils.showError('Error: ' + (response.error || 'Error desconocido'));
+                throw new Error(response.error || 'Error al guardar en el servidor');
             }
         } catch (error) {
-            console.error('Error enviando formulario:', error);
+            console.error('Error guardando en servidor:', error);
             
-            // Si falla el envío, ofrecer guardar como borrador local
-            if (confirm('No se pudo enviar el formulario. ¿Desea guardarlo localmente para enviarlo después?')) {
+            // Si falla, guardar localmente solo como backup
+            if (accion === 'borrador') {
                 guardarBorradorLocal(data);
-                Utils.showSuccess('Formulario guardado localmente. Se enviará cuando haya conexión.');
+                Utils.showWarning('⚠️ Guardado localmente (sin conexión). Se sincronizará automáticamente.');
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('formModal'));
+                if (modal) modal.hide();
+                
+                await loadForms();
+                await actualizarPanelMesas();
+                return;
+            }
+            
+            // Si es envío y falla, preguntar si guardar como borrador
+            if (confirm('No se pudo enviar el formulario. ¿Desea guardarlo como borrador para enviarlo después?')) {
+                // Cambiar a borrador y guardar localmente
+                data.estado = 'borrador';
+                guardarBorradorLocal(data);
+                Utils.showWarning('Guardado como borrador local. Se sincronizará cuando haya conexión.');
                 
                 const modal = bootstrap.Modal.getInstance(document.getElementById('formModal'));
                 if (modal) modal.hide();
@@ -825,7 +831,9 @@ async function saveForm(accion = 'borrador') {
             } else {
                 Utils.showError('Error al enviar formulario: ' + error.message);
             }
+            return;
         }
+
         
     } catch (error) {
         console.error('Error saving form:', error);

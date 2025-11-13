@@ -2,7 +2,8 @@
 Rutas para el coordinador departamental
 """
 from flask import Blueprint, render_template, jsonify, request, send_file
-from backend.utils.decorators import login_required, role_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from backend.utils.decorators import role_required
 from backend.services.departamental_service import DepartamentalService
 from backend.services.discrepancia_service import DiscrepanciaService
 from backend.services.reporte_departamental_service import ReporteDepartamentalService
@@ -15,17 +16,20 @@ bp = Blueprint('coordinador_departamental', __name__, url_prefix='/coordinador/d
 
 
 @bp.route('/')
-@login_required
+@jwt_required()
 @role_required(['coordinador_departamental', 'super_admin'])
-def dashboard(current_user):
+def dashboard():
     """Dashboard principal del coordinador departamental"""
+    user_id = get_jwt_identity()
+    from backend.models.user import User
+    current_user = User.query.get(int(user_id))
     return render_template('coordinador/departamental.html', user=current_user)
 
 
 @bp.route('/api/municipios')
-@login_required
+@jwt_required()
 @role_required(['coordinador_departamental', 'super_admin'])
-def obtener_municipios(current_user):
+def obtener_municipios():
     """
     Obtener lista de municipios del departamento con estadísticas
     Query params:
@@ -62,9 +66,12 @@ def obtener_municipios(current_user):
 
 
 @bp.route('/api/consolidado')
-@login_required
+@jwt_required()
 @role_required(['coordinador_departamental', 'super_admin'])
-def obtener_consolidado(current_user):
+def obtener_consolidado():
+    user_id = get_jwt_identity()
+    from backend.models.user import User
+    current_user = User.query.get(int(user_id))
     """
     Obtener consolidado departamental
     Query params:
@@ -100,7 +107,7 @@ def obtener_consolidado(current_user):
 
 
 @bp.route('/api/municipio/<int:municipio_id>')
-@login_required
+@jwt_required()
 @role_required(['coordinador_departamental', 'super_admin'])
 def obtener_municipio_detallado(current_user, municipio_id):
     """Obtener información detallada de un municipio"""
@@ -121,9 +128,12 @@ def obtener_municipio_detallado(current_user, municipio_id):
 
 
 @bp.route('/api/discrepancias')
-@login_required
+@jwt_required()
 @role_required(['coordinador_departamental', 'super_admin'])
-def obtener_discrepancias(current_user):
+def obtener_discrepancias():
+    user_id = get_jwt_identity()
+    from backend.models.user import User
+    current_user = User.query.get(int(user_id))
     """Obtener discrepancias del departamento"""
     try:
         # Obtener departamento del coordinador
@@ -147,9 +157,12 @@ def obtener_discrepancias(current_user):
 
 
 @bp.route('/api/comparar-municipios', methods=['POST'])
-@login_required
+@jwt_required()
 @role_required(['coordinador_departamental', 'super_admin'])
-def comparar_municipios(current_user):
+def comparar_municipios():
+    user_id = get_jwt_identity()
+    from backend.models.user import User
+    current_user = User.query.get(int(user_id))
     """
     Comparar estadísticas entre municipios
     Body: { "municipio_ids": [1, 2, 3] }
@@ -174,9 +187,12 @@ def comparar_municipios(current_user):
 
 
 @bp.route('/api/reporte/validar')
-@login_required
+@jwt_required()
 @role_required(['coordinador_departamental', 'super_admin'])
-def validar_reporte(current_user):
+def validar_reporte():
+    user_id = get_jwt_identity()
+    from backend.models.user import User
+    current_user = User.query.get(int(user_id))
     """Validar si se puede generar el reporte departamental"""
     try:
         # Obtener departamento del coordinador
@@ -203,9 +219,12 @@ def validar_reporte(current_user):
 
 
 @bp.route('/api/reporte/generar', methods=['POST'])
-@login_required
+@jwt_required()
 @role_required(['coordinador_departamental', 'super_admin'])
-def generar_reporte(current_user):
+def generar_reporte():
+    user_id = get_jwt_identity()
+    from backend.models.user import User
+    current_user = User.query.get(int(user_id))
     """
     Generar reporte departamental
     Body: { "tipo_eleccion_id": 1 }
@@ -252,9 +271,12 @@ def generar_reporte(current_user):
 
 
 @bp.route('/api/reportes')
-@login_required
+@jwt_required()
 @role_required(['coordinador_departamental', 'super_admin'])
-def listar_reportes(current_user):
+def listar_reportes():
+    user_id = get_jwt_identity()
+    from backend.models.user import User
+    current_user = User.query.get(int(user_id))
     """Listar reportes generados del departamento"""
     try:
         # Obtener departamento del coordinador
