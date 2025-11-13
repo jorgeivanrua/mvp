@@ -70,3 +70,12 @@ class AccountBlockedException(BaseAPIException):
 class DuplicateResourceException(BaseAPIException):
     """Excepción de recurso duplicado"""
     status_code = 409
+
+
+class AuthorizationException(BaseAPIException):
+    """Excepción de autorización"""
+    status_code = 403
+
+
+# Alias para compatibilidad
+NotFoundException = ResourceNotFoundException
