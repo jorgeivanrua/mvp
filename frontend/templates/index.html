@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Electoral - Inicio</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #1e3c72;
+            --secondary-color: #2a5298;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .landing-container {
+            max-width: 900px;
+            width: 100%;
+            padding: 2rem;
+        }
+        
+        .campaign-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .campaign-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+        
+        .campaign-logo {
+            width: 120px;
+            height: 120px;
+            background: white;
+            border-radius: 50%;
+            margin: 0 auto 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .campaign-logo i {
+            font-size: 4rem;
+            color: var(--primary-color);
+        }
+        
+        .campaign-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .campaign-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .campaign-body {
+            padding: 3rem 2rem;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+        }
+        
+        .feature-item:hover {
+            transform: translateX(10px);
+        }
+        
+        .feature-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            font-size: 1.5rem;
+        }
+        
+        .btn-access {
+            padding: 1rem 3rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-access:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        
+        .campaign-footer {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            text-align: center;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .testing-mode {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="landing-container">
+        <div class="campaign-card">
+            <!-- Header -->
+            <div class="campaign-header" id="campaignHeader">
+                <div class="campaign-logo" id="campaignLogo">
+                    <i class="bi bi-check2-circle"></i>
+                </div>
+                <h1 class="campaign-title" id="campaignTitle">Sistema Electoral</h1>
+                <p class="campaign-subtitle" id="campaignSubtitle">Recolección de Datos Electorales</p>
+            </div>
+            
+            <!-- Body -->
+            <div class="campaign-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                            <div>
+                                <strong>Seguro y Confiable</strong>
+                                <br><small class="text-muted">Datos encriptados y protegidos</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="bi bi-wifi-off"></i>
+                            </div>
+                            <div>
+                                <strong>Modo Offline</strong>
+                                <br><small class="text-muted">Funciona sin conexión</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="bi bi-people"></i>
+                            </div>
+                            <div>
+                                <strong>Multi-Rol</strong>
+                                <br><small class="text-muted">Testigos y coordinadores</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="bi bi-graph-up"></i>
+                            </div>
+                            <div>
+                                <strong>Tiempo Real</strong>
+                                <br><small class="text-muted">Resultados instantáneos</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <a href="/auth/login" class="btn btn-primary btn-access">
+                        <i class="bi bi-box-arrow-in-right"></i> Acceder al Sistema
+                    </a>
+                </div>
+                
+                <!-- Testing Mode Info -->
+                <div id="testingModeInfo" style="display: none;">
+                    <div class="testing-mode">
+                        <h6 class="mb-2"><i class="bi bi-bug"></i> Modo Testing Activo</h6>
+                        <p class="small mb-2">Puede acceder sin contraseña para probar el sistema</p>
+                        <button class="btn btn-sm btn-warning" onclick="window.location.href='/auth/login?testing=true'">
+                            <i class="bi bi-key"></i> Acceso Rápido Testing
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="campaign-footer">
+                <p class="mb-0 text-muted">
+                    <i class="bi bi-calendar-event"></i> 
+                    <span id="campaignDates">Campaña Electoral</span>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Cargar información de la campaña activa
+        async function loadCampaignInfo() {
+            try {
+                const response = await fetch('/api/public/campaign-info');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data) {
+                        const campaign = data.data;
+                        
+                        // Actualizar colores
+                        if (campaign.color_primario) {
+                            document.documentElement.style.setProperty('--primary-color', campaign.color_primario);
+                        }
+                        if (campaign.color_secundario) {
+                            document.documentElement.style.setProperty('--secondary-color', campaign.color_secundario);
+                        }
+                        
+                        // Actualizar textos
+                        if (campaign.nombre) {
+                            document.getElementById('campaignTitle').textContent = campaign.nombre;
+                        }
+                        if (campaign.descripcion) {
+                            document.getElementById('campaignSubtitle').textContent = campaign.descripcion;
+                        }
+                        
+                        // Actualizar fechas
+                        if (campaign.fecha_inicio && campaign.fecha_fin) {
+                            const inicio = new Date(campaign.fecha_inicio).toLocaleDateString();
+                            const fin = new Date(campaign.fecha_fin).toLocaleDateString();
+                            document.getElementById('campaignDates').textContent = `${inicio} - ${fin}`;
+                        }
+                        
+                        // Mostrar modo testing si está activo
+                        if (data.testing_mode) {
+                            document.getElementById('testingModeInfo').style.display = 'block';
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading campaign info:', error);
+            }
+        }
+        
+        // Cargar al iniciar
+        loadCampaignInfo();
+    </script>
+</body>
+</html>

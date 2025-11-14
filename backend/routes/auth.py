@@ -102,22 +102,7 @@ def profile():
         if user.ubicacion_id:
             location = Location.query.get(user.ubicacion_id)
             if location:
-                ubicacion = {
-                    'id': location.id,
-                    'tipo': location.tipo,
-                    'nombre_completo': location.nombre_completo,
-                    'departamento_codigo': location.departamento_codigo,
-                    'departamento_nombre': location.departamento_nombre,
-                    'municipio_codigo': location.municipio_codigo,
-                    'municipio_nombre': location.municipio_nombre,
-                    'zona_codigo': location.zona_codigo,
-                    'puesto_codigo': location.puesto_codigo,
-                    'puesto_nombre': location.puesto_nombre,
-                    'mesa_codigo': location.mesa_codigo,
-                    'mesa_nombre': location.mesa_nombre,
-                    'direccion': location.direccion,
-                    'total_votantes_registrados': location.total_votantes_registrados
-                }
+                ubicacion = location.to_dict()
         
         return jsonify({
             'success': True,

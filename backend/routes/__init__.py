@@ -6,6 +6,7 @@ from backend.routes.configuracion import configuracion_bp
 from backend.routes.formularios_e14 import formularios_bp
 from backend.routes.coordinador_municipal import coordinador_municipal_bp
 from backend.routes.super_admin import super_admin_bp
+from backend.routes.public import public_bp
 
 __all__ = [
     'auth_bp',
@@ -14,5 +15,6 @@ __all__ = [
     'configuracion_bp',
     'formularios_bp',
     'coordinador_municipal_bp',
-    'super_admin_bp'
+    'super_admin_bp',
+    'public_bp'
 ]

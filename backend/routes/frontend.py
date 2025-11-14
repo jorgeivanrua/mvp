@@ -8,8 +8,8 @@ frontend_bp = Blueprint('frontend', __name__)
 
 @frontend_bp.route('/')
 def index():
-    """Página principal - redirige al login"""
-    return render_template('auth/login.html')
+    """Página principal - landing page de la campaña"""
+    return render_template('index.html')
 
 
 @frontend_bp.route('/health')

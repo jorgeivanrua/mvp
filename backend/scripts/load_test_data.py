@@ -46,8 +46,9 @@ def load_test_data():
         
         # Departamento
         dept = Location(
-            codigo='TEST01',
-            nombre='Departamento Test',
+            departamento_codigo='TEST01',
+            departamento_nombre='Departamento Test',
+            nombre_completo='Departamento Test',
             tipo='departamento'
         )
         db.session.add(dept)
@@ -55,10 +56,12 @@ def load_test_data():
         
         # Municipio
         mun = Location(
-            codigo='TEST0101',
-            nombre='Municipio Test',
-            tipo='municipio',
-            departamento_id=dept.id
+            departamento_codigo='TEST01',
+            municipio_codigo='TEST0101',
+            departamento_nombre='Departamento Test',
+            municipio_nombre='Municipio Test',
+            nombre_completo='Municipio Test - Departamento Test',
+            tipo='municipio'
         )
         db.session.add(mun)
         db.session.flush()
@@ -67,11 +70,15 @@ def load_test_data():
         puestos = []
         for i in range(1, 4):
             puesto = Location(
-                codigo=f'TEST010100{i}',
-                nombre=f'Puesto Test {i}',
-                tipo='puesto',
-                departamento_id=dept.id,
-                municipio_id=mun.id
+                departamento_codigo='TEST01',
+                municipio_codigo='TEST0101',
+                zona_codigo=f'TEST01Z{i}',
+                puesto_codigo=f'TEST010100{i}',
+                departamento_nombre='Departamento Test',
+                municipio_nombre='Municipio Test',
+                puesto_nombre=f'Puesto Test {i}',
+                nombre_completo=f'Puesto Test {i} - Municipio Test',
+                tipo='puesto'
             )
             db.session.add(puesto)
             db.session.flush()
@@ -80,12 +87,18 @@ def load_test_data():
             # Mesas por puesto
             for j in range(1, 6):
                 mesa = Location(
-                    codigo=f'TEST010100{i}00{j}',
-                    nombre=f'Mesa {j}',
+                    departamento_codigo='TEST01',
+                    municipio_codigo='TEST0101',
+                    zona_codigo=f'TEST01Z{i}',
+                    puesto_codigo=f'TEST010100{i}',
+                    mesa_codigo=f'TEST010100{i}00{j}',
+                    departamento_nombre='Departamento Test',
+                    municipio_nombre='Municipio Test',
+                    puesto_nombre=f'Puesto Test {i}',
+                    mesa_nombre=f'Mesa {j}',
+                    nombre_completo=f'Mesa {j} - Puesto Test {i}',
                     tipo='mesa',
-                    departamento_id=dept.id,
-                    municipio_id=mun.id,
-                    puesto_id=puesto.id
+                    total_votantes_registrados=300
                 )
                 db.session.add(mesa)
         
@@ -105,7 +118,7 @@ def load_test_data():
             {
                 'nombre': 'auditor_test',
                 'password': 'test123',
-                'rol': 'auditor',
+                'rol': 'auditor_electoral',
                 'ubicacion_id': None
             },
             {
@@ -125,16 +138,28 @@ def load_test_data():
                 'password': 'test123',
                 'rol': 'coordinador_puesto',
                 'ubicacion_id': puestos[0].id
+            },
+            {
+                'nombre': 'coord_puesto_test_2',
+                'password': 'test123',
+                'rol': 'coordinador_puesto',
+                'ubicacion_id': puestos[1].id
+            },
+            {
+                'nombre': 'coord_puesto_test_3',
+                'password': 'test123',
+                'rol': 'coordinador_puesto',
+                'ubicacion_id': puestos[2].id
             }
         ]
         
         # Crear testigos para cada mesa
         mesas = Location.query.filter_by(tipo='mesa').all()
-        for idx, mesa in enumerate(mesas[:10]):  # Primeras 10 mesas
+        for idx, mesa in enumerate(mesas):  # Todas las mesas
             usuarios_test.append({
                 'nombre': f'testigo_test_{idx+1}',
                 'password': 'test123',
-                'rol': 'testigo',
+                'rol': 'testigo_electoral',
                 'ubicacion_id': mesa.id
             })
         

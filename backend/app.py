@@ -67,6 +67,10 @@ def register_blueprints(app):
     app.register_blueprint(incidentes_delitos_bp)
     app.register_blueprint(super_admin_bp)
     
+    # Public routes (sin autenticación)
+    from backend.routes.public import public_bp
+    app.register_blueprint(public_bp)
+    
     # Frontend routes
     app.register_blueprint(frontend_bp)
 
