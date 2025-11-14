@@ -14,6 +14,9 @@ class TipoEleccion(db.Model):
     nombre = db.Column(db.String(200), nullable=False)
     descripcion = db.Column(db.Text)
     es_uninominal = db.Column(db.Boolean, default=False)  # True para presidencia, gobernación, alcaldía
+    permite_lista_cerrada = db.Column(db.Boolean, default=True)  # Para corporaciones
+    permite_lista_abierta = db.Column(db.Boolean, default=False)  # Voto preferente
+    permite_coaliciones = db.Column(db.Boolean, default=False)  # Coaliciones de partidos
     activo = db.Column(db.Boolean, default=True)
     orden = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -26,6 +29,9 @@ class TipoEleccion(db.Model):
             'nombre': self.nombre,
             'descripcion': self.descripcion,
             'es_uninominal': self.es_uninominal,
+            'permite_lista_cerrada': self.permite_lista_cerrada,
+            'permite_lista_abierta': self.permite_lista_abierta,
+            'permite_coaliciones': self.permite_coaliciones,
             'activo': self.activo,
             'orden': self.orden
         }
@@ -114,6 +120,7 @@ class Candidato(db.Model):
     tipo_eleccion_id = db.Column(db.Integer, db.ForeignKey('tipos_eleccion.id'))
     foto_url = db.Column(db.String(500))
     es_independiente = db.Column(db.Boolean, default=False)
+    es_cabeza_lista = db.Column(db.Boolean, default=False)  # Para listas cerradas
     activo = db.Column(db.Boolean, default=True)
     orden = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -133,6 +140,9 @@ class Candidato(db.Model):
             'tipo_eleccion_id': self.tipo_eleccion_id,
             'foto_url': self.foto_url,
             'es_independiente': self.es_independiente,
+            'es_cabeza_lista': self.es_cabeza_lista,
             'activo': self.activo,
-            'orden': self.orden
+            'orden': self.orden,
+            'partido_nombre': self.partido.nombre if self.partido else None,
+            'tipo_eleccion_nombre': self.tipo_eleccion.nombre if self.tipo_eleccion else None
         }

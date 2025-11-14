@@ -549,25 +549,93 @@ function renderTiposEleccion() {
         return;
     }
     
-    container.innerHTML = allTiposEleccion.map(tipo => `
-        <div class="d-flex align-items-center justify-content-between mb-2 p-2 border rounded ${!tipo.activo ? 'opacity-50' : ''}">
-            <div class="flex-grow-1">
-                <strong>${tipo.nombre}</strong>
-                <br><small class="text-muted">${tipo.es_uninominal ? 'Uninominal' : 'Por listas'}</small>
-                ${!tipo.activo ? '<br><span class="badge bg-secondary">Deshabilitado</span>' : '<br><span class="badge bg-success">Habilitado</span>'}
+    container.innerHTML = allTiposEleccion.map(tipo => {
+        let detalles = [];
+        if (tipo.es_uninominal) {
+            detalles.push('Uninominal');
+        } else {
+            if (tipo.permite_lista_cerrada) detalles.push('Lista cerrada');
+            if (tipo.permite_lista_abierta) detalles.push('Lista abierta');
+            if (tipo.permite_coaliciones) detalles.push('Coaliciones');
+        }
+        
+        return `
+            <div class="d-flex align-items-center justify-content-between mb-2 p-2 border rounded ${!tipo.activo ? 'opacity-50' : ''}">
+                <div class="flex-grow-1">
+                    <strong>${tipo.nombre}</strong>
+                    <br><small class="text-muted">${detalles.join(' • ')}</small>
+                    ${!tipo.activo ? '<br><span class="badge bg-secondary">Deshabilitado</span>' : '<br><span class="badge bg-success">Habilitado</span>'}
+                </div>
+                <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-${tipo.activo ? 'warning' : 'success'}" 
+                            onclick="toggleTipoEleccion(${tipo.id}, ${!tipo.activo})"
+                            title="${tipo.activo ? 'Deshabilitar' : 'Habilitar'}">
+                        <i class="bi bi-${tipo.activo ? 'toggle-on' : 'toggle-off'}"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-info" onclick="verDetallesTipo(${tipo.id})" title="Ver detalles">
+                        <i class="bi bi-info-circle"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="editTipoEleccion(${tipo.id})">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                </div>
             </div>
-            <div class="d-flex gap-1">
-                <button class="btn btn-sm btn-${tipo.activo ? 'warning' : 'success'}" 
-                        onclick="toggleTipoEleccion(${tipo.id}, ${!tipo.activo})"
-                        title="${tipo.activo ? 'Deshabilitar' : 'Habilitar'}">
-                    <i class="bi bi-${tipo.activo ? 'toggle-on' : 'toggle-off'}"></i>
-                </button>
-                <button class="btn btn-sm btn-outline-primary" onclick="editTipoEleccion(${tipo.id})">
-                    <i class="bi bi-pencil"></i>
-                </button>
+        `;
+    }).join('');
+}
+
+/**
+ * Ver detalles de un tipo de elección
+ */
+function verDetallesTipo(tipoId) {
+    const tipo = allTiposEleccion.find(t => t.id === tipoId);
+    if (!tipo) return;
+    
+    let detallesHtml = `
+        <p><strong>Nombre:</strong> ${tipo.nombre}</p>
+        <p><strong>Descripción:</strong> ${tipo.descripcion || 'N/A'}</p>
+        <p><strong>Tipo:</strong> ${tipo.es_uninominal ? 'Uninominal (candidato único)' : 'Por corporación (listas)'}</p>
+    `;
+    
+    if (!tipo.es_uninominal) {
+        detallesHtml += `
+            <p><strong>Configuración de listas:</strong></p>
+            <ul>
+                <li>Lista cerrada: ${tipo.permite_lista_cerrada ? '✅ Sí' : '❌ No'}</li>
+                <li>Lista abierta (voto preferente): ${tipo.permite_lista_abierta ? '✅ Sí' : '❌ No'}</li>
+                <li>Coaliciones: ${tipo.permite_coaliciones ? '✅ Sí' : '❌ No'}</li>
+            </ul>
+        `;
+    }
+    
+    detallesHtml += `<p><strong>Estado:</strong> ${tipo.activo ? '<span class="badge bg-success">Habilitado</span>' : '<span class="badge bg-secondary">Deshabilitado</span>'}</p>`;
+    
+    const modalHtml = `
+        <div class="modal fade" id="detallesTipoModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Detalles del Tipo de Elección</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        ${detallesHtml}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
             </div>
         </div>
-    `).join('');
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('detallesTipoModal'));
+    modal.show();
+    
+    document.getElementById('detallesTipoModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
 }
 
 /**
@@ -1133,20 +1201,111 @@ async function toggleCandidato(candidatoId, activo) {
  * Crear nuevo tipo de elección
  */
 async function createTipoEleccion() {
-    const nombre = prompt('Ingrese el nombre del tipo de elección:');
-    if (!nombre) return;
+    // Mostrar modal personalizado
+    const modalHtml = `
+        <div class="modal fade" id="createTipoEleccionModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Crear Tipo de Elección</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre *</label>
+                            <input type="text" class="form-control" id="tipoNombre" placeholder="Ej: Presidente, Senado, Cámara">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control" id="tipoDescripcion" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de Elección</label>
+                            <select class="form-select" id="tipoCategoria">
+                                <option value="uninominal">Uninominal (Presidente, Gobernador, Alcalde)</option>
+                                <option value="corporacion">Por Corporación (Senado, Cámara, Asamblea, Concejo)</option>
+                            </select>
+                        </div>
+                        <div id="opcionesLista" style="display:none;">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="listaC errada" checked>
+                                <label class="form-check-label" for="listaCerrada">
+                                    Permite lista cerrada
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="listaAbierta">
+                                <label class="form-check-label" for="listaAbierta">
+                                    Permite lista abierta (voto preferente)
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="coaliciones">
+                                <label class="form-check-label" for="coaliciones">
+                                    Permite coaliciones
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="guardarTipoEleccion()">Crear</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
     
-    const esUninominal = confirm('¿Es uninominal? (Aceptar = Sí, Cancelar = No)');
+    // Agregar modal al DOM
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('createTipoEleccionModal'));
+    
+    // Manejar cambio de categoría
+    document.getElementById('tipoCategoria').addEventListener('change', function() {
+        const opcionesLista = document.getElementById('opcionesLista');
+        opcionesLista.style.display = this.value === 'corporacion' ? 'block' : 'none';
+    });
+    
+    modal.show();
+    
+    // Limpiar modal al cerrar
+    document.getElementById('createTipoEleccionModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+/**
+ * Guardar nuevo tipo de elección
+ */
+async function guardarTipoEleccion() {
+    const nombre = document.getElementById('tipoNombre').value.trim();
+    const descripcion = document.getElementById('tipoDescripcion').value.trim();
+    const categoria = document.getElementById('tipoCategoria').value;
+    
+    if (!nombre) {
+        Utils.showError('El nombre es requerido');
+        return;
+    }
+    
+    const esUninominal = categoria === 'uninominal';
+    const listaCerrada = !esUninominal && document.getElementById('listaCerrada').checked;
+    const listaAbierta = !esUninominal && document.getElementById('listaAbierta').checked;
+    const coaliciones = !esUninominal && document.getElementById('coaliciones').checked;
     
     try {
         const response = await APIClient.post('/super-admin/tipos-eleccion', {
             nombre: nombre,
+            descripcion: descripcion,
             es_uninominal: esUninominal,
+            permite_lista_cerrada: listaCerrada,
+            permite_lista_abierta: listaAbierta,
+            permite_coaliciones: coaliciones,
             activo: true
         });
         
         if (response.success) {
             Utils.showSuccess('Tipo de elección creado exitosamente');
+            bootstrap.Modal.getInstance(document.getElementById('createTipoEleccionModal')).hide();
             await loadTiposEleccion();
         } else {
             Utils.showError(response.error || 'Error al crear tipo de elección');

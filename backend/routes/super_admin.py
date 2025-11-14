@@ -776,7 +776,7 @@ def create_tipo_eleccion():
     """
     try:
         from backend.database import db
-        from backend.models.tipo_eleccion import TipoEleccion
+        from backend.models.configuracion_electoral import TipoEleccion
         
         data = request.get_json()
         
@@ -794,9 +794,17 @@ def create_tipo_eleccion():
                 'error': 'Ya existe un tipo de elección con ese nombre'
             }), 400
         
+        # Generar código automático
+        codigo = data.get('codigo', data['nombre'].upper().replace(' ', '_'))
+        
         tipo = TipoEleccion(
+            codigo=codigo,
             nombre=data['nombre'],
+            descripcion=data.get('descripcion', ''),
             es_uninominal=data.get('es_uninominal', False),
+            permite_lista_cerrada=data.get('permite_lista_cerrada', not data.get('es_uninominal', False)),
+            permite_lista_abierta=data.get('permite_lista_abierta', False),
+            permite_coaliciones=data.get('permite_coaliciones', False),
             activo=data.get('activo', True)
         )
         
@@ -827,7 +835,7 @@ def update_tipo_eleccion(tipo_id):
     """
     try:
         from backend.database import db
-        from backend.models.tipo_eleccion import TipoEleccion
+        from backend.models.configuracion_electoral import TipoEleccion
         
         tipo = TipoEleccion.query.get(tipo_id)
         if not tipo:
@@ -840,8 +848,16 @@ def update_tipo_eleccion(tipo_id):
         
         if 'nombre' in data:
             tipo.nombre = data['nombre']
+        if 'descripcion' in data:
+            tipo.descripcion = data['descripcion']
         if 'es_uninominal' in data:
             tipo.es_uninominal = data['es_uninominal']
+        if 'permite_lista_cerrada' in data:
+            tipo.permite_lista_cerrada = data['permite_lista_cerrada']
+        if 'permite_lista_abierta' in data:
+            tipo.permite_lista_abierta = data['permite_lista_abierta']
+        if 'permite_coaliciones' in data:
+            tipo.permite_coaliciones = data['permite_coaliciones']
         if 'activo' in data:
             tipo.activo = data['activo']
         
