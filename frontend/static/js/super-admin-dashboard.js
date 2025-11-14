@@ -499,15 +499,21 @@ function renderPartidos() {
     }
     
     container.innerHTML = allPartidos.map(partido => `
-        <div class="d-flex align-items-center justify-content-between mb-2 p-2 border rounded">
-            <div class="d-flex align-items-center">
+        <div class="d-flex align-items-center justify-content-between mb-2 p-2 border rounded ${!partido.activo ? 'opacity-50' : ''}">
+            <div class="d-flex align-items-center flex-grow-1">
                 <div style="width: 30px; height: 30px; background-color: ${partido.color}; border-radius: 4px; margin-right: 10px;"></div>
                 <div>
                     <strong>${partido.nombre}</strong>
-                    <br><small class="text-muted">${partido.nombre_corto}</small>
+                    <br><small class="text-muted">${partido.nombre_corto || partido.sigla}</small>
+                    ${!partido.activo ? '<br><span class="badge bg-secondary">Deshabilitado</span>' : '<br><span class="badge bg-success">Habilitado</span>'}
                 </div>
             </div>
-            <div>
+            <div class="d-flex gap-1">
+                <button class="btn btn-sm btn-${partido.activo ? 'warning' : 'success'}" 
+                        onclick="togglePartido(${partido.id}, ${!partido.activo})"
+                        title="${partido.activo ? 'Deshabilitar' : 'Habilitar'}">
+                    <i class="bi bi-${partido.activo ? 'toggle-on' : 'toggle-off'}"></i>
+                </button>
                 <button class="btn btn-sm btn-outline-primary" onclick="editPartido(${partido.id})">
                     <i class="bi bi-pencil"></i>
                 </button>
@@ -544,12 +550,18 @@ function renderTiposEleccion() {
     }
     
     container.innerHTML = allTiposEleccion.map(tipo => `
-        <div class="d-flex align-items-center justify-content-between mb-2 p-2 border rounded">
-            <div>
+        <div class="d-flex align-items-center justify-content-between mb-2 p-2 border rounded ${!tipo.activo ? 'opacity-50' : ''}">
+            <div class="flex-grow-1">
                 <strong>${tipo.nombre}</strong>
                 <br><small class="text-muted">${tipo.es_uninominal ? 'Uninominal' : 'Por listas'}</small>
+                ${!tipo.activo ? '<br><span class="badge bg-secondary">Deshabilitado</span>' : '<br><span class="badge bg-success">Habilitado</span>'}
             </div>
-            <div>
+            <div class="d-flex gap-1">
+                <button class="btn btn-sm btn-${tipo.activo ? 'warning' : 'success'}" 
+                        onclick="toggleTipoEleccion(${tipo.id}, ${!tipo.activo})"
+                        title="${tipo.activo ? 'Deshabilitar' : 'Habilitar'}">
+                    <i class="bi bi-${tipo.activo ? 'toggle-on' : 'toggle-off'}"></i>
+                </button>
                 <button class="btn btn-sm btn-outline-primary" onclick="editTipoEleccion(${tipo.id})">
                     <i class="bi bi-pencil"></i>
                 </button>
@@ -581,18 +593,23 @@ function renderCandidatos() {
     const tbody = document.getElementById('candidatesTableBody');
     
     if (allCandidatos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4"><p class="text-muted">No hay candidatos registrados</p></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><p class="text-muted">No hay candidatos registrados</p></td></tr>';
         return;
     }
     
     tbody.innerHTML = allCandidatos.map(candidato => `
-        <tr>
-            <td>${candidato.nombre_completo}</td>
+        <tr class="${!candidato.activo ? 'opacity-50' : ''}">
+            <td>${candidato.nombre_completo || candidato.nombre}</td>
             <td>${candidato.partido_nombre || 'Independiente'}</td>
             <td>${candidato.tipo_eleccion_nombre || 'N/A'}</td>
             <td>${candidato.numero_lista || '-'}</td>
-            <td><span class="badge bg-${candidato.activo ? 'success' : 'secondary'}">${candidato.activo ? 'Activo' : 'Inactivo'}</span></td>
+            <td><span class="badge bg-${candidato.activo ? 'success' : 'secondary'}">${candidato.activo ? 'Habilitado' : 'Deshabilitado'}</span></td>
             <td>
+                <button class="btn btn-sm btn-${candidato.activo ? 'warning' : 'success'}" 
+                        onclick="toggleCandidato(${candidato.id}, ${!candidato.activo})"
+                        title="${candidato.activo ? 'Deshabilitar' : 'Habilitar'}">
+                    <i class="bi bi-${candidato.activo ? 'toggle-on' : 'toggle-off'}"></i>
+                </button>
                 <button class="btn btn-sm btn-outline-primary" onclick="editCandidato(${candidato.id})">
                     <i class="bi bi-pencil"></i>
                 </button>
@@ -904,56 +921,127 @@ function showUploadResult(result, type) {
 }
 
 /**
- * Descargar plantilla de usuarios
+ * Descargar plantilla de usuarios (Excel con datos de ejemplo)
  */
-function downloadTemplateUsers() {
-    const template = `nombre,password,rol,ubicacion_codigo
-Juan Perez,password123,testigo,001001001
-Maria Garcia,password456,coordinador_puesto,001001
-Carlos Lopez,password789,coordinador_municipal,001`;
-    
-    downloadCSV(template, 'plantilla_usuarios.csv');
-    Utils.showInfo('Plantilla descargada. Puede editarla en Excel y guardarla como .xlsx');
+async function downloadTemplateUsers() {
+    try {
+        const response = await fetch('/api/super-admin/download/template/users', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'plantilla_usuarios.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            Utils.showSuccess('Plantilla de usuarios descargada con datos de ejemplo');
+        } else {
+            Utils.showError('Error al descargar plantilla');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al descargar plantilla: ' + error.message);
+    }
 }
 
 /**
- * Descargar plantilla de ubicaciones
+ * Descargar plantilla de ubicaciones (Excel con datos de ejemplo)
  */
-function downloadTemplateLocations() {
-    const template = `codigo,nombre,tipo,departamento_codigo,municipio_codigo,puesto_codigo
-001,Departamento 1,departamento,,
-001001,Municipio 1,municipio,001,
-001001001,Puesto 1,puesto,001,001001,
-001001001001,Mesa 1,mesa,001,001001,001001001`;
-    
-    downloadCSV(template, 'plantilla_divipola.csv');
-    Utils.showInfo('Plantilla descargada. Puede editarla en Excel y guardarla como .xlsx');
+async function downloadTemplateLocations() {
+    try {
+        const response = await fetch('/api/super-admin/download/template/locations', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'plantilla_divipola.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            Utils.showSuccess('Plantilla de DIVIPOLA descargada con datos de ejemplo');
+        } else {
+            Utils.showError('Error al descargar plantilla');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al descargar plantilla: ' + error.message);
+    }
 }
 
 /**
- * Descargar plantilla de partidos
+ * Descargar plantilla de partidos (Excel con datos de ejemplo)
  */
-function downloadTemplatePartidos() {
-    const template = `nombre,sigla,color,numero_lista
-Partido Liberal,PL,#FF0000,1
-Partido Conservador,PC,#0000FF,2
-Partido Verde,PV,#00FF00,3`;
-    
-    downloadCSV(template, 'plantilla_partidos.csv');
-    Utils.showInfo('Plantilla descargada. Puede editarla en Excel y guardarla como .xlsx');
+async function downloadTemplatePartidos() {
+    try {
+        const response = await fetch('/api/super-admin/download/template/partidos', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'plantilla_partidos.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            Utils.showSuccess('Plantilla de partidos descargada con datos de ejemplo');
+        } else {
+            Utils.showError('Error al descargar plantilla');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al descargar plantilla: ' + error.message);
+    }
 }
 
 /**
- * Descargar plantilla de candidatos
+ * Descargar plantilla de candidatos (Excel con datos de ejemplo)
  */
-function downloadTemplateCandidatos() {
-    const template = `nombre,partido_nombre,tipo_eleccion_nombre,numero_lista
-Juan Perez,Partido Liberal,Presidente,1
-Maria Garcia,Partido Conservador,Senado,2
-Carlos Lopez,Partido Verde,Cámara,3`;
-    
-    downloadCSV(template, 'plantilla_candidatos.csv');
-    Utils.showInfo('Plantilla descargada. Puede editarla en Excel y guardarla como .xlsx');
+async function downloadTemplateCandidatos() {
+    try {
+        const response = await fetch('/api/super-admin/download/template/candidatos', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'plantilla_candidatos.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            Utils.showSuccess('Plantilla de candidatos descargada con datos de ejemplo');
+        } else {
+            Utils.showError('Error al descargar plantilla');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al descargar plantilla: ' + error.message);
+    }
 }
 
 /**
@@ -971,4 +1059,100 @@ function downloadCSV(content, filename) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+
+// ============================================
+// GESTIÓN DE HABILITACIÓN
+// ============================================
+
+/**
+ * Habilitar/Deshabilitar tipo de elección
+ */
+async function toggleTipoEleccion(tipoId, activo) {
+    try {
+        const response = await APIClient.put(`/super-admin/tipos-eleccion/${tipoId}`, {
+            activo: activo
+        });
+        
+        if (response.success) {
+            Utils.showSuccess(`Tipo de elección ${activo ? 'habilitado' : 'deshabilitado'} exitosamente`);
+            await loadTiposEleccion();
+        } else {
+            Utils.showError(response.error || 'Error al actualizar tipo de elección');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al actualizar tipo de elección');
+    }
+}
+
+/**
+ * Habilitar/Deshabilitar partido
+ */
+async function togglePartido(partidoId, activo) {
+    try {
+        const response = await APIClient.put(`/super-admin/partidos/${partidoId}/toggle`, {
+            activo: activo
+        });
+        
+        if (response.success) {
+            Utils.showSuccess(`Partido ${activo ? 'habilitado' : 'deshabilitado'} para recolección de datos`);
+            await loadPartidos();
+        } else {
+            Utils.showError(response.error || 'Error al actualizar partido');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al actualizar partido');
+    }
+}
+
+/**
+ * Habilitar/Deshabilitar candidato
+ */
+async function toggleCandidato(candidatoId, activo) {
+    try {
+        const response = await APIClient.put(`/super-admin/candidatos/${candidatoId}/toggle`, {
+            activo: activo
+        });
+        
+        if (response.success) {
+            Utils.showSuccess(`Candidato ${activo ? 'habilitado' : 'deshabilitado'} para recolección de datos`);
+            await loadCandidatos();
+        } else {
+            Utils.showError(response.error || 'Error al actualizar candidato');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al actualizar candidato');
+    }
+}
+
+/**
+ * Crear nuevo tipo de elección
+ */
+async function createTipoEleccion() {
+    const nombre = prompt('Ingrese el nombre del tipo de elección:');
+    if (!nombre) return;
+    
+    const esUninominal = confirm('¿Es uninominal? (Aceptar = Sí, Cancelar = No)');
+    
+    try {
+        const response = await APIClient.post('/super-admin/tipos-eleccion', {
+            nombre: nombre,
+            es_uninominal: esUninominal,
+            activo: true
+        });
+        
+        if (response.success) {
+            Utils.showSuccess('Tipo de elección creado exitosamente');
+            await loadTiposEleccion();
+        } else {
+            Utils.showError(response.error || 'Error al crear tipo de elección');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al crear tipo de elección');
+    }
 }

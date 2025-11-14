@@ -740,3 +740,297 @@ def upload_candidatos():
             'success': False,
             'error': f'Error procesando archivo: {str(e)}'
         }), 500
+
+
+
+@super_admin_bp.route('/tipos-eleccion', methods=['GET'])
+@jwt_required()
+@role_required(['super_admin'])
+def get_tipos_eleccion():
+    """
+    Obtener todos los tipos de elección
+    """
+    try:
+        from backend.models.tipo_eleccion import TipoEleccion
+        
+        tipos = TipoEleccion.query.all()
+        
+        return jsonify({
+            'success': True,
+            'data': [tipo.to_dict() for tipo in tipos]
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/tipos-eleccion', methods=['POST'])
+@jwt_required()
+@role_required(['super_admin'])
+def create_tipo_eleccion():
+    """
+    Crear un nuevo tipo de elección
+    """
+    try:
+        from backend.database import db
+        from backend.models.tipo_eleccion import TipoEleccion
+        
+        data = request.get_json()
+        
+        if not data or 'nombre' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'El nombre es requerido'
+            }), 400
+        
+        # Verificar que no exista
+        existing = TipoEleccion.query.filter_by(nombre=data['nombre']).first()
+        if existing:
+            return jsonify({
+                'success': False,
+                'error': 'Ya existe un tipo de elección con ese nombre'
+            }), 400
+        
+        tipo = TipoEleccion(
+            nombre=data['nombre'],
+            es_uninominal=data.get('es_uninominal', False),
+            activo=data.get('activo', True)
+        )
+        
+        db.session.add(tipo)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Tipo de elección creado exitosamente',
+            'data': tipo.to_dict()
+        }), 201
+        
+    except Exception as e:
+        from backend.database import db
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/tipos-eleccion/<int:tipo_id>', methods=['PUT'])
+@jwt_required()
+@role_required(['super_admin'])
+def update_tipo_eleccion(tipo_id):
+    """
+    Actualizar un tipo de elección (habilitar/deshabilitar)
+    """
+    try:
+        from backend.database import db
+        from backend.models.tipo_eleccion import TipoEleccion
+        
+        tipo = TipoEleccion.query.get(tipo_id)
+        if not tipo:
+            return jsonify({
+                'success': False,
+                'error': 'Tipo de elección no encontrado'
+            }), 404
+        
+        data = request.get_json()
+        
+        if 'nombre' in data:
+            tipo.nombre = data['nombre']
+        if 'es_uninominal' in data:
+            tipo.es_uninominal = data['es_uninominal']
+        if 'activo' in data:
+            tipo.activo = data['activo']
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Tipo de elección actualizado exitosamente',
+            'data': tipo.to_dict()
+        }), 200
+        
+    except Exception as e:
+        from backend.database import db
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/partidos/<int:partido_id>/toggle', methods=['PUT'])
+@jwt_required()
+@role_required(['super_admin'])
+def toggle_partido(partido_id):
+    """
+    Habilitar/deshabilitar un partido para recolección de datos
+    """
+    try:
+        from backend.database import db
+        from backend.models.partido import Partido
+        
+        partido = Partido.query.get(partido_id)
+        if not partido:
+            return jsonify({
+                'success': False,
+                'error': 'Partido no encontrado'
+            }), 404
+        
+        data = request.get_json()
+        partido.activo = data.get('activo', not partido.activo)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Partido {"habilitado" if partido.activo else "deshabilitado"} exitosamente',
+            'data': partido.to_dict()
+        }), 200
+        
+    except Exception as e:
+        from backend.database import db
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/candidatos/<int:candidato_id>/toggle', methods=['PUT'])
+@jwt_required()
+@role_required(['super_admin'])
+def toggle_candidato(candidato_id):
+    """
+    Habilitar/deshabilitar un candidato para recolección de datos
+    """
+    try:
+        from backend.database import db
+        from backend.models.candidato import Candidato
+        
+        candidato = Candidato.query.get(candidato_id)
+        if not candidato:
+            return jsonify({
+                'success': False,
+                'error': 'Candidato no encontrado'
+            }), 404
+        
+        data = request.get_json()
+        candidato.activo = data.get('activo', not candidato.activo)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Candidato {"habilitado" if candidato.activo else "deshabilitado"} exitosamente',
+            'data': candidato.to_dict()
+        }), 200
+        
+    except Exception as e:
+        from backend.database import db
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/download/template/<template_type>', methods=['GET'])
+@jwt_required()
+@role_required(['super_admin'])
+def download_template(template_type):
+    """
+    Descargar plantilla Excel con datos de ejemplo
+    
+    Tipos: users, locations, partidos, candidatos, tipos_eleccion
+    """
+    try:
+        import pandas as pd
+        from io import BytesIO
+        from flask import send_file
+        
+        templates = {
+            'users': {
+                'data': {
+                    'nombre': ['Juan Perez', 'Maria Garcia', 'Carlos Lopez', 'Ana Martinez', 'Pedro Rodriguez'],
+                    'password': ['password123', 'password456', 'password789', 'password101', 'password202'],
+                    'rol': ['testigo', 'coordinador_puesto', 'coordinador_municipal', 'coordinador_departamental', 'auditor'],
+                    'ubicacion_codigo': ['001001001001', '001001001', '001001', '001', '']
+                },
+                'filename': 'plantilla_usuarios.xlsx'
+            },
+            'locations': {
+                'data': {
+                    'codigo': ['001', '001001', '001001001', '001001001001', '001001001002'],
+                    'nombre': ['Departamento Ejemplo', 'Municipio Ejemplo', 'Puesto Electoral 1', 'Mesa 1', 'Mesa 2'],
+                    'tipo': ['departamento', 'municipio', 'puesto', 'mesa', 'mesa'],
+                    'departamento_codigo': ['', '001', '001', '001', '001'],
+                    'municipio_codigo': ['', '', '001001', '001001', '001001'],
+                    'puesto_codigo': ['', '', '', '001001001', '001001001']
+                },
+                'filename': 'plantilla_divipola.xlsx'
+            },
+            'partidos': {
+                'data': {
+                    'nombre': ['Partido Liberal', 'Partido Conservador', 'Partido Verde', 'Partido de la U', 'Polo Democrático'],
+                    'sigla': ['PL', 'PC', 'PV', 'PU', 'PD'],
+                    'color': ['#FF0000', '#0000FF', '#00FF00', '#FFFF00', '#FF00FF'],
+                    'numero_lista': [1, 2, 3, 4, 5]
+                },
+                'filename': 'plantilla_partidos.xlsx'
+            },
+            'candidatos': {
+                'data': {
+                    'nombre': ['Juan Perez', 'Maria Garcia', 'Carlos Lopez', 'Ana Martinez', 'Pedro Rodriguez'],
+                    'partido_nombre': ['Partido Liberal', 'Partido Conservador', 'Partido Verde', 'Partido de la U', 'Polo Democrático'],
+                    'tipo_eleccion_nombre': ['Presidente', 'Senado', 'Cámara', 'Gobernador', 'Alcalde'],
+                    'numero_lista': [1, 2, 3, 4, 5]
+                },
+                'filename': 'plantilla_candidatos.xlsx'
+            },
+            'tipos_eleccion': {
+                'data': {
+                    'nombre': ['Presidente', 'Senado', 'Cámara', 'Gobernador', 'Alcalde', 'Concejo', 'JAL'],
+                    'es_uninominal': [True, False, False, True, True, False, False]
+                },
+                'filename': 'plantilla_tipos_eleccion.xlsx'
+            }
+        }
+        
+        if template_type not in templates:
+            return jsonify({
+                'success': False,
+                'error': 'Tipo de plantilla no válido'
+            }), 400
+        
+        template = templates[template_type]
+        df = pd.DataFrame(template['data'])
+        
+        # Crear archivo Excel en memoria
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Datos')
+            
+            # Ajustar ancho de columnas
+            worksheet = writer.sheets['Datos']
+            for idx, col in enumerate(df.columns):
+                max_length = max(df[col].astype(str).apply(len).max(), len(col)) + 2
+                worksheet.column_dimensions[chr(65 + idx)].width = max_length
+        
+        output.seek(0)
+        
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=template['filename']
+        )
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
