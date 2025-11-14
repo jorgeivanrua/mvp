@@ -13,6 +13,8 @@ document.addEventListener('DOMContentLoaded', function() {
     loadUserProfile();
     loadForms();
     loadTiposEleccion();
+    loadTiposIncidentes();
+    loadTiposDelitos();
     // setupImagePreview se llama cuando se abre el modal
 });
 
@@ -575,7 +577,6 @@ function updateFormsTable(forms) {
         // Solo se pueden editar borradores y formularios locales
         const puedeEditar = form.estado === 'borrador' || form.estado === 'local';
         const esLocal = form.es_local || form.estado === 'local';
-        const esEnviado = form.estado === 'pendiente' || form.estado === 'validado';
         
         // Hacer la fila clickeable si puede editar
         if (puedeEditar) {
@@ -715,10 +716,10 @@ function showCreateForm() {
 
 function cambiarMesaFormulario() {
     const mesaSelect = document.getElementById('mesaFormulario');
-    const selectedOption = mesaSelect.options[mesaSelect.selectedIndex];
+    const mesaSelectOption = mesaSelect.options[mesaSelect.selectedIndex];
     
-    if (selectedOption && selectedOption.value) {
-        const votantes = selectedOption.dataset.votantes || 0;
+    if (mesaSelectOption && mesaSelectOption.value) {
+        const votantes = mesaSelectOption.dataset.votantes || 0;
         document.getElementById('votantesRegistrados').value = votantes;
     }
 }
@@ -1308,10 +1309,61 @@ document.addEventListener('DOMContentLoaded', function() {
 // ============================================
 
 /**
+ * Cargar tipos de incidentes
+ */
+async function loadTiposIncidentes() {
+    try {
+        const response = await APIClient.getTiposIncidentes();
+        if (response.success) {
+            const select = document.getElementById('tipoIncidente');
+            if (select) {
+                select.innerHTML = '<option value="">Seleccione tipo de incidente...</option>';
+                response.data.forEach(tipo => {
+                    const option = document.createElement('option');
+                    option.value = tipo.codigo;
+                    option.textContent = tipo.nombre;
+                    select.appendChild(option);
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error loading tipos incidentes:', error);
+    }
+}
+
+/**
+ * Cargar tipos de delitos
+ */
+async function loadTiposDelitos() {
+    try {
+        const response = await APIClient.getTiposDelitos();
+        if (response.success) {
+            const select = document.getElementById('tipoDelito');
+            if (select) {
+                select.innerHTML = '<option value="">Seleccione tipo de delito...</option>';
+                response.data.forEach(tipo => {
+                    const option = document.createElement('option');
+                    option.value = tipo.codigo;
+                    option.textContent = tipo.nombre;
+                    select.appendChild(option);
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error loading tipos delitos:', error);
+    }
+}
+
+/**
  * Reportar incidente
  */
 function reportarIncidente() {
-    document.getElementById('incidenteForm').reset();
+    if (!selectedMesa) {
+        Utils.showWarning('Por favor selecciona una mesa primero');
+        return;
+    }
+    
+    document.getElementById('formIncidente').reset();
     new bootstrap.Modal(document.getElementById('incidenteModal')).show();
 }
 
@@ -1319,10 +1371,15 @@ function reportarIncidente() {
  * Guardar incidente
  */
 async function guardarIncidente() {
-    const form = document.getElementById('incidenteForm');
+    const form = document.getElementById('formIncidente');
     
     if (!form.checkValidity()) {
         form.reportValidity();
+        return;
+    }
+    
+    if (!selectedMesa) {
+        Utils.showError('Debe seleccionar una mesa');
         return;
     }
     
@@ -1330,18 +1387,32 @@ async function guardarIncidente() {
         const formData = new FormData(form);
         
         const data = {
-            mesa_id: selectedMesa ? selectedMesa.id : null,
+            mesa_id: selectedMesa.id,
             tipo_incidente: formData.get('tipo_incidente'),
-            descripcion: formData.get('descripcion'),
-            fecha_hora: new Date().toISOString()
+            titulo: formData.get('titulo'),
+            severidad: formData.get('severidad'),
+            descripcion: formData.get('descripcion')
         };
         
-        // Guardar localmente primero
-        guardarIncidenteLocal(data);
-        
-        Utils.showSuccess('Incidente reportado exitosamente');
-        bootstrap.Modal.getInstance(document.getElementById('incidenteModal')).hide();
-        cargarIncidentes();
+        // Intentar guardar en el servidor
+        try {
+            const response = await APIClient.reportarIncidente(data);
+            
+            if (response.success) {
+                Utils.showSuccess('✓ Incidente reportado exitosamente');
+                bootstrap.Modal.getInstance(document.getElementById('incidenteModal')).hide();
+                cargarIncidentes();
+            } else {
+                throw new Error(response.error || 'Error al reportar incidente');
+            }
+        } catch (error) {
+            console.error('Error guardando incidente en servidor:', error);
+            // Guardar localmente como backup
+            guardarIncidenteLocal(data);
+            Utils.showWarning('⚠️ Incidente guardado localmente. Se sincronizará cuando haya conexión.');
+            bootstrap.Modal.getInstance(document.getElementById('incidenteModal')).hide();
+            cargarIncidentes();
+        }
         
     } catch (error) {
         console.error('Error guardando incidente:', error);
@@ -1381,35 +1452,75 @@ function obtenerIncidentesLocales() {
 /**
  * Cargar incidentes
  */
-function cargarIncidentes() {
-    const incidentes = obtenerIncidentesLocales();
+async function cargarIncidentes() {
     const lista = document.getElementById('incidentesLista');
     
-    const incidentesArray = Object.values(incidentes);
-    
-    if (incidentesArray.length === 0) {
-        lista.innerHTML = '<p class="text-muted text-center py-4">No hay incidentes reportados</p>';
-        return;
-    }
-    
-    lista.innerHTML = incidentesArray.map(incidente => `
-        <div class="card mb-2">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <h6 class="mb-1">${getTipoIncidenteLabel(incidente.tipo_incidente)}</h6>
-                        <p class="mb-1">${incidente.descripcion}</p>
+    try {
+        // Cargar incidentes del servidor
+        const params = selectedMesa ? { mesa_id: selectedMesa.id } : {};
+        const response = await APIClient.getIncidentes(params);
+        
+        let incidentesServidor = [];
+        if (response.success) {
+            incidentesServidor = response.data || [];
+        }
+        
+        // Cargar incidentes locales
+        const incidentesLocales = Object.values(obtenerIncidentesLocales());
+        
+        // Combinar ambos
+        const todosIncidentes = [...incidentesServidor, ...incidentesLocales];
+        
+        if (todosIncidentes.length === 0) {
+            lista.innerHTML = '<p class="text-muted text-center py-4">No hay incidentes reportados</p>';
+            return;
+        }
+        
+        lista.innerHTML = todosIncidentes.map(incidente => {
+            const esLocal = incidente.sincronizado === false;
+            const severidadColor = getSeveridadColor(incidente.severidad || 'media');
+            
+            return `
+                <div class="card mb-3 border-${severidadColor}">
+                    <div class="card-header bg-${severidadColor} bg-opacity-10">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">${incidente.titulo || getTipoIncidenteLabel(incidente.tipo_incidente)}</h6>
+                                <span class="badge bg-${severidadColor}">${incidente.severidad_label || incidente.severidad || 'Media'}</span>
+                            </div>
+                            <span class="badge ${esLocal ? 'bg-warning' : 'bg-success'}">
+                                ${esLocal ? '💾 Local' : '✓ Reportado'}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">${incidente.descripcion}</p>
                         <small class="text-muted">
-                            <i class="bi bi-clock"></i> ${Utils.formatDate(incidente.fecha_hora)}
+                            <i class="bi bi-clock"></i> ${Utils.formatDate(incidente.fecha_hora || incidente.created_at)}
+                            ${incidente.mesa_codigo ? `• Mesa ${incidente.mesa_codigo}` : ''}
                         </small>
                     </div>
-                    <span class="badge ${incidente.sincronizado ? 'bg-success' : 'bg-warning'}">
-                        ${incidente.sincronizado ? 'Sincronizado' : 'Pendiente'}
-                    </span>
                 </div>
-            </div>
-        </div>
-    `).join('');
+            `;
+        }).join('');
+        
+    } catch (error) {
+        console.error('Error cargando incidentes:', error);
+        lista.innerHTML = '<div class="alert alert-warning">Error al cargar incidentes</div>';
+    }
+}
+
+/**
+ * Obtener color según severidad
+ */
+function getSeveridadColor(severidad) {
+    const colors = {
+        'baja': 'info',
+        'media': 'warning',
+        'alta': 'danger',
+        'critica': 'dark'
+    };
+    return colors[severidad] || 'warning';
 }
 
 /**
@@ -1430,7 +1541,12 @@ function getTipoIncidenteLabel(tipo) {
  * Reportar delito
  */
 function reportarDelito() {
-    document.getElementById('delitoForm').reset();
+    if (!selectedMesa) {
+        Utils.showWarning('Por favor selecciona una mesa primero');
+        return;
+    }
+    
+    document.getElementById('formDelito').reset();
     new bootstrap.Modal(document.getElementById('delitoModal')).show();
 }
 
@@ -1438,7 +1554,7 @@ function reportarDelito() {
  * Guardar delito
  */
 async function guardarDelito() {
-    const form = document.getElementById('delitoForm');
+    const form = document.getElementById('formDelito');
     
     if (!form.checkValidity()) {
         form.reportValidity();
@@ -1449,22 +1565,42 @@ async function guardarDelito() {
         return;
     }
     
+    if (!selectedMesa) {
+        Utils.showError('Debe seleccionar una mesa');
+        return;
+    }
+    
     try {
         const formData = new FormData(form);
         
         const data = {
-            mesa_id: selectedMesa ? selectedMesa.id : null,
+            mesa_id: selectedMesa.id,
             tipo_delito: formData.get('tipo_delito'),
+            titulo: formData.get('titulo'),
+            gravedad: formData.get('gravedad'),
             descripcion: formData.get('descripcion'),
-            fecha_hora: new Date().toISOString()
+            testigos_adicionales: formData.get('testigos_adicionales') || null
         };
         
-        // Guardar localmente primero
-        guardarDelitoLocal(data);
-        
-        Utils.showSuccess('Delito reportado exitosamente. Las autoridades serán notificadas.');
-        bootstrap.Modal.getInstance(document.getElementById('delitoModal')).hide();
-        cargarDelitos();
+        // Intentar guardar en el servidor
+        try {
+            const response = await APIClient.reportarDelito(data);
+            
+            if (response.success) {
+                Utils.showSuccess('✓ Delito reportado exitosamente. Las autoridades han sido notificadas.');
+                bootstrap.Modal.getInstance(document.getElementById('delitoModal')).hide();
+                cargarDelitos();
+            } else {
+                throw new Error(response.error || 'Error al reportar delito');
+            }
+        } catch (error) {
+            console.error('Error guardando delito en servidor:', error);
+            // Guardar localmente como backup
+            guardarDelitoLocal(data);
+            Utils.showWarning('⚠️ Delito guardado localmente. Se sincronizará cuando haya conexión.');
+            bootstrap.Modal.getInstance(document.getElementById('delitoModal')).hide();
+            cargarDelitos();
+        }
         
     } catch (error) {
         console.error('Error guardando delito:', error);
@@ -1504,35 +1640,76 @@ function obtenerDelitosLocales() {
 /**
  * Cargar delitos
  */
-function cargarDelitos() {
-    const delitos = obtenerDelitosLocales();
+async function cargarDelitos() {
     const lista = document.getElementById('delitosLista');
     
-    const delitosArray = Object.values(delitos);
-    
-    if (delitosArray.length === 0) {
-        lista.innerHTML = '<p class="text-muted text-center py-4">No hay delitos reportados</p>';
-        return;
-    }
-    
-    lista.innerHTML = delitosArray.map(delito => `
-        <div class="card mb-2 border-danger">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <h6 class="mb-1 text-danger">${getTipoDelitoLabel(delito.tipo_delito)}</h6>
-                        <p class="mb-1">${delito.descripcion}</p>
+    try {
+        // Cargar delitos del servidor
+        const params = selectedMesa ? { mesa_id: selectedMesa.id } : {};
+        const response = await APIClient.getDelitos(params);
+        
+        let delitosServidor = [];
+        if (response.success) {
+            delitosServidor = response.data || [];
+        }
+        
+        // Cargar delitos locales
+        const delitosLocales = Object.values(obtenerDelitosLocales());
+        
+        // Combinar ambos
+        const todosDelitos = [...delitosServidor, ...delitosLocales];
+        
+        if (todosDelitos.length === 0) {
+            lista.innerHTML = '<p class="text-muted text-center py-4">No hay delitos reportados</p>';
+            return;
+        }
+        
+        lista.innerHTML = todosDelitos.map(delito => {
+            const esLocal = delito.sincronizado === false;
+            const gravedadColor = getGravedadColor(delito.gravedad || 'media');
+            
+            return `
+                <div class="card mb-3 border-${gravedadColor}">
+                    <div class="card-header bg-${gravedadColor} bg-opacity-10">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1 text-${gravedadColor}">${delito.titulo || getTipoDelitoLabel(delito.tipo_delito)}</h6>
+                                <span class="badge bg-${gravedadColor}">${delito.gravedad_label || delito.gravedad || 'Media'}</span>
+                            </div>
+                            <span class="badge ${esLocal ? 'bg-warning' : 'bg-success'}">
+                                ${esLocal ? '💾 Local' : '✓ Reportado'}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">${delito.descripcion}</p>
+                        ${delito.testigos_adicionales ? `<p class="mb-2"><strong>Testigos:</strong> ${delito.testigos_adicionales}</p>` : ''}
                         <small class="text-muted">
-                            <i class="bi bi-clock"></i> ${Utils.formatDate(delito.fecha_hora)}
+                            <i class="bi bi-clock"></i> ${Utils.formatDate(delito.fecha_hora || delito.created_at)}
+                            ${delito.mesa_codigo ? `• Mesa ${delito.mesa_codigo}` : ''}
                         </small>
                     </div>
-                    <span class="badge ${delito.sincronizado ? 'bg-success' : 'bg-danger'}">
-                        ${delito.sincronizado ? 'Reportado' : 'Pendiente'}
-                    </span>
                 </div>
-            </div>
-        </div>
-    `).join('');
+            `;
+        }).join('');
+        
+    } catch (error) {
+        console.error('Error cargando delitos:', error);
+        lista.innerHTML = '<div class="alert alert-warning">Error al cargar delitos</div>';
+    }
+}
+
+/**
+ * Obtener color según gravedad
+ */
+function getGravedadColor(gravedad) {
+    const colors = {
+        'leve': 'info',
+        'media': 'warning',
+        'grave': 'danger',
+        'muy_grave': 'dark'
+    };
+    return colors[gravedad] || 'danger';
 }
 
 /**

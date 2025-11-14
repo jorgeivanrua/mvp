@@ -321,6 +321,66 @@ class APIClient {
     static async marcarNotificacionLeida(id) {
         return this.put(`/notificaciones/${id}/leer`, {});
     }
+    
+    // ============================================
+    // MÉTODOS ADICIONALES PARA TESTIGOS
+    // ============================================
+    
+    /**
+     * Obtener tipos de incidentes
+     */
+    static async getTiposIncidentes() {
+        return this.get('/incidentes-delitos/tipos-incidentes');
+    }
+    
+    /**
+     * Obtener tipos de delitos
+     */
+    static async getTiposDelitos() {
+        return this.get('/incidentes-delitos/tipos-delitos');
+    }
+    
+    /**
+     * Reportar incidente (alias para testigos)
+     */
+    static async reportarIncidente(data) {
+        return this.crearIncidente(data);
+    }
+    
+    /**
+     * Obtener incidentes (alias para testigos)
+     */
+    static async getIncidentes(params = {}) {
+        return this.obtenerIncidentes(params);
+    }
+    
+    /**
+     * Obtener incidente por ID (alias para testigos)
+     */
+    static async getIncidente(id) {
+        return this.obtenerIncidente(id);
+    }
+    
+    /**
+     * Reportar delito (alias para testigos)
+     */
+    static async reportarDelito(data) {
+        return this.crearDelito(data);
+    }
+    
+    /**
+     * Obtener delitos (alias para testigos)
+     */
+    static async getDelitos(params = {}) {
+        return this.obtenerDelitos(params);
+    }
+    
+    /**
+     * Obtener delito por ID (alias para testigos)
+     */
+    static async getDelito(id) {
+        return this.obtenerDelito(id);
+    }
 }
 
 // Exponer APIClient globalmente

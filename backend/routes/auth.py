@@ -224,7 +224,7 @@ def verificar_presencia():
                     # TODO: Implementar sistema de notificaciones
                     # Por ahora solo registramos en logs
                     print(f"NOTIFICACIÓN: Testigo {user.nombre} verificó presencia en {ubicacion.nombre_completo}")
-                    print(f"  -> Coordinador a notificar: {coordinador.nombre} ({coordinador.email})")
+                    print(f"  -> Coordinador a notificar: {coordinador.nombre}")
                     coordinador_notificado = True
         
         return jsonify({
