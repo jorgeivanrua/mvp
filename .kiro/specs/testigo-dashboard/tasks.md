@@ -18,9 +18,14 @@ Este plan documenta la implementación del Dashboard del Testigo Electoral, que 
   - Crear función `loadMesas()` para cargar mesas del testigo
   - Implementar selector de mesa con dropdown
   - Crear función `cambiarMesa()` para cambiar mesa activa
+  - Función `seleccionarMesaDesdePanel()` para seleccionar desde panel lateral
   - Implementar panel lateral con lista de mesas
-  - Mostrar estado de cada mesa (con/sin formularios)
+  - Mostrar estado de cada mesa:
+    - Badge verde con cantidad de E-14 si tiene formularios
+    - Badge gris "Sin E-14" si no tiene formularios
   - Función `actualizarPanelMesas()` para actualizar vista
+  - Mostrar mesa seleccionada con clase "active"
+  - Mostrar votantes registrados por mesa
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 15.1, 15.2_
 
 - [x] 3. Implementar verificación de presencia
@@ -56,40 +61,58 @@ Este plan documenta la implementación del Dashboard del Testigo Electoral, que 
   - Función `guardarBorradorLocal()` para guardar en localStorage
   - Función `obtenerBorradoresLocales()` para leer borradores
   - Función `eliminarBorradorLocal()` para eliminar borradores
+  - Función `sincronizarBorradoresLocales()` para sincronizar con servidor
   - Botón "Guardar Borrador" en modal
-  - Mostrar borradores con badge gris en lista
+  - Mostrar borradores con badge amarillo "💾 Guardado Localmente" en lista
   - Función `editarBorradorLocal()` para editar borradores
   - Función `eliminarBorradorLocalPorId()` para eliminar desde lista
+  - Clave única por mesa y tipo de elección: `${mesa_id}_${tipo_eleccion_id}`
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6_
 
 - [x] 7. Implementar envío de formularios
   - Función `saveForm(accion)` con parámetro 'enviar' o 'borrador'
-  - Validar campos requeridos antes de enviar
+  - Validar campos requeridos antes de enviar (solo si accion='enviar')
   - Endpoint POST `/api/formularios` en backend
   - Cambiar estado a 'pendiente' al enviar
   - Mostrar confirmación de envío exitoso
   - Fallback a guardado local si falla conexión
+  - Deshabilitar botones durante envío para prevenir doble envío
   - Limpiar formulario y cerrar modal después de enviar
+  - Eliminar borrador local si el envío es exitoso
+  - Actualizar vistas (formularios y panel de mesas) después de enviar
+  - Delay de 500ms antes de cerrar modal para mostrar mensaje
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6_
 
 - [x] 8. Implementar visualización de formularios
   - Función `loadForms()` para cargar formularios del testigo
   - Función `updateFormsTable()` para renderizar tabla
+  - Función `getMesaCodigoById()` para obtener código de mesa
   - Mostrar mesa, estado, total votos, fecha para cada formulario
-  - Badges de colores según estado (pendiente/validado/rechazado/borrador/local)
+  - Badges de colores según estado:
+    - Pendiente (azul): 📤 Enviado - Pendiente Revisión
+    - Validado (verde): ✅ Validado
+    - Rechazado (rojo): ❌ Rechazado
+    - Borrador (gris): 📝 Borrador
+    - Local (amarillo): 💾 Guardado Localmente
   - Función `getStatusColor()` para colores de badges
   - Función `getEstadoLabel()` para labels de estados
-  - Combinar formularios del servidor y locales
+  - Combinar formularios del servidor y borradores locales
+  - Filas clickeables para editar borradores
+  - Botones de editar/eliminar para borradores locales
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
 - [x] 9. Implementar carga de partidos y candidatos
   - Función `loadTiposEleccion()` para cargar tipos de elección
   - Función `cargarPartidosYCandidatos()` para cargar según tipo
   - Endpoint GET `/api/configuracion/partidos` en backend
-  - Endpoint GET `/api/configuracion/candidatos` en backend
+  - Endpoint GET `/api/configuracion/candidatos` en backend con filtro por tipo_eleccion_id
   - Función `renderVotacionForm()` para renderizar formulario dinámico
-  - Soporte para elecciones uninominales y por listas
+  - Soporte para elecciones uninominales (un candidato por partido, sin votos de partido)
+  - Soporte para elecciones por listas (múltiples candidatos + votos de partido)
   - Agrupar candidatos por partido
+  - Cards con color del partido en border-left
+  - Inputs numéricos con actualización en tiempo real
+  - Mostrar total por partido en elecciones por listas
   - _Requirements: 3.2, 3.3, 3.4_
 
 - [x] 10. Implementar reporte de incidentes
@@ -116,11 +139,19 @@ Este plan documenta la implementación del Dashboard del Testigo Electoral, que 
 - [x] 12. Implementar visualización de incidentes y delitos
   - Función `cargarIncidentes()` para cargar y renderizar incidentes
   - Función `cargarDelitos()` para cargar y renderizar delitos
-  - Combinar datos del servidor y locales
-  - Mostrar tipo, título, severidad/gravedad, descripción, fecha
-  - Indicar estado de sincronización (sincronizado/pendiente)
-  - Colores distintivos según severidad/gravedad
+  - Combinar datos del servidor y locales usando SyncManager
+  - Mostrar tipo, título, severidad/gravedad, descripción, fecha, mesa
+  - Indicar estado de sincronización:
+    - ✓ Reportado (verde) - Sincronizado con servidor
+    - 💾 Local (amarillo) - Pendiente de sincronización
+  - Colores distintivos según severidad/gravedad:
+    - Baja/Leve (azul info)
+    - Media (amarillo warning)
+    - Alta/Grave (rojo danger)
+    - Crítica/Muy Grave (gris oscuro)
   - Funciones `getSeveridadColor()` y `getGravedadColor()`
+  - Funciones `getTipoIncidenteLabel()` y `getTipoDelitoLabel()`
+  - Cards con border-left coloreado según severidad/gravedad
   - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
 
 - [x] 13. Implementar SyncManager universal
@@ -130,8 +161,11 @@ Este plan documenta la implementación del Dashboard del Testigo Electoral, que 
   - Función `syncAll()` para sincronizar todos los datos
   - Función `syncIncidents()` para sincronizar incidentes
   - Función `syncCrimes()` para sincronizar delitos
+  - Funciones `saveIncidentLocally()` y `saveCrimeLocally()` para guardado local
+  - Funciones `getLocalIncidents()` y `getLocalCrimes()` para lectura
   - Sincronización automática al cargar (2 segundos)
   - Sincronización periódica cada 5 minutos
+  - Instancia global `window.syncManager`
   - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7_
 
 - [x] 14. Implementar indicador de sincronización
@@ -198,10 +232,22 @@ Este plan documenta la implementación del Dashboard del Testigo Electoral, que 
   - _Requirements: 16.1, 16.2, 16.3, 16.4, 16.5_
 
 - [x] 21. Integrar con backend
-  - Crear endpoints en `backend/routes/formularios_e14.py`
-  - Crear endpoints en `backend/routes/incidentes_delitos.py`
+  - Crear endpoints en `backend/routes/formularios_e14.py`:
+    - GET `/api/formularios/mis-formularios` - Listar formularios del testigo
+    - POST `/api/formularios` - Crear formulario E-14
+    - PUT `/api/formularios/<id>` - Actualizar formulario
+    - GET `/api/formularios/<id>` - Obtener formulario específico
+  - Crear endpoints en `backend/routes/incidentes_delitos.py`:
+    - POST `/api/incidentes-delitos/incidentes` - Reportar incidente
+    - GET `/api/incidentes-delitos/incidentes` - Listar incidentes
+    - POST `/api/incidentes-delitos/delitos` - Reportar delito
+    - GET `/api/incidentes-delitos/delitos` - Listar delitos
+    - GET `/api/incidentes-delitos/tipos-incidentes` - Tipos de incidentes
+    - GET `/api/incidentes-delitos/tipos-delitos` - Tipos de delitos
+  - Crear endpoint en `backend/routes/auth.py`:
+    - POST `/api/auth/verificar-presencia` - Verificar presencia del testigo
   - Decoradores `@jwt_required()` y `@role_required(['testigo_electoral'])`
-  - Validar acceso solo a mesas asignadas
+  - Validar acceso solo a mesas asignadas del testigo
   - Registrar blueprints en `backend/app.py`
   - Crear ruta frontend `/testigo/dashboard` en `backend/routes/frontend.py`
   - _Requirements: Todos_
@@ -263,26 +309,96 @@ Este plan documenta la implementación del Dashboard del Testigo Electoral, que 
   - Facilitar edición rápida
   - _Requirements: 12.2_
 
-- [x] 30. Documentar código
+- [x] 30. Implementar métodos en API Client
+  - Agregar métodos en `frontend/static/js/api-client.js`:
+    - `getFormulariosE14()` - Obtener formularios del testigo
+    - `getFormularioE14(id)` - Obtener formulario específico
+    - `createFormularioE14(data)` - Crear formulario
+    - `updateFormularioE14(id, data)` - Actualizar formulario
+    - `getTiposEleccion()` - Obtener tipos de elección
+    - `getPartidos()` - Obtener partidos políticos
+    - `getCandidatos(params)` - Obtener candidatos con filtros
+    - `getTiposIncidentes()` - Obtener tipos de incidentes
+    - `getTiposDelitos()` - Obtener tipos de delitos
+    - `reportarIncidente(data)` - Reportar incidente (alias de crearIncidente)
+    - `reportarDelito(data)` - Reportar delito (alias de crearDelito)
+    - `getIncidentes(params)` - Obtener incidentes
+    - `getDelitos(params)` - Obtener delitos
+  - Todos los métodos retornan promesas con formato `{success, data, error}`
+  - Manejo de errores centralizado en `handleResponse()`
+  - _Requirements: Todos_
+
+- [x] 31. Documentar código
   - Comentarios JSDoc en funciones principales
   - Comentarios explicativos en lógica compleja
-  - README con instrucciones de uso
+  - Comentarios de secciones con separadores visuales
   - _Requirements: Mantenibilidad_
 
 ## Estado Actual
 
 ✅ **Dashboard Testigo Electoral 100% Funcional**
 
-Todas las tareas están completadas y el sistema está en producción. El dashboard incluye:
+Todas las 31 tareas están completadas y el sistema está en producción. El dashboard incluye:
 
-- ✅ Gestión completa de formularios E-14
-- ✅ Reporte de incidentes y delitos
-- ✅ Sincronización automática universal
-- ✅ Funcionamiento offline completo
-- ✅ Interfaz móvil-first responsive
-- ✅ Validaciones y cálculos automáticos
-- ✅ Gestión de múltiples mesas
-- ✅ Seguridad y auditoría
+### Funcionalidades Principales
+- ✅ **Gestión completa de formularios E-14**
+  - Creación con cálculos automáticos
+  - Guardado de borradores locales
+  - Envío para revisión
+  - Edición de borradores
+  - Visualización con estados (pendiente/validado/rechazado/borrador/local)
+
+- ✅ **Reporte de incidentes y delitos**
+  - Modales de reporte con validaciones
+  - Tipos predefinidos cargados desde servidor
+  - Guardado local si falla conexión
+  - Visualización con colores por severidad/gravedad
+
+- ✅ **Sincronización automática universal (SyncManager)**
+  - Sincronización al cargar (2 segundos)
+  - Sincronización periódica (cada 5 minutos)
+  - Indicador flotante con pendientes
+  - Sincronización manual con botón
+  - Limpieza de datos antiguos (>7 días)
+
+- ✅ **Funcionamiento offline completo**
+  - Guardado local en localStorage
+  - Sincronización automática al recuperar conexión
+  - Indicadores visuales de estado de sincronización
+
+- ✅ **Interfaz móvil-first responsive**
+  - Diseño optimizado para móviles
+  - Inputs numéricos con teclado optimizado
+  - Captura de fotos con cámara
+  - Botones grandes y táctiles
+
+- ✅ **Validaciones y cálculos automáticos**
+  - Validación de campos requeridos
+  - Cálculo automático de totales
+  - Identificación de partido ganador
+  - Prevención de errores
+
+- ✅ **Gestión de múltiples mesas**
+  - Selector de mesa
+  - Panel lateral con lista de mesas
+  - Filtrado por mesa seleccionada
+  - Prevención de duplicados
+
+- ✅ **Seguridad y auditoría**
+  - Autenticación con JWT
+  - Validación de rol testigo_electoral
+  - Cierre de sesión seguro
+  - Logs de todas las acciones
+
+### Archivos Implementados
+- `frontend/templates/testigo/dashboard.html` - Template HTML
+- `frontend/static/js/testigo-dashboard-new.js` - Lógica principal (1570 líneas)
+- `frontend/static/js/sync-manager.js` - Sincronización universal
+- `frontend/static/js/api-client.js` - Cliente API con métodos
+- `backend/routes/formularios_e14.py` - Endpoints de formularios
+- `backend/routes/incidentes_delitos.py` - Endpoints de incidentes/delitos
+- `backend/routes/auth.py` - Endpoint de verificación de presencia
+- `backend/routes/frontend.py` - Ruta `/testigo/dashboard`
 
 ## Mejoras Futuras (Opcionales)
 
