@@ -806,21 +806,34 @@ async function saveForm(accion = 'borrador') {
                 
                 const mensaje = accion === 'borrador' ? 
                     '✓ Borrador guardado en el servidor' : 
-                    '✓ Formulario E-14 enviado exitosamente';
+                    '✓ Formulario E-14 enviado exitosamente para revisión';
                 Utils.showSuccess(mensaje);
                 
-                // Cerrar modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById('formModal'));
-                if (modal) modal.hide();
+                // Limpiar formulario ANTES de cerrar modal
+                form.reset();
+                document.getElementById('imagePreview').innerHTML = '<p class="text-muted">Toque el botón para tomar una foto</p>';
+                votosData = {};
                 
-                // Limpiar formulario si fue envío
-                if (accion === 'enviar') {
-                    form.reset();
-                    document.getElementById('imagePreview').innerHTML = '<p class="text-muted">Toque el botón para tomar una foto</p>';
-                    votosData = {};
-                }
+                // Cerrar modal con un pequeño delay para que se vea el mensaje
+                setTimeout(() => {
+                    const modalElement = document.getElementById('formModal');
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) {
+                        modal.hide();
+                    } else {
+                        // Si no hay instancia, crear una y cerrarla
+                        const newModal = new bootstrap.Modal(modalElement);
+                        newModal.hide();
+                    }
+                    
+                    // Asegurar que el backdrop se elimine
+                    document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style.removeProperty('overflow');
+                    document.body.style.removeProperty('padding-right');
+                }, 500);
                 
-                // Actualizar vistas
+                // Actualizar vistas inmediatamente
                 await loadForms();
                 await actualizarPanelMesas();
                 return;
@@ -835,8 +848,16 @@ async function saveForm(accion = 'borrador') {
                 guardarBorradorLocal(data);
                 Utils.showWarning('⚠️ Guardado localmente (sin conexión). Se sincronizará automáticamente.');
                 
-                const modal = bootstrap.Modal.getInstance(document.getElementById('formModal'));
-                if (modal) modal.hide();
+                setTimeout(() => {
+                    const modalElement = document.getElementById('formModal');
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) {
+                        modal.hide();
+                    }
+                    document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style.removeProperty('overflow');
+                }, 500);
                 
                 await loadForms();
                 await actualizarPanelMesas();
@@ -850,8 +871,15 @@ async function saveForm(accion = 'borrador') {
                 guardarBorradorLocal(data);
                 Utils.showWarning('Guardado como borrador local. Se sincronizará cuando haya conexión.');
                 
-                const modal = bootstrap.Modal.getInstance(document.getElementById('formModal'));
-                if (modal) modal.hide();
+                setTimeout(() => {
+                    const modalElement = document.getElementById('formModal');
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) {
+                        modal.hide();
+                    }
+                    document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+                    document.body.classList.remove('modal-open');
+                }, 500);
                 
                 await loadForms();
                 await actualizarPanelMesas();

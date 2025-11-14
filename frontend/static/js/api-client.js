@@ -218,6 +218,109 @@ class APIClient {
         
         return this.handleResponse(response);
     }
+    
+    // ==================== INCIDENTES Y DELITOS ====================
+    
+    /**
+     * Crear un incidente electoral
+     */
+    static async crearIncidente(data) {
+        return this.post('/incidentes', data);
+    }
+    
+    /**
+     * Obtener incidentes con filtros opcionales
+     */
+    static async obtenerIncidentes(filtros = {}) {
+        return this.get('/incidentes', filtros);
+    }
+    
+    /**
+     * Obtener detalle de un incidente
+     */
+    static async obtenerIncidente(id) {
+        return this.get(`/incidentes/${id}`);
+    }
+    
+    /**
+     * Actualizar estado de un incidente
+     */
+    static async actualizarEstadoIncidente(id, estado, comentario = null) {
+        return this.put(`/incidentes/${id}/estado`, { estado, comentario });
+    }
+    
+    /**
+     * Obtener tipos de incidentes disponibles
+     */
+    static async obtenerTiposIncidentes() {
+        return this.get('/incidentes/tipos');
+    }
+    
+    /**
+     * Crear un delito electoral
+     */
+    static async crearDelito(data) {
+        return this.post('/delitos', data);
+    }
+    
+    /**
+     * Obtener delitos con filtros opcionales
+     */
+    static async obtenerDelitos(filtros = {}) {
+        return this.get('/delitos', filtros);
+    }
+    
+    /**
+     * Obtener detalle de un delito
+     */
+    static async obtenerDelito(id) {
+        return this.get(`/delitos/${id}`);
+    }
+    
+    /**
+     * Actualizar estado de un delito
+     */
+    static async actualizarEstadoDelito(id, estado, comentario = null) {
+        return this.put(`/delitos/${id}/estado`, { estado, comentario });
+    }
+    
+    /**
+     * Denunciar formalmente un delito
+     */
+    static async denunciarDelito(id, numeroDenuncia, autoridadCompetente) {
+        return this.post(`/delitos/${id}/denunciar`, {
+            numero_denuncia: numeroDenuncia,
+            autoridad_competente: autoridadCompetente
+        });
+    }
+    
+    /**
+     * Obtener tipos de delitos disponibles
+     */
+    static async obtenerTiposDelitos() {
+        return this.get('/delitos/tipos');
+    }
+    
+    /**
+     * Obtener estadísticas de incidentes y delitos
+     */
+    static async obtenerEstadisticasReportes() {
+        return this.get('/reportes/estadisticas');
+    }
+    
+    /**
+     * Obtener notificaciones del usuario
+     */
+    static async obtenerNotificaciones(soloNoLeidas = false) {
+        return this.get('/notificaciones', { solo_no_leidas: soloNoLeidas });
+    }
+    
+    /**
+     * Marcar notificación como leída
+     */
+    static async marcarNotificacionLeida(id) {
+        return this.put(`/notificaciones/${id}/leer`, {});
+    }
 }
 
 // Exponer APIClient globalmente

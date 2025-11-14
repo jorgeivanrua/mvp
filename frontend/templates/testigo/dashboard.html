@@ -474,32 +474,36 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="incidenteForm">
+                <form id="formIncidente">
                     <div class="mb-3">
                         <label class="form-label">Tipo de Incidente *</label>
-                        <select class="form-select" name="tipo_incidente" required>
-                            <option value="">Seleccione...</option>
-                            <option value="retraso_apertura">Retraso en apertura</option>
-                            <option value="falta_material">Falta de material electoral</option>
-                            <option value="problemas_tecnicos">Problemas técnicos</option>
-                            <option value="irregularidades">Irregularidades en el proceso</option>
-                            <option value="otros">Otros</option>
+                        <select class="form-select" id="tipoIncidente" name="tipo_incidente" required>
+                            <option value="">Seleccione tipo de incidente...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Título *</label>
+                        <input type="text" class="form-control" name="titulo" required placeholder="Ej: Falta de boletas en mesa 123">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Severidad *</label>
+                        <select class="form-select" name="severidad" required>
+                            <option value="baja">Baja</option>
+                            <option value="media" selected>Media</option>
+                            <option value="alta">Alta</option>
+                            <option value="critica">Crítica</option>
                         </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Descripción *</label>
                         <textarea class="form-control" name="descripcion" rows="4" required placeholder="Describa el incidente con el mayor detalle posible..."></textarea>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Foto (opcional)</label>
-                        <input type="file" class="form-control" name="foto" accept="image/*" capture="environment">
-                    </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-warning" onclick="guardarIncidente()">
-                    <i class="bi bi-send"></i> Reportar
+                    <i class="bi bi-send"></i> Reportar Incidente
                 </button>
             </div>
         </div>
@@ -519,17 +523,24 @@
                     <i class="bi bi-exclamation-triangle"></i>
                     <strong>Advertencia:</strong> Este reporte será enviado a las autoridades electorales competentes.
                 </div>
-                <form id="delitoForm">
+                <form id="formDelito">
                     <div class="mb-3">
                         <label class="form-label">Tipo de Delito *</label>
-                        <select class="form-select" name="tipo_delito" required>
-                            <option value="">Seleccione...</option>
-                            <option value="compra_votos">Compra de votos</option>
-                            <option value="coaccion">Coacción al votante</option>
-                            <option value="fraude">Fraude electoral</option>
-                            <option value="suplantacion">Suplantación de identidad</option>
-                            <option value="alteracion">Alteración de resultados</option>
-                            <option value="otros">Otros delitos</option>
+                        <select class="form-select" id="tipoDelito" name="tipo_delito" required>
+                            <option value="">Seleccione tipo de delito...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Título *</label>
+                        <input type="text" class="form-control" name="titulo" required placeholder="Ej: Intento de compra de votos">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Gravedad *</label>
+                        <select class="form-select" name="gravedad" required>
+                            <option value="leve">Leve</option>
+                            <option value="media" selected>Media</option>
+                            <option value="grave">Grave</option>
+                            <option value="muy_grave">Muy Grave</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -537,9 +548,8 @@
                         <textarea class="form-control" name="descripcion" rows="5" required placeholder="Describa el delito con el mayor detalle posible: qué ocurrió, quiénes estuvieron involucrados, cuándo sucedió, etc."></textarea>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Evidencia Fotográfica (opcional)</label>
-                        <input type="file" class="form-control" name="evidencia" accept="image/*" capture="environment">
-                        <small class="text-muted">Si es posible, tome fotos como evidencia</small>
+                        <label class="form-label">Testigos Adicionales (opcional)</label>
+                        <input type="text" class="form-control" name="testigos_adicionales" placeholder="Nombres de otros testigos presenciales">
                     </div>
                 </form>
             </div>
@@ -556,5 +566,6 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{{ url_for('static', filename='js/incidentes-delitos.js') }}"></script>
 <script src="{{ url_for('static', filename='js/testigo-dashboard-new.js') }}"></script>
 {% endblock %}
