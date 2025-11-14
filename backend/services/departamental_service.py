@@ -91,7 +91,6 @@ class DepartamentalService:
                 'coordinador': {
                     'id': coordinador.id if coordinador else None,
                     'nombre': coordinador.nombre if coordinador else 'Sin asignar',
-                    'telefono': coordinador.telefono if coordinador else None,
                     'ultimo_acceso': ultimo_acceso.isoformat() if ultimo_acceso else None
                 },
                 'estado': estado,
@@ -269,9 +268,7 @@ class DepartamentalService:
             'coordinador': {
                 'id': coordinador_municipal.id if coordinador_municipal else None,
                 'nombre': coordinador_municipal.nombre if coordinador_municipal else 'Sin asignar',
-                'telefono': coordinador_municipal.telefono if coordinador_municipal else None,
-                'email': coordinador_municipal.email if coordinador_municipal else None,
-                'ultimo_acceso': coordinador_municipal.last_login.isoformat() if coordinador_municipal and coordinador_municipal.last_login else None
+                'ultimo_acceso': coordinador_municipal.ultimo_acceso.isoformat() if coordinador_municipal and coordinador_municipal.ultimo_acceso else None
             },
             'puestos': datos_municipio.get('puestos', []) if datos_municipio else [],
             'estadisticas': datos_municipio.get('estadisticas', {}) if datos_municipio else {},

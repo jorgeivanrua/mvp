@@ -724,15 +724,18 @@ function cambiarMesaFormulario() {
 }
 
 async function saveForm(accion = 'borrador') {
+    console.log('saveForm called with accion:', accion);
     const form = document.getElementById('e14Form');
     
     // Solo validar si se va a enviar
     if (accion === 'enviar' && !form.checkValidity()) {
+        console.log('Form validation failed');
         form.reportValidity();
         return;
     }
     
     const mesaId = document.getElementById('mesaFormulario').value;
+    console.log('Mesa ID:', mesaId);
     if (!mesaId) {
         Utils.showError('Selecciona una mesa');
         return;
@@ -743,12 +746,14 @@ async function saveForm(accion = 'borrador') {
     const btnEnviar = document.querySelector('.btn-primary[onclick*="saveForm"]');
     const btnCancelar = document.querySelector('.btn-secondary[data-bs-dismiss="modal"]');
     
+    console.log('Disabling buttons...');
     if (btnGuardar) btnGuardar.disabled = true;
     if (btnEnviar) btnEnviar.disabled = true;
     if (btnCancelar) btnCancelar.disabled = true;
     
     try {
         const formData = new FormData(form);
+        console.log('FormData created');
         
         // Construir datos de votos por partido y candidato
         const votosPartidos = [];

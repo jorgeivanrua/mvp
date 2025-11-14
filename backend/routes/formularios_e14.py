@@ -567,11 +567,9 @@ def obtener_testigos_puesto():
             testigos_data.append({
                 'id': testigo.id,
                 'nombre': testigo.nombre,
-                'telefono': testigo.telefono,
-                'email': testigo.email,
                 'presencia_verificada': testigo.presencia_verificada,
                 'presencia_verificada_at': testigo.presencia_verificada_at.isoformat() if testigo.presencia_verificada_at else None,
-                'last_login': testigo.last_login.isoformat() if testigo.last_login else None
+                'ultimo_acceso': testigo.ultimo_acceso.isoformat() if testigo.ultimo_acceso else None
             })
         
         return jsonify({

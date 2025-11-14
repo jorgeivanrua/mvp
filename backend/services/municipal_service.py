@@ -94,7 +94,6 @@ class MunicipalService:
                 'coordinador': {
                     'id': coordinador.id if coordinador else None,
                     'nombre': coordinador.nombre if coordinador else 'Sin asignar',
-                    'telefono': coordinador.telefono if coordinador else None,
                     'ultimo_acceso': ultimo_acceso.isoformat() if ultimo_acceso else None
                 },
                 'estado': estado,
@@ -206,9 +205,7 @@ class MunicipalService:
             'coordinador': {
                 'id': coordinador_puesto.id if coordinador_puesto else None,
                 'nombre': coordinador_puesto.nombre if coordinador_puesto else 'Sin asignar',
-                'telefono': coordinador_puesto.telefono if coordinador_puesto else None,
-                'email': coordinador_puesto.email if coordinador_puesto else None,
-                'ultimo_acceso': coordinador_puesto.last_login.isoformat() if coordinador_puesto and coordinador_puesto.last_login else None
+                'ultimo_acceso': coordinador_puesto.ultimo_acceso.isoformat() if coordinador_puesto and coordinador_puesto.ultimo_acceso else None
             },
             'mesas': [
                 {
