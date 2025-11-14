@@ -1,6 +1,7 @@
 """
 Rutas de autenticación
 """
+from datetime import datetime
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.services.auth_service import AuthService
@@ -222,9 +223,14 @@ def login_testing():
         
         # Login exitoso
         user.reset_failed_attempts()
+        user.ultimo_acceso = datetime.now()
         db.session.commit()
         
-        return jsonify(create_token_response(user, *AuthService._create_tokens(user))), 200
+        # Generar tokens
+        from backend.utils.jwt_utils import generate_tokens
+        access_token, refresh_token = generate_tokens(user)
+        
+        return jsonify(create_token_response(user, access_token, refresh_token)), 200
         
     except Exception as e:
         return jsonify({
