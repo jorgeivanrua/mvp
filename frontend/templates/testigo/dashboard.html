@@ -92,9 +92,14 @@
                 <h2>Dashboard - Testigo Electoral</h2>
                 <p class="text-muted mb-0">Bienvenido al sistema de recolección de datos electorales</p>
             </div>
-            <button class="btn btn-outline-danger" onclick="logout()">
-                <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
-            </button>
+            <div>
+                <button class="btn btn-outline-primary me-2" onclick="sincronizarTodosDatosLocales()" title="Sincronizar datos locales con el servidor">
+                    <i class="bi bi-arrow-repeat"></i> Sincronizar
+                </button>
+                <button class="btn btn-outline-danger" onclick="logout()">
+                    <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                </button>
+            </div>
         </div>
     </div>
 

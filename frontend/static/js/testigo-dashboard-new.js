@@ -15,6 +15,17 @@ document.addEventListener('DOMContentLoaded', function() {
     loadTiposEleccion();
     loadTiposIncidentes();
     loadTiposDelitos();
+    
+    // Sincronizar datos locales con BD al cargar
+    setTimeout(() => {
+        sincronizarTodosDatosLocales();
+    }, 2000);
+    
+    // Sincronización automática cada 5 minutos
+    setInterval(() => {
+        sincronizarTodosDatosLocales(true); // true = silencioso
+    }, 5 * 60 * 1000);
+    
     // setupImagePreview se llama cuando se abre el modal
 });
 
@@ -486,11 +497,8 @@ async function loadForms() {
         
         updateFormsTable(todosFormularios);
         
-        // Mostrar indicador si hay borradores pendientes de sincronizar
-        const totalBorradores = formulariosLocales.length;
-        if (totalBorradores > 0) {
-            mostrarIndicadorSincronizacion(totalBorradores);
-        }
+        // Actualizar indicador de sincronización
+        actualizarIndicadorSincronizacion();
         
         // Actualizar panel lateral
         if (userLocation && userLocation.puesto_codigo) {
@@ -526,35 +534,7 @@ function getMesaCodigoById(mesaId) {
     return 'N/A';
 }
 
-/**
- * Mostrar indicador de sincronización pendiente
- */
-function mostrarIndicadorSincronizacion(cantidad) {
-    // Buscar o crear contenedor de indicador
-    let indicador = document.getElementById('indicadorSincronizacion');
-    
-    if (!indicador) {
-        indicador = document.createElement('div');
-        indicador.id = 'indicadorSincronizacion';
-        indicador.className = 'alert alert-warning d-flex justify-content-between align-items-center';
-        indicador.style.position = 'fixed';
-        indicador.style.bottom = '20px';
-        indicador.style.right = '20px';
-        indicador.style.zIndex = '1050';
-        indicador.style.minWidth = '300px';
-        document.body.appendChild(indicador);
-    }
-    
-    indicador.innerHTML = `
-        <div>
-            <i class="bi bi-cloud-upload"></i>
-            <strong>${cantidad}</strong> formulario(s) pendiente(s) de sincronizar
-        </div>
-        <button class="btn btn-sm btn-warning" onclick="sincronizarBorradoresLocales()">
-            <i class="bi bi-arrow-repeat"></i> Sincronizar
-        </button>
-    `;
-}
+
 
 function updateFormsTable(forms) {
     const tbody = document.querySelector('#formsTable tbody');
@@ -968,15 +948,17 @@ function eliminarBorradorLocal(mesaId, tipoEleccionId) {
 /**
  * Sincronizar borradores locales con el servidor
  */
-async function sincronizarBorradoresLocales() {
+async function sincronizarBorradoresLocales(silencioso = false) {
     try {
         const borradores = obtenerBorradoresLocales();
         const keys = Object.keys(borradores);
         
         if (keys.length === 0) {
             console.log('No hay borradores locales para sincronizar');
-            Utils.showInfo('No hay formularios pendientes de sincronizar');
-            return;
+            if (!silencioso) {
+                Utils.showInfo('No hay formularios pendientes de sincronizar');
+            }
+            return { sincronizados: 0, errores: 0 };
         }
         
         console.log(`Sincronizando ${keys.length} borradores locales...`);
@@ -1007,17 +989,22 @@ async function sincronizarBorradoresLocales() {
             }
         }
         
-        if (sincronizados > 0) {
-            Utils.showSuccess(`${sincronizados} formulario(s) sincronizado(s) exitosamente`);
-            loadForms();
+        if (!silencioso) {
+            if (sincronizados > 0) {
+                Utils.showSuccess(`✓ ${sincronizados} formulario(s) sincronizado(s) exitosamente`);
+                loadForms();
+            }
+            
+            if (errores > 0) {
+                Utils.showWarning(`⚠️ ${errores} formulario(s) no se pudieron sincronizar`);
+            }
         }
         
-        if (errores > 0) {
-            Utils.showWarning(`${errores} formulario(s) no se pudieron sincronizar`);
-        }
+        return { sincronizados, errores };
         
     } catch (error) {
         console.error('Error en sincronización de borradores:', error);
+        return { sincronizados: 0, errores: 0 };
     }
 }
 
@@ -1433,10 +1420,82 @@ function guardarIncidenteLocal(data) {
         const id = `incidente_${Date.now()}`;
         data.id = id;
         data.sincronizado = false;
+        data.fecha_hora = new Date().toISOString();
         incidentes[id] = data;
         localStorage.setItem('incidentes_testigo', JSON.stringify(incidentes));
+        console.log('Incidente guardado localmente:', id);
     } catch (error) {
         console.error('Error guardando incidente local:', error);
+    }
+}
+
+/**
+ * Sincronizar incidentes locales con el servidor
+ */
+async function sincronizarIncidentesLocales(silencioso = false) {
+    try {
+        const incidentes = obtenerIncidentesLocales();
+        const keys = Object.keys(incidentes);
+        
+        if (keys.length === 0) {
+            console.log('No hay incidentes locales para sincronizar');
+            return { sincronizados: 0, errores: 0 };
+        }
+        
+        console.log(`Sincronizando ${keys.length} incidentes locales...`);
+        
+        let sincronizados = 0;
+        let errores = 0;
+        
+        for (const key of keys) {
+            const incidente = incidentes[key];
+            
+            // Solo sincronizar los que no están sincronizados
+            if (incidente.sincronizado) {
+                continue;
+            }
+            
+            try {
+                // Preparar datos para enviar
+                const dataToSend = {
+                    mesa_id: incidente.mesa_id,
+                    tipo_incidente: incidente.tipo_incidente,
+                    titulo: incidente.titulo,
+                    severidad: incidente.severidad,
+                    descripcion: incidente.descripcion
+                };
+                
+                const response = await APIClient.reportarIncidente(dataToSend);
+                
+                if (response.success) {
+                    // Marcar como sincronizado en lugar de eliminar
+                    incidente.sincronizado = true;
+                    incidente.id_servidor = response.data.id;
+                    incidentes[key] = incidente;
+                    localStorage.setItem('incidentes_testigo', JSON.stringify(incidentes));
+                    
+                    sincronizados++;
+                    console.log('Incidente sincronizado:', key);
+                } else {
+                    errores++;
+                    console.error('Error sincronizando incidente:', key, response.error);
+                }
+            } catch (error) {
+                errores++;
+                console.error('Error sincronizando incidente:', key, error);
+            }
+        }
+        
+        if (!silencioso && sincronizados > 0) {
+            Utils.showSuccess(`✓ ${sincronizados} incidente(s) sincronizado(s)`);
+            cargarIncidentes();
+        }
+        
+        return { sincronizados, errores };
+        
+    } catch (error) {
+        console.error('Error en sincronización de incidentes:', error);
+        return { sincronizados: 0, errores: 0 };
     }
 }
 
@@ -1621,10 +1680,83 @@ function guardarDelitoLocal(data) {
         const id = `delito_${Date.now()}`;
         data.id = id;
         data.sincronizado = false;
+        data.fecha_hora = new Date().toISOString();
         delitos[id] = data;
         localStorage.setItem('delitos_testigo', JSON.stringify(delitos));
+        console.log('Delito guardado localmente:', id);
     } catch (error) {
         console.error('Error guardando delito local:', error);
+    }
+}
+
+/**
+ * Sincronizar delitos locales con el servidor
+ */
+async function sincronizarDelitosLocales(silencioso = false) {
+    try {
+        const delitos = obtenerDelitosLocales();
+        const keys = Object.keys(delitos);
+        
+        if (keys.length === 0) {
+            console.log('No hay delitos locales para sincronizar');
+            return { sincronizados: 0, errores: 0 };
+        }
+        
+        console.log(`Sincronizando ${keys.length} delitos locales...`);
+        
+        let sincronizados = 0;
+        let errores = 0;
+        
+        for (const key of keys) {
+            const delito = delitos[key];
+            
+            // Solo sincronizar los que no están sincronizados
+            if (delito.sincronizado) {
+                continue;
+            }
+            
+            try {
+                // Preparar datos para enviar
+                const dataToSend = {
+                    mesa_id: delito.mesa_id,
+                    tipo_delito: delito.tipo_delito,
+                    titulo: delito.titulo,
+                    gravedad: delito.gravedad,
+                    descripcion: delito.descripcion,
+                    testigos_adicionales: delito.testigos_adicionales || null
+                };
+                
+                const response = await APIClient.reportarDelito(dataToSend);
+                
+                if (response.success) {
+                    // Marcar como sincronizado en lugar de eliminar
+                    delito.sincronizado = true;
+                    delito.id_servidor = response.data.id;
+                    delitos[key] = delito;
+                    localStorage.setItem('delitos_testigo', JSON.stringify(delitos));
+                    
+                    sincronizados++;
+                    console.log('Delito sincronizado:', key);
+                } else {
+                    errores++;
+                    console.error('Error sincronizando delito:', key, response.error);
+                }
+            } catch (error) {
+                errores++;
+                console.error('Error sincronizando delito:', key, error);
+            }
+        }
+        
+        if (!silencioso && sincronizados > 0) {
+            Utils.showSuccess(`✓ ${sincronizados} delito(s) sincronizado(s)`);
+            cargarDelitos();
+        }
+        
+        return { sincronizados, errores };
+        
+    } catch (error) {
+        console.error('Error en sincronización de delitos:', error);
+        return { sincronizados: 0, errores: 0 };
     }
 }
 
@@ -1731,6 +1863,129 @@ function getTipoDelitoLabel(tipo) {
     return labels[tipo] || tipo;
 }
 
+/**
+ * Sincronizar todos los datos locales con el servidor
+ */
+async function sincronizarTodosDatosLocales(silencioso = false) {
+    try {
+        if (!silencioso) {
+            console.log('Iniciando sincronización completa de datos locales...');
+        }
+        
+        // Sincronizar formularios E-14
+        const resultadosFormularios = await sincronizarBorradoresLocales(silencioso);
+        
+        // Sincronizar incidentes
+        const resultadosIncidentes = await sincronizarIncidentesLocales(silencioso);
+        
+        // Sincronizar delitos
+        const resultadosDelitos = await sincronizarDelitosLocales(silencioso);
+        
+        // Calcular totales
+        const totalSincronizados = resultadosFormularios.sincronizados + 
+                                   resultadosIncidentes.sincronizados + 
+                                   resultadosDelitos.sincronizados;
+        
+        const totalErrores = resultadosFormularios.errores + 
+                            resultadosIncidentes.errores + 
+                            resultadosDelitos.errores;
+        
+        // Mostrar resumen si no es silencioso
+        if (!silencioso && (totalSincronizados > 0 || totalErrores > 0)) {
+            let mensaje = '';
+            
+            if (totalSincronizados > 0) {
+                mensaje += `✓ ${totalSincronizados} registro(s) sincronizado(s)`;
+            }
+            
+            if (totalErrores > 0) {
+                if (mensaje) mensaje += '\n';
+                mensaje += `⚠️ ${totalErrores} registro(s) con error`;
+            }
+            
+            if (totalSincronizados > 0 && totalErrores === 0) {
+                Utils.showSuccess(mensaje);
+            } else if (totalErrores > 0) {
+                Utils.showWarning(mensaje);
+            }
+            
+            // Actualizar vistas
+            loadForms();
+            cargarIncidentes();
+            cargarDelitos();
+        }
+        
+        // Actualizar indicador de sincronización
+        actualizarIndicadorSincronizacion();
+        
+        console.log(`Sincronización completa: ${totalSincronizados} sincronizados, ${totalErrores} errores`);
+        
+        return { totalSincronizados, totalErrores };
+        
+    } catch (error) {
+        console.error('Error en sincronización completa:', error);
+        if (!silencioso) {
+            Utils.showError('Error al sincronizar datos');
+        }
+        return { totalSincronizados: 0, totalErrores: 0 };
+    }
+}
+
+/**
+ * Actualizar indicador de sincronización
+ */
+function actualizarIndicadorSincronizacion() {
+    const borradores = obtenerBorradoresLocales();
+    const incidentes = obtenerIncidentesLocales();
+    const delitos = obtenerDelitosLocales();
+    
+    // Contar pendientes
+    const borradoresPendientes = Object.keys(borradores).length;
+    const incidentesPendientes = Object.values(incidentes).filter(i => !i.sincronizado).length;
+    const delitosPendientes = Object.values(delitos).filter(d => !d.sincronizado).length;
+    
+    const totalPendientes = borradoresPendientes + incidentesPendientes + delitosPendientes;
+    
+    // Buscar o crear indicador
+    let indicador = document.getElementById('indicadorSincronizacion');
+    
+    if (totalPendientes > 0) {
+        if (!indicador) {
+            indicador = document.createElement('div');
+            indicador.id = 'indicadorSincronizacion';
+            indicador.className = 'alert alert-warning d-flex justify-content-between align-items-center';
+            indicador.style.position = 'fixed';
+            indicador.style.bottom = '20px';
+            indicador.style.right = '20px';
+            indicador.style.zIndex = '1050';
+            indicador.style.minWidth = '300px';
+            indicador.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+            document.body.appendChild(indicador);
+        }
+        
+        indicador.innerHTML = `
+            <div>
+                <i class="bi bi-cloud-upload"></i>
+                <strong>${totalPendientes}</strong> registro(s) pendiente(s) de sincronizar
+                <br>
+                <small class="text-muted">
+                    ${borradoresPendientes > 0 ? `${borradoresPendientes} formulario(s) ` : ''}
+                    ${incidentesPendientes > 0 ? `${incidentesPendientes} incidente(s) ` : ''}
+                    ${delitosPendientes > 0 ? `${delitosPendientes} delito(s)` : ''}
+                </small>
+            </div>
+            <button class="btn btn-sm btn-warning" onclick="sincronizarTodosDatosLocales()">
+                <i class="bi bi-arrow-repeat"></i> Sincronizar
+            </button>
+        `;
+    } else {
+        // Eliminar indicador si no hay pendientes
+        if (indicador) {
+            indicador.remove();
+        }
+    }
+}
+
 // Cargar incidentes y delitos al cambiar de pestaña
 document.addEventListener('DOMContentLoaded', function() {
     const incidentesTab = document.getElementById('incidentes-tab');
@@ -1747,4 +2002,9 @@ document.addEventListener('DOMContentLoaded', function() {
             cargarDelitos();
         });
     }
+    
+    // Actualizar indicador cada 30 segundos
+    setInterval(() => {
+        actualizarIndicadorSincronizacion();
+    }, 30000);
 });
