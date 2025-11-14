@@ -1050,3 +1050,337 @@ def download_template(template_type):
             'success': False,
             'error': str(e)
         }), 500
+
+
+
+# ============================================
+# GESTIÓN DE CAMPAÑAS
+# ============================================
+
+@super_admin_bp.route('/campanas', methods=['GET'])
+@jwt_required()
+@role_required(['super_admin'])
+def get_campanas():
+    """
+    Obtener todas las campañas
+    """
+    try:
+        from backend.models.configuracion_electoral import Campana
+        
+        campanas = Campana.query.order_by(Campana.created_at.desc()).all()
+        
+        return jsonify({
+            'success': True,
+            'data': [campana.to_dict() for campana in campanas]
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/campanas', methods=['POST'])
+@jwt_required()
+@role_required(['super_admin'])
+def create_campana():
+    """
+    Crear una nueva campaña
+    """
+    try:
+        from backend.database import db
+        from backend.models.configuracion_electoral import Campana
+        
+        data = request.get_json()
+        user_id = get_jwt_identity()
+        
+        if not data or 'nombre' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'El nombre es requerido'
+            }), 400
+        
+        # Generar código automático
+        codigo = data.get('codigo', data['nombre'].upper().replace(' ', '_'))
+        
+        # Verificar que no exista
+        existing = Campana.query.filter_by(codigo=codigo).first()
+        if existing:
+            return jsonify({
+                'success': False,
+                'error': 'Ya existe una campaña con ese código'
+            }), 400
+        
+        campana = Campana(
+            codigo=codigo,
+            nombre=data['nombre'],
+            descripcion=data.get('descripcion', ''),
+            fecha_inicio=data.get('fecha_inicio'),
+            fecha_fin=data.get('fecha_fin'),
+            color_primario=data.get('color_primario', '#1e3c72'),
+            color_secundario=data.get('color_secundario', '#2a5298'),
+            logo_url=data.get('logo_url'),
+            es_candidato_unico=data.get('es_candidato_unico', False),
+            es_partido_completo=data.get('es_partido_completo', False),
+            activa=False,  # No activar automáticamente
+            created_by=int(user_id)
+        )
+        
+        db.session.add(campana)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Campaña creada exitosamente',
+            'data': campana.to_dict()
+        }), 201
+        
+    except Exception as e:
+        from backend.database import db
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/campanas/<int:campana_id>/activar', methods=['PUT'])
+@jwt_required()
+@role_required(['super_admin'])
+def activar_campana(campana_id):
+    """
+    Activar una campaña (desactiva las demás)
+    """
+    try:
+        from backend.database import db
+        from backend.models.configuracion_electoral import Campana
+        
+        campana = Campana.query.get(campana_id)
+        if not campana:
+            return jsonify({
+                'success': False,
+                'error': 'Campaña no encontrada'
+            }), 404
+        
+        # Desactivar todas las campañas
+        Campana.query.update({'activa': False})
+        
+        # Activar la seleccionada
+        campana.activa = True
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Campaña "{campana.nombre}" activada exitosamente',
+            'data': campana.to_dict()
+        }), 200
+        
+    except Exception as e:
+        from backend.database import db
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/campanas/<int:campana_id>/reset', methods=['POST'])
+@jwt_required()
+@role_required(['super_admin'])
+def reset_campana(campana_id):
+    """
+    Resetear datos de una campaña (eliminar formularios, incidentes, delitos)
+    PELIGROSO: Requiere confirmación
+    """
+    try:
+        from backend.database import db
+        from backend.models.configuracion_electoral import Campana
+        from backend.models.formulario_e14 import FormularioE14
+        from backend.models.incidentes_delitos import Incidente, Delito
+        
+        data = request.get_json()
+        confirmacion = data.get('confirmacion', '')
+        
+        if confirmacion != 'CONFIRMAR_RESET':
+            return jsonify({
+                'success': False,
+                'error': 'Se requiere confirmación explícita'
+            }), 400
+        
+        campana = Campana.query.get(campana_id)
+        if not campana:
+            return jsonify({
+                'success': False,
+                'error': 'Campaña no encontrada'
+            }), 404
+        
+        # Contar registros antes de eliminar
+        formularios_count = FormularioE14.query.filter_by(campana_id=campana_id).count()
+        incidentes_count = Incidente.query.filter_by(campana_id=campana_id).count()
+        delitos_count = Delito.query.filter_by(campana_id=campana_id).count()
+        
+        # Eliminar datos de la campaña
+        FormularioE14.query.filter_by(campana_id=campana_id).delete()
+        Incidente.query.filter_by(campana_id=campana_id).delete()
+        Delito.query.filter_by(campana_id=campana_id).delete()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Campaña "{campana.nombre}" reseteada exitosamente',
+            'data': {
+                'formularios_eliminados': formularios_count,
+                'incidentes_eliminados': incidentes_count,
+                'delitos_eliminados': delitos_count
+            }
+        }), 200
+        
+    except Exception as e:
+        from backend.database import db
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/campanas/<int:campana_id>', methods=['DELETE'])
+@jwt_required()
+@role_required(['super_admin'])
+def delete_campana(campana_id):
+    """
+    Eliminar una campaña completa (incluyendo todos sus datos)
+    PELIGROSO: Requiere confirmación
+    """
+    try:
+        from backend.database import db
+        from backend.models.configuracion_electoral import Campana
+        from backend.models.formulario_e14 import FormularioE14
+        from backend.models.incidentes_delitos import Incidente, Delito
+        
+        data = request.get_json()
+        confirmacion = data.get('confirmacion', '')
+        
+        if confirmacion != 'CONFIRMAR_ELIMINACION':
+            return jsonify({
+                'success': False,
+                'error': 'Se requiere confirmación explícita'
+            }), 400
+        
+        campana = Campana.query.get(campana_id)
+        if not campana:
+            return jsonify({
+                'success': False,
+                'error': 'Campaña no encontrada'
+            }), 404
+        
+        if campana.activa:
+            return jsonify({
+                'success': False,
+                'error': 'No se puede eliminar la campaña activa'
+            }), 400
+        
+        # Eliminar todos los datos asociados
+        FormularioE14.query.filter_by(campana_id=campana_id).delete()
+        Incidente.query.filter_by(campana_id=campana_id).delete()
+        Delito.query.filter_by(campana_id=campana_id).delete()
+        
+        # Eliminar la campaña
+        db.session.delete(campana)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Campaña "{campana.nombre}" eliminada exitosamente'
+        }), 200
+        
+    except Exception as e:
+        from backend.database import db
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+# ============================================
+# GESTIÓN DE TEMAS
+# ============================================
+
+@super_admin_bp.route('/temas', methods=['GET'])
+@jwt_required()
+@role_required(['super_admin'])
+def get_temas():
+    """
+    Obtener todos los temas configurados
+    """
+    try:
+        from backend.models.configuracion_electoral import ConfiguracionTema
+        
+        temas = ConfiguracionTema.query.filter_by(activo=True).all()
+        
+        return jsonify({
+            'success': True,
+            'data': [tema.to_dict() for tema in temas]
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/temas', methods=['POST'])
+@jwt_required()
+@role_required(['super_admin'])
+def create_tema():
+    """
+    Crear una nueva configuración de tema
+    """
+    try:
+        from backend.database import db
+        from backend.models.configuracion_electoral import ConfiguracionTema
+        
+        data = request.get_json()
+        
+        if not data or 'nombre' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'El nombre es requerido'
+            }), 400
+        
+        tema = ConfiguracionTema(
+            nombre=data['nombre'],
+            aplica_a_rol=data.get('aplica_a_rol'),
+            aplica_a_tipo_eleccion_id=data.get('aplica_a_tipo_eleccion_id'),
+            campana_id=data.get('campana_id'),
+            color_primario=data.get('color_primario', '#1e3c72'),
+            color_secundario=data.get('color_secundario', '#2a5298'),
+            color_acento=data.get('color_acento', '#28a745'),
+            color_fondo=data.get('color_fondo', '#f8f9fa'),
+            color_texto=data.get('color_texto', '#212529'),
+            logo_url=data.get('logo_url'),
+            favicon_url=data.get('favicon_url'),
+            activo=True
+        )
+        
+        db.session.add(tema)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Tema creado exitosamente',
+            'data': tema.to_dict()
+        }), 201
+        
+    except Exception as e:
+        from backend.database import db
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

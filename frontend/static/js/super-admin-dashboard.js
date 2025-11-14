@@ -34,6 +34,7 @@ async function initSuperAdminDashboard() {
         await loadPartidos();
         await loadTiposEleccion();
         await loadCandidatos();
+        await loadCampanas();
         
         // Auto-refresh cada 30 segundos
         setInterval(() => {
@@ -1313,5 +1314,275 @@ async function guardarTipoEleccion() {
     } catch (error) {
         console.error('Error:', error);
         Utils.showError('Error al crear tipo de elección');
+    }
+}
+
+
+// ============================================
+// GESTIÓN DE CAMPAÑAS
+// ============================================
+
+let allCampanas = [];
+let allTemas = [];
+
+/**
+ * Cargar campañas
+ */
+async function loadCampanas() {
+    try {
+        const response = await APIClient.get('/super-admin/campanas');
+        
+        if (response.success) {
+            allCampanas = response.data;
+            renderCampanas();
+        }
+    } catch (error) {
+        console.error('Error cargando campañas:', error);
+        Utils.showError('Error al cargar campañas');
+    }
+}
+
+/**
+ * Renderizar campañas
+ */
+function renderCampanas() {
+    const container = document.getElementById('campanasContainer');
+    
+    if (!allCampanas || allCampanas.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center">No hay campañas registradas</p>';
+        return;
+    }
+    
+    container.innerHTML = allCampanas.map(campana => `
+        <div class="card mb-3 ${campana.activa ? 'border-success' : ''}">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="card-title">
+                            ${campana.nombre}
+                            ${campana.activa ? '<span class="badge bg-success ms-2">ACTIVA</span>' : ''}
+                            ${campana.completada ? '<span class="badge bg-secondary ms-2">Completada</span>' : ''}
+                        </h6>
+                        <p class="card-text text-muted small">${campana.descripcion || 'Sin descripción'}</p>
+                        <div class="d-flex gap-2 align-items-center">
+                            <span class="badge" style="background-color: ${campana.color_primario}">Color Primario</span>
+                            <span class="badge" style="background-color: ${campana.color_secundario}">Color Secundario</span>
+                            ${campana.es_candidato_unico ? '<span class="badge bg-info">Candidato Único</span>' : ''}
+                            ${campana.es_partido_completo ? '<span class="badge bg-warning">Partido Completo</span>' : ''}
+                        </div>
+                    </div>
+                    <div class="btn-group-vertical">
+                        ${!campana.activa ? `
+                            <button class="btn btn-sm btn-success" onclick="activarCampana(${campana.id})" title="Activar campaña">
+                                <i class="bi bi-check-circle"></i> Activar
+                            </button>
+                        ` : ''}
+                        <button class="btn btn-sm btn-warning" onclick="resetCampana(${campana.id})" title="Resetear datos">
+                            <i class="bi bi-arrow-clockwise"></i> Reset
+                        </button>
+                        ${!campana.activa ? `
+                            <button class="btn btn-sm btn-danger" onclick="deleteCampana(${campana.id})" title="Eliminar campaña">
+                                <i class="bi bi-trash"></i> Eliminar
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+/**
+ * Mostrar modal para crear campaña
+ */
+function showCreateCampanaModal() {
+    const modalHtml = `
+        <div class="modal fade" id="createCampanaModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Crear Nueva Campaña</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Nombre *</label>
+                                <input type="text" class="form-control" id="campanaNombre" placeholder="Ej: Campaña Presidencial 2026">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Código</label>
+                                <input type="text" class="form-control" id="campanaCodigo" placeholder="Se genera automáticamente">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control" id="campanaDescripcion" rows="2"></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fecha Inicio</label>
+                                <input type="date" class="form-control" id="campanaFechaInicio">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fecha Fin</label>
+                                <input type="date" class="form-control" id="campanaFechaFin">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Color Primario</label>
+                                <input type="color" class="form-control" id="campanaColorPrimario" value="#1e3c72">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Color Secundario</label>
+                                <input type="color" class="form-control" id="campanaColorSecundario" value="#2a5298">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de Campaña</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="campanaCandidatoUnico">
+                                <label class="form-check-label" for="campanaCandidatoUnico">
+                                    Campaña de candidato único
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="campanaPartidoCompleto">
+                                <label class="form-check-label" for="campanaPartidoCompleto">
+                                    Campaña de partido completo (múltiples elecciones)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="guardarCampana()">Crear Campaña</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('createCampanaModal'));
+    modal.show();
+    
+    document.getElementById('createCampanaModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+/**
+ * Guardar nueva campaña
+ */
+async function guardarCampana() {
+    const nombre = document.getElementById('campanaNombre').value.trim();
+    
+    if (!nombre) {
+        Utils.showError('El nombre es requerido');
+        return;
+    }
+    
+    try {
+        const response = await APIClient.post('/super-admin/campanas', {
+            nombre: nombre,
+            codigo: document.getElementById('campanaCodigo').value.trim(),
+            descripcion: document.getElementById('campanaDescripcion').value.trim(),
+            fecha_inicio: document.getElementById('campanaFechaInicio').value,
+            fecha_fin: document.getElementById('campanaFechaFin').value,
+            color_primario: document.getElementById('campanaColorPrimario').value,
+            color_secundario: document.getElementById('campanaColorSecundario').value,
+            es_candidato_unico: document.getElementById('campanaCandidatoUnico').checked,
+            es_partido_completo: document.getElementById('campanaPartidoCompleto').checked
+        });
+        
+        if (response.success) {
+            Utils.showSuccess('Campaña creada exitosamente');
+            bootstrap.Modal.getInstance(document.getElementById('createCampanaModal')).hide();
+            await loadCampanas();
+        } else {
+            Utils.showError(response.error || 'Error al crear campaña');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al crear campaña');
+    }
+}
+
+/**
+ * Activar campaña
+ */
+async function activarCampana(campanaId) {
+    if (!confirm('¿Está seguro de activar esta campaña? Se desactivarán las demás.')) {
+        return;
+    }
+    
+    try {
+        const response = await APIClient.put(`/super-admin/campanas/${campanaId}/activar`);
+        
+        if (response.success) {
+            Utils.showSuccess('Campaña activada exitosamente');
+            await loadCampanas();
+        } else {
+            Utils.showError(response.error || 'Error al activar campaña');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al activar campaña');
+    }
+}
+
+/**
+ * Resetear campaña
+ */
+async function resetCampana(campanaId) {
+    const confirmText = prompt('Esta acción eliminará TODOS los datos de la campaña (formularios, incidentes, delitos).\\n\\nEscriba "CONFIRMAR_RESET" para continuar:');
+    
+    if (confirmText !== 'CONFIRMAR_RESET') {
+        return;
+    }
+    
+    try {
+        const response = await APIClient.post(`/super-admin/campanas/${campanaId}/reset`, {
+            confirmacion: 'CONFIRMAR_RESET'
+        });
+        
+        if (response.success) {
+            Utils.showSuccess(`Campaña reseteada. ${response.data.formularios_eliminados} formularios, ${response.data.incidentes_eliminados} incidentes y ${response.data.delitos_eliminados} delitos eliminados.`);
+            await loadCampanas();
+        } else {
+            Utils.showError(response.error || 'Error al resetear campaña');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al resetear campaña');
+    }
+}
+
+/**
+ * Eliminar campaña
+ */
+async function deleteCampana(campanaId) {
+    const confirmText = prompt('Esta acción eliminará PERMANENTEMENTE la campaña y todos sus datos.\\n\\nEscriba "CONFIRMAR_ELIMINACION" para continuar:');
+    
+    if (confirmText !== 'CONFIRMAR_ELIMINACION') {
+        return;
+    }
+    
+    try {
+        const response = await APIClient.delete(`/super-admin/campanas/${campanaId}`, {
+            confirmacion: 'CONFIRMAR_ELIMINACION'
+        });
+        
+        if (response.success) {
+            Utils.showSuccess('Campaña eliminada exitosamente');
+            await loadCampanas();
+        } else {
+            Utils.showError(response.error || 'Error al eliminar campaña');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al eliminar campaña');
     }
 }
