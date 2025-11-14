@@ -404,3 +404,66 @@ window.reportarDelito = reportarDelito;
 window.guardarDelito = guardarDelito;
 window.cargarIncidentes = cargarIncidentes;
 window.cargarDelitos = cargarDelitos;
+
+
+// ============================================
+// INTEGRACIÓN CON SYNC MANAGER
+// ============================================
+
+/**
+ * Reportar incidente con sincronización automática
+ */
+async function reportarIncidenteConSync(data) {
+    try {
+        // Intentar guardar en el servidor primero
+        const response = await APIClient.reportarIncidente(data);
+        
+        if (response.success) {
+            Utils.showSuccess('✓ Incidente reportado exitosamente');
+            return response;
+        } else {
+            throw new Error(response.error || 'Error al reportar incidente');
+        }
+    } catch (error) {
+        console.error('Error reportando incidente, guardando localmente:', error);
+        
+        // Guardar localmente si falla
+        if (window.syncManager) {
+            window.syncManager.saveIncidentLocally(data);
+            Utils.showWarning('⚠️ Incidente guardado localmente. Se sincronizará automáticamente.');
+        } else {
+            throw error;
+        }
+    }
+}
+
+/**
+ * Reportar delito con sincronización automática
+ */
+async function reportarDelitoConSync(data) {
+    try {
+        // Intentar guardar en el servidor primero
+        const response = await APIClient.reportarDelito(data);
+        
+        if (response.success) {
+            Utils.showSuccess('✓ Delito reportado exitosamente');
+            return response;
+        } else {
+            throw new Error(response.error || 'Error al reportar delito');
+        }
+    } catch (error) {
+        console.error('Error reportando delito, guardando localmente:', error);
+        
+        // Guardar localmente si falla
+        if (window.syncManager) {
+            window.syncManager.saveCrimeLocally(data);
+            Utils.showWarning('⚠️ Delito guardado localmente. Se sincronizará automáticamente.');
+        } else {
+            throw error;
+        }
+    }
+}
+
+// Exponer funciones globalmente
+window.reportarIncidenteConSync = reportarIncidenteConSync;
+window.reportarDelitoConSync = reportarDelitoConSync;

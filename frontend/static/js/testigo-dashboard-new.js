@@ -16,15 +16,10 @@ document.addEventListener('DOMContentLoaded', function() {
     loadTiposIncidentes();
     loadTiposDelitos();
     
-    // Sincronizar datos locales con BD al cargar
-    setTimeout(() => {
-        sincronizarTodosDatosLocales();
-    }, 2000);
-    
-    // Sincronización automática cada 5 minutos
-    setInterval(() => {
-        sincronizarTodosDatosLocales(true); // true = silencioso
-    }, 5 * 60 * 1000);
+    // Inicializar SyncManager para sincronización automática
+    if (window.syncManager) {
+        window.syncManager.init();
+    }
     
     // setupImagePreview se llama cuando se abre el modal
 });
@@ -1398,9 +1393,14 @@ async function guardarIncidente() {
             }
         } catch (error) {
             console.error('Error guardando incidente en servidor:', error);
-            // Guardar localmente como backup
-            guardarIncidenteLocal(data);
-            Utils.showWarning('⚠️ Incidente guardado localmente. Se sincronizará cuando haya conexión.');
+            // Guardar localmente usando SyncManager
+            if (window.syncManager) {
+                window.syncManager.saveIncidentLocally(data);
+                Utils.showWarning('⚠️ Incidente guardado localmente. Se sincronizará automáticamente.');
+            } else {
+                guardarIncidenteLocal(data);
+                Utils.showWarning('⚠️ Incidente guardado localmente.');
+            }
             bootstrap.Modal.getInstance(document.getElementById('incidenteModal')).hide();
             cargarIncidentes();
         }
@@ -1528,8 +1528,11 @@ async function cargarIncidentes() {
             incidentesServidor = response.data || [];
         }
         
-        // Cargar incidentes locales
-        const incidentesLocales = Object.values(obtenerIncidentesLocales());
+        // Cargar incidentes locales (usar SyncManager si está disponible)
+        const incidentesLocalesObj = window.syncManager ? 
+            window.syncManager.getLocalIncidents() : 
+            obtenerIncidentesLocales();
+        const incidentesLocales = Object.values(incidentesLocalesObj);
         
         // Combinar ambos
         const todosIncidentes = [...incidentesServidor, ...incidentesLocales];
@@ -1658,9 +1661,14 @@ async function guardarDelito() {
             }
         } catch (error) {
             console.error('Error guardando delito en servidor:', error);
-            // Guardar localmente como backup
-            guardarDelitoLocal(data);
-            Utils.showWarning('⚠️ Delito guardado localmente. Se sincronizará cuando haya conexión.');
+            // Guardar localmente usando SyncManager
+            if (window.syncManager) {
+                window.syncManager.saveCrimeLocally(data);
+                Utils.showWarning('⚠️ Delito guardado localmente. Se sincronizará automáticamente.');
+            } else {
+                guardarDelitoLocal(data);
+                Utils.showWarning('⚠️ Delito guardado localmente.');
+            }
             bootstrap.Modal.getInstance(document.getElementById('delitoModal')).hide();
             cargarDelitos();
         }
@@ -1789,8 +1797,11 @@ async function cargarDelitos() {
             delitosServidor = response.data || [];
         }
         
-        // Cargar delitos locales
-        const delitosLocales = Object.values(obtenerDelitosLocales());
+        // Cargar delitos locales (usar SyncManager si está disponible)
+        const delitosLocalesObj = window.syncManager ? 
+            window.syncManager.getLocalCrimes() : 
+            obtenerDelitosLocales();
+        const delitosLocales = Object.values(delitosLocalesObj);
         
         // Combinar ambos
         const todosDelitos = [...delitosServidor, ...delitosLocales];
