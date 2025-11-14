@@ -75,32 +75,31 @@ async function loadUserProfile() {
  */
 async function loadMainStats() {
     try {
-        // TODO: Implementar endpoint real de estadísticas
-        // Por ahora usamos datos de ejemplo
+        const response = await APIClient.get('/super-admin/stats');
         
-        const stats = {
-            totalUsuarios: 0,
-            usuariosChange: 0,
-            totalPuestos: 0,
-            totalMesas: 0,
-            totalFormularios: 0,
-            formulariosPendientes: 0,
-            totalValidados: 0,
-            porcentajeValidados: 0
-        };
-        
-        // Actualizar UI
-        document.getElementById('totalUsuarios').textContent = Utils.formatNumber(stats.totalUsuarios);
-        document.getElementById('usuariosChange').textContent = stats.usuariosChange;
-        document.getElementById('totalPuestos').textContent = Utils.formatNumber(stats.totalPuestos);
-        document.getElementById('totalMesas').textContent = Utils.formatNumber(stats.totalMesas);
-        document.getElementById('totalFormularios').textContent = Utils.formatNumber(stats.totalFormularios);
-        document.getElementById('formulariosPendientes').textContent = Utils.formatNumber(stats.formulariosPendientes);
-        document.getElementById('totalValidados').textContent = Utils.formatNumber(stats.totalValidados);
-        document.getElementById('porcentajeValidados').textContent = stats.porcentajeValidados.toFixed(1);
-        
+        if (response.success) {
+            const stats = response.data;
+            
+            // Actualizar UI
+            document.getElementById('totalUsuarios').textContent = Utils.formatNumber(stats.totalUsuarios);
+            document.getElementById('usuariosChange').textContent = stats.usuariosChange >= 0 ? `+${stats.usuariosChange}` : stats.usuariosChange;
+            document.getElementById('totalPuestos').textContent = Utils.formatNumber(stats.totalPuestos);
+            document.getElementById('totalMesas').textContent = Utils.formatNumber(stats.totalMesas);
+            document.getElementById('totalFormularios').textContent = Utils.formatNumber(stats.totalFormularios);
+            document.getElementById('formulariosPendientes').textContent = Utils.formatNumber(stats.formulariosPendientes);
+            document.getElementById('totalValidados').textContent = Utils.formatNumber(stats.totalValidados);
+            document.getElementById('porcentajeValidados').textContent = stats.porcentajeValidados.toFixed(1);
+            
+            // Actualizar barra de progreso
+            const progressBar = document.querySelector('.progress-bar');
+            if (progressBar) {
+                progressBar.style.width = `${stats.porcentajeValidados}%`;
+                progressBar.setAttribute('aria-valuenow', stats.porcentajeValidados);
+            }
+        }
     } catch (error) {
         console.error('Error cargando estadísticas:', error);
+        Utils.showError('Error al cargar estadísticas del sistema');
     }
 }
 
@@ -161,14 +160,49 @@ async function loadRecentActivity() {
 /**
  * Actualizar estado de salud del sistema
  */
-function updateSystemHealth() {
-    // TODO: Implementar verificación real de salud
-    const indicator = document.getElementById('systemHealthIndicator');
-    const text = document.getElementById('systemHealthText');
-    
-    // Por ahora siempre mostramos "bueno"
-    indicator.className = 'health-indicator health-good';
-    text.textContent = 'Sistema operando normalmente';
+async function updateSystemHealth() {
+    try {
+        const response = await APIClient.get('/super-admin/system-health');
+        
+        if (response.success) {
+            const health = response.data;
+            const indicator = document.getElementById('systemHealthIndicator');
+            const text = document.getElementById('systemHealthText');
+            
+            // Actualizar indicador visual
+            indicator.className = 'health-indicator';
+            if (health.status === 'healthy') {
+                indicator.classList.add('health-good');
+                text.textContent = 'Sistema operando normalmente';
+            } else if (health.status === 'warning') {
+                indicator.classList.add('health-warning');
+                text.textContent = 'Sistema con advertencias';
+            } else {
+                indicator.classList.add('health-critical');
+                text.textContent = 'Sistema con problemas críticos';
+            }
+            
+            // Actualizar métricas detalladas si existen
+            const cpuElement = document.getElementById('cpuUsage');
+            const memoryElement = document.getElementById('memoryUsage');
+            const dbElement = document.getElementById('dbStatus');
+            
+            if (cpuElement) cpuElement.textContent = `${health.cpu_percent.toFixed(1)}%`;
+            if (memoryElement) memoryElement.textContent = `${health.memory_percent.toFixed(1)}%`;
+            if (dbElement) {
+                dbElement.textContent = health.database === 'healthy' ? 'Conectada' : 'Desconectada';
+                dbElement.className = health.database === 'healthy' ? 'text-success' : 'text-danger';
+            }
+        }
+    } catch (error) {
+        console.error('Error actualizando salud del sistema:', error);
+        const indicator = document.getElementById('systemHealthIndicator');
+        const text = document.getElementById('systemHealthText');
+        if (indicator && text) {
+            indicator.className = 'health-indicator health-critical';
+            text.textContent = 'Error al verificar estado del sistema';
+        }
+    }
 }
 
 /**
@@ -245,25 +279,99 @@ function initCharts() {
  */
 async function loadUsers() {
     try {
-        // TODO: Implementar endpoint real
-        const tbody = document.getElementById('usersTableBody');
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><p class="text-muted">No hay usuarios para mostrar</p></td></tr>';
+        const response = await APIClient.get('/super-admin/users');
         
+        if (response.success) {
+            allUsers = response.data;
+            renderUsers(allUsers);
+        }
     } catch (error) {
         console.error('Error cargando usuarios:', error);
+        Utils.showError('Error al cargar usuarios');
     }
+}
+
+/**
+ * Renderizar tabla de usuarios
+ */
+function renderUsers(users) {
+    const tbody = document.getElementById('usersTableBody');
+    
+    if (!users || users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><p class="text-muted">No hay usuarios para mostrar</p></td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = users.map(user => `
+        <tr>
+            <td>${user.id}</td>
+            <td>${user.nombre}</td>
+            <td><span class="badge bg-${getRoleBadgeColor(user.rol)}">${user.rol}</span></td>
+            <td>${user.ubicacion_nombre || 'N/A'}</td>
+            <td><span class="badge bg-${user.activo ? 'success' : 'secondary'}">${user.activo ? 'Activo' : 'Inactivo'}</span></td>
+            <td>${user.ultimo_acceso ? Utils.formatDateTime(user.ultimo_acceso) : 'Nunca'}</td>
+            <td>
+                <button class="btn btn-sm btn-primary" onclick="editUser(${user.id})" title="Editar">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-warning" onclick="resetUserPassword(${user.id})" title="Resetear contraseña">
+                    <i class="bi bi-key"></i>
+                </button>
+                <button class="btn btn-sm btn-${user.activo ? 'danger' : 'success'}" 
+                        onclick="toggleUserStatus(${user.id}, ${!user.activo})" 
+                        title="${user.activo ? 'Desactivar' : 'Activar'}">
+                    <i class="bi bi-${user.activo ? 'x-circle' : 'check-circle'}"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+/**
+ * Obtener color de badge según rol
+ */
+function getRoleBadgeColor(rol) {
+    const colors = {
+        'super_admin': 'dark',
+        'auditor': 'info',
+        'coordinador_departamental': 'primary',
+        'coordinador_municipal': 'primary',
+        'coordinador_puesto': 'success',
+        'testigo': 'warning'
+    };
+    return colors[rol] || 'secondary';
 }
 
 /**
  * Filtrar usuarios
  */
 function filterUsers() {
-    const role = document.getElementById('filterRole').value;
-    const status = document.getElementById('filterStatus').value;
-    const search = document.getElementById('searchUser').value.toLowerCase();
+    const role = document.getElementById('filterRole')?.value || '';
+    const status = document.getElementById('filterStatus')?.value || '';
+    const search = document.getElementById('searchUser')?.value.toLowerCase() || '';
     
-    // TODO: Implementar filtrado real
-    console.log('Filtrando usuarios:', { role, status, search });
+    let filtered = allUsers;
+    
+    // Filtrar por rol
+    if (role) {
+        filtered = filtered.filter(user => user.rol === role);
+    }
+    
+    // Filtrar por estado
+    if (status) {
+        const isActive = status === 'activo';
+        filtered = filtered.filter(user => user.activo === isActive);
+    }
+    
+    // Filtrar por búsqueda
+    if (search) {
+        filtered = filtered.filter(user => 
+            user.nombre.toLowerCase().includes(search) ||
+            (user.ubicacion_nombre && user.ubicacion_nombre.toLowerCase().includes(search))
+        );
+    }
+    
+    renderUsers(filtered);
 }
 
 /**
@@ -271,7 +379,92 @@ function filterUsers() {
  */
 function showCreateUserModal() {
     Utils.showInfo('Funcionalidad de crear usuario en desarrollo');
-    // TODO: Implementar modal
+    // TODO: Implementar modal completo con formulario
+}
+
+/**
+ * Editar usuario
+ */
+async function editUser(userId) {
+    try {
+        const user = allUsers.find(u => u.id === userId);
+        if (!user) {
+            Utils.showError('Usuario no encontrado');
+            return;
+        }
+        
+        Utils.showInfo(`Editar usuario: ${user.nombre} (en desarrollo)`);
+        // TODO: Implementar modal de edición
+    } catch (error) {
+        console.error('Error editando usuario:', error);
+        Utils.showError('Error al editar usuario');
+    }
+}
+
+/**
+ * Resetear contraseña de usuario
+ */
+async function resetUserPassword(userId) {
+    try {
+        const user = allUsers.find(u => u.id === userId);
+        if (!user) {
+            Utils.showError('Usuario no encontrado');
+            return;
+        }
+        
+        const newPassword = prompt(`Ingrese nueva contraseña para ${user.nombre}:`);
+        if (!newPassword) return;
+        
+        if (newPassword.length < 6) {
+            Utils.showError('La contraseña debe tener al menos 6 caracteres');
+            return;
+        }
+        
+        const response = await APIClient.post(`/super-admin/users/${userId}/reset-password`, {
+            password: newPassword
+        });
+        
+        if (response.success) {
+            Utils.showSuccess('Contraseña reseteada exitosamente');
+        } else {
+            Utils.showError(response.error || 'Error al resetear contraseña');
+        }
+    } catch (error) {
+        console.error('Error reseteando contraseña:', error);
+        Utils.showError('Error al resetear contraseña');
+    }
+}
+
+/**
+ * Cambiar estado de usuario (activar/desactivar)
+ */
+async function toggleUserStatus(userId, newStatus) {
+    try {
+        const user = allUsers.find(u => u.id === userId);
+        if (!user) {
+            Utils.showError('Usuario no encontrado');
+            return;
+        }
+        
+        const action = newStatus ? 'activar' : 'desactivar';
+        if (!confirm(`¿Está seguro de ${action} al usuario ${user.nombre}?`)) {
+            return;
+        }
+        
+        const response = await APIClient.put(`/super-admin/users/${userId}`, {
+            activo: newStatus
+        });
+        
+        if (response.success) {
+            Utils.showSuccess(`Usuario ${action}do exitosamente`);
+            await loadUsers(); // Recargar lista
+        } else {
+            Utils.showError(response.error || `Error al ${action} usuario`);
+        }
+    } catch (error) {
+        console.error('Error cambiando estado de usuario:', error);
+        Utils.showError('Error al cambiar estado del usuario');
+    }
 }
 
 // ============================================
