@@ -330,14 +330,14 @@ class APIClient {
      * Obtener tipos de incidentes
      */
     static async getTiposIncidentes() {
-        return this.get('/incidentes-delitos/tipos-incidentes');
+        return this.get('/incidentes/tipos');
     }
     
     /**
      * Obtener tipos de delitos
      */
     static async getTiposDelitos() {
-        return this.get('/incidentes-delitos/tipos-delitos');
+        return this.get('/delitos/tipos');
     }
     
     /**

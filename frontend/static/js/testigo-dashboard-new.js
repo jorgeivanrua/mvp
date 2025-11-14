@@ -1314,17 +1314,19 @@ document.addEventListener('DOMContentLoaded', function() {
 async function loadTiposIncidentes() {
     try {
         const response = await APIClient.getTiposIncidentes();
-        if (response.success) {
-            const select = document.getElementById('tipoIncidente');
-            if (select) {
-                select.innerHTML = '<option value="">Seleccione tipo de incidente...</option>';
-                response.data.forEach(tipo => {
-                    const option = document.createElement('option');
-                    option.value = tipo.codigo;
-                    option.textContent = tipo.nombre;
-                    select.appendChild(option);
-                });
-            }
+        console.log('Tipos incidentes response:', response);
+        
+        const select = document.getElementById('tipoIncidente');
+        if (select && response.tipos) {
+            select.innerHTML = '<option value="">Seleccione tipo de incidente...</option>';
+            
+            // response.tipos es un objeto con código: descripción
+            Object.entries(response.tipos).forEach(([codigo, descripcion]) => {
+                const option = document.createElement('option');
+                option.value = codigo;
+                option.textContent = descripcion;
+                select.appendChild(option);
+            });
         }
     } catch (error) {
         console.error('Error loading tipos incidentes:', error);
@@ -1337,17 +1339,19 @@ async function loadTiposIncidentes() {
 async function loadTiposDelitos() {
     try {
         const response = await APIClient.getTiposDelitos();
-        if (response.success) {
-            const select = document.getElementById('tipoDelito');
-            if (select) {
-                select.innerHTML = '<option value="">Seleccione tipo de delito...</option>';
-                response.data.forEach(tipo => {
-                    const option = document.createElement('option');
-                    option.value = tipo.codigo;
-                    option.textContent = tipo.nombre;
-                    select.appendChild(option);
-                });
-            }
+        console.log('Tipos delitos response:', response);
+        
+        const select = document.getElementById('tipoDelito');
+        if (select && response.tipos) {
+            select.innerHTML = '<option value="">Seleccione tipo de delito...</option>';
+            
+            // response.tipos es un objeto con código: descripción
+            Object.entries(response.tipos).forEach(([codigo, descripcion]) => {
+                const option = document.createElement('option');
+                option.value = codigo;
+                option.textContent = descripcion;
+                select.appendChild(option);
+            });
         }
     } catch (error) {
         console.error('Error loading tipos delitos:', error);
