@@ -120,7 +120,7 @@ class AuthService:
                     municipio_codigo=ubicacion_data['municipio_codigo']
                 )
         
-        elif rol in ['coordinador_puesto', 'testigo_electoral']:
+        elif rol == 'coordinador_puesto':
             if 'puesto_codigo' in ubicacion_data:
                 query = query.filter_by(
                     tipo='puesto',
@@ -128,6 +128,18 @@ class AuthService:
                     zona_codigo=ubicacion_data.get('zona_codigo'),
                     puesto_codigo=ubicacion_data['puesto_codigo']
                 )
+        
+        elif rol == 'testigo_electoral':
+            if 'puesto_codigo' in ubicacion_data:
+                query = query.filter_by(
+                    tipo='mesa',
+                    municipio_codigo=ubicacion_data.get('municipio_codigo'),
+                    zona_codigo=ubicacion_data.get('zona_codigo'),
+                    puesto_codigo=ubicacion_data['puesto_codigo']
+                )
+                # Si hay mesa_codigo específico, filtrar por él
+                if 'mesa_codigo' in ubicacion_data:
+                    query = query.filter_by(mesa_codigo=ubicacion_data['mesa_codigo'])
         
         return query.first()
     

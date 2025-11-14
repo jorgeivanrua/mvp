@@ -1,16 +1,20 @@
-# ✅ Endpoint Login Testing Funcionando
+# ✅ Usuarios de Testing Configurados
 
 ## Estado
-El endpoint `/api/auth/login-testing` está completamente funcional y probado.
+Los usuarios de testing están configurados en la base de datos y usan el endpoint de login estándar `/api/auth/login`.
 
 ## Endpoint
 ```
-POST /api/auth/login-testing
+POST /api/auth/login
 Content-Type: application/json
 
 Body:
 {
-  "username": "nombre_usuario",
+  "rol": "rol_usuario",
+  "departamento_codigo": "TEST01",
+  "municipio_codigo": "TEST0101",  // opcional según rol
+  "zona_codigo": "TEST01Z1",       // opcional según rol
+  "puesto_codigo": "TEST0101001",  // opcional según rol
   "password": "contraseña"
 }
 ```
@@ -36,87 +40,130 @@ Body:
 ## Credenciales de Prueba
 
 ### Super Admin
-- **Usuario:** `admin_test`
 - **Contraseña:** `test123`
-- **Rol:** super_admin
-- **Ubicación:** null
+- **Rol:** `super_admin`
+- **Login:**
+  ```json
+  {
+    "rol": "super_admin",
+    "password": "test123"
+  }
+  ```
 
 ### Auditor Electoral
-- **Usuario:** `auditor_test`
 - **Contraseña:** `test123`
-- **Rol:** auditor_electoral
-- **Ubicación:** null
+- **Rol:** `auditor_electoral`
+- **Login:**
+  ```json
+  {
+    "rol": "auditor_electoral",
+    "departamento_codigo": "TEST01",
+    "password": "test123"
+  }
+  ```
 
 ### Coordinador Departamental
-- **Usuario:** `coord_dept_test`
 - **Contraseña:** `test123`
-- **Rol:** coordinador_departamental
-- **Ubicación:** Departamento Test
+- **Rol:** `coordinador_departamental`
+- **Ubicación:** Departamento Test (TEST01)
+- **Login:**
+  ```json
+  {
+    "rol": "coordinador_departamental",
+    "departamento_codigo": "TEST01",
+    "password": "test123"
+  }
+  ```
 
 ### Coordinador Municipal
-- **Usuario:** `coord_mun_test`
 - **Contraseña:** `test123`
-- **Rol:** coordinador_municipal
-- **Ubicación:** Municipio Test
+- **Rol:** `coordinador_municipal`
+- **Ubicación:** Municipio Test (TEST0101)
+- **Login:**
+  ```json
+  {
+    "rol": "coordinador_municipal",
+    "departamento_codigo": "TEST01",
+    "municipio_codigo": "TEST0101",
+    "password": "test123"
+  }
+  ```
 
 ### Coordinador de Puesto
-- **Usuario:** `coord_puesto_test`
 - **Contraseña:** `test123`
-- **Rol:** coordinador_puesto
-- **Ubicación:** Puesto Test 1
+- **Rol:** `coordinador_puesto`
+- **Ubicación:** Puesto Test 1 (TEST0101001)
+- **Login:**
+  ```json
+  {
+    "rol": "coordinador_puesto",
+    "departamento_codigo": "TEST01",
+    "municipio_codigo": "TEST0101",
+    "zona_codigo": "TEST01Z1",
+    "puesto_codigo": "TEST0101001",
+    "password": "test123"
+  }
+  ```
 
 ### Testigo Electoral
-- **Usuario:** `testigo_test_1`
 - **Contraseña:** `test123`
-- **Rol:** testigo_electoral
-- **Ubicación:** Mesa 1 - Puesto Test 1
+- **Rol:** `testigo_electoral`
+- **Ubicación:** Mesa 1 - Puesto Test 1 (TEST01010010001)
+- **Login:**
+  ```json
+  {
+    "rol": "testigo_electoral",
+    "departamento_codigo": "TEST01",
+    "municipio_codigo": "TEST0101",
+    "zona_codigo": "TEST01Z1",
+    "puesto_codigo": "TEST0101001",
+    "password": "test123"
+  }
+  ```
 
 ## Pruebas Realizadas
 
 ### ✅ Prueba 1: Login Super Admin
 ```bash
-curl -X POST http://localhost:5000/api/auth/login-testing \
+curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin_test","password":"test123"}'
+  -d '{"rol":"super_admin","password":"test123"}'
 ```
 **Resultado:** ✅ Exitoso - Tokens generados correctamente
 
 ### ✅ Prueba 2: Login Testigo Electoral
 ```bash
-curl -X POST http://localhost:5000/api/auth/login-testing \
+curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"testigo_test_1","password":"test123"}'
+  -d '{"rol":"testigo_electoral","departamento_codigo":"TEST01","municipio_codigo":"TEST0101","zona_codigo":"TEST01Z1","puesto_codigo":"TEST0101001","password":"test123"}'
 ```
 **Resultado:** ✅ Exitoso - Tokens generados correctamente
 
 ## Cambios Realizados
 
-### 1. Corrección del Endpoint
+### 1. Eliminación del Endpoint de Testing
 - **Archivo:** `backend/routes/auth.py`
-- **Cambio:** Reemplazado `AuthService._create_tokens()` por `generate_tokens()` de `jwt_utils`
-- **Commit:** `ad1082c - fix: Corregir endpoint login-testing usando generate_tokens`
+- **Cambio:** Eliminado endpoint `/login-testing` - Los usuarios de testing usan el endpoint estándar `/login`
+- **Razón:** Los usuarios de testing deben seguir el mismo flujo de autenticación que los usuarios normales
 
-### 2. Import de datetime
-- **Archivo:** `backend/routes/auth.py`
-- **Cambio:** Agregado `from datetime import datetime` para actualizar `ultimo_acceso`
+## Funcionalidades del Sistema de Autenticación
 
-## Funcionalidades del Endpoint
-
-1. ✅ Validación de datos de entrada
-2. ✅ Búsqueda de usuario por nombre
-3. ✅ Verificación de contraseña
-4. ✅ Manejo de intentos fallidos
-5. ✅ Verificación de bloqueo de cuenta
-6. ✅ Generación de tokens JWT (access y refresh)
-7. ✅ Actualización de último acceso
-8. ✅ Reset de intentos fallidos en login exitoso
+1. ✅ Autenticación basada en rol y ubicación jerárquica
+2. ✅ Validación de datos de entrada
+3. ✅ Búsqueda de usuario por rol y ubicación
+4. ✅ Verificación de contraseña
+5. ✅ Manejo de intentos fallidos
+6. ✅ Verificación de bloqueo de cuenta
+7. ✅ Generación de tokens JWT (access y refresh)
+8. ✅ Actualización de último acceso
+9. ✅ Reset de intentos fallidos en login exitoso
 
 ## Próximos Pasos
 
-1. Probar el endpoint desde el frontend (login-testing.html)
+1. Probar el login desde el frontend con los usuarios de testing
 2. Verificar que los tokens funcionen con endpoints protegidos
 3. Probar el sistema de auditoría con estos usuarios
-4. Documentar el flujo completo de autenticación
+4. Verificar que cada rol tenga acceso a sus funcionalidades correspondientes
 
 ## Servidor
 El servidor Flask está corriendo en: `http://localhost:5000`
