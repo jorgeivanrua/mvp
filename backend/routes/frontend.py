@@ -19,6 +19,7 @@ def health():
 
 
 @frontend_bp.route('/login')
+@frontend_bp.route('/auth/login')
 def login():
     """Página de login"""
     return render_template('auth/login.html')
