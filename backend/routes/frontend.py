@@ -70,3 +70,21 @@ def admin_configuracion():
 def auditor_dashboard():
     """Dashboard del auditor"""
     return render_template('admin/dashboard.html')  # Usa el mismo template del admin por ahora
+
+
+@frontend_bp.route('/admin/super-admin')
+def super_admin_dashboard():
+    """Dashboard del Super Admin"""
+    return render_template('admin/super-admin-dashboard.html')
+
+
+@frontend_bp.route('/coordinador/departamental')
+def coordinador_departamental():
+    """Dashboard del coordinador departamental"""
+    return render_template('coordinador/departamental.html')
+
+
+@frontend_bp.route('/auditor/dashboard')
+def auditor_dashboard():
+    """Dashboard del auditor electoral"""
+    return render_template('auditor/dashboard.html')
