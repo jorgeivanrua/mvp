@@ -361,7 +361,7 @@ def obtener_mesas_puesto():
 
 @formularios_bp.route('/mis-formularios', methods=['GET'])
 @jwt_required()
-@role_required(['testigo'])
+@role_required(['testigo_electoral'])
 def obtener_mis_formularios():
     """
     Obtener formularios del testigo actual
@@ -437,7 +437,7 @@ def obtener_mis_formularios():
 
 @formularios_bp.route('', methods=['POST'])
 @jwt_required()
-@role_required(['testigo'])
+@role_required(['testigo_electoral'])
 def crear_formulario():
     """
     Crear un nuevo formulario E-14
@@ -487,7 +487,7 @@ def crear_formulario():
 
 @formularios_bp.route('/<int:formulario_id>', methods=['PUT'])
 @jwt_required()
-@role_required(['testigo', 'coordinador_puesto'])
+@role_required(['testigo_electoral', 'coordinador_puesto'])
 def actualizar_formulario(formulario_id):
     """
     Actualizar un formulario E-14
