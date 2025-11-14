@@ -1080,3 +1080,455 @@ function renderTestigos(testigos) {
     html += '</div>';
     container.innerHTML = html;
 }
+
+
+// ==================== INCIDENTES Y DELITOS ====================
+
+let incidentesPuesto = [];
+let delitosPuesto = [];
+let incidenteActual = null;
+let delitoActual = null;
+let filtroEstadoIncidentes = '';
+let filtroEstadoDelitos = '';
+
+/**
+ * Cargar incidentes del puesto
+ */
+async function cargarIncidentesPuesto() {
+    try {
+        const response = await APIClient.obtenerIncidentes();
+        
+        if (response.incidentes) {
+            incidentesPuesto = response.incidentes;
+            renderizarIncidentesPuesto();
+            actualizarBadgeIncidentes();
+        }
+    } catch (error) {
+        console.error('Error cargando incidentes:', error);
+        document.getElementById('incidentesLista').innerHTML = 
+            '<p class="text-danger text-center py-4">Error al cargar incidentes</p>';
+    }
+}
+
+/**
+ * Cargar delitos del puesto
+ */
+async function cargarDelitosPuesto() {
+    try {
+        const response = await APIClient.obtenerDelitos();
+        
+        if (response.delitos) {
+            delitosPuesto = response.delitos;
+            renderizarDelitosPuesto();
+            actualizarBadgeDelitos();
+        }
+    } catch (error) {
+        console.error('Error cargando delitos:', error);
+        document.getElementById('delitosLista').innerHTML = 
+            '<p class="text-danger text-center py-4">Error al cargar delitos</p>';
+    }
+}
+
+/**
+ * Renderizar lista de incidentes
+ */
+function renderizarIncidentesPuesto() {
+    const container = document.getElementById('incidentesLista');
+    
+    // Filtrar incidentes
+    let incidentesFiltrados = incidentesPuesto;
+    if (filtroEstadoIncidentes) {
+        incidentesFiltrados = incidentesPuesto.filter(i => i.estado === filtroEstadoIncidentes);
+    }
+    
+    if (incidentesFiltrados.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center py-4">No hay incidentes reportados</p>';
+        return;
+    }
+    
+    container.innerHTML = incidentesFiltrados.map(incidente => `
+        <div class="card mb-3 border-${getSeveridadColor(incidente.severidad)}">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="card-title mb-2">
+                            ${incidente.titulo}
+                            <span class="badge bg-${getSeveridadColor(incidente.severidad)} ms-2">
+                                ${incidente.severidad_label}
+                            </span>
+                        </h6>
+                        <p class="card-text text-muted small mb-2">
+                            <i class="bi bi-tag"></i> ${incidente.tipo_incidente_label}
+                        </p>
+                        <p class="card-text">${incidente.descripcion}</p>
+                        <div class="row g-2 mt-2">
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <i class="bi bi-geo-alt"></i> Mesa: ${incidente.mesa_codigo || 'N/A'}
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <i class="bi bi-person"></i> Reportado por: ${incidente.reportado_por_nombre}
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <i class="bi bi-clock"></i> ${Utils.formatDate(incidente.fecha_reporte)}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-${getEstadoIncidenteColor(incidente.estado)} mb-2">
+                            ${incidente.estado_label}
+                        </span>
+                        <br>
+                        <button class="btn btn-sm btn-outline-primary" onclick="gestionarIncidente(${incidente.id})">
+                            <i class="bi bi-gear"></i> Gestionar
+                        </button>
+                    </div>
+                </div>
+                ${incidente.notas_resolucion ? `
+                    <div class="alert alert-info mt-3 mb-0">
+                        <strong>Resolución:</strong> ${incidente.notas_resolucion}
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+/**
+ * Renderizar lista de delitos
+ */
+function renderizarDelitosPuesto() {
+    const container = document.getElementById('delitosLista');
+    
+    // Filtrar delitos
+    let delitosFiltrados = delitosPuesto;
+    if (filtroEstadoDelitos) {
+        delitosFiltrados = delitosPuesto.filter(d => d.estado === filtroEstadoDelitos);
+    }
+    
+    if (delitosFiltrados.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center py-4">No hay delitos reportados</p>';
+        return;
+    }
+    
+    container.innerHTML = delitosFiltrados.map(delito => `
+        <div class="card mb-3 border-danger">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="card-title mb-2">
+                            ${delito.titulo}
+                            <span class="badge bg-${getGravedadColor(delito.gravedad)} ms-2">
+                                ${delito.gravedad_label}
+                            </span>
+                        </h6>
+                        <p class="card-text text-muted small mb-2">
+                            <i class="bi bi-shield-exclamation"></i> ${delito.tipo_delito_label}
+                        </p>
+                        <p class="card-text">${delito.descripcion}</p>
+                        ${delito.testigos_adicionales ? `
+                            <p class="card-text small mb-1">
+                                <strong>Testigos:</strong> ${delito.testigos_adicionales}
+                            </p>
+                        ` : ''}
+                        <div class="row g-2 mt-2">
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <i class="bi bi-geo-alt"></i> Mesa: ${delito.mesa_codigo || 'N/A'}
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <i class="bi bi-person"></i> Reportado por: ${delito.reportado_por_nombre}
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <i class="bi bi-clock"></i> ${Utils.formatDate(delito.fecha_reporte)}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-${getEstadoDelitoColor(delito.estado)} mb-2">
+                            ${delito.estado_label}
+                        </span>
+                        ${delito.denunciado_formalmente ? `
+                            <br><span class="badge bg-success">Denunciado</span>
+                        ` : ''}
+                        <br>
+                        <button class="btn btn-sm btn-outline-danger mt-2" onclick="gestionarDelito(${delito.id})">
+                            <i class="bi bi-gear"></i> Gestionar
+                        </button>
+                    </div>
+                </div>
+                ${delito.resultado_investigacion ? `
+                    <div class="alert alert-info mt-3 mb-0">
+                        <strong>Investigación:</strong> ${delito.resultado_investigacion}
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+/**
+ * Filtrar incidentes por estado
+ */
+function filtrarIncidentes(estado) {
+    filtroEstadoIncidentes = estado;
+    renderizarIncidentesPuesto();
+    
+    // Actualizar botones activos
+    document.querySelectorAll('#incidentes .btn-group button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+}
+
+/**
+ * Filtrar delitos por estado
+ */
+function filtrarDelitos(estado) {
+    filtroEstadoDelitos = estado;
+    renderizarDelitosPuesto();
+    
+    // Actualizar botones activos
+    document.querySelectorAll('#delitos .btn-group button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+}
+
+/**
+ * Gestionar incidente
+ */
+async function gestionarIncidente(incidenteId) {
+    try {
+        const response = await APIClient.obtenerIncidente(incidenteId);
+        
+        if (response.incidente) {
+            incidenteActual = response.incidente;
+            mostrarModalGestionIncidente(response.incidente, response.seguimiento);
+        }
+    } catch (error) {
+        Utils.showError('Error al cargar incidente: ' + error.message);
+    }
+}
+
+/**
+ * Mostrar modal de gestión de incidente
+ */
+function mostrarModalGestionIncidente(incidente, seguimiento) {
+    const detalleHtml = `
+        <div class="mb-3">
+            <h6>${incidente.titulo}</h6>
+            <p class="text-muted small mb-2">
+                <span class="badge bg-${getSeveridadColor(incidente.severidad)}">${incidente.severidad_label}</span>
+                <span class="badge bg-${getEstadoIncidenteColor(incidente.estado)} ms-1">${incidente.estado_label}</span>
+            </p>
+            <p><strong>Tipo:</strong> ${incidente.tipo_incidente_label}</p>
+            <p><strong>Descripción:</strong> ${incidente.descripcion}</p>
+            <p><strong>Mesa:</strong> ${incidente.mesa_codigo || 'N/A'}</p>
+            <p><strong>Reportado por:</strong> ${incidente.reportado_por_nombre}</p>
+            <p><strong>Fecha:</strong> ${Utils.formatDate(incidente.fecha_reporte)}</p>
+        </div>
+        ${seguimiento && seguimiento.length > 0 ? `
+            <div class="mb-3">
+                <h6>Historial de Seguimiento</h6>
+                <div class="list-group">
+                    ${seguimiento.map(seg => `
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">${seg.accion}</h6>
+                                <small>${Utils.formatDate(seg.created_at)}</small>
+                            </div>
+                            <p class="mb-1">${seg.comentario || ''}</p>
+                            <small>Por: ${seg.usuario_nombre}</small>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : ''}
+    `;
+    
+    document.getElementById('detalleIncidente').innerHTML = detalleHtml;
+    document.getElementById('nuevoEstadoIncidente').value = 'en_revision';
+    document.getElementById('comentarioIncidente').value = '';
+    
+    const modal = new bootstrap.Modal(document.getElementById('gestionarIncidenteModal'));
+    modal.show();
+}
+
+/**
+ * Guardar gestión de incidente
+ */
+async function guardarGestionIncidente() {
+    const nuevoEstado = document.getElementById('nuevoEstadoIncidente').value;
+    const comentario = document.getElementById('comentarioIncidente').value;
+    
+    if (!comentario.trim()) {
+        Utils.showError('Debe agregar un comentario');
+        return;
+    }
+    
+    try {
+        Utils.showInfo('Actualizando incidente...');
+        
+        const response = await APIClient.actualizarEstadoIncidente(
+            incidenteActual.id,
+            nuevoEstado,
+            comentario
+        );
+        
+        if (response.message) {
+            Utils.showSuccess('✓ Incidente actualizado exitosamente');
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('gestionarIncidenteModal'));
+            if (modal) modal.hide();
+            
+            // Recargar incidentes
+            await cargarIncidentesPuesto();
+        }
+    } catch (error) {
+        Utils.showError('Error al actualizar incidente: ' + error.message);
+    }
+}
+
+/**
+ * Gestionar delito
+ */
+async function gestionarDelito(delitoId) {
+    try {
+        const response = await APIClient.obtenerDelito(delitoId);
+        
+        if (response.delito) {
+            delitoActual = response.delito;
+            mostrarModalGestionDelito(response.delito, response.seguimiento);
+        }
+    } catch (error) {
+        Utils.showError('Error al cargar delito: ' + error.message);
+    }
+}
+
+/**
+ * Mostrar modal de gestión de delito
+ */
+function mostrarModalGestionDelito(delito, seguimiento) {
+    const detalleHtml = `
+        <div class="mb-3">
+            <h6>${delito.titulo}</h6>
+            <p class="text-muted small mb-2">
+                <span class="badge bg-${getGravedadColor(delito.gravedad)}">${delito.gravedad_label}</span>
+                <span class="badge bg-${getEstadoDelitoColor(delito.estado)} ms-1">${delito.estado_label}</span>
+                ${delito.denunciado_formalmente ? '<span class="badge bg-success ms-1">Denunciado</span>' : ''}
+            </p>
+            <p><strong>Tipo:</strong> ${delito.tipo_delito_label}</p>
+            <p><strong>Descripción:</strong> ${delito.descripcion}</p>
+            ${delito.testigos_adicionales ? `<p><strong>Testigos:</strong> ${delito.testigos_adicionales}</p>` : ''}
+            <p><strong>Mesa:</strong> ${delito.mesa_codigo || 'N/A'}</p>
+            <p><strong>Reportado por:</strong> ${delito.reportado_por_nombre}</p>
+            <p><strong>Fecha:</strong> ${Utils.formatDate(delito.fecha_reporte)}</p>
+        </div>
+        ${seguimiento && seguimiento.length > 0 ? `
+            <div class="mb-3">
+                <h6>Historial de Seguimiento</h6>
+                <div class="list-group">
+                    ${seguimiento.map(seg => `
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">${seg.accion}</h6>
+                                <small>${Utils.formatDate(seg.created_at)}</small>
+                            </div>
+                            <p class="mb-1">${seg.comentario || ''}</p>
+                            <small>Por: ${seg.usuario_nombre}</small>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : ''}
+    `;
+    
+    document.getElementById('detalleDelito').innerHTML = detalleHtml;
+    document.getElementById('nuevoEstadoDelito').value = 'en_investigacion';
+    document.getElementById('comentarioDelito').value = '';
+    
+    const modal = new bootstrap.Modal(document.getElementById('gestionarDelitoModal'));
+    modal.show();
+}
+
+/**
+ * Guardar gestión de delito
+ */
+async function guardarGestionDelito() {
+    const nuevoEstado = document.getElementById('nuevoEstadoDelito').value;
+    const comentario = document.getElementById('comentarioDelito').value;
+    
+    if (!comentario.trim()) {
+        Utils.showError('Debe agregar un comentario');
+        return;
+    }
+    
+    try {
+        Utils.showInfo('Actualizando delito...');
+        
+        const response = await APIClient.actualizarEstadoDelito(
+            delitoActual.id,
+            nuevoEstado,
+            comentario
+        );
+        
+        if (response.message) {
+            Utils.showSuccess('✓ Delito actualizado exitosamente');
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('gestionarDelitoModal'));
+            if (modal) modal.hide();
+            
+            // Recargar delitos
+            await cargarDelitosPuesto();
+        }
+    } catch (error) {
+        Utils.showError('Error al actualizar delito: ' + error.message);
+    }
+}
+
+/**
+ * Actualizar badge de incidentes
+ */
+function actualizarBadgeIncidentes() {
+    const pendientes = incidentesPuesto.filter(i => i.estado === 'reportado' || i.estado === 'en_revision').length;
+    document.getElementById('badge-incidentes').textContent = pendientes;
+}
+
+/**
+ * Actualizar badge de delitos
+ */
+function actualizarBadgeDelitos() {
+    const pendientes = delitosPuesto.filter(d => d.estado === 'reportado' || d.estado === 'en_investigacion').length;
+    document.getElementById('badge-delitos').textContent = pendientes;
+}
+
+// Event listener para cargar incidentes y delitos al cambiar de tab
+document.addEventListener('DOMContentLoaded', function() {
+    const incidentesTab = document.getElementById('incidentes-tab');
+    const delitosTab = document.getElementById('delitos-tab');
+    
+    if (incidentesTab) {
+        incidentesTab.addEventListener('shown.bs.tab', function() {
+            cargarIncidentesPuesto();
+        });
+    }
+    
+    if (delitosTab) {
+        delitosTab.addEventListener('shown.bs.tab', function() {
+            cargarDelitosPuesto();
+        });
+    }
+});

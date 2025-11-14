@@ -186,6 +186,18 @@
                 <i class="bi bi-table"></i> Consolidado E-24 Puesto
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="incidentes-tab" data-bs-toggle="tab" data-bs-target="#incidentes" type="button" role="tab">
+                <i class="bi bi-exclamation-triangle"></i> Incidentes
+                <span class="badge bg-warning ms-1" id="badge-incidentes">0</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="delitos-tab" data-bs-toggle="tab" data-bs-target="#delitos" type="button" role="tab">
+                <i class="bi bi-shield-exclamation"></i> Delitos
+                <span class="badge bg-danger ms-1" id="badge-delitos">0</span>
+            </button>
+        </li>
     </ul>
 
     <div class="tab-content" id="dashboardTabContent">
@@ -362,6 +374,62 @@
                 </div>
             </div>
         </div>
+        <!-- Fin Tab E-24 -->
+
+        <!-- Tab Incidentes -->
+        <div class="tab-pane fade" id="incidentes" role="tabpanel">
+            <div class="row">
+                <div class="col-12 mb-3">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Incidentes Reportados en el Puesto</h5>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-primary active" onclick="filtrarIncidentes('')">Todos</button>
+                                <button type="button" class="btn btn-outline-primary" onclick="filtrarIncidentes('reportado')">Reportados</button>
+                                <button type="button" class="btn btn-outline-warning" onclick="filtrarIncidentes('en_revision')">En Revisión</button>
+                                <button type="button" class="btn btn-outline-success" onclick="filtrarIncidentes('resuelto')">Resueltos</button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="incidentesLista">
+                                <p class="text-muted text-center py-4">Cargando incidentes...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Fin Tab Incidentes -->
+
+        <!-- Tab Delitos -->
+        <div class="tab-pane fade" id="delitos" role="tabpanel">
+            <div class="row">
+                <div class="col-12 mb-3">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Delitos Electorales Reportados en el Puesto</h5>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-primary active" onclick="filtrarDelitos('')">Todos</button>
+                                <button type="button" class="btn btn-outline-primary" onclick="filtrarDelitos('reportado')">Reportados</button>
+                                <button type="button" class="btn btn-outline-warning" onclick="filtrarDelitos('en_investigacion')">En Investigación</button>
+                                <button type="button" class="btn btn-outline-success" onclick="filtrarDelitos('investigado')">Investigados</button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <strong>Importante:</strong> Los delitos electorales requieren atención prioritaria. Revise y gestione cada reporte cuidadosamente.
+                            </div>
+                            <div id="delitosLista">
+                                <p class="text-muted text-center py-4">Cargando delitos...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Fin Tab Delitos -->
+
     </div>
 </div>
 
@@ -548,9 +616,81 @@
         </div>
     </div>
 </div>
+
+<!-- Modal para gestionar incidente -->
+<div class="modal fade" id="gestionarIncidenteModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Gestionar Incidente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="detalleIncidente"></div>
+                <hr>
+                <h6>Cambiar Estado</h6>
+                <div class="mb-3">
+                    <label class="form-label">Nuevo Estado</label>
+                    <select class="form-select" id="nuevoEstadoIncidente">
+                        <option value="en_revision">En Revisión</option>
+                        <option value="resuelto">Resuelto</option>
+                        <option value="escalado">Escalar a Superior</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Comentario / Notas de Resolución</label>
+                    <textarea class="form-control" id="comentarioIncidente" rows="3" placeholder="Agregue comentarios sobre la gestión del incidente..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarGestionIncidente()">
+                    <i class="bi bi-check-circle"></i> Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para gestionar delito -->
+<div class="modal fade" id="gestionarDelitoModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Gestionar Delito Electoral</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="detalleDelito"></div>
+                <hr>
+                <h6>Cambiar Estado</h6>
+                <div class="mb-3">
+                    <label class="form-label">Nuevo Estado</label>
+                    <select class="form-select" id="nuevoEstadoDelito">
+                        <option value="en_investigacion">En Investigación</option>
+                        <option value="investigado">Investigado</option>
+                        <option value="escalado">Escalar a Auditor</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Comentario / Resultado de Investigación</label>
+                    <textarea class="form-control" id="comentarioDelito" rows="4" placeholder="Agregue comentarios sobre la investigación del delito..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="guardarGestionDelito()">
+                    <i class="bi bi-check-circle"></i> Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/incidentes-delitos.js') }}"></script>
 <script src="{{ url_for('static', filename='js/coordinador-puesto.js') }}"></script>
 {% endblock %}
