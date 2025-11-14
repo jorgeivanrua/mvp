@@ -1586,3 +1586,214 @@ async function deleteCampana(campanaId) {
         Utils.showError('Error al eliminar campaña');
     }
 }
+
+
+// ============================================
+// TESTING Y AUDITORÍA
+// ============================================
+
+/**
+ * Cargar datos de prueba
+ */
+async function loadTestData() {
+    if (!confirm('¿Está seguro de cargar datos de prueba?\\n\\nEsto creará:\\n- Usuarios de prueba para todos los roles\\n- Ubicaciones de ejemplo\\n- Partidos y candidatos\\n- Una campaña de prueba\\n\\nCredenciales: usuario_test / test123')) {
+        return;
+    }
+    
+    try {
+        Utils.showInfo('Cargando datos de prueba... Esto puede tardar un momento.');
+        
+        const response = await APIClient.post('/super-admin/test/load-data', {});
+        
+        if (response.success) {
+            Utils.showSuccess('Datos de prueba cargados exitosamente');
+            
+            // Mostrar detalles
+            const modalHtml = `
+                <div class="modal fade" id="testDataModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title">✅ Datos de Prueba Cargados</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <h6>🔑 Credenciales de Acceso:</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Usuario</th>
+                                                <th>Contraseña</th>
+                                                <th>Rol</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><code>admin_test</code></td>
+                                                <td><code>test123</code></td>
+                                                <td>Super Admin</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>auditor_test</code></td>
+                                                <td><code>test123</code></td>
+                                                <td>Auditor</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>coord_dept_test</code></td>
+                                                <td><code>test123</code></td>
+                                                <td>Coordinador Departamental</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>coord_mun_test</code></td>
+                                                <td><code>test123</code></td>
+                                                <td>Coordinador Municipal</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>coord_puesto_test</code></td>
+                                                <td><code>test123</code></td>
+                                                <td>Coordinador Puesto</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>testigo_test_1</code></td>
+                                                <td><code>test123</code></td>
+                                                <td>Testigo</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="alert alert-info mt-3">
+                                    <strong>💡 Tip:</strong> Puede cerrar sesión y probar con cualquiera de estos usuarios para verificar las funcionalidades de cada rol.
+                                </div>
+                                <pre class="bg-light p-3 rounded"><code>${response.output || 'Datos cargados exitosamente'}</code></pre>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                <button type="button" class="btn btn-primary" onclick="runSystemAudit()">
+                                    <i class="bi bi-clipboard-check"></i> Ejecutar Auditoría
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            const modal = new bootstrap.Modal(document.getElementById('testDataModal'));
+            modal.show();
+            
+            document.getElementById('testDataModal').addEventListener('hidden.bs.modal', function() {
+                this.remove();
+            });
+            
+            // Recargar datos
+            await loadMainStats();
+            await loadUsers();
+        } else {
+            Utils.showError(response.error || 'Error al cargar datos de prueba');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al cargar datos de prueba');
+    }
+}
+
+/**
+ * Ejecutar auditoría del sistema
+ */
+async function runSystemAudit() {
+    try {
+        Utils.showInfo('Ejecutando auditoría del sistema...');
+        
+        const response = await APIClient.get('/super-admin/test/audit');
+        
+        if (response.success) {
+            const audit = response.data;
+            
+            // Crear modal con resultados
+            const checksHtml = audit.checks.map(check => {
+                const icon = check.status === 'pass' ? '✅' : '❌';
+                const badgeClass = check.status === 'pass' ? 'success' : 'danger';
+                
+                let detailsHtml = '';
+                if (check.details) {
+                    detailsHtml = '<ul class="small mb-0">';
+                    for (const [key, value] of Object.entries(check.details)) {
+                        detailsHtml += `<li>${key}: ${value}</li>`;
+                    }
+                    detailsHtml += '</ul>';
+                }
+                
+                return `
+                    <div class="card mb-2">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">${icon} ${check.name}</h6>
+                                    <p class="mb-1 text-muted small">${check.message}</p>
+                                    ${detailsHtml}
+                                </div>
+                                <span class="badge bg-${badgeClass}">${check.status.toUpperCase()}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            const statusClass = audit.status === 'success' ? 'success' : 'warning';
+            const statusIcon = audit.status === 'success' ? '✅' : '⚠️';
+            
+            const modalHtml = `
+                <div class="modal fade" id="auditModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header bg-${statusClass} text-white">
+                                <h5 class="modal-title">${statusIcon} Auditoría del Sistema</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-${statusClass}">
+                                    <strong>${audit.message}</strong>
+                                    <br><small>Ejecutado: ${new Date(audit.timestamp).toLocaleString()}</small>
+                                </div>
+                                <h6 class="mb-3">Resultados de Verificación:</h6>
+                                ${checksHtml}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                <button type="button" class="btn btn-primary" onclick="runSystemAudit()">
+                                    <i class="bi bi-arrow-clockwise"></i> Ejecutar Nuevamente
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remover modal anterior si existe
+            const existingModal = document.getElementById('auditModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            const modal = new bootstrap.Modal(document.getElementById('auditModal'));
+            modal.show();
+            
+            document.getElementById('auditModal').addEventListener('hidden.bs.modal', function() {
+                this.remove();
+            });
+            
+            if (audit.status === 'success') {
+                Utils.showSuccess('Auditoría completada: Todos los checks pasaron');
+            } else {
+                Utils.showWarning('Auditoría completada con advertencias');
+            }
+        } else {
+            Utils.showError(response.error || 'Error al ejecutar auditoría');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al ejecutar auditoría');
+    }
+}

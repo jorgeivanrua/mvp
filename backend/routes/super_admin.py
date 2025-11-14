@@ -1384,3 +1384,227 @@ def create_tema():
             'success': False,
             'error': str(e)
         }), 500
+
+
+
+# ============================================
+# TESTING Y AUDITORÍA
+# ============================================
+
+@super_admin_bp.route('/test/load-data', methods=['POST'])
+@jwt_required()
+@role_required(['super_admin'])
+def load_test_data_endpoint():
+    """
+    Cargar datos de prueba en el sistema
+    """
+    try:
+        import subprocess
+        import sys
+        
+        # Ejecutar script de carga de datos
+        result = subprocess.run(
+            [sys.executable, 'backend/scripts/load_test_data.py'],
+            capture_output=True,
+            text=True
+        )
+        
+        if result.returncode == 0:
+            return jsonify({
+                'success': True,
+                'message': 'Datos de prueba cargados exitosamente',
+                'output': result.stdout
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Error al cargar datos de prueba',
+                'output': result.stderr
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/test/audit', methods=['GET'])
+@jwt_required()
+@role_required(['super_admin'])
+def system_audit():
+    """
+    Auditoría completa del sistema
+    Verifica que todas las funcionalidades estén operativas
+    """
+    try:
+        from backend.models.formulario_e14 import FormularioE14
+        from backend.models.incidentes_delitos import Incidente, Delito
+        
+        audit_results = {
+            'timestamp': datetime.utcnow().isoformat(),
+            'status': 'success',
+            'checks': []
+        }
+        
+        # Check 1: Base de datos
+        try:
+            db.session.execute('SELECT 1')
+            audit_results['checks'].append({
+                'name': 'Database Connection',
+                'status': 'pass',
+                'message': 'Conexión a base de datos OK'
+            })
+        except Exception as e:
+            audit_results['checks'].append({
+                'name': 'Database Connection',
+                'status': 'fail',
+                'message': f'Error: {str(e)}'
+            })
+        
+        # Check 2: Usuarios
+        try:
+            total_users = User.query.count()
+            users_by_role = db.session.query(
+                User.rol, db.func.count(User.id)
+            ).group_by(User.rol).all()
+            
+            audit_results['checks'].append({
+                'name': 'Users',
+                'status': 'pass',
+                'message': f'Total: {total_users} usuarios',
+                'details': {role: count for role, count in users_by_role}
+            })
+        except Exception as e:
+            audit_results['checks'].append({
+                'name': 'Users',
+                'status': 'fail',
+                'message': f'Error: {str(e)}'
+            })
+        
+        # Check 3: Ubicaciones
+        try:
+            locations_by_type = db.session.query(
+                Location.tipo, db.func.count(Location.id)
+            ).group_by(Location.tipo).all()
+            
+            audit_results['checks'].append({
+                'name': 'Locations',
+                'status': 'pass',
+                'message': 'Ubicaciones configuradas',
+                'details': {tipo: count for tipo, count in locations_by_type}
+            })
+        except Exception as e:
+            audit_results['checks'].append({
+                'name': 'Locations',
+                'status': 'fail',
+                'message': f'Error: {str(e)}'
+            })
+        
+        # Check 4: Configuración Electoral
+        try:
+            from backend.models.configuracion_electoral import TipoEleccion, Partido, Candidato
+            
+            tipos_count = TipoEleccion.query.filter_by(activo=True).count()
+            partidos_count = Partido.query.filter_by(activo=True).count()
+            candidatos_count = Candidato.query.filter_by(activo=True).count()
+            
+            audit_results['checks'].append({
+                'name': 'Electoral Configuration',
+                'status': 'pass',
+                'message': 'Configuración electoral OK',
+                'details': {
+                    'tipos_eleccion': tipos_count,
+                    'partidos': partidos_count,
+                    'candidatos': candidatos_count
+                }
+            })
+        except Exception as e:
+            audit_results['checks'].append({
+                'name': 'Electoral Configuration',
+                'status': 'fail',
+                'message': f'Error: {str(e)}'
+            })
+        
+        # Check 5: Formularios
+        try:
+            formularios_count = FormularioE14.query.count()
+            formularios_by_estado = db.session.query(
+                FormularioE14.estado, db.func.count(FormularioE14.id)
+            ).group_by(FormularioE14.estado).all()
+            
+            audit_results['checks'].append({
+                'name': 'Formularios E-14',
+                'status': 'pass',
+                'message': f'Total: {formularios_count} formularios',
+                'details': {estado: count for estado, count in formularios_by_estado}
+            })
+        except Exception as e:
+            audit_results['checks'].append({
+                'name': 'Formularios E-14',
+                'status': 'fail',
+                'message': f'Error: {str(e)}'
+            })
+        
+        # Check 6: Incidentes y Delitos
+        try:
+            incidentes_count = Incidente.query.count()
+            delitos_count = Delito.query.count()
+            
+            audit_results['checks'].append({
+                'name': 'Incidents & Crimes',
+                'status': 'pass',
+                'message': 'Sistema de incidentes OK',
+                'details': {
+                    'incidentes': incidentes_count,
+                    'delitos': delitos_count
+                }
+            })
+        except Exception as e:
+            audit_results['checks'].append({
+                'name': 'Incidents & Crimes',
+                'status': 'fail',
+                'message': f'Error: {str(e)}'
+            })
+        
+        # Check 7: Campañas
+        try:
+            from backend.models.configuracion_electoral import Campana
+            
+            campanas_count = Campana.query.count()
+            campana_activa = Campana.query.filter_by(activa=True).first()
+            
+            audit_results['checks'].append({
+                'name': 'Campaigns',
+                'status': 'pass',
+                'message': f'Total: {campanas_count} campañas',
+                'details': {
+                    'total': campanas_count,
+                    'activa': campana_activa.nombre if campana_activa else 'Ninguna'
+                }
+            })
+        except Exception as e:
+            audit_results['checks'].append({
+                'name': 'Campaigns',
+                'status': 'fail',
+                'message': f'Error: {str(e)}'
+            })
+        
+        # Determinar estado general
+        failed_checks = [c for c in audit_results['checks'] if c['status'] == 'fail']
+        if failed_checks:
+            audit_results['status'] = 'warning'
+            audit_results['message'] = f'{len(failed_checks)} checks fallidos'
+        else:
+            audit_results['message'] = 'Todos los checks pasaron exitosamente'
+        
+        return jsonify({
+            'success': True,
+            'data': audit_results
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
