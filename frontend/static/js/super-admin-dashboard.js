@@ -700,3 +700,275 @@ async function logout() {
         window.location.href = '/login';
     }
 }
+
+
+// ============================================
+// CARGA MASIVA DE DATOS
+// ============================================
+
+/**
+ * Cargar usuarios desde archivo Excel
+ */
+async function uploadUsers(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    try {
+        Utils.showInfo('Cargando usuarios...');
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await fetch('/api/super-admin/upload/users', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showUploadResult(result, 'success');
+            await loadUsers(); // Recargar lista de usuarios
+        } else {
+            showUploadResult(result, 'danger');
+        }
+        
+    } catch (error) {
+        console.error('Error cargando usuarios:', error);
+        Utils.showError('Error al cargar usuarios: ' + error.message);
+    } finally {
+        input.value = ''; // Limpiar input
+    }
+}
+
+/**
+ * Cargar ubicaciones (DIVIPOLA) desde archivo Excel
+ */
+async function uploadLocations(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    try {
+        Utils.showInfo('Cargando ubicaciones...');
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await fetch('/api/super-admin/upload/locations', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showUploadResult(result, 'success');
+        } else {
+            showUploadResult(result, 'danger');
+        }
+        
+    } catch (error) {
+        console.error('Error cargando ubicaciones:', error);
+        Utils.showError('Error al cargar ubicaciones: ' + error.message);
+    } finally {
+        input.value = ''; // Limpiar input
+    }
+}
+
+/**
+ * Cargar partidos desde archivo Excel
+ */
+async function uploadPartidos(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    try {
+        Utils.showInfo('Cargando partidos...');
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await fetch('/api/super-admin/upload/partidos', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showUploadResult(result, 'success');
+            await loadPartidos(); // Recargar lista de partidos
+        } else {
+            showUploadResult(result, 'danger');
+        }
+        
+    } catch (error) {
+        console.error('Error cargando partidos:', error);
+        Utils.showError('Error al cargar partidos: ' + error.message);
+    } finally {
+        input.value = ''; // Limpiar input
+    }
+}
+
+/**
+ * Cargar candidatos desde archivo Excel
+ */
+async function uploadCandidatos(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    try {
+        Utils.showInfo('Cargando candidatos...');
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await fetch('/api/super-admin/upload/candidatos', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showUploadResult(result, 'success');
+            await loadCandidatos(); // Recargar lista de candidatos
+        } else {
+            showUploadResult(result, 'danger');
+        }
+        
+    } catch (error) {
+        console.error('Error cargando candidatos:', error);
+        Utils.showError('Error al cargar candidatos: ' + error.message);
+    } finally {
+        input.value = ''; // Limpiar input
+    }
+}
+
+/**
+ * Mostrar resultado de carga masiva
+ */
+function showUploadResult(result, type) {
+    const resultDiv = document.getElementById('uploadResult');
+    const contentDiv = document.getElementById('uploadResultContent');
+    
+    if (!resultDiv || !contentDiv) return;
+    
+    let html = '';
+    
+    if (result.success && result.data) {
+        html = `
+            <p class="mb-2"><strong>${result.message}</strong></p>
+            <ul class="mb-0">
+                <li>Total procesados: ${result.data.total_processed}</li>
+                <li>Creados exitosamente: ${result.data.total_created}</li>
+                <li>Errores: ${result.data.total_errors}</li>
+            </ul>
+        `;
+        
+        if (result.data.errors && result.data.errors.length > 0) {
+            html += `
+                <hr>
+                <p class="mb-2"><strong>Errores encontrados:</strong></p>
+                <ul class="small mb-0" style="max-height: 200px; overflow-y: auto;">
+                    ${result.data.errors.map(error => `<li>${error}</li>`).join('')}
+                </ul>
+            `;
+        }
+    } else {
+        html = `<p class="mb-0"><strong>Error:</strong> ${result.error || 'Error desconocido'}</p>`;
+    }
+    
+    contentDiv.innerHTML = html;
+    resultDiv.querySelector('.alert').className = `alert alert-${type}`;
+    resultDiv.style.display = 'block';
+    
+    // Auto-ocultar después de 10 segundos si es exitoso
+    if (type === 'success') {
+        setTimeout(() => {
+            resultDiv.style.display = 'none';
+        }, 10000);
+    }
+}
+
+/**
+ * Descargar plantilla de usuarios
+ */
+function downloadTemplateUsers() {
+    const template = `nombre,password,rol,ubicacion_codigo
+Juan Perez,password123,testigo,001001001
+Maria Garcia,password456,coordinador_puesto,001001
+Carlos Lopez,password789,coordinador_municipal,001`;
+    
+    downloadCSV(template, 'plantilla_usuarios.csv');
+    Utils.showInfo('Plantilla descargada. Puede editarla en Excel y guardarla como .xlsx');
+}
+
+/**
+ * Descargar plantilla de ubicaciones
+ */
+function downloadTemplateLocations() {
+    const template = `codigo,nombre,tipo,departamento_codigo,municipio_codigo,puesto_codigo
+001,Departamento 1,departamento,,
+001001,Municipio 1,municipio,001,
+001001001,Puesto 1,puesto,001,001001,
+001001001001,Mesa 1,mesa,001,001001,001001001`;
+    
+    downloadCSV(template, 'plantilla_divipola.csv');
+    Utils.showInfo('Plantilla descargada. Puede editarla en Excel y guardarla como .xlsx');
+}
+
+/**
+ * Descargar plantilla de partidos
+ */
+function downloadTemplatePartidos() {
+    const template = `nombre,sigla,color,numero_lista
+Partido Liberal,PL,#FF0000,1
+Partido Conservador,PC,#0000FF,2
+Partido Verde,PV,#00FF00,3`;
+    
+    downloadCSV(template, 'plantilla_partidos.csv');
+    Utils.showInfo('Plantilla descargada. Puede editarla en Excel y guardarla como .xlsx');
+}
+
+/**
+ * Descargar plantilla de candidatos
+ */
+function downloadTemplateCandidatos() {
+    const template = `nombre,partido_nombre,tipo_eleccion_nombre,numero_lista
+Juan Perez,Partido Liberal,Presidente,1
+Maria Garcia,Partido Conservador,Senado,2
+Carlos Lopez,Partido Verde,Cámara,3`;
+    
+    downloadCSV(template, 'plantilla_candidatos.csv');
+    Utils.showInfo('Plantilla descargada. Puede editarla en Excel y guardarla como .xlsx');
+}
+
+/**
+ * Función auxiliar para descargar CSV
+ */
+function downloadCSV(content, filename) {
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}

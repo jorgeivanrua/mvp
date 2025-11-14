@@ -359,6 +359,92 @@
 
         <!-- Tab: Configuración -->
         <div class="tab-pane fade" id="config" role="tabpanel">
+            
+            <!-- Sección de Carga Masiva -->
+            <div class="chart-card mb-4">
+                <h5 class="mb-3"><i class="bi bi-cloud-upload"></i> Carga Masiva de Datos</h5>
+                <p class="text-muted">Cargue datos masivamente desde archivos Excel (.xlsx, .xls)</p>
+                
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card border-primary mb-3">
+                            <div class="card-body text-center">
+                                <i class="bi bi-people-fill text-primary" style="font-size: 2rem;"></i>
+                                <h6 class="mt-2">Usuarios</h6>
+                                <p class="small text-muted">Testigos y Coordinadores</p>
+                                <input type="file" id="uploadUsersFile" accept=".xlsx,.xls" style="display:none" onchange="uploadUsers(this)">
+                                <button class="btn btn-sm btn-primary" onclick="document.getElementById('uploadUsersFile').click()">
+                                    <i class="bi bi-upload"></i> Cargar
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" onclick="downloadTemplateUsers()">
+                                    <i class="bi bi-download"></i> Plantilla
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card border-success mb-3">
+                            <div class="card-body text-center">
+                                <i class="bi bi-geo-alt-fill text-success" style="font-size: 2rem;"></i>
+                                <h6 class="mt-2">DIVIPOLA</h6>
+                                <p class="small text-muted">Ubicaciones Geográficas</p>
+                                <input type="file" id="uploadLocationsFile" accept=".xlsx,.xls" style="display:none" onchange="uploadLocations(this)">
+                                <button class="btn btn-sm btn-success" onclick="document.getElementById('uploadLocationsFile').click()">
+                                    <i class="bi bi-upload"></i> Cargar
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" onclick="downloadTemplateLocations()">
+                                    <i class="bi bi-download"></i> Plantilla
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card border-warning mb-3">
+                            <div class="card-body text-center">
+                                <i class="bi bi-flag-fill text-warning" style="font-size: 2rem;"></i>
+                                <h6 class="mt-2">Partidos</h6>
+                                <p class="small text-muted">Partidos Políticos</p>
+                                <input type="file" id="uploadPartidosFile" accept=".xlsx,.xls" style="display:none" onchange="uploadPartidos(this)">
+                                <button class="btn btn-sm btn-warning" onclick="document.getElementById('uploadPartidosFile').click()">
+                                    <i class="bi bi-upload"></i> Cargar
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" onclick="downloadTemplatePartidos()">
+                                    <i class="bi bi-download"></i> Plantilla
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card border-danger mb-3">
+                            <div class="card-body text-center">
+                                <i class="bi bi-person-badge-fill text-danger" style="font-size: 2rem;"></i>
+                                <h6 class="mt-2">Candidatos</h6>
+                                <p class="small text-muted">Candidatos Electorales</p>
+                                <input type="file" id="uploadCandidatosFile" accept=".xlsx,.xls" style="display:none" onchange="uploadCandidatos(this)">
+                                <button class="btn btn-sm btn-danger" onclick="document.getElementById('uploadCandidatosFile').click()">
+                                    <i class="bi bi-upload"></i> Cargar
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" onclick="downloadTemplateCandidatos()">
+                                    <i class="bi bi-download"></i> Plantilla
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Resultado de carga -->
+                <div id="uploadResult" class="mt-3" style="display:none;">
+                    <div class="alert" role="alert">
+                        <h6 class="alert-heading"><i class="bi bi-info-circle"></i> Resultado de Carga</h6>
+                        <div id="uploadResultContent"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Configuración Manual -->
             <div class="row">
                 <div class="col-md-6">
                     <div class="chart-card">
