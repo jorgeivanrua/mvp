@@ -4,7 +4,7 @@ Rutas del Super Admin
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.user import User
-from backend.decorators import role_required
+from backend.utils.decorators import role_required
 
 super_admin_bp = Blueprint('super_admin', __name__, url_prefix='/api/super-admin')
 
