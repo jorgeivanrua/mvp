@@ -7,6 +7,7 @@ from backend.services.auth_service import AuthService
 from backend.models.user import User
 from backend.utils.jwt_utils import create_token_response
 from backend.utils.exceptions import BaseAPIException
+from backend.database import db
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -160,6 +161,71 @@ def change_password():
         
     except BaseAPIException as e:
         return jsonify(e.to_dict()), e.status_code
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@auth_bp.route('/login-testing', methods=['POST'])
+def login_testing():
+    """
+    Login simplificado para testing - solo usuario y contraseña
+    
+    Body:
+        username: Nombre de usuario
+        password: Contraseña
+    """
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No se proporcionaron datos'
+            }), 400
+        
+        username = data.get('username')
+        password = data.get('password')
+        
+        if not username or not password:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario y contraseña son requeridos'
+            }), 400
+        
+        # Buscar usuario por nombre
+        user = User.query.filter_by(nombre=username, activo=True).first()
+        
+        if not user:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no encontrado'
+            }), 401
+        
+        # Verificar contraseña
+        if not user.check_password(password):
+            user.increment_failed_attempts()
+            db.session.commit()
+            return jsonify({
+                'success': False,
+                'error': 'Contraseña incorrecta'
+            }), 401
+        
+        # Verificar si está bloqueado
+        if user.is_blocked():
+            return jsonify({
+                'success': False,
+                'error': 'Usuario bloqueado temporalmente'
+            }), 403
+        
+        # Login exitoso
+        user.reset_failed_attempts()
+        db.session.commit()
+        
+        return jsonify(create_token_response(user, *AuthService._create_tokens(user))), 200
+        
     except Exception as e:
         return jsonify({
             'success': False,

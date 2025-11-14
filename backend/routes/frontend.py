@@ -25,6 +25,13 @@ def login():
     return render_template('auth/login.html')
 
 
+@frontend_bp.route('/login-testing')
+@frontend_bp.route('/auth/login-testing')
+def login_testing():
+    """Página de login simplificada para testing"""
+    return render_template('auth/login-testing.html')
+
+
 @frontend_bp.route('/dashboard')
 def dashboard():
     """Dashboard genérico"""
