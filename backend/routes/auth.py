@@ -232,3 +232,50 @@ def verificar_presencia():
             'success': False,
             'error': str(e)
         }), 500
+
+
+@auth_bp.route('/reset-all-passwords-test123', methods=['POST'])
+def reset_all_passwords_test123():
+    """
+    ENDPOINT TEMPORAL SOLO PARA TESTING
+    Resetea todas las contraseñas a test123
+    ⚠️ ELIMINAR EN PRODUCCIÓN
+    """
+    try:
+        # Verificar que sea ambiente de desarrollo
+        import os
+        if os.getenv('FLASK_ENV') == 'production':
+            return jsonify({
+                'success': False,
+                'error': 'Endpoint no disponible en producción'
+            }), 403
+        
+        # Obtener todos los usuarios
+        users = User.query.all()
+        
+        if not users:
+            return jsonify({
+                'success': False,
+                'error': 'No se encontraron usuarios'
+            }), 404
+        
+        # Resetear contraseña de cada usuario
+        count = 0
+        for user in users:
+            user.set_password('test123')
+            count += 1
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'{count} contraseñas reseteadas a test123',
+            'users_updated': count
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
