@@ -141,15 +141,24 @@ def import_data(data):
             # Importar tipos de elección
             print(f"   Importando {len(data['tipos_eleccion'])} tipos de elección...")
             for tipo_data in data['tipos_eleccion']:
-                tipo = TipoEleccion(
-                    codigo=tipo_data['codigo'],
-                    nombre=tipo_data['nombre'],
-                    es_uninominal=tipo_data['es_uninominal'],
-                    permite_lista_cerrada=tipo_data['permite_lista_cerrada'],
-                    permite_lista_abierta=tipo_data['permite_lista_abierta'],
-                    permite_voto_preferente=tipo_data['permite_voto_preferente'],
-                    activo=tipo_data['activo']
-                )
+                # Crear dict con campos básicos
+                tipo_dict = {
+                    'codigo': tipo_data['codigo'],
+                    'nombre': tipo_data['nombre'],
+                    'activo': tipo_data['activo']
+                }
+                
+                # Agregar campos opcionales solo si existen en el modelo
+                if hasattr(TipoEleccion, 'es_uninominal'):
+                    tipo_dict['es_uninominal'] = tipo_data.get('es_uninominal', False)
+                if hasattr(TipoEleccion, 'permite_lista_cerrada'):
+                    tipo_dict['permite_lista_cerrada'] = tipo_data.get('permite_lista_cerrada', False)
+                if hasattr(TipoEleccion, 'permite_lista_abierta'):
+                    tipo_dict['permite_lista_abierta'] = tipo_data.get('permite_lista_abierta', False)
+                if hasattr(TipoEleccion, 'permite_voto_preferente'):
+                    tipo_dict['permite_voto_preferente'] = tipo_data.get('permite_voto_preferente', False)
+                
+                tipo = TipoEleccion(**tipo_dict)
                 db.session.add(tipo)
             
             db.session.commit()
