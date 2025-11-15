@@ -7,6 +7,7 @@ from backend.routes.formularios_e14 import formularios_bp
 from backend.routes.coordinador_municipal import coordinador_municipal_bp
 from backend.routes.super_admin import super_admin_bp
 from backend.routes.public import public_bp
+from backend.routes.admin_tools import admin_tools_bp
 
 __all__ = [
     'auth_bp',
@@ -16,5 +17,6 @@ __all__ = [
     'formularios_bp',
     'coordinador_municipal_bp',
     'super_admin_bp',
-    'public_bp'
+    'public_bp',
+    'admin_tools_bp'
 ]
