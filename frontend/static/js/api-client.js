@@ -36,8 +36,8 @@ class APIClient {
                 localStorage.removeItem('refresh_token');
                 localStorage.removeItem('user_data');
                 
-                if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
-                    window.location.href = '/login';
+                if (window.location.pathname !== '/login' && window.location.pathname !== '/auth/login' && window.location.pathname !== '/') {
+                    window.location.href = '/auth/login';
                 }
                 
                 throw new Error(data.error || 'Sesión expirada');
