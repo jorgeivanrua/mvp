@@ -110,10 +110,10 @@ def export_data():
             data['tipos_eleccion'].append({
                 'codigo': tipo.codigo,
                 'nombre': tipo.nombre,
-                'es_uninominal': tipo.es_uninominal,
-                'permite_lista_cerrada': tipo.permite_lista_cerrada,
-                'permite_lista_abierta': tipo.permite_lista_abierta,
-                'permite_voto_preferente': tipo.permite_voto_preferente,
+                'es_uninominal': getattr(tipo, 'es_uninominal', False),
+                'permite_lista_cerrada': getattr(tipo, 'permite_lista_cerrada', False),
+                'permite_lista_abierta': getattr(tipo, 'permite_lista_abierta', False),
+                'permite_voto_preferente': getattr(tipo, 'permite_voto_preferente', False),
                 'activo': tipo.activo
             })
         

@@ -26,6 +26,11 @@ def download_data():
         
         if response.status_code != 200:
             print(f"❌ Error HTTP {response.status_code}")
+            try:
+                error_data = response.json()
+                print(f"   Detalle: {error_data.get('error', 'Sin detalles')}")
+            except:
+                print(f"   Respuesta: {response.text[:200]}")
             return None
         
         data = response.json()
