@@ -1,316 +1,257 @@
 """
-Rutas para el coordinador departamental
+Rutas para Coordinador Departamental
 """
-from flask import Blueprint, render_template, jsonify, request, send_file
+from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from backend.utils.decorators import role_required
-from backend.services.departamental_service import DepartamentalService
-from backend.services.discrepancia_service import DiscrepanciaService
-from backend.services.reporte_departamental_service import ReporteDepartamentalService
 from backend.models.user import User
 from backend.models.location import Location
+from backend.models.formulario_e14 import FormularioE14
 from backend.database import db
-from datetime import datetime
 
-bp = Blueprint('coordinador_departamental', __name__, url_prefix='/coordinador/departamental')
+bp = Blueprint('coordinador_departamental', __name__)
 
 
-@bp.route('/')
+@bp.route('/stats', methods=['GET'])
 @jwt_required()
-@role_required(['coordinador_departamental', 'super_admin'])
-def dashboard():
-    """Dashboard principal del coordinador departamental"""
-    user_id = get_jwt_identity()
-    from backend.models.user import User
-    current_user = User.query.get(int(user_id))
-    return render_template('coordinador/departamental.html', user=current_user)
-
-
-@bp.route('/api/municipios')
-@jwt_required()
-@role_required(['coordinador_departamental', 'super_admin'])
-def obtener_municipios():
-    """
-    Obtener lista de municipios del departamento con estadísticas
-    Query params:
-        - estado: filtro por estado (completo, incompleto, con_discrepancias)
-    """
+def get_stats():
+    """Estadísticas departamentales"""
     try:
-        # Obtener departamento del coordinador
-        if current_user.rol == 'super_admin':
-            # Super admin puede ver cualquier departamento
-            departamento_id = request.args.get('departamento_id', type=int)
-            if not departamento_id:
-                return jsonify({'error': 'Se requiere departamento_id para super_admin'}), 400
-        else:
-            departamento_id = current_user.ubicacion_id
+        user_id = get_jwt_identity()
+        user = User.query.get(int(user_id))
         
-        if not departamento_id:
-            return jsonify({'error': 'Usuario sin departamento asignado'}), 400
+        if not user or user.rol != 'coordinador_departamental':
+            return jsonify({
+                'success': False,
+                'error': 'No autorizado'
+            }), 403
         
-        # Obtener filtros
-        filtros = {}
-        if request.args.get('estado'):
-            filtros['estado'] = request.args.get('estado')
+        if not user.ubicacion_id:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
         
-        # Obtener municipios
-        resultado = DepartamentalService.obtener_municipios_departamento(departamento_id, filtros)
+        departamento = Location.query.get(user.ubicacion_id)
         
-        if not resultado:
-            return jsonify({'error': 'No se pudieron obtener los municipios'}), 404
+        # Obtener ubicaciones del departamento
+        municipios = Location.query.filter_by(
+            tipo='municipio',
+            departamento_codigo=departamento.departamento_codigo,
+            activo=True
+        ).count()
         
-        return jsonify(resultado), 200
+        puestos = Location.query.filter_by(
+            tipo='puesto',
+            departamento_codigo=departamento.departamento_codigo,
+            activo=True
+        ).count()
         
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@bp.route('/api/consolidado')
-@jwt_required()
-@role_required(['coordinador_departamental', 'super_admin'])
-def obtener_consolidado():
-    user_id = get_jwt_identity()
-    from backend.models.user import User
-    current_user = User.query.get(int(user_id))
-    """
-    Obtener consolidado departamental
-    Query params:
-        - tipo_eleccion_id: ID del tipo de elección (opcional)
-    """
-    try:
-        # Obtener departamento del coordinador
-        if current_user.rol == 'super_admin':
-            departamento_id = request.args.get('departamento_id', type=int)
-            if not departamento_id:
-                return jsonify({'error': 'Se requiere departamento_id para super_admin'}), 400
-        else:
-            departamento_id = current_user.ubicacion_id
+        mesas = Location.query.filter_by(
+            tipo='mesa',
+            departamento_codigo=departamento.departamento_codigo,
+            activo=True
+        ).count()
         
-        if not departamento_id:
-            return jsonify({'error': 'Usuario sin departamento asignado'}), 400
+        # Obtener formularios del departamento
+        mesa_ids = [m.id for m in Location.query.filter_by(
+            tipo='mesa',
+            departamento_codigo=departamento.departamento_codigo,
+            activo=True
+        ).all()]
         
-        tipo_eleccion_id = request.args.get('tipo_eleccion_id', type=int)
+        formularios = FormularioE14.query.filter(
+            FormularioE14.mesa_id.in_(mesa_ids)
+        ).all() if mesa_ids else []
         
-        # Calcular consolidado
-        consolidado = DepartamentalService.calcular_consolidado_departamental(
-            departamento_id, 
-            tipo_eleccion_id
-        )
+        formularios_completados = sum(1 for f in formularios if f.estado == 'completado')
         
-        if not consolidado:
-            return jsonify({'error': 'No se pudo calcular el consolidado'}), 404
-        
-        return jsonify(consolidado), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@bp.route('/api/municipio/<int:municipio_id>')
-@jwt_required()
-@role_required(['coordinador_departamental', 'super_admin'])
-def obtener_municipio_detallado(current_user, municipio_id):
-    """Obtener información detallada de un municipio"""
-    try:
-        # Obtener información del municipio
-        municipio_info = DepartamentalService.obtener_municipio_detallado(
-            municipio_id, 
-            current_user.id
-        )
-        
-        if not municipio_info:
-            return jsonify({'error': 'Municipio no encontrado o sin permisos'}), 404
-        
-        return jsonify(municipio_info), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@bp.route('/api/discrepancias')
-@jwt_required()
-@role_required(['coordinador_departamental', 'super_admin'])
-def obtener_discrepancias():
-    user_id = get_jwt_identity()
-    from backend.models.user import User
-    current_user = User.query.get(int(user_id))
-    """Obtener discrepancias del departamento"""
-    try:
-        # Obtener departamento del coordinador
-        if current_user.rol == 'super_admin':
-            departamento_id = request.args.get('departamento_id', type=int)
-            if not departamento_id:
-                return jsonify({'error': 'Se requiere departamento_id para super_admin'}), 400
-        else:
-            departamento_id = current_user.ubicacion_id
-        
-        if not departamento_id:
-            return jsonify({'error': 'Usuario sin departamento asignado'}), 400
-        
-        # Detectar discrepancias
-        discrepancias = DiscrepanciaService.detectar_discrepancias_departamento(departamento_id)
-        
-        return jsonify({'discrepancias': discrepancias}), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@bp.route('/api/comparar-municipios', methods=['POST'])
-@jwt_required()
-@role_required(['coordinador_departamental', 'super_admin'])
-def comparar_municipios():
-    user_id = get_jwt_identity()
-    from backend.models.user import User
-    current_user = User.query.get(int(user_id))
-    """
-    Comparar estadísticas entre municipios
-    Body: { "municipio_ids": [1, 2, 3] }
-    """
-    try:
-        data = request.get_json()
-        municipio_ids = data.get('municipio_ids', [])
-        
-        if not municipio_ids or len(municipio_ids) < 2:
-            return jsonify({'error': 'Se requieren al menos 2 municipios para comparar'}), 400
-        
-        # Comparar municipios
-        comparacion = DepartamentalService.comparar_municipios(municipio_ids)
-        
-        if not comparacion:
-            return jsonify({'error': 'No se pudo realizar la comparación'}), 404
-        
-        return jsonify(comparacion), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@bp.route('/api/reporte/validar')
-@jwt_required()
-@role_required(['coordinador_departamental', 'super_admin'])
-def validar_reporte():
-    user_id = get_jwt_identity()
-    from backend.models.user import User
-    current_user = User.query.get(int(user_id))
-    """Validar si se puede generar el reporte departamental"""
-    try:
-        # Obtener departamento del coordinador
-        if current_user.rol == 'super_admin':
-            departamento_id = request.args.get('departamento_id', type=int)
-            if not departamento_id:
-                return jsonify({'error': 'Se requiere departamento_id para super_admin'}), 400
-        else:
-            departamento_id = current_user.ubicacion_id
-        
-        if not departamento_id:
-            return jsonify({'error': 'Usuario sin departamento asignado'}), 400
-        
-        # Validar requisitos
-        cumple, errores = ReporteDepartamentalService.validar_requisitos_reporte(departamento_id)
+        stats = {
+            'total_municipios': municipios,
+            'total_puestos': puestos,
+            'total_mesas': mesas,
+            'total_formularios': len(formularios),
+            'formularios_completados': formularios_completados,
+            'formularios_pendientes': len(formularios) - formularios_completados,
+            'porcentaje_avance': (formularios_completados / len(formularios) * 100) if formularios else 0,
+            'departamento': {
+                'id': departamento.id,
+                'nombre': departamento.nombre_completo,
+                'codigo': departamento.departamento_codigo
+            }
+        }
         
         return jsonify({
-            'puede_generar': cumple,
-            'errores': errores
+            'success': True,
+            'data': stats
         }), 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@bp.route('/api/reporte/generar', methods=['POST'])
-@jwt_required()
-@role_required(['coordinador_departamental', 'super_admin'])
-def generar_reporte():
-    user_id = get_jwt_identity()
-    from backend.models.user import User
-    current_user = User.query.get(int(user_id))
-    """
-    Generar reporte departamental
-    Body: { "tipo_eleccion_id": 1 }
-    """
-    try:
-        data = request.get_json()
-        tipo_eleccion_id = data.get('tipo_eleccion_id')
-        
-        if not tipo_eleccion_id:
-            return jsonify({'error': 'Se requiere tipo_eleccion_id'}), 400
-        
-        # Obtener departamento del coordinador
-        if current_user.rol == 'super_admin':
-            departamento_id = data.get('departamento_id')
-            if not departamento_id:
-                return jsonify({'error': 'Se requiere departamento_id para super_admin'}), 400
-        else:
-            departamento_id = current_user.ubicacion_id
-        
-        if not departamento_id:
-            return jsonify({'error': 'Usuario sin departamento asignado'}), 400
-        
-        # Generar reporte
-        reporte = ReporteDepartamentalService.generar_reporte_departamental(
-            departamento_id,
-            tipo_eleccion_id,
-            current_user.id
-        )
-        
         return jsonify({
-            'mensaje': 'Reporte generado exitosamente',
-            'reporte': {
-                'id': reporte.id,
-                'version': reporte.version,
-                'pdf_url': reporte.pdf_url,
-                'created_at': reporte.created_at.isoformat()
-            }
-        }), 201
-        
-    except ValueError as e:
-        return jsonify({'error': str(e)}), 400
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+            'success': False,
+            'error': str(e)
+        }), 500
 
 
-@bp.route('/api/reportes')
+@bp.route('/municipios', methods=['GET'])
 @jwt_required()
-@role_required(['coordinador_departamental', 'super_admin'])
-def listar_reportes():
-    user_id = get_jwt_identity()
-    from backend.models.user import User
-    current_user = User.query.get(int(user_id))
-    """Listar reportes generados del departamento"""
+def get_municipios():
+    """Obtener municipios del departamento"""
     try:
-        # Obtener departamento del coordinador
-        if current_user.rol == 'super_admin':
-            departamento_id = request.args.get('departamento_id', type=int)
-            if not departamento_id:
-                return jsonify({'error': 'Se requiere departamento_id para super_admin'}), 400
-        else:
-            departamento_id = current_user.ubicacion_id
+        user_id = get_jwt_identity()
+        user = User.query.get(int(user_id))
         
-        if not departamento_id:
-            return jsonify({'error': 'Usuario sin departamento asignado'}), 400
+        if not user or user.rol != 'coordinador_departamental':
+            return jsonify({
+                'success': False,
+                'error': 'No autorizado'
+            }), 403
         
-        # Obtener reportes
-        from backend.models.coordinador_departamental import ReporteDepartamental
-        reportes = ReporteDepartamental.query.filter_by(
-            departamento_id=departamento_id
-        ).order_by(ReporteDepartamental.created_at.desc()).all()
+        if not user.ubicacion_id:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
         
-        reportes_data = []
-        for reporte in reportes:
-            coordinador = User.query.get(reporte.coordinador_id)
-            reportes_data.append({
-                'id': reporte.id,
-                'version': reporte.version,
-                'total_municipios': reporte.total_municipios,
-                'municipios_incluidos': reporte.municipios_incluidos,
-                'total_votos': reporte.total_votos,
-                'pdf_url': reporte.pdf_url,
-                'coordinador_nombre': coordinador.nombre if coordinador else 'Desconocido',
-                'created_at': reporte.created_at.isoformat()
+        departamento = Location.query.get(user.ubicacion_id)
+        
+        municipios = Location.query.filter_by(
+            tipo='municipio',
+            departamento_codigo=departamento.departamento_codigo,
+            activo=True
+        ).all()
+        
+        municipios_data = []
+        for municipio in municipios:
+            # Contar puestos y mesas del municipio
+            puestos_count = Location.query.filter_by(
+                tipo='puesto',
+                departamento_codigo=municipio.departamento_codigo,
+                municipio_codigo=municipio.municipio_codigo,
+                activo=True
+            ).count()
+            
+            mesas_count = Location.query.filter_by(
+                tipo='mesa',
+                departamento_codigo=municipio.departamento_codigo,
+                municipio_codigo=municipio.municipio_codigo,
+                activo=True
+            ).count()
+            
+            # Obtener formularios del municipio
+            mesa_ids = [m.id for m in Location.query.filter_by(
+                tipo='mesa',
+                departamento_codigo=municipio.departamento_codigo,
+                municipio_codigo=municipio.municipio_codigo,
+                activo=True
+            ).all()]
+            
+            formularios = FormularioE14.query.filter(
+                FormularioE14.mesa_id.in_(mesa_ids)
+            ).all() if mesa_ids else []
+            
+            formularios_completados = sum(1 for f in formularios if f.estado == 'completado')
+            
+            municipios_data.append({
+                'id': municipio.id,
+                'nombre': municipio.municipio_nombre,
+                'nombre_completo': municipio.nombre_completo,
+                'municipio_codigo': municipio.municipio_codigo,
+                'total_puestos': puestos_count,
+                'total_mesas': mesas_count,
+                'total_formularios': len(formularios),
+                'formularios_completados': formularios_completados,
+                'porcentaje_avance': (formularios_completados / len(formularios) * 100) if formularios else 0
             })
         
-        return jsonify({'reportes': reportes_data}), 200
+        return jsonify({
+            'success': True,
+            'data': municipios_data
+        }), 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@bp.route('/resumen', methods=['GET'])
+@jwt_required()
+def get_resumen():
+    """Resumen de avance departamental"""
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(int(user_id))
+        
+        if not user or user.rol != 'coordinador_departamental':
+            return jsonify({
+                'success': False,
+                'error': 'No autorizado'
+            }), 403
+        
+        if not user.ubicacion_id:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
+        
+        departamento = Location.query.get(user.ubicacion_id)
+        
+        # Obtener resumen por municipio
+        municipios = Location.query.filter_by(
+            tipo='municipio',
+            departamento_codigo=departamento.departamento_codigo,
+            activo=True
+        ).all()
+        
+        resumen_municipios = []
+        total_mesas_depto = 0
+        total_formularios_depto = 0
+        total_completados_depto = 0
+        
+        for municipio in municipios:
+            mesa_ids = [m.id for m in Location.query.filter_by(
+                tipo='mesa',
+                departamento_codigo=municipio.departamento_codigo,
+                municipio_codigo=municipio.municipio_codigo,
+                activo=True
+            ).all()]
+            
+            mesas_count = len(mesa_ids)
+            formularios = FormularioE14.query.filter(
+                FormularioE14.mesa_id.in_(mesa_ids)
+            ).all() if mesa_ids else []
+            
+            formularios_completados = sum(1 for f in formularios if f.estado == 'completado')
+            
+            total_mesas_depto += mesas_count
+            total_formularios_depto += len(formularios)
+            total_completados_depto += formularios_completados
+            
+            resumen_municipios.append({
+                'municipio': municipio.municipio_nombre,
+                'total_mesas': mesas_count,
+                'formularios_completados': formularios_completados,
+                'porcentaje_avance': (formularios_completados / mesas_count * 100) if mesas_count > 0 else 0
+            })
+        
+        resumen = {
+            'departamento': departamento.nombre_completo,
+            'total_municipios': len(municipios),
+            'total_mesas': total_mesas_depto,
+            'total_formularios': total_formularios_depto,
+            'formularios_completados': total_completados_depto,
+            'porcentaje_avance_general': (total_completados_depto / total_mesas_depto * 100) if total_mesas_depto > 0 else 0,
+            'resumen_por_municipio': resumen_municipios
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': resumen
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

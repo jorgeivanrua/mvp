@@ -8,18 +8,28 @@ from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity, get_jwt
 
 def token_required(fn):
     """
-    Decorador que requiere un token JWT válido
+    Decorador que requiere un token JWT válido y pasa el usuario actual
     
     Usage:
         @token_required
-        def protected_route():
+        def protected_route(current_user):
             pass
     """
     @wraps(fn)
     def wrapper(*args, **kwargs):
         try:
+            from backend.models.user import User
             verify_jwt_in_request()
-            return fn(*args, **kwargs)
+            user_id = get_jwt_identity()
+            current_user = User.query.get(int(user_id))
+            
+            if not current_user:
+                return jsonify({
+                    'success': False,
+                    'error': 'Usuario no encontrado'
+                }), 404
+            
+            return fn(current_user, *args, **kwargs)
         except Exception as e:
             return jsonify({
                 'success': False,

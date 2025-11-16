@@ -1,0 +1,320 @@
+{
+  "resultados": {
+    "super_admin": {
+      "login": true,
+      "user_name": "Super Admin",
+      "endpoints": {
+        "/api/super-admin/stats": {
+          "exito": true,
+          "mensaje": "OK",
+          "descripcion": "Estadísticas generales"
+        },
+        "/api/super-admin/usuarios": {
+          "exito": false,
+          "mensaje": "404 Not Found",
+          "descripcion": "Lista de usuarios"
+        },
+        "/api/super-admin/ubicaciones": {
+          "exito": false,
+          "mensaje": "404 Not Found",
+          "descripcion": "Lista de ubicaciones"
+        },
+        "/api/super-admin/partidos": {
+          "exito": false,
+          "mensaje": "404 Not Found",
+          "descripcion": "Lista de partidos"
+        },
+        "/api/super-admin/tipos-eleccion": {
+          "exito": false,
+          "mensaje": "500 Internal Error",
+          "descripcion": "Tipos de elección"
+        }
+      },
+      "endpoints_ok": 1,
+      "endpoints_total": 5
+    },
+    "admin_departamental": {
+      "login": true,
+      "user_name": "Admin Departamental Caquetá",
+      "endpoints": {
+        "/api/admin/stats": {
+          "exito": false,
+          "mensaje": "500 Internal Error",
+          "descripcion": "Estadísticas departamentales"
+        },
+        "/api/admin/usuarios": {
+          "exito": false,
+          "mensaje": "500 Internal Error",
+          "descripcion": "Usuarios del departamento"
+        },
+        "/api/admin/ubicaciones": {
+          "exito": true,
+          "mensaje": "OK",
+          "descripcion": "Ubicaciones del departamento"
+        }
+      },
+      "endpoints_ok": 1,
+      "endpoints_total": 3
+    },
+    "admin_municipal": {
+      "login": true,
+      "user_name": "Admin Municipal Florencia",
+      "endpoints": {
+        "/api/admin-municipal/stats": {
+          "exito": true,
+          "mensaje": "OK",
+          "descripcion": "Estadísticas municipales"
+        },
+        "/api/admin-municipal/zonas": {
+          "exito": true,
+          "mensaje": "OK",
+          "descripcion": "Zonas del municipio"
+        },
+        "/api/admin-municipal/puestos": {
+          "exito": true,
+          "mensaje": "OK",
+          "descripcion": "Puestos del municipio"
+        }
+      },
+      "endpoints_ok": 3,
+      "endpoints_total": 3
+    },
+    "coordinador_departamental": {
+      "login": true,
+      "user_name": "Coordinador Departamental Caquetá",
+      "endpoints": {
+        "/api/coordinador-departamental/stats": {
+          "exito": false,
+          "mensaje": "404 Not Found",
+          "descripcion": "Estadísticas departamentales"
+        },
+        "/api/coordinador-departamental/municipios": {
+          "exito": false,
+          "mensaje": "404 Not Found",
+          "descripcion": "Municipios del departamento"
+        },
+        "/api/coordinador-departamental/resumen": {
+          "exito": false,
+          "mensaje": "404 Not Found",
+          "descripcion": "Resumen departamental"
+        }
+      },
+      "endpoints_ok": 0,
+      "endpoints_total": 3
+    },
+    "coordinador_municipal": {
+      "login": true,
+      "user_name": "Coordinador Municipal Florencia",
+      "endpoints": {
+        "/api/coordinador-municipal/stats": {
+          "exito": false,
+          "mensaje": "404 Not Found",
+          "descripcion": "Estadísticas municipales"
+        },
+        "/api/coordinador-municipal/zonas": {
+          "exito": false,
+          "mensaje": "404 Not Found",
+          "descripcion": "Zonas del municipio"
+        },
+        "/api/coordinador-municipal/puestos": {
+          "exito": false,
+          "mensaje": "500 Internal Error",
+          "descripcion": "Puestos del municipio"
+        },
+        "/api/coordinador-municipal/mesas": {
+          "exito": false,
+          "mensaje": "404 Not Found",
+          "descripcion": "Mesas del municipio"
+        }
+      },
+      "endpoints_ok": 0,
+      "endpoints_total": 4
+    },
+    "coordinador_puesto": {
+      "login": true,
+      "user_name": "Coordinador Puesto 01",
+      "endpoints": {
+        "/api/coordinador-puesto/stats": {
+          "exito": true,
+          "mensaje": "OK",
+          "descripcion": "Estadísticas del puesto"
+        },
+        "/api/coordinador-puesto/mesas": {
+          "exito": true,
+          "mensaje": "OK",
+          "descripcion": "Mesas del puesto"
+        },
+        "/api/coordinador-puesto/testigos": {
+          "exito": true,
+          "mensaje": "OK",
+          "descripcion": "Testigos del puesto"
+        },
+        "/api/coordinador-puesto/incidentes": {
+          "exito": true,
+          "mensaje": "OK",
+          "descripcion": "Incidentes del puesto"
+        }
+      },
+      "endpoints_ok": 4,
+      "endpoints_total": 4
+    },
+    "testigo_electoral": {
+      "login": true,
+      "user_name": "Testigo Electoral Puesto 01",
+      "endpoints": {
+        "/api/testigo/info": {
+          "exito": true,
+          "mensaje": "OK",
+          "descripcion": "Información del testigo"
+        },
+        "/api/testigo/mesa": {
+          "exito": true,
+          "mensaje": "OK",
+          "descripcion": "Mesa asignada"
+        },
+        "/api/testigo/tipos-eleccion": {
+          "exito": true,
+          "mensaje": "OK",
+          "descripcion": "Tipos de elección"
+        },
+        "/api/testigo/partidos": {
+          "exito": true,
+          "mensaje": "OK",
+          "descripcion": "Partidos políticos"
+        }
+      },
+      "endpoints_ok": 4,
+      "endpoints_total": 4
+    },
+    "auditor_electoral": {
+      "login": true,
+      "user_name": "Auditor Electoral Caquetá",
+      "endpoints": {
+        "/api/auditor/stats": {
+          "exito": true,
+          "mensaje": "OK",
+          "descripcion": "Estadísticas de auditoría"
+        },
+        "/api/auditor/inconsistencias": {
+          "exito": true,
+          "mensaje": "OK",
+          "descripcion": "Inconsistencias detectadas"
+        },
+        "/api/auditor/reportes": {
+          "exito": true,
+          "mensaje": "OK",
+          "descripcion": "Reportes de auditoría"
+        }
+      },
+      "endpoints_ok": 3,
+      "endpoints_total": 3
+    }
+  },
+  "tareas_pendientes": [
+    {
+      "prioridad": "ALTA",
+      "rol": "super_admin",
+      "tipo": "ENDPOINT_FALTANTE",
+      "endpoint": "/api/super-admin/usuarios",
+      "metodo": "GET",
+      "descripcion": "Implementar GET /api/super-admin/usuarios - Lista de usuarios"
+    },
+    {
+      "prioridad": "ALTA",
+      "rol": "super_admin",
+      "tipo": "ENDPOINT_FALTANTE",
+      "endpoint": "/api/super-admin/ubicaciones",
+      "metodo": "GET",
+      "descripcion": "Implementar GET /api/super-admin/ubicaciones - Lista de ubicaciones"
+    },
+    {
+      "prioridad": "ALTA",
+      "rol": "super_admin",
+      "tipo": "ENDPOINT_FALTANTE",
+      "endpoint": "/api/super-admin/partidos",
+      "metodo": "GET",
+      "descripcion": "Implementar GET /api/super-admin/partidos - Lista de partidos"
+    },
+    {
+      "prioridad": "CRÍTICA",
+      "rol": "super_admin",
+      "tipo": "ENDPOINT_ERROR",
+      "endpoint": "/api/super-admin/tipos-eleccion",
+      "metodo": "GET",
+      "descripcion": "Corregir error 500 en GET /api/super-admin/tipos-eleccion - Tipos de elección"
+    },
+    {
+      "prioridad": "CRÍTICA",
+      "rol": "admin_departamental",
+      "tipo": "ENDPOINT_ERROR",
+      "endpoint": "/api/admin/stats",
+      "metodo": "GET",
+      "descripcion": "Corregir error 500 en GET /api/admin/stats - Estadísticas departamentales"
+    },
+    {
+      "prioridad": "CRÍTICA",
+      "rol": "admin_departamental",
+      "tipo": "ENDPOINT_ERROR",
+      "endpoint": "/api/admin/usuarios",
+      "metodo": "GET",
+      "descripcion": "Corregir error 500 en GET /api/admin/usuarios - Usuarios del departamento"
+    },
+    {
+      "prioridad": "ALTA",
+      "rol": "coordinador_departamental",
+      "tipo": "ENDPOINT_FALTANTE",
+      "endpoint": "/api/coordinador-departamental/stats",
+      "metodo": "GET",
+      "descripcion": "Implementar GET /api/coordinador-departamental/stats - Estadísticas departamentales"
+    },
+    {
+      "prioridad": "ALTA",
+      "rol": "coordinador_departamental",
+      "tipo": "ENDPOINT_FALTANTE",
+      "endpoint": "/api/coordinador-departamental/municipios",
+      "metodo": "GET",
+      "descripcion": "Implementar GET /api/coordinador-departamental/municipios - Municipios del departamento"
+    },
+    {
+      "prioridad": "ALTA",
+      "rol": "coordinador_departamental",
+      "tipo": "ENDPOINT_FALTANTE",
+      "endpoint": "/api/coordinador-departamental/resumen",
+      "metodo": "GET",
+      "descripcion": "Implementar GET /api/coordinador-departamental/resumen - Resumen departamental"
+    },
+    {
+      "prioridad": "ALTA",
+      "rol": "coordinador_municipal",
+      "tipo": "ENDPOINT_FALTANTE",
+      "endpoint": "/api/coordinador-municipal/stats",
+      "metodo": "GET",
+      "descripcion": "Implementar GET /api/coordinador-municipal/stats - Estadísticas municipales"
+    },
+    {
+      "prioridad": "ALTA",
+      "rol": "coordinador_municipal",
+      "tipo": "ENDPOINT_FALTANTE",
+      "endpoint": "/api/coordinador-municipal/zonas",
+      "metodo": "GET",
+      "descripcion": "Implementar GET /api/coordinador-municipal/zonas - Zonas del municipio"
+    },
+    {
+      "prioridad": "CRÍTICA",
+      "rol": "coordinador_municipal",
+      "tipo": "ENDPOINT_ERROR",
+      "endpoint": "/api/coordinador-municipal/puestos",
+      "metodo": "GET",
+      "descripcion": "Corregir error 500 en GET /api/coordinador-municipal/puestos - Puestos del municipio"
+    },
+    {
+      "prioridad": "ALTA",
+      "rol": "coordinador_municipal",
+      "tipo": "ENDPOINT_FALTANTE",
+      "endpoint": "/api/coordinador-municipal/mesas",
+      "metodo": "GET",
+      "descripcion": "Implementar GET /api/coordinador-municipal/mesas - Mesas del municipio"
+    }
+  ],
+  "problemas": []
+}

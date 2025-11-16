@@ -1,0 +1,97 @@
+{
+  "super_admin": {
+    "login": true,
+    "endpoints": {
+      "/api/super-admin/stats": {
+        "exito": false,
+        "mensaje": "Sin token",
+        "tiene_datos": false
+      },
+      "/api/super-admin/usuarios": {
+        "exito": false,
+        "mensaje": "Sin token",
+        "tiene_datos": false
+      },
+      "/api/super-admin/ubicaciones": {
+        "exito": false,
+        "mensaje": "Sin token",
+        "tiene_datos": false
+      },
+      "/api/super-admin/partidos": {
+        "exito": false,
+        "mensaje": "Sin token",
+        "tiene_datos": false
+      },
+      "/api/super-admin/tipos-eleccion": {
+        "exito": false,
+        "mensaje": "Sin token",
+        "tiene_datos": false
+      }
+    }
+  },
+  "admin_departamental": {
+    "login": true,
+    "endpoints": {
+      "/api/admin/stats": {
+        "exito": false,
+        "mensaje": "Sin token",
+        "tiene_datos": false
+      },
+      "/api/admin/usuarios": {
+        "exito": false,
+        "mensaje": "Sin token",
+        "tiene_datos": false
+      },
+      "/api/admin/ubicaciones": {
+        "exito": false,
+        "mensaje": "Sin token",
+        "tiene_datos": false
+      },
+      "/api/resultados/departamento": {
+        "exito": false,
+        "mensaje": "Sin token",
+        "tiene_datos": false
+      }
+    }
+  },
+  "coordinador_departamental": {
+    "login": true,
+    "endpoints": {
+      "/api/coordinador-departamental/stats": {
+        "exito": false,
+        "mensaje": "Sin token",
+        "tiene_datos": false
+      },
+      "/api/coordinador-departamental/municipios": {
+        "exito": false,
+        "mensaje": "Sin token",
+        "tiene_datos": false
+      },
+      "/api/coordinador-departamental/resumen": {
+        "exito": false,
+        "mensaje": "Sin token",
+        "tiene_datos": false
+      }
+    }
+  },
+  "auditor_electoral": {
+    "login": true,
+    "endpoints": {
+      "/api/auditor/stats": {
+        "exito": false,
+        "mensaje": "Sin token",
+        "tiene_datos": false
+      },
+      "/api/auditor/inconsistencias": {
+        "exito": false,
+        "mensaje": "Sin token",
+        "tiene_datos": false
+      },
+      "/api/auditor/reportes": {
+        "exito": false,
+        "mensaje": "Sin token",
+        "tiene_datos": false
+      }
+    }
+  }
+}

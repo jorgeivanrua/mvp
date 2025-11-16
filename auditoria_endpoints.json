@@ -1,0 +1,732 @@
+{
+  "blueprints": {
+    "admin_tools": {
+      "archivo": "backend\\routes\\admin_tools.py",
+      "endpoints": [
+        [
+          "GET",
+          "/export-data"
+        ],
+        [
+          "POST",
+          "/reset-passwords"
+        ],
+        [
+          "GET",
+          "/stats"
+        ]
+      ]
+    },
+    "auth": {
+      "archivo": "backend\\routes\\auth.py",
+      "endpoints": [
+        [
+          "POST",
+          "/login"
+        ],
+        [
+          "POST",
+          "/logout"
+        ],
+        [
+          "GET",
+          "/profile"
+        ],
+        [
+          "POST",
+          "/change-password"
+        ],
+        [
+          "POST",
+          "/verificar-presencia"
+        ],
+        [
+          "POST",
+          "/reset-all-passwords-test123"
+        ]
+      ]
+    },
+    "configuracion": {
+      "archivo": "backend\\routes\\configuracion.py",
+      "endpoints": [
+        [
+          "GET",
+          "/tipos-eleccion"
+        ],
+        [
+          "POST",
+          "/tipos-eleccion"
+        ],
+        [
+          "PUT",
+          "/tipos-eleccion/<int:id>"
+        ],
+        [
+          "GET",
+          "/partidos"
+        ],
+        [
+          "POST",
+          "/partidos"
+        ],
+        [
+          "PUT",
+          "/partidos/<int:id>"
+        ],
+        [
+          "GET",
+          "/candidatos"
+        ],
+        [
+          "POST",
+          "/candidatos"
+        ],
+        [
+          "PUT",
+          "/candidatos/<int:id>"
+        ],
+        [
+          "GET",
+          "/coaliciones"
+        ],
+        [
+          "POST",
+          "/coaliciones"
+        ]
+      ]
+    },
+    "coordinador_municipal": {
+      "archivo": "backend\\routes\\coordinador_municipal.py",
+      "endpoints": [
+        [
+          "GET",
+          "/puestos"
+        ],
+        [
+          "GET",
+          "/consolidado"
+        ],
+        [
+          "GET",
+          "/puesto/<int:puesto_id>"
+        ],
+        [
+          "GET",
+          "/discrepancias"
+        ],
+        [
+          "POST",
+          "/e24-municipal"
+        ],
+        [
+          "GET",
+          "/comparacion"
+        ],
+        [
+          "GET",
+          "/estadisticas"
+        ],
+        [
+          "POST",
+          "/notificar"
+        ],
+        [
+          "GET",
+          "/exportar"
+        ],
+        [
+          "GET",
+          "/e24-puestos"
+        ],
+        [
+          "GET",
+          "/consolidado-por-zona"
+        ]
+      ]
+    },
+    "formularios_e14": {
+      "archivo": "backend\\routes\\formularios_e14.py",
+      "endpoints": [
+        [
+          "GET",
+          "/puesto"
+        ],
+        [
+          "GET",
+          "/<int:formulario_id>"
+        ],
+        [
+          "PUT",
+          "/<int:formulario_id>/validar"
+        ],
+        [
+          "PUT",
+          "/<int:formulario_id>/rechazar"
+        ],
+        [
+          "GET",
+          "/consolidado"
+        ],
+        [
+          "GET",
+          "/mesas"
+        ],
+        [
+          "GET",
+          "/mis-formularios"
+        ],
+        [
+          "PUT",
+          "/<int:formulario_id>"
+        ],
+        [
+          "GET",
+          "/testigos-puesto"
+        ]
+      ]
+    },
+    "frontend": {
+      "archivo": "backend\\routes\\frontend.py",
+      "endpoints": [
+        [
+          "GET",
+          "/"
+        ],
+        [
+          "GET",
+          "/health"
+        ],
+        [
+          "GET",
+          "/login"
+        ],
+        [
+          "GET",
+          "/auth/login"
+        ],
+        [
+          "GET",
+          "/dashboard"
+        ],
+        [
+          "GET",
+          "/testigo/dashboard"
+        ],
+        [
+          "GET",
+          "/coordinador/puesto"
+        ],
+        [
+          "GET",
+          "/coordinador/municipal"
+        ],
+        [
+          "GET",
+          "/coordinador/departamental"
+        ],
+        [
+          "GET",
+          "/admin/dashboard"
+        ],
+        [
+          "GET",
+          "/admin/configuracion"
+        ],
+        [
+          "GET",
+          "/auditor/dashboard"
+        ],
+        [
+          "GET",
+          "/admin/super-admin"
+        ]
+      ]
+    },
+    "incidentes_delitos": {
+      "archivo": "backend\\routes\\incidentes_delitos.py",
+      "endpoints": [
+        [
+          "POST",
+          "/api/incidentes"
+        ],
+        [
+          "GET",
+          "/api/incidentes"
+        ],
+        [
+          "GET",
+          "/api/incidentes/<int:incidente_id>"
+        ],
+        [
+          "PUT",
+          "/api/incidentes/<int:incidente_id>/estado"
+        ],
+        [
+          "POST",
+          "/api/delitos"
+        ],
+        [
+          "GET",
+          "/api/delitos"
+        ],
+        [
+          "GET",
+          "/api/delitos/<int:delito_id>"
+        ],
+        [
+          "PUT",
+          "/api/delitos/<int:delito_id>/estado"
+        ],
+        [
+          "POST",
+          "/api/delitos/<int:delito_id>/denunciar"
+        ],
+        [
+          "GET",
+          "/api/reportes/estadisticas"
+        ],
+        [
+          "GET",
+          "/api/notificaciones"
+        ],
+        [
+          "PUT",
+          "/api/notificaciones/<int:notificacion_id>/leer"
+        ],
+        [
+          "GET",
+          "/api/incidentes/tipos"
+        ],
+        [
+          "GET",
+          "/api/delitos/tipos"
+        ]
+      ]
+    },
+    "locations": {
+      "archivo": "backend\\routes\\locations.py",
+      "endpoints": [
+        [
+          "GET",
+          "/departamentos"
+        ],
+        [
+          "GET",
+          "/municipios"
+        ],
+        [
+          "GET",
+          "/zonas"
+        ],
+        [
+          "GET",
+          "/puestos"
+        ],
+        [
+          "GET",
+          "/mesas"
+        ]
+      ]
+    },
+    "public": {
+      "archivo": "backend\\routes\\public.py",
+      "endpoints": [
+        [
+          "GET",
+          "/campaign-info"
+        ],
+        [
+          "GET",
+          "/test-users"
+        ]
+      ]
+    },
+    "super_admin": {
+      "archivo": "backend\\routes\\super_admin.py",
+      "endpoints": [
+        [
+          "GET",
+          "/stats"
+        ],
+        [
+          "GET",
+          "/users"
+        ],
+        [
+          "POST",
+          "/users"
+        ],
+        [
+          "PUT",
+          "/users/<int:user_id>"
+        ],
+        [
+          "POST",
+          "/users/<int:user_id>/reset-password"
+        ],
+        [
+          "GET",
+          "/system-health"
+        ],
+        [
+          "POST",
+          "/upload/users"
+        ],
+        [
+          "POST",
+          "/upload/locations"
+        ],
+        [
+          "POST",
+          "/upload/partidos"
+        ],
+        [
+          "POST",
+          "/upload/candidatos"
+        ],
+        [
+          "GET",
+          "/tipos-eleccion"
+        ],
+        [
+          "POST",
+          "/tipos-eleccion"
+        ],
+        [
+          "PUT",
+          "/tipos-eleccion/<int:tipo_id>"
+        ],
+        [
+          "PUT",
+          "/partidos/<int:partido_id>/toggle"
+        ],
+        [
+          "PUT",
+          "/candidatos/<int:candidato_id>/toggle"
+        ],
+        [
+          "GET",
+          "/download/template/<template_type>"
+        ],
+        [
+          "GET",
+          "/campanas"
+        ],
+        [
+          "POST",
+          "/campanas"
+        ],
+        [
+          "PUT",
+          "/campanas/<int:campana_id>/activar"
+        ],
+        [
+          "POST",
+          "/campanas/<int:campana_id>/reset"
+        ],
+        [
+          "DELETE",
+          "/campanas/<int:campana_id>"
+        ],
+        [
+          "GET",
+          "/temas"
+        ],
+        [
+          "POST",
+          "/temas"
+        ],
+        [
+          "POST",
+          "/test/load-data"
+        ],
+        [
+          "GET",
+          "/test/audit"
+        ]
+      ]
+    },
+    "testigo": {
+      "archivo": "backend\\routes\\testigo.py",
+      "endpoints": [
+        [
+          "GET",
+          "/info"
+        ],
+        [
+          "GET",
+          "/mesa"
+        ],
+        [
+          "GET",
+          "/tipos-eleccion"
+        ],
+        [
+          "GET",
+          "/partidos"
+        ]
+      ]
+    }
+  },
+  "problemas": [
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "super_admin",
+      "metodo": "GET",
+      "path": "/api/super-admin/usuarios",
+      "descripcion": "Lista de todos los usuarios"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "super_admin",
+      "metodo": "GET",
+      "path": "/api/super-admin/ubicaciones",
+      "descripcion": "Lista de todas las ubicaciones"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "super_admin",
+      "metodo": "GET",
+      "path": "/api/super-admin/partidos",
+      "descripcion": "Lista de partidos políticos"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "super_admin",
+      "metodo": "POST",
+      "path": "/api/super-admin/usuarios",
+      "descripcion": "Crear nuevo usuario"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "super_admin",
+      "metodo": "PUT",
+      "path": "/api/super-admin/usuarios/<id>",
+      "descripcion": "Actualizar usuario"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "super_admin",
+      "metodo": "DELETE",
+      "path": "/api/super-admin/usuarios/<id>",
+      "descripcion": "Eliminar usuario"
+    },
+    {
+      "tipo": "BLUEPRINT_FALTANTE",
+      "rol": "admin_departamental",
+      "blueprint": "admin",
+      "descripcion": "Crear archivo backend/routes/admin.py"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "admin_departamental",
+      "metodo": "GET",
+      "path": "/api/admin/stats",
+      "descripcion": "Estadísticas del departamento"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "admin_departamental",
+      "metodo": "GET",
+      "path": "/api/admin/usuarios",
+      "descripcion": "Usuarios del departamento"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "admin_departamental",
+      "metodo": "GET",
+      "path": "/api/admin/ubicaciones",
+      "descripcion": "Ubicaciones del departamento"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "admin_departamental",
+      "metodo": "GET",
+      "path": "/api/admin/formularios",
+      "descripcion": "Formularios del departamento"
+    },
+    {
+      "tipo": "BLUEPRINT_FALTANTE",
+      "rol": "admin_municipal",
+      "blueprint": "admin_municipal",
+      "descripcion": "Crear archivo backend/routes/admin_municipal.py"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "admin_municipal",
+      "metodo": "GET",
+      "path": "/api/admin-municipal/stats",
+      "descripcion": "Estadísticas del municipio"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "admin_municipal",
+      "metodo": "GET",
+      "path": "/api/admin-municipal/zonas",
+      "descripcion": "Zonas del municipio"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "admin_municipal",
+      "metodo": "GET",
+      "path": "/api/admin-municipal/puestos",
+      "descripcion": "Puestos del municipio"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "admin_municipal",
+      "metodo": "GET",
+      "path": "/api/admin-municipal/mesas",
+      "descripcion": "Mesas del municipio"
+    },
+    {
+      "tipo": "BLUEPRINT_FALTANTE",
+      "rol": "coordinador_departamental",
+      "blueprint": "coordinador_departamental",
+      "descripcion": "Crear archivo backend/routes/coordinador_departamental.py"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "coordinador_departamental",
+      "metodo": "GET",
+      "path": "/api/coordinador-departamental/stats",
+      "descripcion": "Estadísticas departamentales"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "coordinador_departamental",
+      "metodo": "GET",
+      "path": "/api/coordinador-departamental/municipios",
+      "descripcion": "Municipios del departamento"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "coordinador_departamental",
+      "metodo": "GET",
+      "path": "/api/coordinador-departamental/resumen",
+      "descripcion": "Resumen de avance departamental"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "coordinador_municipal",
+      "metodo": "GET",
+      "path": "/api/coordinador-municipal/stats",
+      "descripcion": "Estadísticas municipales"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "coordinador_municipal",
+      "metodo": "GET",
+      "path": "/api/coordinador-municipal/zonas",
+      "descripcion": "Zonas del municipio"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "coordinador_municipal",
+      "metodo": "GET",
+      "path": "/api/coordinador-municipal/mesas",
+      "descripcion": "Mesas del municipio"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "coordinador_municipal",
+      "metodo": "GET",
+      "path": "/api/coordinador-municipal/formularios",
+      "descripcion": "Formularios del municipio"
+    },
+    {
+      "tipo": "BLUEPRINT_FALTANTE",
+      "rol": "coordinador_puesto",
+      "blueprint": "coordinador_puesto",
+      "descripcion": "Crear archivo backend/routes/coordinador_puesto.py"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "coordinador_puesto",
+      "metodo": "GET",
+      "path": "/api/coordinador-puesto/stats",
+      "descripcion": "Estadísticas del puesto"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "coordinador_puesto",
+      "metodo": "GET",
+      "path": "/api/coordinador-puesto/mesas",
+      "descripcion": "Mesas del puesto"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "coordinador_puesto",
+      "metodo": "GET",
+      "path": "/api/coordinador-puesto/testigos",
+      "descripcion": "Testigos del puesto"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "coordinador_puesto",
+      "metodo": "GET",
+      "path": "/api/coordinador-puesto/incidentes",
+      "descripcion": "Incidentes del puesto"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "coordinador_puesto",
+      "metodo": "GET",
+      "path": "/api/coordinador-puesto/formularios",
+      "descripcion": "Formularios del puesto"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "testigo_electoral",
+      "metodo": "GET",
+      "path": "/api/testigo/formularios",
+      "descripcion": "Formularios del testigo"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "testigo_electoral",
+      "metodo": "POST",
+      "path": "/api/testigo/formularios",
+      "descripcion": "Crear formulario"
+    },
+    {
+      "tipo": "BLUEPRINT_FALTANTE",
+      "rol": "auditor_electoral",
+      "blueprint": "auditor",
+      "descripcion": "Crear archivo backend/routes/auditor.py"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "auditor_electoral",
+      "metodo": "GET",
+      "path": "/api/auditor/stats",
+      "descripcion": "Estadísticas de auditoría"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "auditor_electoral",
+      "metodo": "GET",
+      "path": "/api/auditor/inconsistencias",
+      "descripcion": "Inconsistencias detectadas"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "auditor_electoral",
+      "metodo": "GET",
+      "path": "/api/auditor/reportes",
+      "descripcion": "Reportes de auditoría"
+    },
+    {
+      "tipo": "ENDPOINT_FALTANTE",
+      "rol": "auditor_electoral",
+      "metodo": "GET",
+      "path": "/api/auditor/formularios",
+      "descripcion": "Formularios para auditar"
+    }
+  ],
+  "resumen": {
+    "endpoints_ok": 7,
+    "endpoints_faltantes": 32,
+    "total_problemas": 37
+  }
+}

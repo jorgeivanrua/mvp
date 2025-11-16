@@ -56,6 +56,11 @@ def register_blueprints(app):
     from backend.routes.coordinador_departamental import bp as coordinador_departamental_bp
     from backend.routes.incidentes_delitos import incidentes_delitos_bp
     from backend.routes.super_admin import super_admin_bp
+    from backend.routes.testigo import testigo_bp
+    from backend.routes.coordinador_puesto import coordinador_puesto_bp
+    from backend.routes.admin import admin_bp
+    from backend.routes.admin_municipal import admin_municipal_bp
+    from backend.routes.auditor import auditor_bp
     
     # API routes
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -66,6 +71,11 @@ def register_blueprints(app):
     app.register_blueprint(coordinador_departamental_bp)
     app.register_blueprint(incidentes_delitos_bp)
     app.register_blueprint(super_admin_bp)
+    app.register_blueprint(testigo_bp, url_prefix='/api/testigo')
+    app.register_blueprint(coordinador_puesto_bp, url_prefix='/api/coordinador-puesto')
+    app.register_blueprint(admin_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_municipal_bp, url_prefix='/api/admin-municipal')
+    app.register_blueprint(auditor_bp, url_prefix='/api/auditor')
     
     # Public routes (sin autenticación)
     from backend.routes.public import public_bp

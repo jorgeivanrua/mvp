@@ -525,14 +525,15 @@ def upload_partidos():
     Cargar partidos políticos masivamente desde archivo Excel
     
     Formato esperado del Excel:
+    - codigo: Código del partido (opcional, se genera automático)
     - nombre: Nombre del partido
-    - sigla: Sigla del partido
+    - nombre_corto: Nombre corto del partido
     - color: Color en formato hexadecimal (ej: #FF0000)
-    - numero_lista: Número de lista (opcional)
+    - logo_url: URL del logo (opcional)
     """
     try:
         from backend.database import db
-        from backend.models.partido import Partido
+        from backend.models.configuracion_electoral import Partido
         import pandas as pd
         from io import BytesIO
         
@@ -560,7 +561,7 @@ def upload_partidos():
         df = pd.read_excel(BytesIO(file.read()))
         
         # Validar columnas requeridas
-        required_columns = ['nombre', 'sigla', 'color']
+        required_columns = ['nombre', 'nombre_corto', 'color']
         missing_columns = [col for col in required_columns if col not in df.columns]
         
         if missing_columns:
@@ -581,12 +582,17 @@ def upload_partidos():
                     errors.append(f"Fila {index + 2}: Partido '{row['nombre']}' ya existe")
                     continue
                 
+                # Generar código si no existe
+                codigo = row.get('codigo') if 'codigo' in row and pd.notna(row.get('codigo')) else row['nombre'].upper().replace(' ', '_')
+                
                 # Crear partido
                 partido = Partido(
+                    codigo=codigo,
                     nombre=row['nombre'],
-                    sigla=row['sigla'],
+                    nombre_corto=row['nombre_corto'],
                     color=row['color'],
-                    numero_lista=row.get('numero_lista') if 'numero_lista' in row and pd.notna(row.get('numero_lista')) else None
+                    logo_url=row.get('logo_url') if 'logo_url' in row and pd.notna(row.get('logo_url')) else None,
+                    activo=row.get('activo', True) if 'activo' in row else True
                 )
                 
                 db.session.add(partido)
@@ -628,16 +634,18 @@ def upload_candidatos():
     Cargar candidatos masivamente desde archivo Excel
     
     Formato esperado del Excel:
-    - nombre: Nombre del candidato
+    - codigo: Código del candidato (opcional, se genera automático)
+    - nombre_completo: Nombre completo del candidato
     - partido_nombre: Nombre del partido
     - tipo_eleccion_nombre: Nombre del tipo de elección
     - numero_lista: Número de lista (opcional)
+    - es_independiente: True/False (opcional, default False)
+    - es_cabeza_lista: True/False (opcional, default False)
+    - foto_url: URL de la foto (opcional)
     """
     try:
         from backend.database import db
-        from backend.models.candidato import Candidato
-        from backend.models.partido import Partido
-        from backend.models.tipo_eleccion import TipoEleccion
+        from backend.models.configuracion_electoral import Candidato, Partido, TipoEleccion
         import pandas as pd
         from io import BytesIO
         
@@ -665,7 +673,7 @@ def upload_candidatos():
         df = pd.read_excel(BytesIO(file.read()))
         
         # Validar columnas requeridas
-        required_columns = ['nombre', 'partido_nombre', 'tipo_eleccion_nombre']
+        required_columns = ['nombre_completo', 'partido_nombre', 'tipo_eleccion_nombre']
         missing_columns = [col for col in required_columns if col not in df.columns]
         
         if missing_columns:
@@ -692,27 +700,34 @@ def upload_candidatos():
                     errors.append(f"Fila {index + 2}: Tipo de elección '{row['tipo_eleccion_nombre']}' no encontrado")
                     continue
                 
+                # Generar código si no existe
+                if 'codigo' in row and pd.notna(row.get('codigo')):
+                    codigo = row['codigo']
+                else:
+                    codigo = f"{tipo_eleccion.codigo}_{partido.codigo}_{index+1}"
+                
                 # Verificar si el candidato ya existe
-                existing_candidato = Candidato.query.filter_by(
-                    nombre=row['nombre'],
-                    partido_id=partido.id,
-                    tipo_eleccion_id=tipo_eleccion.id
-                ).first()
+                existing_candidato = Candidato.query.filter_by(codigo=codigo).first()
                 
                 if existing_candidato:
-                    errors.append(f"Fila {index + 2}: Candidato '{row['nombre']}' ya existe para este partido y tipo de elección")
+                    errors.append(f"Fila {index + 2}: Candidato con código '{codigo}' ya existe")
                     continue
                 
                 # Crear candidato
                 candidato = Candidato(
-                    nombre=row['nombre'],
+                    codigo=codigo,
+                    nombre_completo=row['nombre_completo'],
                     partido_id=partido.id,
                     tipo_eleccion_id=tipo_eleccion.id,
-                    numero_lista=row.get('numero_lista') if 'numero_lista' in row and pd.notna(row.get('numero_lista')) else None
+                    numero_lista=row.get('numero_lista') if 'numero_lista' in row and pd.notna(row.get('numero_lista')) else None,
+                    es_independiente=row.get('es_independiente', False) if 'es_independiente' in row else False,
+                    es_cabeza_lista=row.get('es_cabeza_lista', False) if 'es_cabeza_lista' in row else False,
+                    foto_url=row.get('foto_url') if 'foto_url' in row and pd.notna(row.get('foto_url')) else None,
+                    activo=row.get('activo', True) if 'activo' in row else True
                 )
                 
                 db.session.add(candidato)
-                created_candidatos.append(row['nombre'])
+                created_candidatos.append(row['nombre_completo'])
                 
             except Exception as e:
                 errors.append(f"Fila {index + 2}: {str(e)}")
@@ -751,7 +766,7 @@ def get_tipos_eleccion():
     Obtener todos los tipos de elección
     """
     try:
-        from backend.models.tipo_eleccion import TipoEleccion
+        from backend.models.configuracion_electoral import TipoEleccion
         
         tipos = TipoEleccion.query.all()
         

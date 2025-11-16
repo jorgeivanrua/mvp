@@ -1,0 +1,102 @@
+{
+  "super_admin": {
+    "login": true,
+    "endpoints": {
+      "/api/super-admin/stats": {
+        "exito": true,
+        "mensaje": "OK"
+      },
+      "/api/super-admin/usuarios": {
+        "exito": false,
+        "mensaje": "404 Not Found"
+      },
+      "/api/super-admin/ubicaciones": {
+        "exito": false,
+        "mensaje": "404 Not Found"
+      }
+    }
+  },
+  "admin_departamental": {
+    "login": true,
+    "endpoints": {
+      "/api/admin/stats": {
+        "exito": false,
+        "mensaje": "404 Not Found"
+      },
+      "/api/admin/usuarios": {
+        "exito": false,
+        "mensaje": "404 Not Found"
+      }
+    }
+  },
+  "admin_municipal": {
+    "login": true,
+    "endpoints": {
+      "/api/admin-municipal/stats": {
+        "exito": false,
+        "mensaje": "404 Not Found"
+      }
+    }
+  },
+  "coordinador_departamental": {
+    "login": true,
+    "endpoints": {
+      "/api/coordinador-departamental/stats": {
+        "exito": false,
+        "mensaje": "404 Not Found"
+      }
+    }
+  },
+  "coordinador_municipal": {
+    "login": true,
+    "endpoints": {
+      "/api/coordinador-municipal/stats": {
+        "exito": false,
+        "mensaje": "404 Not Found"
+      },
+      "/api/coordinador-municipal/puestos": {
+        "exito": false,
+        "mensaje": "Error: HTTPConnectionPool(host='local"
+      }
+    }
+  },
+  "coordinador_puesto": {
+    "login": true,
+    "endpoints": {
+      "/api/coordinador-puesto/stats": {
+        "exito": false,
+        "mensaje": "404 Not Found"
+      },
+      "/api/coordinador-puesto/mesas": {
+        "exito": false,
+        "mensaje": "404 Not Found"
+      },
+      "/api/coordinador-puesto/incidentes": {
+        "exito": false,
+        "mensaje": "404 Not Found"
+      }
+    }
+  },
+  "testigo_electoral": {
+    "login": true,
+    "endpoints": {
+      "/api/testigo/info": {
+        "exito": false,
+        "mensaje": "404 Not Found"
+      },
+      "/api/testigo/mesa": {
+        "exito": false,
+        "mensaje": "404 Not Found"
+      }
+    }
+  },
+  "auditor_electoral": {
+    "login": true,
+    "endpoints": {
+      "/api/auditor/stats": {
+        "exito": false,
+        "mensaje": "404 Not Found"
+      }
+    }
+  }
+}

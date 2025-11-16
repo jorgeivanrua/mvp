@@ -29,8 +29,13 @@ class AuthService:
         Returns:
             tuple: (user, access_token, refresh_token)
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Autenticando: rol={rol}, ubicacion_data={ubicacion_data}")
+        
         # Buscar ubicación según jerarquía
         location = AuthService._find_location_by_hierarchy(rol, ubicacion_data)
+        logger.info(f"Ubicación encontrada: {location.id if location else None}")
         
         # Super admin no necesita ubicación
         if rol == 'super_admin':
@@ -130,6 +135,8 @@ class AuthService:
                 )
         
         elif rol == 'testigo_electoral':
+            # Testigos se autentican a nivel de puesto
+            # La mesa específica se selecciona en el dashboard
             if 'puesto_codigo' in ubicacion_data:
                 query = query.filter_by(
                     tipo='puesto',

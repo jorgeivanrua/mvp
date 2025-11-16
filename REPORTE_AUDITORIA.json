@@ -1,0 +1,1379 @@
+{
+  "fecha": "2025-11-16T13:30:43.395321",
+  "errores": [],
+  "advertencias": [
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 01 - I.E. JUAN BAUTISTA LA SALLE - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 01 - I.E. JUAN BAUTISTA LA SALLE - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 01 - I.E. JUAN BAUTISTA LA SALLE - Mesa 03",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 01 - I.E. JUAN BAUTISTA MIGANI - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 01 - I.E. JUAN BAUTISTA MIGANI - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 01 - I.E. SAN FRANCISCO DE ASIS - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 01 - I.E. SAN FRANCISCO DE ASIS - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 01 - I.E. SAGRADOS CORAZONES - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 01 - I.E. SAGRADOS CORAZONES - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 01 - IE JUAN BAUTISTA LA SALLE SD 7 DE AGOSTO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 01 - I.E. SAN FRANCISCO DE ASIS SD CIRCACIA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 01 - I.E.BUINAIMA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 01 - I.E.BUINAIMA - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 01 - IE LA ESPERANZA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 01 - SEMINARIO MAYOR ARQUIDIOCESANO SAN JOSE - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 02 - I.E. ANTONIO RICAURTE SD JUAN XXIII - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 02 - I.E. ANTONIO RICAURTE SD JUAN XXIII - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 02 - I.E. ANTONIO RICAURTE SD JUAN XXIII - Mesa 03",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 02 - I.E. ANTONIO RICAURTE - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 02 - I.E. ANTONIO RICAURTE - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 02 - I.E. BARRIOS UNIDOS DEL SUR - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 02 - I.E. BARRIOS UNIDOS DEL SUR - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 02 - I.E. BARRIOS UNIDOS DEL SUR - Mesa 03",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 02 - INS TEC AGROINDUSTRIAL  DE LA AMAZONIA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 02 - INS TEC AGROINDUSTRIAL  DE LA AMAZONIA - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 02 - UNIVERSIDAD DE LA AMAZONIA SEDE CENTRO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 02 - I.E. NORMAL SUPERIOR - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 03 - I.E.LOS PINOS SEDE LA PAZ - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 03 - UNIVERSIDAD UNAD - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 03 - INSTITUTO TECNICO INDUSTRIAL - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 03 - INSTITUTO TECNICO INDUSTRIAL - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 03 - I.E.LA SALLE - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 03 - I.E.LA SALLE - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 03 - I.E. LOS PINOS - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 03 - I.E. LOS ANDES - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 04 - I.E.BUS SD PUEBLO NUEVO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 04 - I.E.BUS SD PUEBLO NUEVO - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 04 - I.E.BUS SD SANTA INES - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 04 - I.E. CIUDADELA SIGLO XXI SD EL TRIUNFO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 04 - I.E.DIV.NIÑO SEDE LAS PALMERAS - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 04 - I.E.DIV.NIÑO SEDE LAS PALMERAS - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 04 - I.E. CIUDADELA SIGLO XXI - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 04 - I.E. CIUDADELA SIGLO XXI - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 04 - I.E. CIUDADELA SIGLO XXI - Mesa 03",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 04 - I.E.BELLO HORIZONTE - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 04 - I.E.BELLO HORIZONTE - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 04 - IE JORGE ELIECER GAITAN - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 04 - I.E. JORGE E. GAITAN SD SIMON BOLIVAR - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 90 - UNIVERSIDAD DE LA AMAZONIA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 90 - UNIVERSIDAD DE LA AMAZONIA - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 90 - UNIVERSIDAD DE LA AMAZONIA - Mesa 03",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 98 - CARCEL SEDE UNO- EL CUNDUY - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 98 - CARCEL SEDE DOS-HELICONIAS - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 99 - SAN PEDRO - NORCASIA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 99 - ORTEGUAZA - SANTANA LAS HERMOSAS - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 99 - ORTEGUAZA - SAN ANTONIO DE ATENAS. - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 99 - ORTEGUAZA - REMOLINO ALTO ORTEGUAZA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 99 - EL DANUBIO - REMOLINO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 99 - EL DANUBIO - SAN GUILLERMO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 99 - EL CARAÑO - AVENIDA EL CARAÑO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 99 - EL CARAÑO - NUEVA JERUSALÉN - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 99 - EL CARAÑO - BAJO CALDAS - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 99 - EL CARAÑO-BELLO HORIZONTE SD LA FLORIDA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 99 - SANTO DOMINGO - COFEMA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 99 - SANTO DOMINGO - VILLA HERMOSA DOS. - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 99 - SANTO DOMINGO - I.E. RURAL SANTANDER - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 99 - SAN MARTIN - I.E. ALTOS DE COPOAZU - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 99 - SAN MARTIN-ASENT. HUMANO VILLA DE DIOS - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 99 - VENECIA - PUERTO ARANGO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 99 - VENECIA - LA LIBERTAD. - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 99 - SAN PEDRO - VICTORIA BAJA SEDE EL PARA. - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - FLORENCIA - Zona 99 - SAN PEDRO-VICTORIA BAJA SD VICTORIA BAJA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - ALBANIA - Zona 00 - IE ALBANIA - SD PEREGRINO LOZANO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - ALBANIA - Zona 00 - IE ALBANIA - SD PEREGRINO LOZANO - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - ALBANIA - Zona 99 - DORADO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - CARTAGENA DEL CHAIRA - Zona 00 - IE. EL CHAIRA JOSE MARIA CORDOBA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - CARTAGENA DEL CHAIRA - Zona 00 - IE. EL CHAIRA JOSE MARIA CORDOBA - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - CARTAGENA DEL CHAIRA - Zona 00 - IE. EL CHAIRA JOSE MARIA CORDOBA - Mesa 03",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - CARTAGENA DEL CHAIRA - Zona 00 - IE. EL CHAIRA JOSE MARIA CORDOBA - Mesa 04",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - CARTAGENA DEL CHAIRA - Zona 00 - IE. EL CHAIRA JOSE MARIA CORDOBA - Mesa 05",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - CARTAGENA DEL CHAIRA - Zona 99 - RISARALDA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - CARTAGENA DEL CHAIRA - Zona 99 - REMOLINO DEL CAGUAN - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - CARTAGENA DEL CHAIRA - Zona 99 - SANTA FE DEL CAGUAN - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - CARTAGENA DEL CHAIRA - Zona 99 - MONSERRATE - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - CARTAGENA DEL CHAIRA - Zona 99 - LA SARDINATA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - CARTAGENA DEL CHAIRA - Zona 99 - SANTO DOMINGO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - BELEN DE LOS ANDAQUIES - Zona 00 - PUESTO CABECERA MUNICIPAL - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - BELEN DE LOS ANDAQUIES - Zona 00 - PUESTO CABECERA MUNICIPAL - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - BELEN DE LOS ANDAQUIES - Zona 00 - PUESTO CABECERA MUNICIPAL - Mesa 03",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - BELEN DE LOS ANDAQUIES - Zona 99 - EL PORTAL - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - BELEN DE LOS ANDAQUIES - Zona 99 - VEREDA SAN  LUIS - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - EL DONCELLO - Zona 00 - PUESTO CABECERA MUNICIPAL - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - EL DONCELLO - Zona 00 - PUESTO CABECERA MUNICIPAL - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - EL DONCELLO - Zona 00 - PUESTO CABECERA MUNICIPAL - Mesa 03",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - EL DONCELLO - Zona 00 - PUESTO CABECERA MUNICIPAL - Mesa 04",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - EL DONCELLO - Zona 99 - MAGUARE - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - EL DONCELLO - Zona 99 - PUERTO HUNGRIA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - EL DONCELLO - Zona 99 - BERLIN - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - EL DONCELLO - Zona 99 - URIAS RONDON - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - EL DONCELLO - Zona 99 - PEÑAS NEGRAS - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - EL DONCELLO - Zona 99 - PUERTO MANRIQUE - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - EL PAUJIL - Zona 00 - PUESTO CABECERA MUNICIPAL - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - EL PAUJIL - Zona 00 - PUESTO CABECERA MUNICIPAL - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - EL PAUJIL - Zona 00 - PUESTO CABECERA MUNICIPAL - Mesa 03",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - EL PAUJIL - Zona 99 - BOLIVIA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - EL PAUJIL - Zona 99 - VERSALLES - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - LA MONTAÑITA - Zona 00 - PUESTO CABECERA MUNICIPAL - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - LA MONTAÑITA - Zona 00 - PUESTO CABECERA MUNICIPAL - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - LA MONTAÑITA - Zona 99 - EL TRIUNFO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - LA MONTAÑITA - Zona 99 - SANTUARIO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - LA MONTAÑITA - Zona 99 - LA UNION PENEYA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - LA MONTAÑITA - Zona 99 - MATEGUADUA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - PUERTO RICO - Zona 00 - IE SAGRADOS CORAZONES - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - PUERTO RICO - Zona 00 - IE SAGRADOS CORAZONES - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - PUERTO RICO - Zona 00 - IE SAGRADOS CORAZONES - Mesa 03",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - PUERTO RICO - Zona 00 - IE ACEVEDO Y GOMEZ - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - PUERTO RICO - Zona 00 - IE ACEVEDO Y GOMEZ - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - PUERTO RICO - Zona 99 - LA AGUILILLA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - PUERTO RICO - Zona 99 - LA ESMERALDA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - PUERTO RICO - Zona 99 - LUSITANIA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - PUERTO RICO - Zona 99 - RIO NEGRO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - PUERTO RICO - Zona 99 - LA CHIPA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - PUERTO RICO - Zona 99 - SANTANA RAMOS - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - PUERTO RICO - Zona 99 - LA PAZ - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 01 - I.E. INST. NAL. PROMOCION SOCIAL - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 01 - I.E. INST. NAL. PROMOCION SOCIAL - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 01 - I.E. INST. NAL. PROMOCION SOCIAL - Mesa 03",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 01 - I.E. DANTE ALIGHIERI SEDE DIEGO OMAR - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 01 - I.E. DANTE ALIGHIERI SEDE DIEGO OMAR - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 01 - LICEO MODERNO NELLY PERDOMO DE FALLA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 01 - I.E. DANTE ALIGHIERI SEDE ANTONIO NARIÑO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 02 - I.E.VERDE AMAZONICO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 02 - I.E.VERDE AMAZONICO - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 02 - IE INST NAL DE PROM SOCIAL SD C. JARDIN - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 02 - I E VERDE AMAZONICO SD SANTA  ISABEL - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 99 - GUACAMAYAS - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 99 - PLAYA RICA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 99 - SANTA ROSA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 99 - CAMPO HERMOSO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 99 - BALSILLAS - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 99 - PUERTO AMOR - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 99 - GUAYABAL - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 99 - LOS POZOS - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 99 - PUERTO BETANIA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 99 - SAN JUAN DEL LOZADA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 99 - TRES ESQUINAS - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 99 - TRONCALES - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 99 - CENTRO POBLADO LA NOVIA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 99 - CIUDAD YARI - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 99 - VILLA CARMONA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 99 - VILLA LOBOS - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 99 - LAS DAMAS - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN VICENTE DEL CAGUAN - Zona 99 - LA CRISTALINA DEL LOZADA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - CURILLO - Zona 00 - PUESTO CABECERA MUNICIPAL - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - CURILLO - Zona 00 - PUESTO CABECERA MUNICIPAL - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - CURILLO - Zona 99 - PUERTO VALDIVIA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - CURILLO - Zona 99 - SALAMINA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - MILAN - Zona 00 - PUESTO CABECERA MUNICIPAL - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - MILAN - Zona 99 - LA ILUSION MATICURU - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - MILAN - Zona 99 - GETUCHA (SAN ANTONIO) - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - MILAN - Zona 99 - AGUA BLANCA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - MILAN - Zona 99 - MATICURU (GRANARIO) - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - MILAN - Zona 99 - RESGUARDO INDIGENA AGUA NEGRA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - MILAN - Zona 99 - REMOLINO DE ARICUNTI - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - MORELIA - Zona 00 - PUESTO CABECERA MUNICIPAL - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - MORELIA - Zona 99 - VEREDA BOLIVIA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - MORELIA - Zona 99 - VEREDA EL SILENCIO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - MORELIA - Zona 99 - VEREDA SAN MARCOS - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN JOSE DEL FRAGUA - Zona 00 - INSTITUCION EDUCATIVA PARROQUIAL - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN JOSE DEL FRAGUA - Zona 00 - INSTITUCION EDUCATIVA PARROQUIAL - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN JOSE DEL FRAGUA - Zona 00 - SEDE 2 I.E. DON QUIJOTE - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN JOSE DEL FRAGUA - Zona 99 - FRAGUITA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN JOSE DEL FRAGUA - Zona 99 - PUERTO BELLO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN JOSE DEL FRAGUA - Zona 99 - PUERTO NUEVO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SAN JOSE DEL FRAGUA - Zona 99 - YURAYACO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SOLANO - Zona 00 - PUESTO CABECERA MUNICIPAL - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SOLANO - Zona 00 - PUESTO CABECERA MUNICIPAL - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SOLANO - Zona 99 - ARARACUARA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SOLANO - Zona 99 - CUEMANI - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SOLANO - Zona 99 - LA MANA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SOLANO - Zona 99 - DANUBIO (CAMPO ALEGRE) - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SOLANO - Zona 99 - MONONGUETE - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SOLANO - Zona 99 - PEÑAS BLANCAS - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SOLANO - Zona 99 - PUERTO TEJADA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SOLANO - Zona 99 - VEREDA PUERTO HERICHA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SOLANO - Zona 99 - VEREDA PUERTO MERCEDES - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SOLANO - Zona 99 - VEREDA CURI PLAYA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SOLANO - Zona 99 - VEREDA EL SABALO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SOLITA - Zona 00 - PUESTO CABECERA MUNICIPAL - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SOLITA - Zona 00 - PUESTO CABECERA MUNICIPAL - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - SOLITA - Zona 99 - VEREDA CAMPOLEJANO - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - VALPARAISO - Zona 00 - PUESTO CABECERA MUNICIPAL - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - VALPARAISO - Zona 00 - PUESTO CABECERA MUNICIPAL - Mesa 02",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - VALPARAISO - Zona 99 - PLAYA RICA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - VALPARAISO - Zona 99 - CAMPO ALEGRE KM 18 - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Mesa sin puesto padre: CAQUETA - VALPARAISO - Zona 99 - SANTIAGO DE LA SELVA - Mesa 01",
+      "archivo": null,
+      "severidad": "WARNING"
+    }
+  ],
+  "info": [
+    {
+      "categoria": "BD",
+      "mensaje": "Usuarios: 10",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "BD",
+      "mensaje": "Ubicaciones: 1 depts, 16 muns, 153 puestos, 211 mesas",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "BD",
+      "mensaje": "Electoral: 11 tipos, 10 partidos, 17 candidatos",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "BD",
+      "mensaje": "Formularios E-14: 2",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "BD",
+      "mensaje": "Incidentes: 1, Delitos: 1",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "INTEGRIDAD",
+      "mensaje": "Verificación de integridad completada",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "MODELO",
+      "mensaje": "User.set_password ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "MODELO",
+      "mensaje": "User.check_password ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "MODELO",
+      "mensaje": "User.to_dict ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "MODELO",
+      "mensaje": "Location.to_dict ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "MODELO",
+      "mensaje": "TipoEleccion.to_dict ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "MODELO",
+      "mensaje": "Partido.to_dict ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "MODELO",
+      "mensaje": "Candidato.to_dict ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "MODELO",
+      "mensaje": "FormularioE14.to_dict ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "MODELO",
+      "mensaje": "IncidenteElectoral.to_dict ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "MODELO",
+      "mensaje": "DelitoElectoral.to_dict ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "ENDPOINT",
+      "mensaje": "Servidor Flask está corriendo",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "ENDPOINT",
+      "mensaje": "GET / responde",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "ENDPOINT",
+      "mensaje": "POST /api/auth/login responde",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "ARCHIVO",
+      "mensaje": "backend/app.py ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "ARCHIVO",
+      "mensaje": "backend/database.py ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "ARCHIVO",
+      "mensaje": "backend/models/user.py ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "ARCHIVO",
+      "mensaje": "backend/models/location.py ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "ARCHIVO",
+      "mensaje": "backend/models/configuracion_electoral.py ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "ARCHIVO",
+      "mensaje": "backend/models/formulario_e14.py ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "ARCHIVO",
+      "mensaje": "backend/models/incidentes_delitos.py ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "ARCHIVO",
+      "mensaje": "backend/routes/auth.py ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "ARCHIVO",
+      "mensaje": "backend/routes/testigo.py ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "ARCHIVO",
+      "mensaje": "backend/routes/formularios_e14.py ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "ARCHIVO",
+      "mensaje": "backend/routes/incidentes_delitos.py ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "ARCHIVO",
+      "mensaje": "backend/services/auth_service.py ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "ARCHIVO",
+      "mensaje": "backend/utils/decorators.py ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "ARCHIVO",
+      "mensaje": "backend/utils/jwt_utils.py ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "ARCHIVO",
+      "mensaje": "requirements.txt ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "ARCHIVO",
+      "mensaje": ".env ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "CONFIG",
+      "mensaje": "SECRET_KEY configurada ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "CONFIG",
+      "mensaje": "JWT_SECRET_KEY configurada ✓",
+      "severidad": "INFO"
+    },
+    {
+      "categoria": "CONFIG",
+      "mensaje": "DATABASE_URL configurada ✓",
+      "severidad": "INFO"
+    }
+  ],
+  "resumen": {
+    "total_errores": 0,
+    "total_advertencias": 196,
+    "total_info": 38
+  }
+}

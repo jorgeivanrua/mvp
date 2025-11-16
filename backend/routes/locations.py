@@ -2,6 +2,7 @@
 Rutas de ubicaciones
 """
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.location import Location
 
 locations_bp = Blueprint('locations', __name__)
@@ -98,6 +99,7 @@ def get_puestos():
 
 
 @locations_bp.route('/mesas', methods=['GET'])
+@jwt_required()
 def get_mesas():
     """Obtener mesas filtradas"""
     try:
