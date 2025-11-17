@@ -24,6 +24,125 @@ document.addEventListener('DOMContentLoaded', function() {
     // setupImagePreview se llama cuando se abre el modal
 });
 
+/**
+ * Mostrar formulario para crear nuevo E-14
+ */
+async function showCreateForm() {
+    try {
+        // Verificar que el usuario tenga una mesa asignada
+        if (!userLocation || !userLocation.id) {
+            Utils.showError('No tienes una mesa asignada. Contacta al administrador.');
+            return;
+        }
+        
+        // Limpiar formulario
+        const form = document.getElementById('e14Form');
+        form.reset();
+        votosData = {};
+        
+        // Limpiar preview de imagen
+        document.getElementById('imagePreview').innerHTML = 
+            '<p class="text-muted">Toque el botón para tomar una foto</p>';
+        
+        // Habilitar tipo de elección
+        const tipoEleccionSelect = document.getElementById('tipoEleccion');
+        if (tipoEleccionSelect) {
+            tipoEleccionSelect.disabled = false;
+        }
+        
+        // Cargar las mesas en el selector del formulario
+        const mesaSelect = document.getElementById('mesaFormulario');
+        console.log('mesaSelect element:', mesaSelect);
+        console.log('userLocation:', userLocation);
+        
+        if (mesaSelect && userLocation) {
+            // Si el testigo tiene una mesa asignada (tipo='mesa'), usar esa mesa directamente
+            if (userLocation.tipo === 'mesa') {
+                console.log('Usuario tiene mesa asignada directamente');
+                
+                // Limpiar y agregar solo la mesa del testigo
+                mesaSelect.innerHTML = '<option value="">Seleccione mesa...</option>';
+                const option = document.createElement('option');
+                option.value = userLocation.id;
+                option.textContent = `Mesa ${userLocation.mesa_codigo} - ${userLocation.puesto_nombre}`;
+                option.dataset.mesa = JSON.stringify(userLocation);
+                mesaSelect.appendChild(option);
+                
+                // Pre-seleccionar la mesa del testigo
+                mesaSelect.value = userLocation.id;
+                
+                console.log('Mesa pre-seleccionada:', userLocation.id);
+                
+                // Cargar información de la mesa seleccionada
+                await cambiarMesaFormulario();
+            } 
+            // Si el testigo tiene un puesto asignado, cargar todas las mesas del puesto
+            else if (userLocation.puesto_codigo) {
+                console.log('Usuario tiene puesto asignado, cargando mesas del puesto');
+                
+                // Obtener todas las mesas del puesto
+                const params = {
+                    puesto_codigo: userLocation.puesto_codigo,
+                    zona_codigo: userLocation.zona_codigo,
+                    municipio_codigo: userLocation.municipio_codigo,
+                    departamento_codigo: userLocation.departamento_codigo
+                };
+                
+                console.log('Params para cargar mesas:', params);
+                
+                const response = await APIClient.get('/locations/mesas', params);
+                const mesas = response.data || [];
+                
+                console.log('Mesas cargadas:', mesas.length);
+                
+                // Limpiar y cargar opciones
+                mesaSelect.innerHTML = '<option value="">Seleccione mesa...</option>';
+                mesas.forEach(mesa => {
+                    const option = document.createElement('option');
+                    option.value = mesa.id;
+                    option.textContent = `Mesa ${mesa.mesa_codigo} - ${mesa.puesto_nombre}`;
+                    option.dataset.mesa = JSON.stringify(mesa);
+                    mesaSelect.appendChild(option);
+                });
+                
+                // Pre-seleccionar la primera mesa si solo hay una
+                if (mesas.length === 1) {
+                    mesaSelect.value = mesas[0].id;
+                    await cambiarMesaFormulario();
+                }
+            } else {
+                console.error('Usuario no tiene mesa ni puesto asignado');
+                Utils.showError('No tienes una ubicación asignada correctamente');
+            }
+        } else {
+            console.error('mesaSelect o userLocation no disponible');
+        }
+        
+        // Pre-cargar votantes registrados desde DIVIPOLA
+        const votantesInput = document.getElementById('votantesRegistrados');
+        if (votantesInput && userLocation.total_votantes_registrados) {
+            votantesInput.value = userLocation.total_votantes_registrados;
+            votantesInput.readOnly = true; // Solo lectura - viene de DIVIPOLA
+            
+            // Agregar tooltip explicativo
+            votantesInput.title = 'Total de personas habilitadas para votar en esta mesa según el censo electoral (DIVIPOLA)';
+        }
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('formModal'));
+        modal.show();
+        
+        // Configurar preview de imagen cuando se muestre el modal
+        document.getElementById('formModal').addEventListener('shown.bs.modal', function() {
+            setupImagePreview();
+        }, { once: true });
+        
+    } catch (error) {
+        console.error('Error al abrir formulario:', error);
+        Utils.showError('Error al abrir formulario: ' + error.message);
+    }
+}
+
 async function loadUserProfile() {
     try {
         const response = await APIClient.getProfile();
@@ -101,6 +220,28 @@ function cambiarMesa() {
         
         // Actualizar panel lateral con todas las mesas
         actualizarPanelMesas();
+    }
+}
+
+/**
+ * Cambiar mesa en el formulario E-14 y cargar votantes registrados
+ */
+async function cambiarMesaFormulario() {
+    const selector = document.getElementById('mesaFormulario');
+    const selectedOption = selector.options[selector.selectedIndex];
+    
+    if (selectedOption && selectedOption.dataset.mesa) {
+        const mesaData = JSON.parse(selectedOption.dataset.mesa);
+        
+        // Actualizar votantes registrados desde DIVIPOLA
+        const votantesInput = document.getElementById('votantesRegistrados');
+        if (votantesInput && mesaData.total_votantes_registrados) {
+            votantesInput.value = mesaData.total_votantes_registrados;
+            votantesInput.readOnly = true;
+            votantesInput.title = 'Total de personas habilitadas para votar en esta mesa según el censo electoral (DIVIPOLA)';
+        }
+        
+        console.log('Mesa seleccionada en formulario:', mesaData);
     }
 }
 

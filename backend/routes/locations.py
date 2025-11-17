@@ -18,8 +18,8 @@ def get_departamentos():
             'success': True,
             'data': [{
                 'id': d.id,
-                'codigo': d.departamento_codigo,
-                'nombre': d.departamento_nombre
+                'departamento_codigo': d.departamento_codigo,
+                'departamento_nombre': d.departamento_nombre
             } for d in departamentos]
         }), 200
     except Exception as e:
@@ -42,8 +42,12 @@ def get_municipios():
             'success': True,
             'data': [{
                 'id': m.id,
-                'codigo': m.municipio_codigo,
-                'nombre': m.municipio_nombre
+                'codigo': m.municipio_codigo,  # Mantener compatibilidad
+                'nombre': m.municipio_nombre,  # Mantener compatibilidad
+                'municipio_codigo': m.municipio_codigo,
+                'municipio_nombre': m.municipio_nombre,
+                'departamento_codigo': m.departamento_codigo,
+                'departamento_nombre': m.departamento_nombre
             } for m in municipios]
         }), 200
     except Exception as e:
@@ -79,20 +83,46 @@ def get_puestos():
     """Obtener puestos filtrados"""
     try:
         zona_codigo = request.args.get('zona_codigo')
+        municipio_codigo = request.args.get('municipio_codigo')
+        departamento_codigo = request.args.get('departamento_codigo')
+        
         query = Location.query.filter_by(tipo='puesto')
         
         if zona_codigo:
             query = query.filter_by(zona_codigo=zona_codigo)
+        if municipio_codigo:
+            query = query.filter_by(municipio_codigo=municipio_codigo)
+        if departamento_codigo:
+            query = query.filter_by(departamento_codigo=departamento_codigo)
         
         puestos = query.all()
         
+        # Contar mesas por puesto
+        result = []
+        for p in puestos:
+            total_mesas = Location.query.filter_by(
+                tipo='mesa',
+                puesto_codigo=p.puesto_codigo,
+                zona_codigo=p.zona_codigo,
+                municipio_codigo=p.municipio_codigo,
+                departamento_codigo=p.departamento_codigo
+            ).count()
+            
+            result.append({
+                'id': p.id,
+                'puesto_codigo': p.puesto_codigo,
+                'puesto_nombre': p.puesto_nombre,
+                'municipio_codigo': p.municipio_codigo,
+                'municipio_nombre': p.municipio_nombre,
+                'departamento_codigo': p.departamento_codigo,
+                'departamento_nombre': p.departamento_nombre,
+                'zona_codigo': p.zona_codigo,
+                'total_mesas': total_mesas
+            })
+        
         return jsonify({
             'success': True,
-            'data': [{
-                'id': p.id,
-                'codigo': p.puesto_codigo,
-                'nombre': p.puesto_nombre
-            } for p in puestos]
+            'data': result
         }), 200
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

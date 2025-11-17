@@ -61,6 +61,7 @@ def register_blueprints(app):
     from backend.routes.admin import admin_bp
     from backend.routes.admin_municipal import admin_municipal_bp
     from backend.routes.auditor import auditor_bp
+    from backend.routes.gestion_usuarios import gestion_usuarios_bp
     
     # API routes
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -76,6 +77,7 @@ def register_blueprints(app):
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
     app.register_blueprint(admin_municipal_bp, url_prefix='/api/admin-municipal')
     app.register_blueprint(auditor_bp, url_prefix='/api/auditor')
+    app.register_blueprint(gestion_usuarios_bp)
     
     # Public routes (sin autenticación)
     from backend.routes.public import public_bp

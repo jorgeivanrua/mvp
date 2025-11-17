@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Gestión Usuarios</title>
+    <script>
+        async function testEndpoints() {
+            const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc2MzMzMzk0OSwianRpIjoiNjllOGRhYjItNDBiYy00MjMyLWI2ZWEtNjBhYWI1NTZmNjkyIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjEiLCJuYmYiOjE3NjMzMzM5NDksImNzcmYiOiIxNmFiN2ZmMC03NmY1LTRjYzEtOTU4MS0xYTE0YWE0ODk5ZDciLCJleHAiOjE3NjMzMzc1NDksInJvbCI6InN1cGVyX2FkbWluIiwidWJpY2FjaW9uX2lkIjpudWxsLCJub21icmUiOiJTdXBlciBBZG1pbiJ9.GpLhk5XmkDJYOv8xeLLME1Cbvtye5FiqLNXKHe6Rwro';
+            
+            console.log('Testing /api/gestion-usuarios/puestos...');
+            const response = await fetch('http://127.0.0.1:5000/api/gestion-usuarios/puestos', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            const data = await response.json();
+            console.log('Response:', data);
+            console.log('Total puestos:', data.puestos ? data.puestos.length : 0);
+            
+            if (data.puestos && data.puestos.length > 0) {
+                console.log('Primer puesto:', data.puestos[0]);
+            }
+        }
+        
+        testEndpoints();
+    </script>
+</head>
+<body>
+    <h1>Test Gestión Usuarios</h1>
+    <p>Abre la consola del navegador (F12) para ver los resultados</p>
+</body>
+</html>

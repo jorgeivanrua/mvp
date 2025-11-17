@@ -13,6 +13,7 @@ from backend.routes.coordinador_puesto import coordinador_puesto_bp
 from backend.routes.admin import admin_bp
 from backend.routes.admin_municipal import admin_municipal_bp
 from backend.routes.auditor import auditor_bp
+from backend.routes.gestion_usuarios import gestion_usuarios_bp
 
 __all__ = [
     'auth_bp',
@@ -28,5 +29,6 @@ __all__ = [
     'coordinador_puesto_bp',
     'admin_bp',
     'admin_municipal_bp',
-    'auditor_bp'
+    'auditor_bp',
+    'gestion_usuarios_bp'
 ]

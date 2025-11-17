@@ -77,3 +77,9 @@ def auditor_dashboard():
 def super_admin_dashboard():
     """Dashboard del Super Admin"""
     return render_template('admin/super-admin-dashboard.html')
+
+
+@frontend_bp.route('/admin/gestion-usuarios')
+def gestion_usuarios():
+    """Gestión automática de usuarios"""
+    return render_template('admin/gestion-usuarios.html')

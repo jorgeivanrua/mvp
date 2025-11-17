@@ -113,11 +113,20 @@ class LoginManager {
     }
     
     async loadDepartamentos() {
+        console.log('[LoginManager] Cargando departamentos...');
         try {
             const response = await APIClient.getDepartamentos();
-            Utils.populateSelect('departamento', response.data, 'codigo', 'nombre', 'Seleccione departamento');
+            console.log('[LoginManager] Departamentos recibidos:', response);
+            
+            if (response && response.data) {
+                console.log('[LoginManager] Poblando select con', response.data.length, 'departamentos');
+                Utils.populateSelect('departamento', response.data, 'departamento_codigo', 'departamento_nombre', 'Seleccione departamento');
+                console.log('[LoginManager] Select poblado exitosamente');
+            } else {
+                console.error('[LoginManager] Respuesta sin datos:', response);
+            }
         } catch (error) {
-            console.error('Error loading departamentos:', error);
+            console.error('[LoginManager] Error loading departamentos:', error);
             Utils.showError('Error cargando departamentos: ' + error.message);
         }
     }
@@ -134,7 +143,7 @@ class LoginManager {
             Utils.setLoading('municipio', true);
             const response = await APIClient.getMunicipios(departamentoId);
             
-            Utils.populateSelect('municipio', response.data, 'codigo', 'nombre', 'Seleccione municipio');
+            Utils.populateSelect('municipio', response.data, 'municipio_codigo', 'municipio_nombre', 'Seleccione municipio');
             Utils.enableSelect('municipio', true);
             Utils.enableSelect('zona', false);
             Utils.enableSelect('puesto', false);
@@ -158,7 +167,7 @@ class LoginManager {
             Utils.setLoading('zona', true);
             const response = await APIClient.getZonas(municipioId);
             
-            Utils.populateSelect('zona', response.data, 'codigo', 'nombre_completo', 'Seleccione zona');
+            Utils.populateSelect('zona', response.data, 'zona_codigo', 'nombre_completo', 'Seleccione zona');
             Utils.enableSelect('zona', true);
             Utils.enableSelect('puesto', false);
             
@@ -180,7 +189,7 @@ class LoginManager {
             Utils.setLoading('puesto', true);
             const response = await APIClient.getPuestos(zonaId);
             
-            Utils.populateSelect('puesto', response.data, 'codigo', 'nombre', 'Seleccione puesto');
+            Utils.populateSelect('puesto', response.data, 'puesto_codigo', 'puesto_nombre', 'Seleccione puesto');
             Utils.enableSelect('puesto', true);
             
         } catch (error) {
@@ -275,4 +284,12 @@ class LoginManager {
 
 document.addEventListener('DOMContentLoaded', () => {
     new LoginManager();
+});
+
+
+// Inicializar LoginManager cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('[LoginManager] Inicializando...');
+    new LoginManager();
+    console.log('[LoginManager] Inicializado correctamente');
 });

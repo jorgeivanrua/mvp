@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Login Endpoints</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; }
+        .error { background-color: #f8d7da; }
+    </style>
+</head>
+<body>
+    <h1>Test Login Endpoints</h1>
+    <button onclick="testEndpoints()">Probar Endpoints</button>
+    <div id="results"></div>
+    
+    <script>
+        async function testEndpoints() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Probando...</p>';
+            
+            const tests = [
+                { name: 'Departamentos', url: '/api/locations/departamentos' },
+                { name: 'Municipios', url: '/api/locations/municipios?departamento_codigo=44' },
+                { name: 'Zonas', url: '/api/locations/zonas?municipio_codigo=01' },
+                { name: 'Puestos', url: '/api/locations/puestos?zona_codigo=01' }
+            ];
+            
+            results.innerHTML = '';
+            
+            for (const test of tests) {
+                try {
+                    const response = await fetch(test.url);
+                    const data = await response.json();
+                    
+                    const div = document.createElement('div');
+                    div.className = 'result ' + (response.ok ? 'success' : 'error');
+                    div.innerHTML = `
+                        <strong>${test.name}</strong><br>
+                        Status: ${response.status}<br>
+                        Success: ${data.success}<br>
+                        Data count: ${data.data ? data.data.length : 0}<br>
+                        ${data.data && data.data.length > 0 ? 'First item: ' + JSON.stringify(data.data[0]) : ''}
+                    `;
+                    results.appendChild(div);
+                } catch (error) {
+                    const div = document.createElement('div');
+                    div.className = 'result error';
+                    div.innerHTML = `
+                        <strong>${test.name}</strong><br>
+                        Error: ${error.message}
+                    `;
+                    results.appendChild(div);
+                }
+            }
+        }
+        
+        // Auto-ejecutar al cargar
+        window.onload = () => testEndpoints();
+    </script>
+</body>
+</html>

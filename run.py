@@ -15,9 +15,9 @@ if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
     
     # Ejecutar en modo desarrollo
-    print(f"🚀 Iniciando aplicación en modo {config_name}")
-    print(f"🌐 Servidor corriendo en http://0.0.0.0:{port}")
-    print(f"📊 Base de datos: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    print(f">> Iniciando aplicacion en modo {config_name}")
+    print(f">> Servidor corriendo en http://0.0.0.0:{port}")
+    print(f">> Base de datos: {app.config['SQLALCHEMY_DATABASE_URI']}")
     
     app.run(
         host='0.0.0.0',
