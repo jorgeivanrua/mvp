@@ -37,12 +37,8 @@ def init_database():
         # Cargar datos de prueba
         print("⚠️  Inicializando base de datos con datos de prueba...")
         
-        import sys
-        import os
-        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-        
-        from backend.scripts.load_complete_test_data import load_complete_test_data
-        load_complete_test_data()
+        from backend.scripts.load_basic_data_simple import load_basic_data_simple
+        load_basic_data_simple()
         
         # Verificar que se cargaron los datos
         departamentos_count = Location.query.filter_by(tipo='departamento').count()
