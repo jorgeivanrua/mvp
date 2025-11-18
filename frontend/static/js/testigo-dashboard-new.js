@@ -84,7 +84,12 @@ async function verificarPresencia() {
  * Habilitar o deshabilitar el botón de nuevo formulario
  */
 function habilitarBotonNuevoFormulario() {
-    const btnNuevoFormulario = document.querySelector('[onclick="showCreateForm()"]');
+    const btnNuevoFormulario = document.getElementById('btnNuevoFormulario');
+    
+    console.log('habilitarBotonNuevoFormulario called');
+    console.log('presenciaVerificada:', presenciaVerificada);
+    console.log('mesaSeleccionadaDashboard:', mesaSeleccionadaDashboard);
+    console.log('btnNuevoFormulario:', btnNuevoFormulario);
     
     if (presenciaVerificada && mesaSeleccionadaDashboard) {
         // Habilitar botón
@@ -92,6 +97,7 @@ function habilitarBotonNuevoFormulario() {
             btnNuevoFormulario.disabled = false;
             btnNuevoFormulario.classList.remove('disabled');
             btnNuevoFormulario.title = 'Crear nuevo formulario E-14';
+            console.log('Botón habilitado');
         }
     } else {
         // Deshabilitar botón
@@ -99,6 +105,7 @@ function habilitarBotonNuevoFormulario() {
             btnNuevoFormulario.disabled = true;
             btnNuevoFormulario.classList.add('disabled');
             btnNuevoFormulario.title = 'Debe seleccionar una mesa y verificar presencia primero';
+            console.log('Botón deshabilitado');
         }
     }
 }
