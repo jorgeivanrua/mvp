@@ -188,29 +188,60 @@ async function showCreateForm() {
             tipoEleccionSelect.disabled = false;
         }
         
-        // Cargar la mesa seleccionada en el dashboard automáticamente
+        // Cargar todas las mesas disponibles en el selector del formulario
         const mesaSelect = document.getElementById('mesaFormulario');
-        if (mesaSelect && mesaSeleccionadaDashboard) {
-            // Limpiar y agregar la mesa seleccionada
-            mesaSelect.innerHTML = '';
-            const option = document.createElement('option');
-            option.value = mesaSeleccionadaDashboard.id;
-            option.textContent = `Mesa ${mesaSeleccionadaDashboard.mesa_codigo} - ${mesaSeleccionadaDashboard.puesto_nombre}`;
-            option.dataset.mesa = JSON.stringify(mesaSeleccionadaDashboard);
-            mesaSelect.appendChild(option);
-            
-            // Pre-seleccionar la mesa
-            mesaSelect.value = mesaSeleccionadaDashboard.id;
-            
-            // Cargar votantes registrados
-            const votantesInput = document.getElementById('votantesRegistrados');
-            if (votantesInput && mesaSeleccionadaDashboard.total_votantes_registrados) {
-                votantesInput.value = mesaSeleccionadaDashboard.total_votantes_registrados;
-                votantesInput.readOnly = true;
-                votantesInput.title = 'Total de personas habilitadas para votar en esta mesa según el censo electoral (DIVIPOLA)';
+        if (mesaSelect && userLocation && userLocation.puesto_codigo) {
+            try {
+                // Obtener todas las mesas del puesto
+                const params = {
+                    puesto_codigo: userLocation.puesto_codigo,
+                    zona_codigo: userLocation.zona_codigo,
+                    municipio_codigo: userLocation.municipio_codigo,
+                    departamento_codigo: userLocation.departamento_codigo
+                };
+                
+                const response = await APIClient.get('/locations/mesas', params);
+                const mesas = response.data || [];
+                
+                // Limpiar y cargar todas las mesas
+                mesaSelect.innerHTML = '<option value="">Seleccione mesa...</option>';
+                mesas.forEach(mesa => {
+                    const option = document.createElement('option');
+                    option.value = mesa.id;
+                    option.textContent = `Mesa ${mesa.mesa_codigo} - ${mesa.puesto_nombre}`;
+                    option.dataset.mesa = JSON.stringify(mesa);
+                    mesaSelect.appendChild(option);
+                });
+                
+                // Pre-seleccionar la mesa del dashboard si existe
+                if (mesaSeleccionadaDashboard) {
+                    mesaSelect.value = mesaSeleccionadaDashboard.id;
+                    
+                    // Cargar votantes registrados
+                    const votantesInput = document.getElementById('votantesRegistrados');
+                    if (votantesInput) {
+                        const votantes = mesaSeleccionadaDashboard.total_votantes_registrados || 0;
+                        votantesInput.value = votantes;
+                        votantesInput.readOnly = true;
+                        votantesInput.title = 'Total de personas habilitadas para votar en esta mesa según el censo electoral (DIVIPOLA)';
+                        console.log('Votantes registrados cargados:', votantes);
+                    }
+                }
+                
+                console.log('Mesas cargadas en formulario:', mesas.length);
+            } catch (error) {
+                console.error('Error cargando mesas en formulario:', error);
+                // Si falla, al menos cargar la mesa seleccionada
+                if (mesaSeleccionadaDashboard) {
+                    mesaSelect.innerHTML = '';
+                    const option = document.createElement('option');
+                    option.value = mesaSeleccionadaDashboard.id;
+                    option.textContent = `Mesa ${mesaSeleccionadaDashboard.mesa_codigo} - ${mesaSeleccionadaDashboard.puesto_nombre}`;
+                    option.dataset.mesa = JSON.stringify(mesaSeleccionadaDashboard);
+                    mesaSelect.appendChild(option);
+                    mesaSelect.value = mesaSeleccionadaDashboard.id;
+                }
             }
-            
-            console.log('Mesa cargada automáticamente:', mesaSeleccionadaDashboard);
         }
         
         // Mostrar modal
@@ -329,13 +360,21 @@ async function cambiarMesaFormulario() {
         
         // Actualizar votantes registrados desde DIVIPOLA
         const votantesInput = document.getElementById('votantesRegistrados');
-        if (votantesInput && mesaData.total_votantes_registrados) {
-            votantesInput.value = mesaData.total_votantes_registrados;
+        if (votantesInput) {
+            const votantes = mesaData.total_votantes_registrados || 0;
+            votantesInput.value = votantes;
             votantesInput.readOnly = true;
             votantesInput.title = 'Total de personas habilitadas para votar en esta mesa según el censo electoral (DIVIPOLA)';
+            console.log('Votantes registrados actualizados:', votantes, 'para mesa:', mesaData.mesa_codigo);
         }
         
         console.log('Mesa seleccionada en formulario:', mesaData);
+    } else {
+        // Limpiar votantes si no hay mesa seleccionada
+        const votantesInput = document.getElementById('votantesRegistrados');
+        if (votantesInput) {
+            votantesInput.value = '';
+        }
     }
 }
 
@@ -443,21 +482,37 @@ function seleccionarMesaDesdePanel(mesaId) {
 
 async function loadTiposEleccion() {
     try {
+        console.log('Cargando tipos de elección...');
         const response = await APIClient.getTiposEleccion();
+        console.log('Respuesta tipos de elección:', response);
+        
         if (response.success) {
             tiposEleccion = response.data;
-            const select = document.getElementById('tipoEleccion');
-            select.innerHTML = '<option value="">Seleccione...</option>';
+            console.log('Tipos de elección cargados:', tiposEleccion.length);
             
-            tiposEleccion.forEach(tipo => {
-                const option = document.createElement('option');
-                option.value = tipo.id;
-                option.textContent = tipo.nombre;
-                select.appendChild(option);
-            });
+            const select = document.getElementById('tipoEleccion');
+            if (select) {
+                select.innerHTML = '<option value="">Seleccione...</option>';
+                
+                tiposEleccion.forEach(tipo => {
+                    const option = document.createElement('option');
+                    option.value = tipo.id;
+                    option.textContent = tipo.nombre;
+                    option.dataset.tipo = JSON.stringify(tipo);
+                    select.appendChild(option);
+                    console.log(`  - ${tipo.nombre} (ID: ${tipo.id}, Uninominal: ${tipo.es_uninominal})`);
+                });
+                
+                console.log('✅ Tipos de elección cargados en selector');
+            } else {
+                console.error('❌ No se encontró el selector tipoEleccion');
+            }
+        } else {
+            console.error('❌ Error en respuesta:', response);
         }
     } catch (error) {
-        console.error('Error loading tipos eleccion:', error);
+        console.error('❌ Error loading tipos eleccion:', error);
+        Utils.showError('Error cargando tipos de elección: ' + error.message);
     }
 }
 
@@ -470,21 +525,38 @@ async function cargarPartidosYCandidatos() {
     }
     
     try {
-        console.log('Cargando datos para tipo de elección:', tipoEleccionId);
+        console.log('🔄 Cargando datos para tipo de elección:', tipoEleccionId);
+        
+        // Obtener información del tipo de elección
+        const tipoEleccion = tiposEleccion.find(t => t.id == tipoEleccionId);
+        console.log('Tipo de elección seleccionado:', tipoEleccion);
         
         // Cargar partidos
         const partidosResponse = await APIClient.getPartidos();
         partidosData = partidosResponse.success ? partidosResponse.data : [];
-        console.log('Partidos cargados:', partidosData);
+        console.log(`✅ Partidos cargados: ${partidosData.length}`);
+        
+        if (partidosData.length === 0) {
+            document.getElementById('votacionContainer').innerHTML = 
+                '<div class="alert alert-warning">No hay partidos políticos registrados en el sistema</div>';
+            return;
+        }
         
         // Cargar candidatos del tipo de elección
         const candidatosResponse = await APIClient.getCandidatos({ tipo_eleccion_id: tipoEleccionId });
         console.log('Respuesta de candidatos:', candidatosResponse);
         candidatosData = candidatosResponse.success ? candidatosResponse.data : [];
-        console.log('Candidatos cargados:', candidatosData);
+        console.log(`📋 Candidatos cargados: ${candidatosData.length}`);
         
         if (candidatosData.length === 0) {
-            console.warn('No se encontraron candidatos para el tipo de elección:', tipoEleccionId);
+            console.warn(`⚠️ No hay candidatos para ${tipoEleccion?.nombre || 'este tipo de elección'}`);
+            // Mostrar mensaje pero permitir continuar con votos de partido
+            document.getElementById('votacionContainer').innerHTML = 
+                `<div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> 
+                    No hay candidatos registrados para ${tipoEleccion?.nombre || 'este tipo de elección'}.
+                    Solo podrá registrar votos por partido.
+                </div>`;
         }
         
         // Agrupar candidatos por partido
@@ -501,8 +573,13 @@ async function cargarPartidosYCandidatos() {
         renderVotacionForm(partidosData, candidatosPorPartido);
         
     } catch (error) {
-        console.error('Error loading partidos y candidatos:', error);
+        console.error('❌ Error loading partidos y candidatos:', error);
         Utils.showError('Error cargando datos de votación: ' + error.message);
+        document.getElementById('votacionContainer').innerHTML = 
+            `<div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle"></i> 
+                Error al cargar datos: ${error.message}
+            </div>`;
     }
 }
 

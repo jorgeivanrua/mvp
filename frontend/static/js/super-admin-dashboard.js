@@ -1797,3 +1797,342 @@ async function runSystemAudit() {
         Utils.showError('Error al ejecutar auditoría');
     }
 }
+
+
+// ============================================
+// FUNCIONES DE EDICIÓN
+// ============================================
+
+/**
+ * Editar partido
+ */
+async function editPartido(partidoId) {
+    const partido = allPartidos.find(p => p.id === partidoId);
+    if (!partido) {
+        Utils.showError('Partido no encontrado');
+        return;
+    }
+    
+    const modalHtml = `
+        <div class="modal fade" id="editPartidoModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Editar Partido</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre Completo *</label>
+                            <input type="text" class="form-control" id="editPartidoNombre" value="${partido.nombre}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nombre Corto / Sigla *</label>
+                            <input type="text" class="form-control" id="editPartidoNombreCorto" value="${partido.nombre_corto || partido.sigla || ''}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Color</label>
+                            <input type="color" class="form-control" id="editPartidoColor" value="${partido.color || '#6c757d'}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Logo URL (opcional)</label>
+                            <input type="text" class="form-control" id="editPartidoLogo" value="${partido.logo_url || ''}">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="guardarEdicionPartido(${partidoId})">Guardar Cambios</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('editPartidoModal'));
+    modal.show();
+    
+    document.getElementById('editPartidoModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+/**
+ * Guardar edición de partido
+ */
+async function guardarEdicionPartido(partidoId) {
+    const nombre = document.getElementById('editPartidoNombre').value.trim();
+    const nombreCorto = document.getElementById('editPartidoNombreCorto').value.trim();
+    const color = document.getElementById('editPartidoColor').value;
+    const logoUrl = document.getElementById('editPartidoLogo').value.trim();
+    
+    if (!nombre || !nombreCorto) {
+        Utils.showError('El nombre y nombre corto son requeridos');
+        return;
+    }
+    
+    try {
+        const response = await APIClient.put(`/super-admin/partidos/${partidoId}`, {
+            nombre: nombre,
+            nombre_corto: nombreCorto,
+            color: color,
+            logo_url: logoUrl || null
+        });
+        
+        if (response.success) {
+            Utils.showSuccess('Partido actualizado exitosamente');
+            bootstrap.Modal.getInstance(document.getElementById('editPartidoModal')).hide();
+            await loadPartidos();
+        } else {
+            Utils.showError(response.error || 'Error al actualizar partido');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al actualizar partido');
+    }
+}
+
+/**
+ * Editar tipo de elección
+ */
+async function editTipoEleccion(tipoId) {
+    const tipo = allTiposEleccion.find(t => t.id === tipoId);
+    if (!tipo) {
+        Utils.showError('Tipo de elección no encontrado');
+        return;
+    }
+    
+    const modalHtml = `
+        <div class="modal fade" id="editTipoEleccionModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Editar Tipo de Elección</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre *</label>
+                            <input type="text" class="form-control" id="editTipoNombre" value="${tipo.nombre}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control" id="editTipoDescripcion" rows="2">${tipo.descripcion || ''}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de Elección</label>
+                            <select class="form-select" id="editTipoCategoria">
+                                <option value="uninominal" ${tipo.es_uninominal ? 'selected' : ''}>Uninominal (Presidente, Gobernador, Alcalde)</option>
+                                <option value="corporacion" ${!tipo.es_uninominal ? 'selected' : ''}>Por Corporación (Senado, Cámara, Asamblea, Concejo)</option>
+                            </select>
+                        </div>
+                        <div id="editOpcionesLista" style="display:${tipo.es_uninominal ? 'none' : 'block'};">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="editListaCerrada" ${tipo.permite_lista_cerrada ? 'checked' : ''}>
+                                <label class="form-check-label" for="editListaCerrada">
+                                    Permite lista cerrada
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="editListaAbierta" ${tipo.permite_lista_abierta ? 'checked' : ''}>
+                                <label class="form-check-label" for="editListaAbierta">
+                                    Permite lista abierta (voto preferente)
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="editCoaliciones" ${tipo.permite_coaliciones ? 'checked' : ''}>
+                                <label class="form-check-label" for="editCoaliciones">
+                                    Permite coaliciones
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="guardarEdicionTipoEleccion(${tipoId})">Guardar Cambios</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('editTipoEleccionModal'));
+    
+    // Manejar cambio de categoría
+    document.getElementById('editTipoCategoria').addEventListener('change', function() {
+        const opcionesLista = document.getElementById('editOpcionesLista');
+        opcionesLista.style.display = this.value === 'corporacion' ? 'block' : 'none';
+    });
+    
+    modal.show();
+    
+    document.getElementById('editTipoEleccionModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+/**
+ * Guardar edición de tipo de elección
+ */
+async function guardarEdicionTipoEleccion(tipoId) {
+    const nombre = document.getElementById('editTipoNombre').value.trim();
+    const descripcion = document.getElementById('editTipoDescripcion').value.trim();
+    const categoria = document.getElementById('editTipoCategoria').value;
+    
+    if (!nombre) {
+        Utils.showError('El nombre es requerido');
+        return;
+    }
+    
+    const esUninominal = categoria === 'uninominal';
+    const listaCerrada = !esUninominal && document.getElementById('editListaCerrada').checked;
+    const listaAbierta = !esUninominal && document.getElementById('editListaAbierta').checked;
+    const coaliciones = !esUninominal && document.getElementById('editCoaliciones').checked;
+    
+    try {
+        const response = await APIClient.put(`/super-admin/tipos-eleccion/${tipoId}`, {
+            nombre: nombre,
+            descripcion: descripcion,
+            es_uninominal: esUninominal,
+            permite_lista_cerrada: listaCerrada,
+            permite_lista_abierta: listaAbierta,
+            permite_coaliciones: coaliciones
+        });
+        
+        if (response.success) {
+            Utils.showSuccess('Tipo de elección actualizado exitosamente');
+            bootstrap.Modal.getInstance(document.getElementById('editTipoEleccionModal')).hide();
+            await loadTiposEleccion();
+        } else {
+            Utils.showError(response.error || 'Error al actualizar tipo de elección');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al actualizar tipo de elección');
+    }
+}
+
+/**
+ * Editar candidato
+ */
+async function editCandidato(candidatoId) {
+    const candidato = allCandidatos.find(c => c.id === candidatoId);
+    if (!candidato) {
+        Utils.showError('Candidato no encontrado');
+        return;
+    }
+    
+    const modalHtml = `
+        <div class="modal fade" id="editCandidatoModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Editar Candidato</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre Completo *</label>
+                            <input type="text" class="form-control" id="editCandidatoNombre" value="${candidato.nombre_completo || candidato.nombre}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Partido</label>
+                            <select class="form-select" id="editCandidatoPartido">
+                                <option value="">Independiente</option>
+                                ${allPartidos.map(p => `
+                                    <option value="${p.id}" ${p.id === candidato.partido_id ? 'selected' : ''}>${p.nombre}</option>
+                                `).join('')}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de Elección *</label>
+                            <select class="form-select" id="editCandidatoTipoEleccion">
+                                ${allTiposEleccion.map(t => `
+                                    <option value="${t.id}" ${t.id === candidato.tipo_eleccion_id ? 'selected' : ''}>${t.nombre}</option>
+                                `).join('')}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Número de Lista (opcional)</label>
+                            <input type="number" class="form-control" id="editCandidatoNumeroLista" value="${candidato.numero_lista || ''}" min="1">
+                            <small class="text-muted">Solo para elecciones por listas</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Foto URL (opcional)</label>
+                            <input type="text" class="form-control" id="editCandidatoFoto" value="${candidato.foto_url || ''}">
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="editCandidatoIndependiente" ${candidato.es_independiente ? 'checked' : ''}>
+                            <label class="form-check-label" for="editCandidatoIndependiente">
+                                Candidato Independiente
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="editCandidatoCabezaLista" ${candidato.es_cabeza_lista ? 'checked' : ''}>
+                            <label class="form-check-label" for="editCandidatoCabezaLista">
+                                Cabeza de Lista
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="guardarEdicionCandidato(${candidatoId})">Guardar Cambios</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('editCandidatoModal'));
+    modal.show();
+    
+    document.getElementById('editCandidatoModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+/**
+ * Guardar edición de candidato
+ */
+async function guardarEdicionCandidato(candidatoId) {
+    const nombre = document.getElementById('editCandidatoNombre').value.trim();
+    const partidoId = document.getElementById('editCandidatoPartido').value;
+    const tipoEleccionId = document.getElementById('editCandidatoTipoEleccion').value;
+    const numeroLista = document.getElementById('editCandidatoNumeroLista').value;
+    const fotoUrl = document.getElementById('editCandidatoFoto').value.trim();
+    const esIndependiente = document.getElementById('editCandidatoIndependiente').checked;
+    const esCabezaLista = document.getElementById('editCandidatoCabezaLista').checked;
+    
+    if (!nombre || !tipoEleccionId) {
+        Utils.showError('El nombre y tipo de elección son requeridos');
+        return;
+    }
+    
+    try {
+        const response = await APIClient.put(`/super-admin/candidatos/${candidatoId}`, {
+            nombre_completo: nombre,
+            partido_id: partidoId || null,
+            tipo_eleccion_id: parseInt(tipoEleccionId),
+            numero_lista: numeroLista ? parseInt(numeroLista) : null,
+            foto_url: fotoUrl || null,
+            es_independiente: esIndependiente,
+            es_cabeza_lista: esCabezaLista
+        });
+        
+        if (response.success) {
+            Utils.showSuccess('Candidato actualizado exitosamente');
+            bootstrap.Modal.getInstance(document.getElementById('editCandidatoModal')).hide();
+            await loadCandidatos();
+        } else {
+            Utils.showError(response.error || 'Error al actualizar candidato');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al actualizar candidato');
+    }
+}
+
+// Inicializar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', initSuperAdminDashboard);
