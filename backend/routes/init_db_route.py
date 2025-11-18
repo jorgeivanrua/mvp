@@ -205,3 +205,10 @@ def reset_all_passwords():
 def reset_passwords_now():
     """Endpoint simple para resetear contraseñas (accesible por GET)"""
     return reset_all_passwords()
+
+
+@init_db_bp.route('/reset-passwords-page')
+def reset_passwords_page():
+    """Página HTML para resetear contraseñas"""
+    from flask import render_template
+    return render_template('reset_passwords.html')
