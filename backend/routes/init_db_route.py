@@ -31,8 +31,11 @@ def upload_database():
         # Decodificar base64
         db_data = base64.b64decode(db_base64)
         
+        # Crear directorio instance si no existe
+        os.makedirs('instance', exist_ok=True)
+        
         # Guardar la base de datos
-        db_path = 'electoral.db'
+        db_path = 'instance/electoral.db'
         with open(db_path, 'wb') as f:
             f.write(db_data)
         
