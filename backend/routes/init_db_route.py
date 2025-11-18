@@ -8,6 +8,12 @@ from backend.models.location import Location
 
 init_db_bp = Blueprint('init_db', __name__)
 
+@init_db_bp.route('/init-db-page')
+def init_db_page():
+    """Página HTML para inicializar la BD"""
+    from flask import render_template
+    return render_template('init_db.html')
+
 @init_db_bp.route('/init-database-secret-endpoint-2024', methods=['GET', 'POST'])
 def init_database():
     """
