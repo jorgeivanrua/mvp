@@ -142,3 +142,61 @@ def init_database():
             'error': str(e),
             'trace': error_trace
         }), 500
+
+
+@init_db_bp.route('/reset-all-passwords-secret-endpoint-2024', methods=['POST'])
+def reset_all_passwords():
+    """Endpoint para resetear todas las contraseñas a test123"""
+    try:
+        from backend.models.user import User
+        
+        # Obtener todos los usuarios
+        usuarios = User.query.all()
+        
+        if not usuarios:
+            return jsonify({
+                'success': False,
+                'error': 'No hay usuarios en la base de datos'
+            }), 404
+        
+        # Resetear contraseñas
+        usuarios_actualizados = 0
+        usuarios_lista = []
+        
+        for usuario in usuarios:
+            # Contraseña especial para admin
+            if usuario.rol == 'super_admin':
+                usuario.set_password('admin123')
+            else:
+                usuario.set_password('test123')
+            
+            usuarios_actualizados += 1
+            usuarios_lista.append({
+                'username': usuario.username,
+                'nombre': usuario.nombre,
+                'rol': usuario.rol,
+                'password': 'admin123' if usuario.rol == 'super_admin' else 'test123'
+            })
+        
+        db.session.commit()
+        
+        print(f"✅ {usuarios_actualizados} contraseñas reseteadas")
+        
+        return jsonify({
+            'success': True,
+            'message': f'{usuarios_actualizados} contraseñas reseteadas exitosamente',
+            'usuarios_actualizados': usuarios_actualizados,
+            'usuarios': usuarios_lista
+        }), 200
+        
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"❌ Error reseteando contraseñas: {e}")
+        print(error_trace)
+        
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'trace': error_trace
+        }), 500
