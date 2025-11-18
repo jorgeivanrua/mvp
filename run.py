@@ -14,13 +14,13 @@ app = create_app(config_name)
 # Inicializar BD si está vacía (solo en producción)
 if config_name == 'production':
     with app.app_context():
-        from backend.models.locations import Departamento
+        from backend.models.location import Location
         
         # Crear tablas si no existen
         db.create_all()
         
-        # Verificar si hay datos
-        departamentos_count = Departamento.query.count()
+        # Verificar si hay datos (contar ubicaciones de tipo departamento)
+        departamentos_count = Location.query.filter_by(tipo='departamento').count()
         
         if departamentos_count == 0:
             print("⚠️  Base de datos vacía. Inicializando con datos de prueba...")
