@@ -34,8 +34,13 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 async function verificarPresencia() {
     try {
+        console.log('=== INICIANDO VERIFICACIÓN DE PRESENCIA ===');
+        
         // Verificar que haya una mesa seleccionada
         const selectorMesa = document.getElementById('mesa');
+        console.log('Selector mesa:', selectorMesa);
+        console.log('Valor seleccionado:', selectorMesa?.value);
+        
         if (!selectorMesa.value) {
             Utils.showError('Debe seleccionar una mesa primero');
             return;
@@ -43,20 +48,35 @@ async function verificarPresencia() {
         
         // Obtener datos de la mesa seleccionada
         const selectedOption = selectorMesa.options[selectorMesa.selectedIndex];
+        console.log('Opción seleccionada:', selectedOption);
+        console.log('Dataset mesa:', selectedOption?.dataset?.mesa);
+        
         if (!selectedOption || !selectedOption.dataset.mesa) {
             Utils.showError('Error al obtener datos de la mesa');
             return;
         }
         
         mesaSeleccionadaDashboard = JSON.parse(selectedOption.dataset.mesa);
+        console.log('Mesa seleccionada dashboard:', mesaSeleccionadaDashboard);
         
         // Llamar al endpoint de verificación de presencia
+        console.log('Llamando a API registrar-presencia con mesa_id:', mesaSeleccionadaDashboard.id);
         const response = await APIClient.post('/testigo/registrar-presencia', {
             mesa_id: mesaSeleccionadaDashboard.id
         });
         
+        console.log('Respuesta de API:', response);
+        
         if (response.success) {
+            console.log('✅ Presencia verificada exitosamente');
+            
+            // IMPORTANTE: Actualizar variables globales ANTES de llamar a habilitarBotonNuevoFormulario
+            window.presenciaVerificada = true;
             presenciaVerificada = true;
+            window.mesaSeleccionadaDashboard = mesaSeleccionadaDashboard;
+            
+            console.log('presenciaVerificada ahora es:', presenciaVerificada);
+            console.log('window.presenciaVerificada:', window.presenciaVerificada);
             
             // Actualizar UI
             document.getElementById('btnVerificarPresencia').classList.add('d-none');
@@ -69,13 +89,27 @@ async function verificarPresencia() {
                 fechaElement.textContent = `Verificada el ${fecha.toLocaleDateString()} a las ${fecha.toLocaleTimeString()}`;
             }
             
-            // Habilitar botón de nuevo formulario
+            // Habilitar botón de nuevo formulario directamente
+            console.log('Habilitando botón directamente...');
+            const btnNuevoFormulario = document.getElementById('btnNuevoFormulario');
+            if (btnNuevoFormulario) {
+                btnNuevoFormulario.disabled = false;
+                btnNuevoFormulario.classList.remove('disabled');
+                btnNuevoFormulario.title = 'Crear nuevo formulario E-14';
+                console.log('✅ Botón habilitado directamente');
+            } else {
+                console.error('❌ No se encontró el botón btnNuevoFormulario');
+            }
+            
+            // También llamar a la función por si acaso
             habilitarBotonNuevoFormulario();
             
             Utils.showSuccess('Presencia verificada exitosamente');
+        } else {
+            console.error('❌ Respuesta no exitosa:', response);
         }
     } catch (error) {
-        console.error('Error al verificar presencia:', error);
+        console.error('❌ Error al verificar presencia:', error);
         Utils.showError('Error al verificar presencia: ' + error.message);
     }
 }
