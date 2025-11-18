@@ -1,0 +1,517 @@
+/**
+ * Estilos responsivos para móviles
+ * Optimización de dashboards para pantallas pequeñas
+ */
+
+/* ============================================
+   OPTIMIZACIONES GENERALES PARA MÓVILES
+   ============================================ */
+
+@media (max-width: 768px) {
+    /* Reducir padding general del contenedor */
+    .container-fluid {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+    
+    /* Headers más compactos */
+    h1 {
+        font-size: 1.5rem !important;
+    }
+    
+    h2 {
+        font-size: 1.3rem !important;
+    }
+    
+    h3 {
+        font-size: 1.1rem !important;
+    }
+    
+    h4, h5, h6 {
+        font-size: 1rem !important;
+    }
+    
+    /* Botones más pequeños */
+    .btn {
+        font-size: 0.85rem;
+        padding: 0.375rem 0.75rem;
+    }
+    
+    .btn-sm {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    /* Cards más compactas */
+    .card {
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .card-header {
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.9rem;
+    }
+    
+    .card-body {
+        padding: 0.75rem !important;
+    }
+    
+    .card-title {
+        font-size: 1rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    /* Tablas responsivas */
+    .table {
+        font-size: 0.85rem;
+    }
+    
+    .table th,
+    .table td {
+        padding: 0.5rem !important;
+    }
+    
+    /* Formularios más compactos */
+    .form-label {
+        font-size: 0.85rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .form-control,
+    .form-select {
+        font-size: 0.85rem;
+        padding: 0.375rem 0.75rem;
+    }
+    
+    .input-group-text {
+        font-size: 0.85rem;
+        padding: 0.375rem 0.75rem;
+    }
+    
+    /* Badges más pequeños */
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    /* Alerts más compactos */
+    .alert {
+        padding: 0.75rem;
+        font-size: 0.85rem;
+    }
+    
+    /* Modales optimizados */
+    .modal-dialog {
+        margin: 0.5rem;
+        max-width: calc(100% - 1rem);
+    }
+    
+    .modal-header {
+        padding: 0.75rem;
+    }
+    
+    .modal-body {
+        padding: 0.75rem;
+    }
+    
+    .modal-footer {
+        padding: 0.5rem;
+    }
+    
+    .modal-title {
+        font-size: 1.1rem;
+    }
+    
+    /* Tabs más compactos */
+    .nav-tabs .nav-link {
+        font-size: 0.85rem;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    /* Breadcrumbs más pequeños */
+    .breadcrumb {
+        font-size: 0.8rem;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    /* Paginación más compacta */
+    .pagination {
+        font-size: 0.85rem;
+    }
+    
+    .page-link {
+        padding: 0.375rem 0.75rem;
+    }
+}
+
+/* ============================================
+   OPTIMIZACIONES ESPECÍFICAS PARA DASHBOARDS
+   ============================================ */
+
+@media (max-width: 768px) {
+    /* Stat cards más compactos */
+    .stat-card {
+        padding: 0.75rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .stat-card h3,
+    .stat-card h2 {
+        font-size: 1.5rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+    
+    .stat-card p {
+        font-size: 0.8rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+    
+    .stat-card small {
+        font-size: 0.75rem !important;
+    }
+    
+    .stat-icon {
+        font-size: 1.5rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+    
+    /* Headers de dashboard */
+    .super-admin-header,
+    .dashboard-header {
+        padding: 1rem !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    .super-admin-header h2,
+    .dashboard-header h2 {
+        font-size: 1.3rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .super-admin-header p,
+    .dashboard-header p {
+        font-size: 0.85rem !important;
+    }
+    
+    /* Botones de acción en headers */
+    .super-admin-header .btn,
+    .dashboard-header .btn {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    /* Quick action cards */
+    .quick-action-card {
+        padding: 0.75rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .quick-action-btn {
+        font-size: 0.85rem;
+        padding: 0.5rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    /* Chart cards */
+    .chart-card {
+        padding: 0.75rem !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    .chart-card h5 {
+        font-size: 1rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+    
+    /* Activity items */
+    .activity-item {
+        padding: 0.5rem !important;
+        font-size: 0.85rem;
+    }
+    
+    .activity-item strong {
+        font-size: 0.85rem;
+    }
+    
+    .activity-item small {
+        font-size: 0.75rem;
+    }
+}
+
+/* ============================================
+   OPTIMIZACIONES PARA FORMULARIOS E-14
+   ============================================ */
+
+@media (max-width: 768px) {
+    /* Secciones de formulario */
+    .form-section {
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .form-section h6 {
+        font-size: 0.9rem !important;
+        margin-bottom: 0.5rem !important;
+        padding-bottom: 0.25rem !important;
+    }
+    
+    /* Preview de imagen */
+    .image-preview {
+        min-height: 120px !important;
+        padding: 0.5rem !important;
+    }
+    
+    .image-preview img {
+        max-height: 200px !important;
+    }
+    
+    /* Inputs de votación */
+    .form-control-sm {
+        font-size: 0.8rem !important;
+        padding: 0.25rem 0.5rem !important;
+    }
+    
+    /* Cards de partidos en formulario */
+    .card.mb-3 {
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .card .row.g-2 {
+        gap: 0.25rem !important;
+    }
+    
+    /* Resumen de votación */
+    .alert-info {
+        padding: 0.5rem !important;
+        font-size: 0.85rem !important;
+    }
+}
+
+/* ============================================
+   OPTIMIZACIONES PARA TABLAS
+   ============================================ */
+
+@media (max-width: 768px) {
+    /* Ocultar columnas menos importantes en móviles */
+    .table-responsive {
+        font-size: 0.8rem;
+    }
+    
+    /* Hacer que las tablas se puedan scrollear horizontalmente */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Reducir padding en celdas */
+    .table-responsive .table td,
+    .table-responsive .table th {
+        white-space: nowrap;
+        padding: 0.375rem !important;
+    }
+    
+    /* Botones de acción en tablas */
+    .table .btn-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .table .btn-sm {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
+    }
+}
+
+/* ============================================
+   OPTIMIZACIONES PARA NAVEGACIÓN
+   ============================================ */
+
+@media (max-width: 768px) {
+    /* Tabs de navegación */
+    .nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .nav-tabs .nav-item {
+        flex-shrink: 0;
+    }
+    
+    .nav-tabs .nav-link {
+        white-space: nowrap;
+    }
+    
+    /* Ocultar iconos en tabs si es necesario */
+    .nav-tabs .nav-link i {
+        display: none;
+    }
+}
+
+/* ============================================
+   OPTIMIZACIONES PARA FILTROS Y BÚSQUEDA
+   ============================================ */
+
+@media (max-width: 768px) {
+    /* Hacer que los filtros se apilen verticalmente */
+    .row.mb-3 > [class*="col-"] {
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Inputs de búsqueda y filtros */
+    .form-select,
+    .form-control {
+        width: 100%;
+    }
+}
+
+/* ============================================
+   UTILIDADES ADICIONALES
+   ============================================ */
+
+@media (max-width: 768px) {
+    /* Ocultar elementos en móviles */
+    .d-mobile-none {
+        display: none !important;
+    }
+    
+    /* Texto más pequeño en móviles */
+    .text-mobile-sm {
+        font-size: 0.75rem !important;
+    }
+    
+    /* Padding reducido en móviles */
+    .p-mobile-sm {
+        padding: 0.5rem !important;
+    }
+    
+    /* Margin reducido en móviles */
+    .m-mobile-sm {
+        margin: 0.5rem !important;
+    }
+    
+    /* Botones de ancho completo en móviles */
+    .btn-mobile-block {
+        width: 100%;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Ocultar texto, mostrar solo iconos */
+    .btn-mobile-icon-only .btn-text {
+        display: none;
+    }
+    
+    /* Reducir espaciado entre elementos */
+    .gap-mobile-sm {
+        gap: 0.25rem !important;
+    }
+}
+
+/* ============================================
+   OPTIMIZACIONES PARA PANTALLAS MUY PEQUEÑAS
+   ============================================ */
+
+@media (max-width: 576px) {
+    /* Reducir aún más el tamaño de fuente */
+    body {
+        font-size: 0.85rem;
+    }
+    
+    /* Headers muy compactos */
+    h1 {
+        font-size: 1.25rem !important;
+    }
+    
+    h2 {
+        font-size: 1.1rem !important;
+    }
+    
+    /* Botones muy pequeños */
+    .btn {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    /* Cards muy compactas */
+    .card-header,
+    .card-body {
+        padding: 0.5rem !important;
+    }
+    
+    /* Modales de pantalla completa */
+    .modal-dialog {
+        margin: 0;
+        max-width: 100%;
+        height: 100vh;
+    }
+    
+    .modal-content {
+        height: 100%;
+        border-radius: 0;
+    }
+    
+    /* Stat cards en una sola columna */
+    .stat-card {
+        margin-bottom: 0.5rem !important;
+    }
+}
+
+/* ============================================
+   MEJORAS DE USABILIDAD TÁCTIL
+   ============================================ */
+
+@media (max-width: 768px) {
+    /* Aumentar área táctil de botones */
+    .btn,
+    .nav-link,
+    .page-link {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Aumentar área táctil de checkboxes y radios */
+    .form-check-input {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+    
+    /* Mejorar espaciado entre elementos interactivos */
+    .btn-group .btn {
+        margin: 0.125rem;
+    }
+    
+    /* Hacer inputs más grandes para facilitar el toque */
+    .form-control,
+    .form-select {
+        min-height: 44px;
+    }
+}
+
+/* ============================================
+   OPTIMIZACIONES DE RENDIMIENTO
+   ============================================ */
+
+@media (max-width: 768px) {
+    /* Reducir animaciones en móviles */
+    * {
+        animation-duration: 0.2s !important;
+        transition-duration: 0.2s !important;
+    }
+    
+    /* Desactivar sombras complejas */
+    .shadow,
+    .shadow-sm,
+    .shadow-lg {
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+    }
+    
+    /* Simplificar bordes redondeados */
+    .rounded,
+    .rounded-lg {
+        border-radius: 0.25rem !important;
+    }
+}

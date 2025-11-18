@@ -87,37 +87,39 @@
     <div id="alert-container" class="mb-3"></div>
     
     <div class="row mb-3">
-        <div class="col-12 d-flex justify-content-between align-items-center">
-            <div>
-                <h2>Dashboard - Testigo Electoral</h2>
-                <p class="text-muted mb-0">Bienvenido al sistema de recolección de datos electorales</p>
-            </div>
-            <div>
-                <button class="btn btn-outline-primary me-2" onclick="window.syncManager && window.syncManager.syncAll()" title="Sincronizar datos locales con el servidor">
-                    <i class="bi bi-arrow-repeat"></i> Sincronizar
-                </button>
-                <button class="btn btn-outline-danger" onclick="logout()">
-                    <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
-                </button>
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <div class="flex-grow-1">
+                    <h2 class="mb-1">Dashboard - Testigo Electoral</h2>
+                    <p class="text-muted mb-0 small">Bienvenido al sistema de recolección de datos electorales</p>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button class="btn btn-outline-primary btn-sm" onclick="window.syncManager && window.syncManager.syncAll()" title="Sincronizar datos locales con el servidor">
+                        <i class="bi bi-arrow-repeat"></i> <span class="d-none d-md-inline">Sincronizar</span>
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="logout()">
+                        <i class="bi bi-box-arrow-right"></i> <span class="d-none d-md-inline">Cerrar Sesión</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Pestañas de navegación -->
-    <ul class="nav nav-tabs mb-4" id="testigoTabs" role="tablist">
-        <li class="nav-item" role="presentation">
+    <ul class="nav nav-tabs mb-3 mb-md-4" id="testigoTabs" role="tablist" style="overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch;">
+        <li class="nav-item" role="presentation" style="flex-shrink: 0;">
             <button class="nav-link active" id="formularios-tab" data-bs-toggle="tab" data-bs-target="#formularios" type="button" role="tab">
-                <i class="bi bi-file-earmark-text"></i> Formularios E-14
+                <i class="bi bi-file-earmark-text"></i> <span class="d-none d-sm-inline">Formularios</span> E-14
             </button>
         </li>
-        <li class="nav-item" role="presentation">
+        <li class="nav-item" role="presentation" style="flex-shrink: 0;">
             <button class="nav-link" id="incidentes-tab" data-bs-toggle="tab" data-bs-target="#incidentes" type="button" role="tab">
-                <i class="bi bi-exclamation-triangle"></i> Incidentes y Problemas
+                <i class="bi bi-exclamation-triangle"></i> Incidentes
             </button>
         </li>
-        <li class="nav-item" role="presentation">
+        <li class="nav-item" role="presentation" style="flex-shrink: 0;">
             <button class="nav-link" id="delitos-tab" data-bs-toggle="tab" data-bs-target="#delitos" type="button" role="tab">
-                <i class="bi bi-shield-exclamation"></i> Reporte de Delitos
+                <i class="bi bi-shield-exclamation"></i> Delitos
             </button>
         </li>
     </ul>
