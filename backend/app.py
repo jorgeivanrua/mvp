@@ -4,6 +4,7 @@ Aplicación principal Flask
 from flask import Flask
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
+from whitenoise import WhiteNoise
 
 from backend.config import config
 from backend.database import init_db
@@ -41,6 +42,15 @@ def create_app(config_name='default'):
     
     # Registrar manejadores de errores
     register_error_handlers(app)
+    
+    # Configurar WhiteNoise para servir archivos estáticos en producción
+    if not app.debug:
+        app.wsgi_app = WhiteNoise(
+            app.wsgi_app,
+            root='frontend/static',
+            prefix='static/',
+            max_age=31536000 if not app.debug else 0
+        )
     
     return app
 
