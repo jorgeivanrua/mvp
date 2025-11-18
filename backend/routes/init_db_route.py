@@ -34,11 +34,16 @@ def init_database():
         # Crear tablas si no existen
         db.create_all()
         
-        # Cargar datos de prueba
-        print("⚠️  Inicializando base de datos con datos de prueba...")
+        # Cargar datos de Caquetá
+        print("⚠️  Inicializando base de datos con datos de Caquetá...")
         
-        from backend.scripts.load_basic_data_simple import load_basic_data_simple
-        load_basic_data_simple()
+        import sys
+        import os
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        
+        # Importar y ejecutar el script de carga de Caquetá
+        from cargar_divipola_caqueta import cargar_divipola_caqueta
+        cargar_divipola_caqueta()
         
         # Verificar que se cargaron los datos
         departamentos_count = Location.query.filter_by(tipo='departamento').count()
