@@ -3,7 +3,13 @@ services:
     name: dia-d
     runtime: python
     plan: free
-    buildCommand: "pip install -r requirements.txt"
+    buildCommand: |
+      pip install -r requirements.txt &&
+      python scripts/init_db.py &&
+      python scripts/load_divipola.py &&
+      python scripts/create_test_users.py &&
+      python scripts/init_configuracion_electoral.py &&
+      python scripts/create_formularios_e14_tables.py
     startCommand: "gunicorn run:app --bind 0.0.0.0:$PORT"
     envVars:
       - key: FLASK_ENV
