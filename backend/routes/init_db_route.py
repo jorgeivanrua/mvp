@@ -14,6 +14,53 @@ def init_db_page():
     from flask import render_template
     return render_template('init_db.html')
 
+@init_db_bp.route('/upload-database-secret-endpoint-2024', methods=['POST'])
+def upload_database():
+    """Endpoint para subir la base de datos desde local"""
+    try:
+        from flask import request
+        import base64
+        import os
+        
+        data = request.get_json()
+        db_base64 = data.get('database')
+        
+        if not db_base64:
+            return jsonify({'success': False, 'error': 'No database provided'}), 400
+        
+        # Decodificar base64
+        db_data = base64.b64decode(db_base64)
+        
+        # Guardar la base de datos
+        db_path = 'electoral.db'
+        with open(db_path, 'wb') as f:
+            f.write(db_data)
+        
+        # Verificar que se guardó correctamente
+        file_size = os.path.getsize(db_path)
+        
+        # Verificar que tiene datos
+        from backend.models.location import Location
+        departamentos_count = Location.query.filter_by(tipo='departamento').count()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Base de datos subida correctamente ({file_size} bytes)',
+            'departamentos': departamentos_count
+        }), 200
+        
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"❌ Error subiendo BD: {e}")
+        print(error_trace)
+        
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'trace': error_trace
+        }), 500
+
 @init_db_bp.route('/init-database-secret-endpoint-2024', methods=['GET', 'POST'])
 def init_database():
     """
