@@ -144,7 +144,7 @@ def init_database():
         }), 500
 
 
-@init_db_bp.route('/reset-all-passwords-secret-endpoint-2024', methods=['POST'])
+@init_db_bp.route('/reset-all-passwords-secret-endpoint-2024', methods=['GET', 'POST'])
 def reset_all_passwords():
     """Endpoint para resetear todas las contraseñas a test123"""
     try:
@@ -172,7 +172,6 @@ def reset_all_passwords():
             
             usuarios_actualizados += 1
             usuarios_lista.append({
-                'username': usuario.username,
                 'nombre': usuario.nombre,
                 'rol': usuario.rol,
                 'password': 'admin123' if usuario.rol == 'super_admin' else 'test123'
@@ -200,3 +199,9 @@ def reset_all_passwords():
             'error': str(e),
             'trace': error_trace
         }), 500
+
+
+@init_db_bp.route('/reset-passwords-now', methods=['GET'])
+def reset_passwords_now():
+    """Endpoint simple para resetear contraseñas (accesible por GET)"""
+    return reset_all_passwords()
