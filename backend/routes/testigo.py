@@ -268,3 +268,86 @@ def get_candidatos():
             'success': False,
             'error': str(e)
         }), 500
+
+
+@testigo_bp.route('/registrar-presencia', methods=['POST'])
+@jwt_required()
+def registrar_presencia():
+    """
+    Registrar presencia del testigo en la mesa
+    """
+    try:
+        from datetime import datetime
+        
+        user_id = get_jwt_identity()
+        user = User.query.get(int(user_id))
+        
+        if not user:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no encontrado'
+            }), 404
+        
+        if user.rol != 'testigo_electoral':
+            return jsonify({
+                'success': False,
+                'error': 'Solo los testigos pueden verificar presencia'
+            }), 403
+        
+        data = request.get_json()
+        mesa_id = data.get('mesa_id')
+        
+        if not mesa_id:
+            return jsonify({
+                'success': False,
+                'error': 'Se requiere el ID de la mesa'
+            }), 400
+        
+        # Verificar que la mesa exista
+        mesa = Location.query.get(mesa_id)
+        if not mesa:
+            return jsonify({
+                'success': False,
+                'error': 'Mesa no encontrada'
+            }), 404
+        
+        # Obtener el puesto del testigo
+        puesto_testigo = Location.query.get(user.ubicacion_id)
+        if not puesto_testigo:
+            return jsonify({
+                'success': False,
+                'error': 'No tienes un puesto asignado'
+            }), 400
+        
+        # Verificar que la mesa pertenezca al puesto del testigo
+        if (mesa.departamento_codigo != puesto_testigo.departamento_codigo or
+            mesa.municipio_codigo != puesto_testigo.municipio_codigo or
+            mesa.zona_codigo != puesto_testigo.zona_codigo or
+            mesa.puesto_codigo != puesto_testigo.puesto_codigo):
+            return jsonify({
+                'success': False,
+                'error': 'Esta mesa no pertenece a tu puesto asignado'
+            }), 403
+        
+        # Registrar presencia
+        user.presencia_verificada = True
+        user.presencia_verificada_at = datetime.now()
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Presencia verificada exitosamente',
+            'data': {
+                'presencia_verificada': True,
+                'presencia_verificada_at': user.presencia_verificada_at.isoformat(),
+                'mesa_id': mesa_id,
+                'mesa_nombre': mesa.nombre_completo
+            }
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

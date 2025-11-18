@@ -4,6 +4,8 @@
 let currentUser = null;
 let userLocation = null;
 let selectedMesa = null;
+let mesaSeleccionadaDashboard = null;
+let presenciaVerificada = false;
 let tiposEleccion = [];
 let partidosData = [];
 let candidatosData = [];
@@ -16,6 +18,9 @@ document.addEventListener('DOMContentLoaded', function() {
     loadTiposIncidentes();
     loadTiposDelitos();
     
+    // Deshabilitar botón de nuevo formulario inicialmente
+    habilitarBotonNuevoFormulario();
+    
     // Inicializar SyncManager para sincronización automática
     if (window.syncManager) {
         window.syncManager.init();
@@ -25,13 +30,93 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /**
+ * Verificar presencia del testigo en la mesa seleccionada
+ */
+async function verificarPresencia() {
+    try {
+        // Verificar que haya una mesa seleccionada
+        const selectorMesa = document.getElementById('mesa');
+        if (!selectorMesa.value) {
+            Utils.showError('Debe seleccionar una mesa primero');
+            return;
+        }
+        
+        // Obtener datos de la mesa seleccionada
+        const selectedOption = selectorMesa.options[selectorMesa.selectedIndex];
+        if (!selectedOption || !selectedOption.dataset.mesa) {
+            Utils.showError('Error al obtener datos de la mesa');
+            return;
+        }
+        
+        mesaSeleccionadaDashboard = JSON.parse(selectedOption.dataset.mesa);
+        
+        // Llamar al endpoint de verificación de presencia
+        const response = await APIClient.post('/testigo/registrar-presencia', {
+            mesa_id: mesaSeleccionadaDashboard.id
+        });
+        
+        if (response.success) {
+            presenciaVerificada = true;
+            
+            // Actualizar UI
+            document.getElementById('btnVerificarPresencia').classList.add('d-none');
+            document.getElementById('alertaPresenciaVerificada').classList.remove('d-none');
+            
+            // Mostrar fecha de verificación
+            const fechaElement = document.getElementById('presenciaFecha');
+            if (fechaElement) {
+                const fecha = new Date();
+                fechaElement.textContent = `Verificada el ${fecha.toLocaleDateString()} a las ${fecha.toLocaleTimeString()}`;
+            }
+            
+            // Habilitar botón de nuevo formulario
+            habilitarBotonNuevoFormulario();
+            
+            Utils.showSuccess('Presencia verificada exitosamente');
+        }
+    } catch (error) {
+        console.error('Error al verificar presencia:', error);
+        Utils.showError('Error al verificar presencia: ' + error.message);
+    }
+}
+
+/**
+ * Habilitar o deshabilitar el botón de nuevo formulario
+ */
+function habilitarBotonNuevoFormulario() {
+    const btnNuevoFormulario = document.querySelector('[onclick="showCreateForm()"]');
+    
+    if (presenciaVerificada && mesaSeleccionadaDashboard) {
+        // Habilitar botón
+        if (btnNuevoFormulario) {
+            btnNuevoFormulario.disabled = false;
+            btnNuevoFormulario.classList.remove('disabled');
+            btnNuevoFormulario.title = 'Crear nuevo formulario E-14';
+        }
+    } else {
+        // Deshabilitar botón
+        if (btnNuevoFormulario) {
+            btnNuevoFormulario.disabled = true;
+            btnNuevoFormulario.classList.add('disabled');
+            btnNuevoFormulario.title = 'Debe seleccionar una mesa y verificar presencia primero';
+        }
+    }
+}
+
+/**
  * Mostrar formulario para crear nuevo E-14
  */
 async function showCreateForm() {
     try {
-        // Verificar que el usuario tenga una mesa asignada
-        if (!userLocation || !userLocation.id) {
-            Utils.showError('No tienes una mesa asignada. Contacta al administrador.');
+        // Verificar que se haya verificado presencia
+        if (!presenciaVerificada) {
+            Utils.showError('Debe verificar su presencia en la mesa antes de crear un formulario');
+            return;
+        }
+        
+        // Verificar que haya una mesa seleccionada
+        if (!mesaSeleccionadaDashboard) {
+            Utils.showError('Debe seleccionar una mesa primero');
             return;
         }
         
@@ -50,82 +135,29 @@ async function showCreateForm() {
             tipoEleccionSelect.disabled = false;
         }
         
-        // Cargar las mesas en el selector del formulario
+        // Cargar la mesa seleccionada en el dashboard automáticamente
         const mesaSelect = document.getElementById('mesaFormulario');
-        console.log('mesaSelect element:', mesaSelect);
-        console.log('userLocation:', userLocation);
-        
-        if (mesaSelect && userLocation) {
-            // Si el testigo tiene una mesa asignada (tipo='mesa'), usar esa mesa directamente
-            if (userLocation.tipo === 'mesa') {
-                console.log('Usuario tiene mesa asignada directamente');
-                
-                // Limpiar y agregar solo la mesa del testigo
-                mesaSelect.innerHTML = '<option value="">Seleccione mesa...</option>';
-                const option = document.createElement('option');
-                option.value = userLocation.id;
-                option.textContent = `Mesa ${userLocation.mesa_codigo} - ${userLocation.puesto_nombre}`;
-                option.dataset.mesa = JSON.stringify(userLocation);
-                mesaSelect.appendChild(option);
-                
-                // Pre-seleccionar la mesa del testigo
-                mesaSelect.value = userLocation.id;
-                
-                console.log('Mesa pre-seleccionada:', userLocation.id);
-                
-                // Cargar información de la mesa seleccionada
-                await cambiarMesaFormulario();
-            } 
-            // Si el testigo tiene un puesto asignado, cargar todas las mesas del puesto
-            else if (userLocation.puesto_codigo) {
-                console.log('Usuario tiene puesto asignado, cargando mesas del puesto');
-                
-                // Obtener todas las mesas del puesto
-                const params = {
-                    puesto_codigo: userLocation.puesto_codigo,
-                    zona_codigo: userLocation.zona_codigo,
-                    municipio_codigo: userLocation.municipio_codigo,
-                    departamento_codigo: userLocation.departamento_codigo
-                };
-                
-                console.log('Params para cargar mesas:', params);
-                
-                const response = await APIClient.get('/locations/mesas', params);
-                const mesas = response.data || [];
-                
-                console.log('Mesas cargadas:', mesas.length);
-                
-                // Limpiar y cargar opciones
-                mesaSelect.innerHTML = '<option value="">Seleccione mesa...</option>';
-                mesas.forEach(mesa => {
-                    const option = document.createElement('option');
-                    option.value = mesa.id;
-                    option.textContent = `Mesa ${mesa.mesa_codigo} - ${mesa.puesto_nombre}`;
-                    option.dataset.mesa = JSON.stringify(mesa);
-                    mesaSelect.appendChild(option);
-                });
-                
-                // Pre-seleccionar la primera mesa si solo hay una
-                if (mesas.length === 1) {
-                    mesaSelect.value = mesas[0].id;
-                    await cambiarMesaFormulario();
-                }
-            } else {
-                console.error('Usuario no tiene mesa ni puesto asignado');
-                Utils.showError('No tienes una ubicación asignada correctamente');
-            }
-        } else {
-            console.error('mesaSelect o userLocation no disponible');
-        }
-        
-        // Pre-cargar votantes registrados desde DIVIPOLA
-        const votantesInput = document.getElementById('votantesRegistrados');
-        if (votantesInput && userLocation.total_votantes_registrados) {
-            votantesInput.value = userLocation.total_votantes_registrados;
-            votantesInput.readOnly = true; // Solo lectura - viene de DIVIPOLA
+        if (mesaSelect && mesaSeleccionadaDashboard) {
+            // Limpiar y agregar la mesa seleccionada
+            mesaSelect.innerHTML = '';
+            const option = document.createElement('option');
+            option.value = mesaSeleccionadaDashboard.id;
+            option.textContent = `Mesa ${mesaSeleccionadaDashboard.mesa_codigo} - ${mesaSeleccionadaDashboard.puesto_nombre}`;
+            option.dataset.mesa = JSON.stringify(mesaSeleccionadaDashboard);
+            mesaSelect.appendChild(option);
             
-            // Agregar tooltip explicativo
-            votantesInput.title = 'Total de personas habilitadas para votar en esta mesa según el censo electoral (DIVIPOLA)';
+            // Pre-seleccionar la mesa
+            mesaSelect.value = mesaSeleccionadaDashboard.id;
+            
+            // Cargar votantes registrados
+            const votantesInput = document.getElementById('votantesRegistrados');
+            if (votantesInput && mesaSeleccionadaDashboard.total_votantes_registrados) {
+                votantesInput.value = mesaSeleccionadaDashboard.total_votantes_registrados;
+                votantesInput.readOnly = true;
+                votantesInput.title = 'Total de personas habilitadas para votar en esta mesa según el censo electoral (DIVIPOLA)';
+            }
+            
+            console.log('Mesa cargada automáticamente:', mesaSeleccionadaDashboard);
         }
         
         // Mostrar modal
@@ -214,6 +246,15 @@ function cambiarMesa() {
     
     if (selectedOption && selectedOption.dataset.mesa) {
         selectedMesa = JSON.parse(selectedOption.dataset.mesa);
+        mesaSeleccionadaDashboard = selectedMesa;
+        
+        // Resetear verificación de presencia al cambiar de mesa
+        presenciaVerificada = false;
+        document.getElementById('btnVerificarPresencia').classList.remove('d-none');
+        document.getElementById('alertaPresenciaVerificada').classList.add('d-none');
+        
+        // Deshabilitar botón de nuevo formulario
+        habilitarBotonNuevoFormulario();
         
         // Recargar formularios de esta mesa
         loadForms();
