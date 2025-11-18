@@ -86,7 +86,19 @@ async function verificarPresencia() {
             const fechaElement = document.getElementById('presenciaFecha');
             if (fechaElement) {
                 const fecha = new Date();
-                fechaElement.textContent = `Verificada el ${fecha.toLocaleDateString()} a las ${fecha.toLocaleTimeString()}`;
+                // Usar zona horaria de Colombia (America/Bogota)
+                const opciones = { 
+                    timeZone: 'America/Bogota',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                };
+                const fechaColombia = fecha.toLocaleString('es-CO', opciones);
+                fechaElement.textContent = `Verificada el ${fechaColombia}`;
             }
             
             // Habilitar botón de nuevo formulario directamente
