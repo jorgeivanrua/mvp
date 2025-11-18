@@ -1,18 +1,18 @@
 services:
   - type: web
-    name: testigos-electorales
+    name: dia-d
     runtime: python
     plan: free
-    buildCommand: "chmod +x build.sh && ./build.sh"
-    startCommand: "gunicorn run:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn run:app --bind 0.0.0.0:$PORT"
     envVars:
       - key: FLASK_ENV
         value: production
       - key: SECRET_KEY
-        generateValue: true
+        value: electoral_secret_key_2024_muy_segura
       - key: JWT_SECRET_KEY
-        generateValue: true
+        value: jwt_secret_key_2024_muy_segura
       - key: DATABASE_URL
         value: sqlite:///electoral.db
-      - key: PYTHON_VERSION
-        value: 3.11.9
+      - key: PYTHONUNBUFFERED
+        value: "1"

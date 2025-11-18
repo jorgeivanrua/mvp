@@ -34,16 +34,27 @@ def init_database():
         # Crear tablas si no existen
         db.create_all()
         
-        # Cargar datos de Caquetá
-        print("⚠️  Inicializando base de datos con datos de Caquetá...")
+        # Ejecutar scripts de inicialización en orden
+        print("⚠️  Inicializando base de datos...")
         
+        import subprocess
         import sys
-        import os
-        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
         
-        # Importar y ejecutar el script de carga de Caquetá
-        from cargar_divipola_caqueta import cargar_divipola_caqueta
-        cargar_divipola_caqueta()
+        scripts = [
+            'scripts/init_db.py',
+            'scripts/load_divipola.py',
+            'scripts/create_test_users.py',
+            'scripts/init_configuracion_electoral.py',
+            'scripts/create_formularios_e14_tables.py'
+        ]
+        
+        for script in scripts:
+            print(f"Ejecutando {script}...")
+            result = subprocess.run([sys.executable, script], capture_output=True, text=True)
+            if result.returncode != 0:
+                print(f"Error en {script}: {result.stderr}")
+                raise Exception(f"Error ejecutando {script}: {result.stderr}")
+            print(result.stdout)
         
         # Verificar que se cargaron los datos
         departamentos_count = Location.query.filter_by(tipo='departamento').count()
