@@ -572,5 +572,5 @@
 
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/incidentes-delitos.js') }}"></script>
-<script src="{{ url_for('static', filename='js/testigo-dashboard-new.js') }}"></script>
+<script src="{{ url_for('static', filename='js/testigo-dashboard-new.js') }}?v={{ range(1, 10000) | random }}"></script>
 {% endblock %}
