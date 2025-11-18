@@ -16,20 +16,31 @@ def init_db_page():
 
 @init_db_bp.route('/upload-database-secret-endpoint-2024', methods=['POST'])
 def upload_database():
-    """Endpoint para subir la base de datos desde local"""
+    """Endpoint para subir la base de datos desde local (con soporte para compresión)"""
     try:
         from flask import request
         import base64
+        import gzip
         import os
         
         data = request.get_json()
         db_base64 = data.get('database')
+        is_compressed = data.get('compressed', False)
         
         if not db_base64:
             return jsonify({'success': False, 'error': 'No database provided'}), 400
         
+        print(f"📥 Recibiendo base de datos (comprimida: {is_compressed})...")
+        
         # Decodificar base64
         db_data = base64.b64decode(db_base64)
+        print(f"✅ Decodificado: {len(db_data):,} bytes")
+        
+        # Descomprimir si está comprimida
+        if is_compressed:
+            print("🗜️  Descomprimiendo...")
+            db_data = gzip.decompress(db_data)
+            print(f"✅ Descomprimido: {len(db_data):,} bytes")
         
         # Crear directorio instance si no existe
         os.makedirs('instance', exist_ok=True)
@@ -39,16 +50,21 @@ def upload_database():
         with open(db_path, 'wb') as f:
             f.write(db_data)
         
+        print(f"💾 Guardado en: {db_path}")
+        
         # Verificar que se guardó correctamente
         file_size = os.path.getsize(db_path)
+        print(f"✅ Tamaño del archivo: {file_size:,} bytes")
         
         # Verificar que tiene datos
         from backend.models.location import Location
         departamentos_count = Location.query.filter_by(tipo='departamento').count()
+        print(f"✅ Departamentos en BD: {departamentos_count}")
         
         return jsonify({
             'success': True,
-            'message': f'Base de datos subida correctamente ({file_size} bytes)',
+            'message': f'Base de datos subida correctamente',
+            'file_size': file_size,
             'departamentos': departamentos_count
         }), 200
         
