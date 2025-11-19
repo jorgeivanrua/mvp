@@ -241,15 +241,37 @@ async function loadUserProfile() {
             console.log('User profile loaded:', currentUser);
             console.log('User location:', userLocation);
             
-            // Cargar mesas disponibles del puesto
-            if (userLocation && userLocation.puesto_codigo) {
-                await loadMesas();
-                // Actualizar panel lateral con lista de mesas
-                await actualizarPanelMesas();
-            } else {
-                document.getElementById('assignedLocation').innerHTML = `
-                    <p class="text-muted">No hay ubicación asignada</p>
-                `;
+            // Si el testigo ya verificó presencia, su ubicación es una mesa
+            // Necesitamos asegurarnos de que tenga acceso al puesto_codigo
+            if (userLocation) {
+                // Si es una mesa y ya verificó presencia, usar esa mesa como seleccionada
+                if (userLocation.tipo === 'mesa' && currentUser.presencia_verificada) {
+                    mesaSeleccionadaDashboard = userLocation;
+                    presenciaVerificada = true;
+                    
+                    // Mostrar que ya verificó presencia
+                    document.getElementById('btnVerificarPresencia').classList.add('d-none');
+                    document.getElementById('alertaPresenciaVerificada').classList.remove('d-none');
+                    
+                    if (currentUser.presencia_verificada_at) {
+                        const fecha = new Date(currentUser.presencia_verificada_at);
+                        document.getElementById('presenciaFecha').textContent = 
+                            `Verificada el ${fecha.toLocaleDateString()} a las ${fecha.toLocaleTimeString()}`;
+                    }
+                    
+                    // Habilitar botón de nuevo formulario
+                    habilitarBotonNuevoFormulario();
+                }
+                
+                // Cargar mesas disponibles del puesto
+                if (userLocation.puesto_codigo) {
+                    await loadMesas();
+                    await actualizarPanelMesas();
+                } else {
+                    document.getElementById('assignedLocation').innerHTML = `
+                        <p class="text-muted">No hay ubicación asignada</p>
+                    `;
+                }
             }
         }
     } catch (error) {
