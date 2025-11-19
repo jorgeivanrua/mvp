@@ -53,14 +53,13 @@ class User(db.Model):
     
     def set_password(self, password):
         """
-        Establecer contraseña hasheada
+        Establecer contraseña en texto plano (TEMPORAL - SOLO PARA PRUEBAS)
         
         Args:
             password: Contraseña en texto plano
         """
-        password_bytes = password.encode('utf-8')
-        salt = bcrypt.gensalt()
-        self.password_hash = bcrypt.hashpw(password_bytes, salt).decode('utf-8')
+        # TEMPORAL: Guardar contraseña sin hashear para pruebas
+        self.password_hash = password
     
     def check_password(self, password):
         """
@@ -72,9 +71,8 @@ class User(db.Model):
         Returns:
             bool: True si la contraseña es correcta
         """
-        password_bytes = password.encode('utf-8')
-        password_hash_bytes = self.password_hash.encode('utf-8')
-        return bcrypt.checkpw(password_bytes, password_hash_bytes)
+        # TEMPORAL: Comparación directa sin bcrypt
+        return self.password_hash == password
     
     def is_blocked(self):
         """
