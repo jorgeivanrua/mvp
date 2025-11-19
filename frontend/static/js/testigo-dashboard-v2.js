@@ -248,9 +248,21 @@ async function showCreateForm() {
         const modal = new bootstrap.Modal(document.getElementById('formModal'));
         modal.show();
         
-        // Configurar preview de imagen cuando se muestre el modal
+        // Configurar preview de imagen y cargar votantes cuando se muestre el modal
         document.getElementById('formModal').addEventListener('shown.bs.modal', function() {
             setupImagePreview();
+            
+            // Asegurar que los votantes registrados se carguen después de que el modal esté visible
+            if (mesaSeleccionadaDashboard) {
+                const votantesInput = document.getElementById('votantesRegistrados');
+                if (votantesInput) {
+                    const votantes = mesaSeleccionadaDashboard.total_votantes_registrados || 0;
+                    votantesInput.value = votantes;
+                    votantesInput.readOnly = true;
+                    votantesInput.title = 'Total de personas habilitadas para votar en esta mesa según el censo electoral (DIVIPOLA)';
+                    console.log('✅ Votantes registrados cargados en modal:', votantes);
+                }
+            }
         }, { once: true });
         
     } catch (error) {
