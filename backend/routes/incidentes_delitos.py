@@ -81,57 +81,73 @@ def obtener_incidentes():
 
 
 @incidentes_delitos_bp.route('/api/incidentes/<int:incidente_id>', methods=['GET'])
-@token_required
-def obtener_incidente(current_user, incidente_id):
+@jwt_required()
+def obtener_incidente(incidente_id):
     """Obtener detalle de un incidente"""
     try:
+        user_id = get_jwt_identity()
+        current_user = User.query.get(int(user_id))
+        
+        if not current_user:
+            return jsonify({'success': False, 'error': 'Usuario no encontrado'}), 404
+        
         incidente = IncidenteElectoral.query.get(incidente_id)
         if not incidente:
-            return jsonify({'error': 'Incidente no encontrado'}), 404
+            return jsonify({'success': False, 'error': 'Incidente no encontrado'}), 404
         
         # Verificar permisos
         if current_user.rol == 'testigo_electoral' and incidente.reportado_por_id != current_user.id:
-            return jsonify({'error': 'No tiene permisos para ver este incidente'}), 403
+            return jsonify({'success': False, 'error': 'No tiene permisos para ver este incidente'}), 403
         
         # Obtener seguimiento
         seguimiento = IncidentesDelitosService.obtener_seguimiento('incidente', incidente_id)
         
         return jsonify({
-            'incidente': incidente.to_dict(),
-            'seguimiento': seguimiento
+            'success': True,
+            'data': {
+                'incidente': incidente.to_dict(),
+                'seguimiento': seguimiento
+            }
         }), 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @incidentes_delitos_bp.route('/api/incidentes/<int:incidente_id>/estado', methods=['PUT'])
-@token_required
-def actualizar_estado_incidente(current_user, incidente_id):
+@jwt_required()
+def actualizar_estado_incidente(incidente_id):
     """Actualizar estado de un incidente"""
     try:
+        user_id = get_jwt_identity()
+        current_user = User.query.get(int(user_id))
+        
+        if not current_user:
+            return jsonify({'success': False, 'error': 'Usuario no encontrado'}), 404
+        
         # Solo coordinadores y superiores pueden cambiar estado
         if current_user.rol not in ['coordinador_puesto', 'coordinador_municipal', 'coordinador_departamental', 'auditor_electoral', 'super_admin']:
-            return jsonify({'error': 'No tiene permisos para actualizar incidentes'}), 403
+            return jsonify({'success': False, 'error': 'No tiene permisos para actualizar incidentes'}), 403
         
         data = request.get_json()
         nuevo_estado = data.get('estado')
         comentario = data.get('comentario')
         
         if not nuevo_estado:
-            return jsonify({'error': 'Estado es requerido'}), 400
+            return jsonify({'success': False, 'error': 'Estado es requerido'}), 400
         
         incidente = IncidentesDelitosService.actualizar_estado_incidente(
             incidente_id, nuevo_estado, current_user.id, comentario
         )
         
         return jsonify({
+            'success': True,
             'message': 'Estado actualizado exitosamente',
-            'incidente': incidente.to_dict()
+            'data': incidente.to_dict()
         }), 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @incidentes_delitos_bp.route('/api/delitos', methods=['POST'])
@@ -206,132 +222,167 @@ def obtener_delitos():
 
 
 @incidentes_delitos_bp.route('/api/delitos/<int:delito_id>', methods=['GET'])
-@token_required
-def obtener_delito(current_user, delito_id):
+@jwt_required()
+def obtener_delito(delito_id):
     """Obtener detalle de un delito"""
     try:
+        user_id = get_jwt_identity()
+        current_user = User.query.get(int(user_id))
+        
+        if not current_user:
+            return jsonify({'success': False, 'error': 'Usuario no encontrado'}), 404
+        
         delito = DelitoElectoral.query.get(delito_id)
         if not delito:
-            return jsonify({'error': 'Delito no encontrado'}), 404
+            return jsonify({'success': False, 'error': 'Delito no encontrado'}), 404
         
         # Verificar permisos
         if current_user.rol == 'testigo_electoral' and delito.reportado_por_id != current_user.id:
-            return jsonify({'error': 'No tiene permisos para ver este delito'}), 403
+            return jsonify({'success': False, 'error': 'No tiene permisos para ver este delito'}), 403
         
         # Obtener seguimiento
         seguimiento = IncidentesDelitosService.obtener_seguimiento('delito', delito_id)
         
         return jsonify({
-            'delito': delito.to_dict(),
-            'seguimiento': seguimiento
+            'success': True,
+            'data': {
+                'delito': delito.to_dict(),
+                'seguimiento': seguimiento
+            }
         }), 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @incidentes_delitos_bp.route('/api/delitos/<int:delito_id>/estado', methods=['PUT'])
-@token_required
-def actualizar_estado_delito(current_user, delito_id):
+@jwt_required()
+def actualizar_estado_delito(delito_id):
     """Actualizar estado de un delito"""
     try:
+        user_id = get_jwt_identity()
+        current_user = User.query.get(int(user_id))
+        
+        if not current_user:
+            return jsonify({'success': False, 'error': 'Usuario no encontrado'}), 404
+        
         # Solo coordinadores y superiores pueden cambiar estado
         if current_user.rol not in ['coordinador_puesto', 'coordinador_municipal', 'coordinador_departamental', 'auditor_electoral', 'super_admin']:
-            return jsonify({'error': 'No tiene permisos para actualizar delitos'}), 403
+            return jsonify({'success': False, 'error': 'No tiene permisos para actualizar delitos'}), 403
         
         data = request.get_json()
         nuevo_estado = data.get('estado')
         comentario = data.get('comentario')
         
         if not nuevo_estado:
-            return jsonify({'error': 'Estado es requerido'}), 400
+            return jsonify({'success': False, 'error': 'Estado es requerido'}), 400
         
         delito = IncidentesDelitosService.actualizar_estado_delito(
             delito_id, nuevo_estado, current_user.id, comentario
         )
         
         return jsonify({
+            'success': True,
             'message': 'Estado actualizado exitosamente',
-            'delito': delito.to_dict()
+            'data': delito.to_dict()
         }), 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @incidentes_delitos_bp.route('/api/delitos/<int:delito_id>/denunciar', methods=['POST'])
-@token_required
-def denunciar_delito(current_user, delito_id):
+@jwt_required()
+def denunciar_delito(delito_id):
     """Denunciar formalmente un delito"""
     try:
+        user_id = get_jwt_identity()
+        current_user = User.query.get(int(user_id))
+        
+        if not current_user:
+            return jsonify({'success': False, 'error': 'Usuario no encontrado'}), 404
+        
         # Solo auditores y super_admin pueden denunciar formalmente
         if current_user.rol not in ['auditor_electoral', 'super_admin']:
-            return jsonify({'error': 'No tiene permisos para denunciar formalmente'}), 403
+            return jsonify({'success': False, 'error': 'No tiene permisos para denunciar formalmente'}), 403
         
         data = request.get_json()
         numero_denuncia = data.get('numero_denuncia')
         autoridad_competente = data.get('autoridad_competente')
         
         if not numero_denuncia or not autoridad_competente:
-            return jsonify({'error': 'Número de denuncia y autoridad competente son requeridos'}), 400
+            return jsonify({'success': False, 'error': 'Número de denuncia y autoridad competente son requeridos'}), 400
         
         delito = IncidentesDelitosService.denunciar_formalmente(
             delito_id, current_user.id, numero_denuncia, autoridad_competente
         )
         
         return jsonify({
+            'success': True,
             'message': 'Delito denunciado formalmente',
-            'delito': delito.to_dict()
+            'data': delito.to_dict()
         }), 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @incidentes_delitos_bp.route('/api/reportes/estadisticas', methods=['GET'])
-@token_required
-def obtener_estadisticas(current_user):
+@jwt_required()
+def obtener_estadisticas():
     """Obtener estadísticas de incidentes y delitos"""
     try:
+        user_id = get_jwt_identity()
+        current_user = User.query.get(int(user_id))
+        
+        if not current_user:
+            return jsonify({'success': False, 'error': 'Usuario no encontrado'}), 404
+        
         estadisticas = IncidentesDelitosService.obtener_estadisticas(
             usuario_id=current_user.id,
             rol_usuario=current_user.rol
         )
         
-        return jsonify(estadisticas), 200
+        return jsonify({'success': True, 'data': estadisticas}), 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @incidentes_delitos_bp.route('/api/notificaciones', methods=['GET'])
-@token_required
-def obtener_notificaciones(current_user):
+@jwt_required()
+def obtener_notificaciones():
     """Obtener notificaciones del usuario"""
     try:
+        user_id = get_jwt_identity()
+        current_user = User.query.get(int(user_id))
+        
+        if not current_user:
+            return jsonify({'success': False, 'error': 'Usuario no encontrado'}), 404
+        
         solo_no_leidas = request.args.get('solo_no_leidas', 'false').lower() == 'true'
         
         notificaciones = IncidentesDelitosService.obtener_notificaciones(
             current_user.id, solo_no_leidas
         )
         
-        return jsonify({'notificaciones': notificaciones}), 200
+        return jsonify({'success': True, 'data': notificaciones}), 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @incidentes_delitos_bp.route('/api/notificaciones/<int:notificacion_id>/leer', methods=['PUT'])
-@token_required
-def marcar_notificacion_leida(current_user, notificacion_id):
+@jwt_required()
+def marcar_notificacion_leida(notificacion_id):
     """Marcar notificación como leída"""
     try:
         IncidentesDelitosService.marcar_notificacion_leida(notificacion_id)
         
-        return jsonify({'message': 'Notificación marcada como leída'}), 200
+        return jsonify({'success': True, 'message': 'Notificación marcada como leída'}), 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @incidentes_delitos_bp.route('/api/incidentes/tipos', methods=['GET'])
