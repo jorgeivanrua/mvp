@@ -135,36 +135,49 @@ def actualizar_estado_incidente(current_user, incidente_id):
 
 
 @incidentes_delitos_bp.route('/api/delitos', methods=['POST'])
-@token_required
-def crear_delito(current_user):
+@jwt_required()
+def crear_delito():
     """Crear un nuevo delito electoral"""
     try:
+        user_id = get_jwt_identity()
+        current_user = User.query.get(int(user_id))
+        
+        if not current_user:
+            return jsonify({'success': False, 'error': 'Usuario no encontrado'}), 404
+        
         data = request.get_json()
         
         # Validar datos requeridos
         if not data.get('tipo_delito'):
-            return jsonify({'error': 'Tipo de delito es requerido'}), 400
+            return jsonify({'success': False, 'error': 'Tipo de delito es requerido'}), 400
         if not data.get('titulo'):
-            return jsonify({'error': 'Título es requerido'}), 400
+            return jsonify({'success': False, 'error': 'Título es requerido'}), 400
         if not data.get('descripcion'):
-            return jsonify({'error': 'Descripción es requerida'}), 400
+            return jsonify({'success': False, 'error': 'Descripción es requerida'}), 400
         
         delito = IncidentesDelitosService.crear_delito(data, current_user.id)
         
         return jsonify({
+            'success': True,
             'message': 'Delito creado exitosamente',
-            'delito': delito.to_dict()
+            'data': delito.to_dict()
         }), 201
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @incidentes_delitos_bp.route('/api/delitos', methods=['GET'])
-@token_required
-def obtener_delitos(current_user):
+@jwt_required()
+def obtener_delitos():
     """Obtener delitos según permisos del usuario"""
     try:
+        user_id = get_jwt_identity()
+        current_user = User.query.get(int(user_id))
+        
+        if not current_user:
+            return jsonify({'success': False, 'error': 'Usuario no encontrado'}), 404
+        
         # Obtener filtros de query params
         filtros = {}
         if request.args.get('estado'):
@@ -177,6 +190,8 @@ def obtener_delitos(current_user):
             filtros['fecha_desde'] = request.args.get('fecha_desde')
         if request.args.get('fecha_hasta'):
             filtros['fecha_hasta'] = request.args.get('fecha_hasta')
+        if request.args.get('mesa_id'):
+            filtros['mesa_id'] = request.args.get('mesa_id')
         
         delitos = IncidentesDelitosService.obtener_delitos(
             filtros=filtros,
@@ -184,10 +199,10 @@ def obtener_delitos(current_user):
             rol_usuario=current_user.rol
         )
         
-        return jsonify({'delitos': delitos}), 200
+        return jsonify({'success': True, 'data': delitos}), 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @incidentes_delitos_bp.route('/api/delitos/<int:delito_id>', methods=['GET'])
