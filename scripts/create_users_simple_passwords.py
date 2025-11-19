@@ -100,22 +100,43 @@ def create_users_simple():
             }
         ]
         
-        # Agregar coordinadores de puesto y testigos si hay puestos disponibles
-        if puesto_01:
-            users_to_create.extend([
-                {
-                    'nombre': 'Coordinador Puesto 01',
-                    'rol': 'coordinador_puesto',
-                    'ubicacion_id': puesto_01.id,
-                    'password': 'test123'
-                },
-                {
-                    'nombre': 'Testigo Electoral Puesto 01',
+        # Agregar coordinadores de puesto para cada puesto disponible
+        puestos = Location.query.filter_by(
+            tipo='puesto',
+            departamento_codigo='44',
+            municipio_codigo='01'
+        ).all()
+        
+        print(f"\n>> Encontrados {len(puestos)} puestos de votación")
+        
+        for puesto in puestos:
+            # Crear coordinador de puesto
+            users_to_create.append({
+                'nombre': f'Coordinador {puesto.nombre_completo}',
+                'rol': 'coordinador_puesto',
+                'ubicacion_id': puesto.id,
+                'password': 'test123'
+            })
+            
+            # Obtener todas las mesas de este puesto
+            mesas = Location.query.filter_by(
+                tipo='mesa',
+                departamento_codigo=puesto.departamento_codigo,
+                municipio_codigo=puesto.municipio_codigo,
+                zona_codigo=puesto.zona_codigo,
+                puesto_codigo=puesto.puesto_codigo
+            ).all()
+            
+            print(f"   Puesto {puesto.puesto_codigo}: {len(mesas)} mesas")
+            
+            # Crear un testigo por cada mesa
+            for mesa in mesas:
+                users_to_create.append({
+                    'nombre': f'Testigo Mesa {mesa.mesa_codigo} - {puesto.nombre_completo}',
                     'rol': 'testigo_electoral',
-                    'ubicacion_id': puesto_01.id,
+                    'ubicacion_id': mesa.id,  # Asignar a la mesa, no al puesto
                     'password': 'test123'
-                }
-            ])
+                })
         
         # Crear usuarios
         created_count = 0

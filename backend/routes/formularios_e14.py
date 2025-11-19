@@ -556,20 +556,48 @@ def obtener_testigos_puesto():
                 'error': 'Coordinador sin ubicación asignada'
             }), 400
         
-        # Obtener testigos del mismo puesto
-        testigos = User.query.filter_by(
-            ubicacion_id=coordinador.ubicacion_id,
-            rol='testigo_electoral'
+        # Obtener el puesto del coordinador
+        puesto = Location.query.get(coordinador.ubicacion_id)
+        
+        if not puesto or puesto.tipo != 'puesto':
+            return jsonify({
+                'success': False,
+                'error': 'Coordinador no asignado a un puesto válido'
+            }), 400
+        
+        # Obtener todas las mesas del puesto
+        mesas = Location.query.filter_by(
+            puesto_codigo=puesto.puesto_codigo,
+            tipo='mesa',
+            departamento_codigo=puesto.departamento_codigo,
+            municipio_codigo=puesto.municipio_codigo,
+            zona_codigo=puesto.zona_codigo
+        ).all()
+        
+        # Obtener IDs de las mesas
+        mesa_ids = [mesa.id for mesa in mesas]
+        
+        # Obtener testigos asignados a cualquiera de las mesas del puesto
+        testigos = User.query.filter(
+            User.ubicacion_id.in_(mesa_ids),
+            User.rol == 'testigo_electoral',
+            User.activo == True
         ).all()
         
         testigos_data = []
         for testigo in testigos:
+            # Obtener la mesa asignada al testigo
+            mesa = Location.query.get(testigo.ubicacion_id)
+            
             testigos_data.append({
                 'id': testigo.id,
                 'nombre': testigo.nombre,
                 'presencia_verificada': testigo.presencia_verificada,
                 'presencia_verificada_at': testigo.presencia_verificada_at.isoformat() if testigo.presencia_verificada_at else None,
-                'ultimo_acceso': testigo.ultimo_acceso.isoformat() if testigo.ultimo_acceso else None
+                'ultimo_acceso': testigo.ultimo_acceso.isoformat() if testigo.ultimo_acceso else None,
+                'mesa_id': mesa.id if mesa else None,
+                'mesa_codigo': mesa.mesa_codigo if mesa else None,
+                'telefono': None  # Agregar campo teléfono si existe en el modelo
             })
         
         return jsonify({
