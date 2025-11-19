@@ -188,60 +188,22 @@ async function showCreateForm() {
             tipoEleccionSelect.disabled = false;
         }
         
-        // Cargar todas las mesas disponibles en el selector del formulario
+        // Cargar la mesa del testigo en el selector del formulario
         const mesaSelect = document.getElementById('mesaFormulario');
-        if (mesaSelect && userLocation && userLocation.puesto_codigo) {
-            try {
-                // Obtener todas las mesas del puesto
-                const params = {
-                    puesto_codigo: userLocation.puesto_codigo,
-                    zona_codigo: userLocation.zona_codigo,
-                    municipio_codigo: userLocation.municipio_codigo,
-                    departamento_codigo: userLocation.departamento_codigo
-                };
-                
-                const response = await APIClient.get('/locations/mesas', params);
-                const mesas = response.data || [];
-                
-                // Limpiar y cargar todas las mesas
-                mesaSelect.innerHTML = '<option value="">Seleccione mesa...</option>';
-                mesas.forEach(mesa => {
-                    const option = document.createElement('option');
-                    option.value = mesa.id;
-                    option.textContent = `Mesa ${mesa.mesa_codigo} - ${mesa.puesto_nombre}`;
-                    option.dataset.mesa = JSON.stringify(mesa);
-                    mesaSelect.appendChild(option);
-                });
-                
-                // Pre-seleccionar la mesa del dashboard si existe
-                if (mesaSeleccionadaDashboard) {
-                    mesaSelect.value = mesaSeleccionadaDashboard.id;
-                    
-                    // Cargar votantes registrados
-                    const votantesInput = document.getElementById('votantesRegistrados');
-                    if (votantesInput) {
-                        const votantes = mesaSeleccionadaDashboard.total_votantes_registrados || 0;
-                        votantesInput.value = votantes;
-                        votantesInput.readOnly = true;
-                        votantesInput.title = 'Total de personas habilitadas para votar en esta mesa según el censo electoral (DIVIPOLA)';
-                        console.log('Votantes registrados cargados:', votantes);
-                    }
-                }
-                
-                console.log('Mesas cargadas en formulario:', mesas.length);
-            } catch (error) {
-                console.error('Error cargando mesas en formulario:', error);
-                // Si falla, al menos cargar la mesa seleccionada
-                if (mesaSeleccionadaDashboard) {
-                    mesaSelect.innerHTML = '';
-                    const option = document.createElement('option');
-                    option.value = mesaSeleccionadaDashboard.id;
-                    option.textContent = `Mesa ${mesaSeleccionadaDashboard.mesa_codigo} - ${mesaSeleccionadaDashboard.puesto_nombre}`;
-                    option.dataset.mesa = JSON.stringify(mesaSeleccionadaDashboard);
-                    mesaSelect.appendChild(option);
-                    mesaSelect.value = mesaSeleccionadaDashboard.id;
-                }
-            }
+        if (mesaSelect) {
+            // Si el testigo ya verificó presencia, solo mostrar su mesa asignada
+            mesaSelect.innerHTML = '';
+            const option = document.createElement('option');
+            option.value = mesaSeleccionadaDashboard.id;
+            option.textContent = `Mesa ${mesaSeleccionadaDashboard.mesa_codigo} - ${mesaSeleccionadaDashboard.puesto_nombre || ''}`;
+            option.dataset.mesa = JSON.stringify(mesaSeleccionadaDashboard);
+            option.selected = true;
+            mesaSelect.appendChild(option);
+            
+            // Deshabilitar el selector ya que el testigo solo puede reportar de su mesa
+            mesaSelect.disabled = true;
+            
+            console.log('Mesa pre-cargada:', mesaSeleccionadaDashboard);
         }
         
         // Mostrar modal
@@ -252,16 +214,14 @@ async function showCreateForm() {
         document.getElementById('formModal').addEventListener('shown.bs.modal', function() {
             setupImagePreview();
             
-            // Asegurar que los votantes registrados se carguen después de que el modal esté visible
-            if (mesaSeleccionadaDashboard) {
-                const votantesInput = document.getElementById('votantesRegistrados');
-                if (votantesInput) {
-                    const votantes = mesaSeleccionadaDashboard.total_votantes_registrados || 0;
-                    votantesInput.value = votantes;
-                    votantesInput.readOnly = true;
-                    votantesInput.title = 'Total de personas habilitadas para votar en esta mesa según el censo electoral (DIVIPOLA)';
-                    console.log('✅ Votantes registrados cargados en modal:', votantes);
-                }
+            // Cargar votantes registrados después de que el modal esté visible
+            const votantesInput = document.getElementById('votantesRegistrados');
+            if (votantesInput && mesaSeleccionadaDashboard) {
+                const votantes = mesaSeleccionadaDashboard.total_votantes_registrados || 0;
+                votantesInput.value = votantes;
+                votantesInput.readOnly = true;
+                votantesInput.title = 'Total de personas habilitadas para votar en esta mesa según el censo electoral (DIVIPOLA)';
+                console.log('✅ Votantes registrados cargados:', votantes);
             }
         }, { once: true });
         
