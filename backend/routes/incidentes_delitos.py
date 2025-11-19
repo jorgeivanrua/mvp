@@ -1,44 +1,58 @@
 """Rutas para incidentes y delitos electorales"""
 
 from flask import Blueprint, request, jsonify
-from backend.utils.decorators import token_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.services.incidentes_delitos_service import IncidentesDelitosService
 from backend.models.incidentes_delitos import IncidenteElectoral, DelitoElectoral
+from backend.models.user import User
 
 incidentes_delitos_bp = Blueprint('incidentes_delitos', __name__)
 
 
 @incidentes_delitos_bp.route('/api/incidentes', methods=['POST'])
-@token_required
-def crear_incidente(current_user):
+@jwt_required()
+def crear_incidente():
     """Crear un nuevo incidente electoral"""
     try:
+        user_id = get_jwt_identity()
+        current_user = User.query.get(int(user_id))
+        
+        if not current_user:
+            return jsonify({'success': False, 'error': 'Usuario no encontrado'}), 404
+        
         data = request.get_json()
         
         # Validar datos requeridos
         if not data.get('tipo_incidente'):
-            return jsonify({'error': 'Tipo de incidente es requerido'}), 400
+            return jsonify({'success': False, 'error': 'Tipo de incidente es requerido'}), 400
         if not data.get('titulo'):
-            return jsonify({'error': 'Título es requerido'}), 400
+            return jsonify({'success': False, 'error': 'Título es requerido'}), 400
         if not data.get('descripcion'):
-            return jsonify({'error': 'Descripción es requerida'}), 400
+            return jsonify({'success': False, 'error': 'Descripción es requerida'}), 400
         
         incidente = IncidentesDelitosService.crear_incidente(data, current_user.id)
         
         return jsonify({
+            'success': True,
             'message': 'Incidente creado exitosamente',
-            'incidente': incidente.to_dict()
+            'data': incidente.to_dict()
         }), 201
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @incidentes_delitos_bp.route('/api/incidentes', methods=['GET'])
-@token_required
-def obtener_incidentes(current_user):
+@jwt_required()
+def obtener_incidentes():
     """Obtener incidentes según permisos del usuario"""
     try:
+        user_id = get_jwt_identity()
+        current_user = User.query.get(int(user_id))
+        
+        if not current_user:
+            return jsonify({'success': False, 'error': 'Usuario no encontrado'}), 404
+        
         # Obtener filtros de query params
         filtros = {}
         if request.args.get('estado'):
@@ -51,6 +65,8 @@ def obtener_incidentes(current_user):
             filtros['fecha_desde'] = request.args.get('fecha_desde')
         if request.args.get('fecha_hasta'):
             filtros['fecha_hasta'] = request.args.get('fecha_hasta')
+        if request.args.get('mesa_id'):
+            filtros['mesa_id'] = request.args.get('mesa_id')
         
         incidentes = IncidentesDelitosService.obtener_incidentes(
             filtros=filtros,
@@ -58,10 +74,10 @@ def obtener_incidentes(current_user):
             rol_usuario=current_user.rol
         )
         
-        return jsonify({'incidentes': incidentes}), 200
+        return jsonify({'success': True, 'data': incidentes}), 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @incidentes_delitos_bp.route('/api/incidentes/<int:incidente_id>', methods=['GET'])
@@ -304,14 +320,14 @@ def marcar_notificacion_leida(current_user, notificacion_id):
 
 
 @incidentes_delitos_bp.route('/api/incidentes/tipos', methods=['GET'])
-@token_required
-def obtener_tipos_incidentes(current_user):
+@jwt_required()
+def obtener_tipos_incidentes():
     """Obtener tipos de incidentes disponibles"""
-    return jsonify({'tipos': IncidenteElectoral.TIPOS_INCIDENTE}), 200
+    return jsonify({'success': True, 'tipos': IncidenteElectoral.TIPOS_INCIDENTE}), 200
 
 
 @incidentes_delitos_bp.route('/api/delitos/tipos', methods=['GET'])
-@token_required
-def obtener_tipos_delitos(current_user):
+@jwt_required()
+def obtener_tipos_delitos():
     """Obtener tipos de delitos disponibles"""
-    return jsonify({'tipos': DelitoElectoral.TIPOS_DELITO}), 200
+    return jsonify({'success': True, 'tipos': DelitoElectoral.TIPOS_DELITO}), 200
