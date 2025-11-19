@@ -2139,6 +2139,37 @@ document.addEventListener('DOMContentLoaded', initSuperAdminDashboard);
 
 
 /**
+ * Arreglar contraseñas - Actualizar todas a texto plano
+ */
+async function fixPasswords() {
+    if (!confirm('¿Actualizar todas las contraseñas a texto plano?\n\nEsto NO borrará datos, solo actualizará las contraseñas.')) {
+        return;
+    }
+    
+    try {
+        Utils.showInfo('Actualizando contraseñas...');
+        
+        const response = await APIClient.post('/admin/fix-passwords', {});
+        
+        if (response.success) {
+            let message = '✅ Contraseñas actualizadas exitosamente!\n\n';
+            message += 'CONTRASEÑAS:\n';
+            for (const [rol, password] of Object.entries(response.passwords)) {
+                message += `${rol}: ${password}\n`;
+            }
+            
+            alert(message);
+            Utils.showSuccess('Contraseñas actualizadas. Puedes seguir usando el sistema.');
+        } else {
+            Utils.showError('Error al actualizar contraseñas: ' + (response.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error actualizando contraseñas:', error);
+        Utils.showError('Error al actualizar contraseñas: ' + error.message);
+    }
+}
+
+/**
  * Resetear base de datos
  * ADVERTENCIA: Esto borrará todos los datos y recreará la BD desde cero
  */
