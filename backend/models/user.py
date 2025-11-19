@@ -58,7 +58,7 @@ class User(db.Model):
         Args:
             password: Contraseña en texto plano
         """
-        # TEMPORAL: Guardar contraseña sin hashear para pruebas
+        # TEMPORAL: Guardar contraseña sin hashear para pruebas en Render gratuito
         self.password_hash = password
     
     def check_password(self, password):
