@@ -329,9 +329,10 @@ def registrar_presencia():
                 'error': 'Esta mesa no pertenece a tu puesto asignado'
             }), 403
         
-        # Registrar presencia
+        # Registrar presencia y actualizar ubicación del testigo a la mesa específica
         user.presencia_verificada = True
         user.presencia_verificada_at = datetime.now()
+        user.ubicacion_id = mesa_id  # Actualizar ubicación del testigo a la mesa
         db.session.commit()
         
         return jsonify({
@@ -341,7 +342,8 @@ def registrar_presencia():
                 'presencia_verificada': True,
                 'presencia_verificada_at': user.presencia_verificada_at.isoformat(),
                 'mesa_id': mesa_id,
-                'mesa_nombre': mesa.nombre_completo
+                'mesa_nombre': mesa.nombre_completo,
+                'ubicacion_actualizada': True
             }
         }), 200
         

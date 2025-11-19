@@ -129,12 +129,13 @@ def create_users_simple():
             
             print(f"   Puesto {puesto.puesto_codigo}: {len(mesas)} mesas")
             
-            # Crear un testigo por cada mesa
-            for mesa in mesas:
+            # Crear un testigo por cada mesa, pero asignado al PUESTO
+            # Se individualizarán cuando verifiquen presencia en una mesa específica
+            for i, mesa in enumerate(mesas, 1):
                 users_to_create.append({
-                    'nombre': f'Testigo Mesa {mesa.mesa_codigo} - {puesto.nombre_completo}',
+                    'nombre': f'Testigo {i} - {puesto.nombre_completo}',
                     'rol': 'testigo_electoral',
-                    'ubicacion_id': mesa.id,  # Asignar a la mesa, no al puesto
+                    'ubicacion_id': puesto.id,  # Asignar al puesto, no a la mesa
                     'password': 'test123'
                 })
         
