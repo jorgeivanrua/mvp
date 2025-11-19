@@ -95,10 +95,6 @@ def register_blueprints(app):
     from backend.routes.public import public_bp
     app.register_blueprint(public_bp)
     
-    # Admin tools (solo desarrollo)
-    from backend.routes.admin_tools import admin_tools_bp
-    app.register_blueprint(admin_tools_bp, url_prefix='/api/admin-tools')
-    
     # Init DB route (para inicializar BD en producción sin Pre-Deploy Command)
     from backend.routes.init_db_route import init_db_bp
     app.register_blueprint(init_db_bp)
