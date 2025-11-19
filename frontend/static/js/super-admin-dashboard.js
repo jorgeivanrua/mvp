@@ -2136,3 +2136,45 @@ async function guardarEdicionCandidato(candidatoId) {
 
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', initSuperAdminDashboard);
+
+
+/**
+ * Resetear base de datos
+ * ADVERTENCIA: Esto borrará todos los datos y recreará la BD desde cero
+ */
+async function resetDatabase() {
+    // Confirmación múltiple para evitar borrados accidentales
+    if (!confirm('⚠️ ADVERTENCIA: Esto borrará TODA la base de datos y la recreará desde cero.\n\n¿Estás seguro de que quieres continuar?')) {
+        return;
+    }
+    
+    if (!confirm('⚠️ ÚLTIMA CONFIRMACIÓN: Se perderán TODOS los datos actuales.\n\nLa aplicación se reiniciará automáticamente.\n\n¿Continuar?')) {
+        return;
+    }
+    
+    try {
+        Utils.showInfo('Reseteando base de datos...');
+        
+        const response = await APIClient.post('/admin/reset-database', {});
+        
+        if (response.success) {
+            Utils.showSuccess('✅ Base de datos reseteada. La aplicación se reiniciará en 5 segundos...');
+            
+            // Esperar 5 segundos y recargar la página
+            setTimeout(() => {
+                // Limpiar tokens
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                localStorage.removeItem('user_data');
+                
+                // Redirigir al login
+                window.location.href = '/auth/login';
+            }, 5000);
+        } else {
+            Utils.showError('Error al resetear base de datos: ' + (response.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error reseteando base de datos:', error);
+        Utils.showError('Error al resetear base de datos: ' + error.message);
+    }
+}
