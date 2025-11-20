@@ -13,8 +13,8 @@ python scripts/init_db.py
 echo "📍 Cargando ubicaciones..."
 python scripts/load_divipola.py
 
-echo "👥 Creando usuarios de prueba..."
-python scripts/create_test_users.py
+echo "👥 Creando usuarios fijos del sistema..."
+python scripts/create_fixed_users.py
 
 echo "⚙️ Configurando sistema electoral..."
 python scripts/init_configuracion_electoral.py

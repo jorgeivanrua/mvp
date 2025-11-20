@@ -66,14 +66,26 @@ def role_required(allowed_roles):
                 claims = get_jwt()
                 user_role = claims.get('rol')
                 
+                # LOG PARA DEBUGGING
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"[ROLE_CHECK] Endpoint: {fn.__name__}")
+                logger.info(f"[ROLE_CHECK] User role: {user_role}")
+                logger.info(f"[ROLE_CHECK] Allowed roles: {allowed_roles}")
+                
                 if user_role not in allowed_roles:
+                    logger.warning(f"[ROLE_CHECK] ❌ ACCESO DENEGADO - Rol '{user_role}' no está en {allowed_roles}")
                     return jsonify({
                         'success': False,
-                        'error': 'No tiene permisos para acceder a este recurso'
+                        'error': f'No tiene permisos para acceder a este recurso. Rol actual: {user_role}, Roles permitidos: {allowed_roles}'
                     }), 403
                 
+                logger.info(f"[ROLE_CHECK] ✅ ACCESO PERMITIDO")
                 return fn(*args, **kwargs)
             except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"[ROLE_CHECK] ❌ ERROR: {e}")
                 return jsonify({
                     'success': False,
                     'error': 'Token inválido o expirado'

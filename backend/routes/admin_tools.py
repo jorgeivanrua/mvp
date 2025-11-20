@@ -123,77 +123,74 @@ def fix_roles():
                 'error': 'Solo super_admin puede corregir roles'
             }), 403
         
-        # Correcciones a aplicar
-        correcciones = [
-            ('admin', 'super_admin', 'admin123'),
-            ('testigo', 'testigo_electoral', 'test123'),
-            ('coordinador_puesto', 'coordinador_puesto', 'test123'),
-            ('coordinador_municipal', 'coordinador_municipal', 'test123'),
-            ('coordinador_departamental', 'coordinador_departamental', 'test123')
-        ]
+        # Obtener TODOS los usuarios y corregir problemas comunes
+        usuarios = User.query.all()
         
         resultados = []
         cambios_totales = 0
         
-        for nombre, rol_correcto, password_correcta in correcciones:
-            user = User.query.filter_by(nombre=nombre).first()
+        for user in usuarios:
+            cambios = []
             
-            if user:
-                cambios = []
+            # Activar usuario si está inactivo
+            if not user.activo:
+                user.activo = True
+                cambios.append("activado")
+            
+            # Resetear bloqueos
+            if user.intentos_fallidos > 0:
+                user.intentos_fallidos = 0
+                cambios.append("intentos fallidos reseteados")
+            
+            if user.bloqueado_hasta:
+                user.bloqueado_hasta = None
+                cambios.append("desbloqueo de cuenta")
+            
+            # Verificar que la contraseña no esté hasheada (debe ser texto plano)
+            # Si la contraseña tiene más de 50 caracteres, probablemente está hasheada
+            if len(user.password_hash) > 50:
+                # Asignar contraseña por defecto según rol
+                password_por_rol = {
+                    'super_admin': 'SuperAdmin123!',
+                    'admin_departamental': 'AdminDept123!',
+                    'admin_municipal': 'AdminMuni123!',
+                    'coordinador_departamental': 'CoordDept123!',
+                    'coordinador_municipal': 'CoordMuni123!',
+                    'auditor_electoral': 'Auditor123!',
+                    'coordinador_puesto': 'CoordPuesto123!',
+                    'testigo_electoral': 'Testigo123!'
+                }
                 
-                # Corregir rol
-                if user.rol != rol_correcto:
-                    rol_anterior = user.rol
-                    user.rol = rol_correcto
-                    cambios.append(f"rol: {rol_anterior} → {rol_correcto}")
-                
-                # Corregir contraseña
-                if user.password_hash != password_correcta:
-                    user.password_hash = password_correcta
-                    cambios.append(f"contraseña actualizada")
-                
-                # Activar usuario
-                if not user.activo:
-                    user.activo = True
-                    cambios.append("activado")
-                
-                # Resetear bloqueos
-                if user.intentos_fallidos > 0:
-                    user.intentos_fallidos = 0
-                    cambios.append("intentos fallidos reseteados")
-                
-                if user.bloqueado_hasta:
-                    user.bloqueado_hasta = None
-                    cambios.append("desbloqueo de cuenta")
-                
-                if cambios:
-                    resultados.append({
-                        'usuario': nombre,
-                        'cambios': cambios,
-                        'status': 'corregido'
-                    })
-                    cambios_totales += len(cambios)
-                else:
-                    resultados.append({
-                        'usuario': nombre,
-                        'cambios': [],
-                        'status': 'correcto'
-                    })
-            else:
+                nueva_password = password_por_rol.get(user.rol, 'test123')
+                user.password_hash = nueva_password
+                cambios.append(f"contraseña actualizada a {nueva_password}")
+            
+            if cambios:
                 resultados.append({
-                    'usuario': nombre,
-                    'cambios': [],
-                    'status': 'no_encontrado'
+                    'usuario': user.nombre,
+                    'rol': user.rol,
+                    'cambios': cambios,
+                    'status': 'corregido'
                 })
+                cambios_totales += len(cambios)
         
         # Guardar cambios
         if cambios_totales > 0:
             db.session.commit()
         
+        # Resumen por rol
+        resumen_roles = {}
+        for user in usuarios:
+            if user.rol not in resumen_roles:
+                resumen_roles[user.rol] = 0
+            resumen_roles[user.rol] += 1
+        
         return jsonify({
             'success': True,
-            'message': f'{cambios_totales} cambios aplicados',
-            'resultados': resultados,
+            'message': f'{cambios_totales} cambios aplicados en {len(usuarios)} usuarios',
+            'resultados': resultados[:10],  # Solo mostrar primeros 10
+            'total_usuarios': len(usuarios),
+            'resumen_roles': resumen_roles,
             'importante': [
                 'Todos los usuarios deben cerrar sesión',
                 'Volver a iniciar sesión para obtener nuevos tokens JWT',
