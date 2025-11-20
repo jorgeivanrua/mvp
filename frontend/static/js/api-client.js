@@ -43,6 +43,16 @@ class APIClient {
                 throw new Error(data.error || 'Sesión expirada');
             }
             
+            if (response.status === 403) {
+                // Error de permisos - probablemente token con rol incorrecto
+                console.warn('[APIClient] 403 Forbidden - Posible conflicto de sesión');
+                console.warn('  Endpoint:', response.url);
+                console.warn('  Error:', data.error);
+                
+                // No redirigir automáticamente, solo mostrar error
+                throw new Error(data.error || 'No tiene permisos para acceder a este recurso');
+            }
+            
             if (response.status === 404) {
                 throw new Error('Endpoint no encontrado. Verifica que el backend esté funcionando correctamente.');
             }

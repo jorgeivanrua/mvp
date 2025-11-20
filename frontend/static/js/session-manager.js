@@ -1,17 +1,29 @@
 /**
  * Session Manager - Detecta cambios de sesión entre pestañas
+ * DESHABILITADO: Causa problemas al tener múltiples pestañas abiertas
+ * 
+ * En su lugar, se recomienda:
+ * 1. Usar una pestaña por usuario
+ * 2. Cerrar sesión antes de cambiar de usuario
+ * 3. Usar navegadores diferentes para diferentes roles
  */
 class SessionManager {
     constructor() {
         this.currentToken = null;
         this.currentRole = null;
         this.checkInterval = null;
+        this.enabled = false; // DESHABILITADO por defecto
     }
     
     /**
      * Inicializar el gestor de sesión
      */
     init() {
+        if (!this.enabled) {
+            console.log('[SessionManager] Disabled - Multiple tabs are allowed');
+            return;
+        }
+        
         // Guardar token y rol actual
         this.currentToken = localStorage.getItem('access_token');
         const userData = localStorage.getItem('user_data');
@@ -40,9 +52,30 @@ class SessionManager {
     }
     
     /**
+     * Habilitar el gestor de sesión
+     */
+    enable() {
+        this.enabled = true;
+        this.init();
+    }
+    
+    /**
+     * Deshabilitar el gestor de sesión
+     */
+    disable() {
+        this.enabled = false;
+        if (this.checkInterval) {
+            clearInterval(this.checkInterval);
+            this.checkInterval = null;
+        }
+    }
+    
+    /**
      * Verificar si la sesión cambió
      */
     checkSession() {
+        if (!this.enabled) return;
+        
         const newToken = localStorage.getItem('access_token');
         const userData = localStorage.getItem('user_data');
         let newRole = null;
@@ -72,6 +105,8 @@ class SessionManager {
      * Manejar cambio de sesión
      */
     handleSessionChange() {
+        if (!this.enabled) return;
+        
         console.log('[SessionManager] Reloading page due to session change...');
         
         // Mostrar mensaje

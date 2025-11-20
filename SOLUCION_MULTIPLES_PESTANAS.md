@@ -33,17 +33,26 @@ Pestaña 1: Super Admin (ahora con token de testigo)
 
 ## ✅ Solución Implementada
 
-### Session Manager
+### Session Manager (DESHABILITADO)
 
-Se creó un **Session Manager** que detecta cuando el token cambia en localStorage y recarga automáticamente la página.
+Se creó un **Session Manager** pero está **deshabilitado por defecto** porque causaba problemas al recargar pestañas automáticamente.
 
 **Archivo**: `frontend/static/js/session-manager.js`
 
-**Funcionalidad**:
+**Estado**: DESHABILITADO (`enabled = false`)
+
+**Razón**: Recargar automáticamente las pestañas cuando cambia la sesión es molesto para los usuarios que quieren tener múltiples pestañas abiertas.
+
+**Funcionalidad (si se habilita)**:
 1. Guarda el token y rol actual al cargar la página
 2. Escucha cambios en localStorage (evento `storage`)
 3. Verifica cada 5 segundos si el token cambió
 4. Si detecta un cambio, muestra un mensaje y recarga la página
+
+**Para habilitar** (no recomendado):
+```javascript
+window.sessionManager.enable();
+```
 
 ### Cómo Funciona
 
@@ -165,12 +174,12 @@ Detectar cambios y recargar:
 
 ## 🚀 Resultado
 
-Con el Session Manager implementado:
+Con el Session Manager deshabilitado:
 
-1. **Detección automática** de cambios de sesión
-2. **Recarga automática** de la página
-3. **Mensaje informativo** al usuario
-4. **Sin errores 403** por tokens mezclados
+1. **Múltiples pestañas permitidas** sin recargas automáticas
+2. **Errores 403 manejados** con mensajes claros en consola
+3. **Usuario decide** cuándo cerrar sesión y cambiar de usuario
+4. **Mejor experiencia** para desarrollo y testing
 
 ## 📝 Notas Técnicas
 
@@ -223,3 +232,56 @@ Ejemplo:
 ## ✅ Conclusión
 
 El Session Manager resuelve el problema de múltiples pestañas de forma simple y efectiva. Los usuarios verán un mensaje cuando la sesión cambie y la página se recargará automáticamente, evitando errores 403.
+
+
+## 🎯 Solución Actual (Session Manager Deshabilitado)
+
+### ¿Por qué está deshabilitado?
+
+El Session Manager automático causaba más problemas que soluciones:
+- Recargaba pestañas automáticamente cuando no era necesario
+- Interrumpía el trabajo del usuario
+- Hacía difícil tener múltiples pestañas abiertas para testing
+
+### Solución Actual: Manejo Manual
+
+**Los usuarios pueden tener múltiples pestañas abiertas** con diferentes roles. Si experimentan errores 403:
+
+1. **Cerrar sesión manualmente** en la pestaña con problemas
+2. **Volver a iniciar sesión** con el usuario correcto
+3. **Continuar trabajando** normalmente
+
+### Ventajas de esta Solución
+
+✅ **Flexibilidad**: Puedes tener múltiples pestañas abiertas
+✅ **Control**: Tú decides cuándo cerrar sesión
+✅ **Sin interrupciones**: No hay recargas automáticas
+✅ **Mejor para desarrollo**: Facilita testing con múltiples roles
+
+### Desventajas
+
+❌ **Errores 403 posibles**: Si usas el token incorrecto
+❌ **Requiere atención**: Debes recordar qué usuario tienes en cada pestaña
+
+### Recomendación
+
+Para evitar confusiones:
+1. **Usa una pestaña por usuario** cuando sea posible
+2. **Cierra sesión antes de cambiar de usuario** en la misma pestaña
+3. **Usa navegadores diferentes** para diferentes roles (Chrome para Admin, Firefox para Testigo)
+
+### Si Quieres Habilitar el Session Manager
+
+Si prefieres que las pestañas se recarguen automáticamente cuando detecten cambio de sesión:
+
+```javascript
+// En la consola del navegador (F12)
+window.sessionManager.enable();
+```
+
+Esto habilitará:
+- Detección automática de cambios de token
+- Recarga automática de la página
+- Mensaje "Sesión Actualizada"
+
+**Nota**: Esto se debe hacer en cada pestaña después de cargar la página.
