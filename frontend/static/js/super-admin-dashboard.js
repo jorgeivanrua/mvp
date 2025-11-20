@@ -2209,3 +2209,113 @@ async function resetDatabase() {
         Utils.showError('Error al resetear base de datos: ' + error.message);
     }
 }
+
+
+/**
+ * Corregir roles de usuarios
+ */
+async function fixRoles() {
+    if (!confirm('¿Corregir roles de usuarios de prueba?\n\nEsto actualizará:\n- admin → super_admin\n- testigo → testigo_electoral\n- coordinador_puesto → coordinador_puesto\n- coordinador_municipal → coordinador_municipal\n- coordinador_departamental → coordinador_departamental\n\nTambién reseteará contraseñas y desbloqueará cuentas.')) {
+        return;
+    }
+    
+    try {
+        Utils.showInfo('Corrigiendo roles...');
+        
+        const response = await APIClient.post('/admin/fix-roles', {});
+        
+        if (response.success) {
+            let message = '✅ Roles corregidos exitosamente!\n\n';
+            message += `Total de cambios: ${response.message}\n\n`;
+            message += 'RESULTADOS:\n';
+            
+            for (const resultado of response.resultados) {
+                message += `\n${resultado.usuario}: ${resultado.status}`;
+                if (resultado.cambios.length > 0) {
+                    message += '\n  - ' + resultado.cambios.join('\n  - ');
+                }
+            }
+            
+            message += '\n\n⚠️ IMPORTANTE:\n';
+            for (const nota of response.importante) {
+                message += `- ${nota}\n`;
+            }
+            
+            alert(message);
+            Utils.showSuccess('Roles corregidos. Todos los usuarios deben cerrar sesión y volver a iniciar sesión.');
+            
+            // Recargar estadísticas
+            await loadMainStats();
+        } else {
+            Utils.showError('Error al corregir roles: ' + (response.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error corrigiendo roles:', error);
+        Utils.showError('Error al corregir roles: ' + error.message);
+    }
+}
+
+/**
+ * Ejecutar diagnóstico del sistema
+ */
+async function runDiagnostico() {
+    try {
+        Utils.showInfo('Ejecutando diagnóstico...');
+        
+        const response = await APIClient.get('/admin/diagnostico');
+        
+        if (response.success) {
+            const data = response.data;
+            
+            let message = '📊 DIAGNÓSTICO DEL SISTEMA\n\n';
+            
+            // Estadísticas
+            message += '=== ESTADÍSTICAS ===\n';
+            message += `Total de usuarios: ${data.estadisticas.total_usuarios}\n`;
+            message += `Usuarios activos: ${data.estadisticas.usuarios_activos}\n`;
+            message += `Usuarios bloqueados: ${data.estadisticas.usuarios_bloqueados}\n`;
+            message += `Usuarios inactivos: ${data.estadisticas.usuarios_inactivos}\n\n`;
+            
+            // Roles
+            message += '=== USUARIOS POR ROL ===\n';
+            for (const [rol, count] of Object.entries(data.roles)) {
+                message += `${rol}: ${count}\n`;
+            }
+            message += '\n';
+            
+            // Usuarios de prueba
+            message += '=== USUARIOS DE PRUEBA ===\n';
+            for (const user of data.usuarios_prueba) {
+                message += `\n${user.nombre}:\n`;
+                message += `  Rol: ${user.rol}\n`;
+                message += `  Activo: ${user.activo ? 'Sí' : 'No'}\n`;
+                message += `  Bloqueado: ${user.bloqueado ? 'Sí' : 'No'}\n`;
+                if (user.presencia_verificada !== null) {
+                    message += `  Presencia: ${user.presencia_verificada ? 'Verificada' : 'No verificada'}\n`;
+                }
+            }
+            message += '\n';
+            
+            // Problemas
+            if (data.problemas.length > 0) {
+                message += '=== ⚠️ PROBLEMAS DETECTADOS ===\n';
+                for (const problema of data.problemas) {
+                    message += `- ${problema}\n`;
+                }
+            } else {
+                message += '=== ✅ NO HAY PROBLEMAS ===\n';
+            }
+            
+            message += '\n';
+            message += `Base de datos: ${data.database_url}\n`;
+            
+            alert(message);
+            Utils.showSuccess('Diagnóstico completado');
+        } else {
+            Utils.showError('Error al ejecutar diagnóstico: ' + (response.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error ejecutando diagnóstico:', error);
+        Utils.showError('Error al ejecutar diagnóstico: ' + error.message);
+    }
+}

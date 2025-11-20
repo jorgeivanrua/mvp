@@ -104,3 +104,195 @@ def fix_passwords():
             'success': False,
             'error': str(e)
         }), 500
+
+
+@admin_tools_bp.route('/fix-roles', methods=['POST'])
+@jwt_required()
+def fix_roles():
+    """
+    Corregir roles de usuarios de prueba
+    Solo super_admin puede ejecutar esto
+    """
+    try:
+        user_id = get_jwt_identity()
+        current_user = User.query.get(int(user_id))
+        
+        if not current_user or current_user.rol != 'super_admin':
+            return jsonify({
+                'success': False,
+                'error': 'Solo super_admin puede corregir roles'
+            }), 403
+        
+        # Correcciones a aplicar
+        correcciones = [
+            ('admin', 'super_admin', 'admin123'),
+            ('testigo', 'testigo_electoral', 'test123'),
+            ('coordinador_puesto', 'coordinador_puesto', 'test123'),
+            ('coordinador_municipal', 'coordinador_municipal', 'test123'),
+            ('coordinador_departamental', 'coordinador_departamental', 'test123')
+        ]
+        
+        resultados = []
+        cambios_totales = 0
+        
+        for nombre, rol_correcto, password_correcta in correcciones:
+            user = User.query.filter_by(nombre=nombre).first()
+            
+            if user:
+                cambios = []
+                
+                # Corregir rol
+                if user.rol != rol_correcto:
+                    rol_anterior = user.rol
+                    user.rol = rol_correcto
+                    cambios.append(f"rol: {rol_anterior} → {rol_correcto}")
+                
+                # Corregir contraseña
+                if user.password_hash != password_correcta:
+                    user.password_hash = password_correcta
+                    cambios.append(f"contraseña actualizada")
+                
+                # Activar usuario
+                if not user.activo:
+                    user.activo = True
+                    cambios.append("activado")
+                
+                # Resetear bloqueos
+                if user.intentos_fallidos > 0:
+                    user.intentos_fallidos = 0
+                    cambios.append("intentos fallidos reseteados")
+                
+                if user.bloqueado_hasta:
+                    user.bloqueado_hasta = None
+                    cambios.append("desbloqueo de cuenta")
+                
+                if cambios:
+                    resultados.append({
+                        'usuario': nombre,
+                        'cambios': cambios,
+                        'status': 'corregido'
+                    })
+                    cambios_totales += len(cambios)
+                else:
+                    resultados.append({
+                        'usuario': nombre,
+                        'cambios': [],
+                        'status': 'correcto'
+                    })
+            else:
+                resultados.append({
+                    'usuario': nombre,
+                    'cambios': [],
+                    'status': 'no_encontrado'
+                })
+        
+        # Guardar cambios
+        if cambios_totales > 0:
+            db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'{cambios_totales} cambios aplicados',
+            'resultados': resultados,
+            'importante': [
+                'Todos los usuarios deben cerrar sesión',
+                'Volver a iniciar sesión para obtener nuevos tokens JWT',
+                'Los tokens antiguos tendrán roles incorrectos'
+            ]
+        }), 200
+            
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@admin_tools_bp.route('/diagnostico', methods=['GET'])
+@jwt_required()
+def diagnostico():
+    """
+    Diagnóstico del sistema
+    Solo super_admin puede ejecutar esto
+    """
+    try:
+        user_id = get_jwt_identity()
+        current_user = User.query.get(int(user_id))
+        
+        if not current_user or current_user.rol != 'super_admin':
+            return jsonify({
+                'success': False,
+                'error': 'Solo super_admin puede ver el diagnóstico'
+            }), 403
+        
+        from sqlalchemy import func
+        
+        # Estadísticas generales
+        total_usuarios = User.query.count()
+        usuarios_activos = User.query.filter_by(activo=True).count()
+        usuarios_bloqueados = User.query.filter(User.bloqueado_hasta.isnot(None)).count()
+        
+        # Usuarios por rol
+        roles_count = db.session.query(
+            User.rol, 
+            func.count(User.id)
+        ).group_by(User.rol).all()
+        
+        roles_dict = {rol: count for rol, count in roles_count}
+        
+        # Usuarios de prueba
+        usuarios_prueba = []
+        for nombre in ['admin', 'testigo', 'coordinador_puesto', 'coordinador_municipal', 'coordinador_departamental']:
+            user = User.query.filter_by(nombre=nombre).first()
+            if user:
+                usuarios_prueba.append({
+                    'nombre': user.nombre,
+                    'rol': user.rol,
+                    'activo': user.activo,
+                    'bloqueado': user.bloqueado_hasta is not None,
+                    'presencia_verificada': user.presencia_verificada if user.rol == 'testigo_electoral' else None,
+                    'ubicacion_id': user.ubicacion_id
+                })
+        
+        # Problemas detectados
+        problemas = []
+        
+        # Testigos sin ubicación
+        testigos_sin_ubicacion = User.query.filter_by(
+            rol='testigo_electoral',
+            ubicacion_id=None
+        ).count()
+        if testigos_sin_ubicacion > 0:
+            problemas.append(f"{testigos_sin_ubicacion} testigos sin ubicación")
+        
+        # Usuarios bloqueados
+        if usuarios_bloqueados > 0:
+            problemas.append(f"{usuarios_bloqueados} usuarios bloqueados")
+        
+        # Usuarios inactivos
+        usuarios_inactivos = total_usuarios - usuarios_activos
+        if usuarios_inactivos > 0:
+            problemas.append(f"{usuarios_inactivos} usuarios inactivos")
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'estadisticas': {
+                    'total_usuarios': total_usuarios,
+                    'usuarios_activos': usuarios_activos,
+                    'usuarios_bloqueados': usuarios_bloqueados,
+                    'usuarios_inactivos': usuarios_inactivos
+                },
+                'roles': roles_dict,
+                'usuarios_prueba': usuarios_prueba,
+                'problemas': problemas,
+                'database_url': os.getenv('DATABASE_URL', 'sqlite:///instance/electoral.db')[:50] + '...'
+            }
+        }), 200
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
