@@ -148,7 +148,7 @@ def create_fixed_users():
         for user_data in usuarios_fijos:
             try:
                 user = User(
-                    nombre=user_data['nombre_completo'],
+                    nombre=user_data['nombre'],  # Usar 'nombre' para login, no 'nombre_completo'
                     rol=user_data['rol'],
                     ubicacion_id=user_data['ubicacion_id'],
                     activo=True
@@ -159,8 +159,7 @@ def create_fixed_users():
                 db.session.commit()
                 
                 ubicacion_info = "Sin ubicación" if user_data['ubicacion_id'] is None else f"Ubicación ID: {user_data['ubicacion_id']}"
-                print(f"✅ {user_data['nombre_completo']}")
-                print(f"   Usuario: {user_data['nombre']}")
+                print(f"✅ {user_data['nombre']} ({user_data['nombre_completo']})")
                 print(f"   Rol: {user_data['rol']}")
                 print(f"   Password: {user_data['password']}")
                 print(f"   {ubicacion_info}")

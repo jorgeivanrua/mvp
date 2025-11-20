@@ -32,7 +32,7 @@ if config_name == 'production':
                 scripts = [
                     'scripts/init_db.py',
                     'scripts/load_divipola.py',
-                    'scripts/create_test_users.py',
+                    'scripts/create_fixed_users.py',
                     'scripts/init_configuracion_electoral.py'
                 ]
                 
