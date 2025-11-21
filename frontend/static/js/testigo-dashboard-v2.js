@@ -357,7 +357,13 @@ function mostrarContextoTestigo(contexto) {
     if (contexto.mis_formularios) {
         const stats = contexto.mis_formularios;
         
-        // Actualizar contadores si existen en el HTML
+        // Mostrar panel de estadísticas
+        const panelEstadisticas = document.getElementById('estadisticasTestigo');
+        if (panelEstadisticas) {
+            panelEstadisticas.style.display = 'flex';
+        }
+        
+        // Actualizar contadores
         const totalElement = document.getElementById('totalFormularios');
         if (totalElement) totalElement.textContent = stats.total;
         
@@ -375,7 +381,7 @@ function mostrarContextoTestigo(contexto) {
             porcentajeElement.textContent = stats.porcentaje_completado.toFixed(1) + '%';
         }
         
-        console.log('Estadísticas de formularios:', stats);
+        console.log('✅ Estadísticas de formularios mostradas:', stats);
     }
 }
 

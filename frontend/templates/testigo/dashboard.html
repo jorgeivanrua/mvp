@@ -105,6 +105,62 @@
         </div>
     </div>
 
+    <!-- ⭐ NUEVO: Panel de Estadísticas del Testigo -->
+    <div class="row mb-3" id="estadisticasTestigo" style="display: none;">
+        <div class="col-md-3 col-6 mb-2">
+            <div class="card border-primary">
+                <div class="card-body p-2 p-md-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted d-block">Total Formularios</small>
+                            <h4 class="mb-0" id="totalFormularios">0</h4>
+                        </div>
+                        <i class="bi bi-file-earmark-text text-primary" style="font-size: 1.5rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-2">
+            <div class="card border-success">
+                <div class="card-body p-2 p-md-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted d-block">Validados</small>
+                            <h4 class="mb-0 text-success" id="formulariosValidados">0</h4>
+                        </div>
+                        <i class="bi bi-check-circle text-success" style="font-size: 1.5rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-2">
+            <div class="card border-warning">
+                <div class="card-body p-2 p-md-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted d-block">Pendientes</small>
+                            <h4 class="mb-0 text-warning" id="formulariosPendientes">0</h4>
+                        </div>
+                        <i class="bi bi-hourglass-split text-warning" style="font-size: 1.5rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-2">
+            <div class="card border-danger">
+                <div class="card-body p-2 p-md-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted d-block">Rechazados</small>
+                            <h4 class="mb-0 text-danger" id="formulariosRechazados">0</h4>
+                        </div>
+                        <i class="bi bi-x-circle text-danger" style="font-size: 1.5rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Pestañas de navegación -->
     <ul class="nav nav-tabs mb-3 mb-md-4" id="testigoTabs" role="tablist" style="overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch;">
         <li class="nav-item" role="presentation" style="flex-shrink: 0;">
