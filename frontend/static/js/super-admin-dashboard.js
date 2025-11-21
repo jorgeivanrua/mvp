@@ -210,6 +210,14 @@ async function updateSystemHealth() {
  * Inicializar gráficos
  */
 function initCharts() {
+    // Destruir gráficos existentes antes de crear nuevos
+    if (charts.progress) {
+        charts.progress.destroy();
+    }
+    if (charts.activity) {
+        charts.activity.destroy();
+    }
+    
     // Gráfico de progreso nacional
     const progressCtx = document.getElementById('progressChart');
     if (progressCtx) {
