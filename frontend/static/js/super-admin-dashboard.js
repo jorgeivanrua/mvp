@@ -379,8 +379,126 @@ function filterUsers() {
  * Mostrar modal de crear usuario
  */
 function showCreateUserModal() {
-    Utils.showInfo('Funcionalidad de crear usuario en desarrollo');
-    // TODO: Implementar modal completo con formulario
+    // Crear modal dinámicamente
+    const modalHtml = `
+        <div class="modal fade" id="createUserModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Crear Nuevo Usuario</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="createUserForm">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Nombre *</label>
+                                    <input type="text" class="form-control" id="userName" required>
+                                    <small class="text-muted">Nombre de usuario para login</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Rol *</label>
+                                    <select class="form-select" id="userRole" required>
+                                        <option value="">Seleccione...</option>
+                                        <option value="super_admin">Super Admin</option>
+                                        <option value="admin_departamental">Admin Departamental</option>
+                                        <option value="admin_municipal">Admin Municipal</option>
+                                        <option value="coordinador_departamental">Coordinador Departamental</option>
+                                        <option value="coordinador_municipal">Coordinador Municipal</option>
+                                        <option value="coordinador_puesto">Coordinador de Puesto</option>
+                                        <option value="testigo_electoral">Testigo Electoral</option>
+                                        <option value="auditor_electoral">Auditor Electoral</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Contraseña *</label>
+                                    <input type="password" class="form-control" id="userPassword" required>
+                                    <small class="text-muted">Mínimo 6 caracteres</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Confirmar Contraseña *</label>
+                                    <input type="password" class="form-control" id="userPasswordConfirm" required>
+                                </div>
+                            </div>
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>Nota:</strong> La ubicación se asignará según el rol seleccionado.
+                                Para roles que requieren ubicación específica, use la gestión de usuarios avanzada.
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="guardarNuevoUsuario()">Crear Usuario</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar modal al DOM si no existe
+    if (!document.getElementById('createUserModal')) {
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('createUserModal'));
+    modal.show();
+}
+
+/**
+ * Guardar nuevo usuario
+ */
+async function guardarNuevoUsuario() {
+    const nombre = document.getElementById('userName').value.trim();
+    const rol = document.getElementById('userRole').value;
+    const password = document.getElementById('userPassword').value;
+    const passwordConfirm = document.getElementById('userPasswordConfirm').value;
+    
+    // Validaciones
+    if (!nombre || !rol || !password) {
+        Utils.showError('Todos los campos son requeridos');
+        return;
+    }
+    
+    if (password.length < 6) {
+        Utils.showError('La contraseña debe tener al menos 6 caracteres');
+        return;
+    }
+    
+    if (password !== passwordConfirm) {
+        Utils.showError('Las contraseñas no coinciden');
+        return;
+    }
+    
+    try {
+        Utils.showInfo('Creando usuario...');
+        
+        const response = await APIClient.post('/super-admin/users', {
+            nombre: nombre,
+            rol: rol,
+            password: password,
+            activo: true
+        });
+        
+        if (response.success) {
+            Utils.showSuccess('Usuario creado exitosamente');
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createUserModal'));
+            modal.hide();
+            
+            // Recargar lista de usuarios
+            await loadUsers();
+        } else {
+            Utils.showError(response.error || 'Error al crear usuario');
+        }
+    } catch (error) {
+        console.error('Error creando usuario:', error);
+        Utils.showError('Error al crear usuario: ' + error.message);
+    }
 }
 
 /**
@@ -695,31 +813,39 @@ function renderCandidatos() {
  * Mostrar modal de configuración
  */
 function showConfigModal() {
-    Utils.showInfo('Funcionalidad de configuración en desarrollo');
+    alert('🔧 CONFIGURACIÓN DEL SISTEMA\n\n' +
+          'Esta funcionalidad permite configurar:\n' +
+          '- Parámetros generales del sistema\n' +
+          '- Configuración de notificaciones\n' +
+          '- Ajustes de seguridad\n\n' +
+          '📝 Estado: En desarrollo\n' +
+          '🎯 Disponible en: Próxima versión');
 }
 
 /**
  * Exportar todos los datos
  */
 async function exportAllData() {
-    if (!confirm('¿Está seguro de exportar todos los datos del sistema? Esto puede tardar varios minutos.')) {
-        return;
-    }
-    
-    Utils.showInfo('Iniciando exportación de datos...');
-    // TODO: Implementar exportación real
+    alert('📥 EXPORTAR DATOS\n\n' +
+          'Esta funcionalidad permite exportar:\n' +
+          '- Todos los usuarios del sistema\n' +
+          '- Formularios E-14 enviados\n' +
+          '- Ubicaciones y mesas\n\n' +
+          '📝 Estado: En desarrollo\n' +
+          '🎯 Disponible en: Próxima versión');
 }
 
 /**
  * Crear respaldo
  */
 async function createBackup() {
-    if (!confirm('¿Está seguro de crear un respaldo de la base de datos?')) {
-        return;
-    }
-    
-    Utils.showInfo('Creando respaldo...');
-    // TODO: Implementar respaldo real
+    alert('💾 CREAR RESPALDO\n\n' +
+          'Esta funcionalidad permite:\n' +
+          '- Crear backup completo de la BD\n' +
+          '- Descargar respaldo en formato SQL\n\n' +
+          '📝 Estado: En desarrollo\n' +
+          '⚠️ Render hace respaldos automáticos de PostgreSQL');
+}
 }
 
 /**
@@ -2317,5 +2443,72 @@ async function runDiagnostico() {
     } catch (error) {
         console.error('Error ejecutando diagnóstico:', error);
         Utils.showError('Error al ejecutar diagnóstico: ' + error.message);
+    }
+}
+
+
+/**
+ * Cargar datos de prueba
+ */
+async function loadTestData() {
+    if (!confirm('¿Está seguro de cargar datos de prueba?\n\nEsto creará usuarios, formularios y datos de ejemplo en el sistema.')) {
+        return;
+    }
+    
+    try {
+        Utils.showInfo('Cargando datos de prueba...');
+        
+        const response = await APIClient.post('/super-admin/test/load-data', {});
+        
+        if (response.success) {
+            Utils.showSuccess('Datos de prueba cargados exitosamente');
+            
+            // Recargar estadísticas
+            await loadMainStats();
+            await loadUsers();
+        } else {
+            Utils.showError(response.error || 'Error al cargar datos de prueba');
+        }
+    } catch (error) {
+        console.error('Error cargando datos de prueba:', error);
+        Utils.showError('Error al cargar datos de prueba: ' + error.message);
+    }
+}
+
+/**
+ * Ejecutar auditoría del sistema
+ */
+async function runSystemAudit() {
+    try {
+        Utils.showInfo('Ejecutando auditoría del sistema...');
+        
+        const response = await APIClient.get('/super-admin/test/audit');
+        
+        if (response.success) {
+            const audit = response.data;
+            
+            let message = '📊 AUDITORÍA DEL SISTEMA\n\n';
+            message += '=== ESTADÍSTICAS ===\n';
+            message += `Total usuarios: ${audit.total_usuarios || 0}\n`;
+            message += `Total ubicaciones: ${audit.total_ubicaciones || 0}\n`;
+            message += `Total formularios: ${audit.total_formularios || 0}\n\n`;
+            
+            message += '=== PROBLEMAS DETECTADOS ===\n';
+            if (audit.problemas && audit.problemas.length > 0) {
+                audit.problemas.forEach(p => {
+                    message += `⚠️ ${p}\n`;
+                });
+            } else {
+                message += '✅ No se detectaron problemas\n';
+            }
+            
+            alert(message);
+            Utils.showSuccess('Auditoría completada');
+        } else {
+            Utils.showError(response.error || 'Error al ejecutar auditoría');
+        }
+    } catch (error) {
+        console.error('Error ejecutando auditoría:', error);
+        Utils.showError('Error al ejecutar auditoría: ' + error.message);
     }
 }
