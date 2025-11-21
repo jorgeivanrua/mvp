@@ -67,9 +67,30 @@ def get_all_users():
     try:
         users = User.query.all()
         
+        users_data = []
+        for user in users:
+            user_dict = {
+                'id': user.id,
+                'nombre': user.nombre,
+                'rol': user.rol,
+                'activo': user.activo,
+                'ubicacion_id': user.ubicacion_id,
+                'ubicacion_nombre': None,
+                'ultimo_acceso': user.last_login.isoformat() if user.last_login else None,
+                'created_at': user.created_at.isoformat() if user.created_at else None
+            }
+            
+            # Obtener nombre de ubicación
+            if user.ubicacion_id:
+                ubicacion = Location.query.get(user.ubicacion_id)
+                if ubicacion:
+                    user_dict['ubicacion_nombre'] = ubicacion.nombre_completo
+            
+            users_data.append(user_dict)
+        
         return jsonify({
             'success': True,
-            'data': [user.to_dict() for user in users]
+            'data': users_data
         }), 200
         
     except Exception as e:
