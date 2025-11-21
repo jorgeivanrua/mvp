@@ -353,3 +353,102 @@ def registrar_presencia():
             'success': False,
             'error': str(e)
         }), 500
+
+
+@testigo_bp.route('/mesas-puesto', methods=['GET'])
+@jwt_required()
+def get_mesas_puesto_testigo():
+    """
+    Obtener mesas del puesto del testigo con información de estado
+    Endpoint específico para testigos con filtrado automático
+    """
+    try:
+        from backend.models.formulario_e14 import FormularioE14
+        
+        user_id = get_jwt_identity()
+        user = User.query.get(int(user_id))
+        
+        if not user:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no encontrado'
+            }), 404
+        
+        if user.rol != 'testigo_electoral':
+            return jsonify({
+                'success': False,
+                'error': 'Solo testigos pueden acceder a este endpoint'
+            }), 403
+        
+        if not user.ubicacion_id:
+            return jsonify({
+                'success': False,
+                'error': 'No tienes ubicación asignada'
+            }), 400
+        
+        # Obtener ubicación del testigo
+        ubicacion = Location.query.get(user.ubicacion_id)
+        
+        # Si ya verificó presencia, su ubicación es una mesa
+        # Obtener el puesto de esa mesa
+        puesto = ubicacion
+        if ubicacion.tipo == 'mesa':
+            puesto = Location.query.filter_by(
+                tipo='puesto',
+                departamento_codigo=ubicacion.departamento_codigo,
+                municipio_codigo=ubicacion.municipio_codigo,
+                zona_codigo=ubicacion.zona_codigo,
+                puesto_codigo=ubicacion.puesto_codigo
+            ).first()
+        
+        if not puesto:
+            return jsonify({
+                'success': False,
+                'error': 'No se pudo determinar el puesto'
+            }), 400
+        
+        # Obtener todas las mesas del puesto
+        mesas = Location.query.filter_by(
+            tipo='mesa',
+            departamento_codigo=puesto.departamento_codigo,
+            municipio_codigo=puesto.municipio_codigo,
+            zona_codigo=puesto.zona_codigo,
+            puesto_codigo=puesto.puesto_codigo,
+            activo=True
+        ).all()
+        
+        # Agregar información de estado de cada mesa
+        mesas_data = []
+        for mesa in mesas:
+            # Verificar si hay formulario para esta mesa del testigo
+            formulario = FormularioE14.query.filter_by(
+                mesa_id=mesa.id,
+                testigo_id=user.id
+            ).first()
+            
+            mesa_dict = mesa.to_dict()
+            mesa_dict['tiene_formulario'] = formulario is not None
+            mesa_dict['estado_formulario'] = formulario.estado if formulario else None
+            mesa_dict['puede_crear_formulario'] = (
+                user.presencia_verificada and 
+                user.ubicacion_id == mesa.id
+            )
+            mesa_dict['es_mi_mesa'] = user.ubicacion_id == mesa.id
+            
+            mesas_data.append(mesa_dict)
+        
+        return jsonify({
+            'success': True,
+            'data': mesas_data,
+            'puesto': {
+                'nombre': puesto.puesto_nombre,
+                'codigo': puesto.puesto_codigo,
+                'total_mesas': len(mesas)
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

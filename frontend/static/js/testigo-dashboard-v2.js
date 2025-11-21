@@ -10,6 +10,7 @@ let tiposEleccion = [];
 let partidosData = [];
 let candidatosData = [];
 let votosData = {};
+let autoRefreshInterval = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     loadUserProfile();
@@ -26,7 +27,22 @@ document.addEventListener('DOMContentLoaded', function() {
         window.syncManager.init();
     }
     
+    // ⭐ MEJORA: Auto-refresh cada 30 segundos
+    autoRefreshInterval = setInterval(() => {
+        loadForms();  // Actualizar formularios
+        if (presenciaVerificada && mesaSeleccionadaDashboard) {
+            actualizarPanelMesas();  // Actualizar estado de mesas
+        }
+    }, 30000);
+    
     // setupImagePreview se llama cuando se abre el modal
+});
+
+// Limpiar interval al salir
+window.addEventListener('beforeunload', function() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
 });
 
 /**
@@ -274,12 +290,18 @@ async function loadUserProfile() {
         if (response.success) {
             currentUser = response.data.user;
             userLocation = response.data.ubicacion;
+            const contexto = response.data.contexto;
             
             console.log('User profile loaded:', currentUser);
             console.log('User location:', userLocation);
+            console.log('Contexto:', contexto);
+            
+            // ⭐ MEJORA: Mostrar información de contexto
+            if (contexto) {
+                mostrarContextoTestigo(contexto);
+            }
             
             // Si el testigo ya verificó presencia, su ubicación es una mesa
-            // Necesitamos asegurarnos de que tenga acceso al puesto_codigo
             if (userLocation) {
                 // Si es una mesa y ya verificó presencia, usar esa mesa como seleccionada
                 if (userLocation.tipo === 'mesa' && currentUser.presencia_verificada) {
@@ -314,6 +336,46 @@ async function loadUserProfile() {
     } catch (error) {
         console.error('Error al cargar perfil:', error);
         Utils.showError('Error al cargar perfil: ' + error.message);
+    }
+}
+
+/**
+ * ⭐ NUEVA FUNCIÓN: Mostrar información de contexto del testigo
+ */
+function mostrarContextoTestigo(contexto) {
+    if (!contexto) return;
+    
+    // Mostrar información del puesto
+    if (contexto.puesto) {
+        const puestoInfo = document.getElementById('puestoInfo');
+        if (puestoInfo) {
+            puestoInfo.textContent = `${contexto.puesto.nombre} - ${contexto.puesto.total_mesas} mesa(s)`;
+        }
+    }
+    
+    // Mostrar estadísticas de formularios
+    if (contexto.mis_formularios) {
+        const stats = contexto.mis_formularios;
+        
+        // Actualizar contadores si existen en el HTML
+        const totalElement = document.getElementById('totalFormularios');
+        if (totalElement) totalElement.textContent = stats.total;
+        
+        const validadosElement = document.getElementById('formulariosValidados');
+        if (validadosElement) validadosElement.textContent = stats.validados;
+        
+        const pendientesElement = document.getElementById('formulariosPendientes');
+        if (pendientesElement) pendientesElement.textContent = stats.pendientes;
+        
+        const rechazadosElement = document.getElementById('formulariosRechazados');
+        if (rechazadosElement) rechazadosElement.textContent = stats.rechazados;
+        
+        const porcentajeElement = document.getElementById('porcentajeCompletado');
+        if (porcentajeElement) {
+            porcentajeElement.textContent = stats.porcentaje_completado.toFixed(1) + '%';
+        }
+        
+        console.log('Estadísticas de formularios:', stats);
     }
 }
 

@@ -106,6 +106,74 @@ def profile():
             if location:
                 ubicacion = location.to_dict()
         
+        # ⭐ MEJORA: Agregar contexto específico para testigos
+        contexto = None
+        if user.rol == 'testigo_electoral' and ubicacion:
+            from backend.models.formulario_e14 import FormularioE14
+            
+            # Obtener puesto (puede ser la ubicación actual o el puesto de la mesa)
+            puesto = ubicacion
+            if ubicacion['tipo'] == 'mesa':
+                puesto_obj = Location.query.filter_by(
+                    tipo='puesto',
+                    departamento_codigo=ubicacion['departamento_codigo'],
+                    municipio_codigo=ubicacion['municipio_codigo'],
+                    zona_codigo=ubicacion['zona_codigo'],
+                    puesto_codigo=ubicacion['puesto_codigo']
+                ).first()
+                if puesto_obj:
+                    puesto = puesto_obj.to_dict()
+            
+            # Contar mesas del puesto
+            total_mesas = Location.query.filter_by(
+                tipo='mesa',
+                departamento_codigo=puesto['departamento_codigo'],
+                municipio_codigo=puesto['municipio_codigo'],
+                zona_codigo=puesto['zona_codigo'],
+                puesto_codigo=puesto['puesto_codigo'],
+                activo=True
+            ).count()
+            
+            # Contar formularios del testigo
+            mis_formularios = FormularioE14.query.filter_by(
+                testigo_id=user.id
+            ).count()
+            
+            formularios_validados = FormularioE14.query.filter_by(
+                testigo_id=user.id,
+                estado='validado'
+            ).count()
+            
+            formularios_pendientes = FormularioE14.query.filter_by(
+                testigo_id=user.id,
+                estado='pendiente'
+            ).count()
+            
+            formularios_rechazados = FormularioE14.query.filter_by(
+                testigo_id=user.id,
+                estado='rechazado'
+            ).count()
+            
+            contexto = {
+                'puesto': {
+                    'nombre': puesto.get('puesto_nombre'),
+                    'codigo': puesto.get('puesto_codigo'),
+                    'total_mesas': total_mesas
+                },
+                'mis_formularios': {
+                    'total': mis_formularios,
+                    'validados': formularios_validados,
+                    'pendientes': formularios_pendientes,
+                    'rechazados': formularios_rechazados,
+                    'porcentaje_completado': round((mis_formularios / total_mesas * 100), 2) if total_mesas > 0 else 0
+                },
+                'presencia': {
+                    'verificada': user.presencia_verificada,
+                    'verificada_at': user.presencia_verificada_at.isoformat() if user.presencia_verificada_at else None,
+                    'puede_crear_formularios': user.presencia_verificada
+                }
+            }
+        
         return jsonify({
             'success': True,
             'data': {
@@ -116,10 +184,11 @@ def profile():
                     'ubicacion_id': user.ubicacion_id,
                     'activo': user.activo,
                     'ultimo_acceso': user.ultimo_acceso.isoformat() if user.ultimo_acceso else None,
-                    'presencia_verificada': user.presencia_verificada if user.rol == 'testigo' else None,
+                    'presencia_verificada': user.presencia_verificada if user.rol == 'testigo_electoral' else None,
                     'presencia_verificada_at': user.presencia_verificada_at.isoformat() if user.presencia_verificada_at else None
                 },
-                'ubicacion': ubicacion
+                'ubicacion': ubicacion,
+                'contexto': contexto  # ⭐ NUEVO
             }
         }), 200
         
