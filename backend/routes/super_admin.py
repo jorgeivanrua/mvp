@@ -1644,3 +1644,242 @@ def system_audit():
             'success': False,
             'error': str(e)
         }), 500
+
+
+@super_admin_bp.route('/monitoreo-departamental', methods=['GET'])
+@jwt_required()
+@role_required(['super_admin'])
+def get_monitoreo_departamental():
+    """
+    Obtener datos de monitoreo por departamento para gráficos
+    """
+    try:
+        from backend.models.formulario_e14 import FormularioE14
+        
+        # Obtener todos los departamentos
+        departamentos = Location.query.filter_by(tipo='departamento', activo=True).all()
+        
+        monitoreo_data = []
+        
+        for depto in departamentos:
+            # Obtener todas las mesas del departamento
+            mesas = Location.query.filter_by(
+                tipo='mesa',
+                departamento_codigo=depto.departamento_codigo,
+                activo=True
+            ).all()
+            
+            mesa_ids = [m.id for m in mesas]
+            
+            # Obtener formularios
+            formularios = FormularioE14.query.filter(
+                FormularioE14.mesa_id.in_(mesa_ids)
+            ).all() if mesa_ids else []
+            
+            validados = sum(1 for f in formularios if f.estado == 'validado')
+            pendientes = sum(1 for f in formularios if f.estado == 'pendiente')
+            rechazados = sum(1 for f in formularios if f.estado == 'rechazado')
+            
+            porcentaje_avance = round((validados / len(mesas) * 100), 2) if mesas else 0
+            
+            monitoreo_data.append({
+                'departamento': depto.departamento_nombre,
+                'codigo': depto.departamento_codigo,
+                'total_mesas': len(mesas),
+                'total_formularios': len(formularios),
+                'validados': validados,
+                'pendientes': pendientes,
+                'rechazados': rechazados,
+                'sin_reporte': len(mesas) - len(formularios),
+                'porcentaje_avance': porcentaje_avance
+            })
+        
+        # Ordenar por porcentaje de avance descendente
+        monitoreo_data.sort(key=lambda x: x['porcentaje_avance'], reverse=True)
+        
+        return jsonify({
+            'success': True,
+            'data': monitoreo_data
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/audit-logs', methods=['GET'])
+@jwt_required()
+@role_required(['super_admin'])
+def get_audit_logs():
+    """
+    Obtener logs de auditoría del sistema
+    """
+    try:
+        # Intentar obtener logs de la tabla AuditLog si existe
+        try:
+            from backend.models.coordinador_municipal import AuditLog
+            
+            limit = request.args.get('limit', 100, type=int)
+            
+            logs = AuditLog.query.order_by(AuditLog.created_at.desc()).limit(limit).all()
+            
+            logs_data = []
+            for log in logs:
+                user = User.query.get(log.user_id)
+                logs_data.append({
+                    'id': log.id,
+                    'user_id': log.user_id,
+                    'user_nombre': user.nombre if user else 'Usuario eliminado',
+                    'accion': log.accion,
+                    'recurso': log.recurso,
+                    'recurso_id': log.recurso_id,
+                    'detalles': log.detalles,
+                    'ip_address': log.ip_address,
+                    'user_agent': log.user_agent,
+                    'created_at': log.created_at.isoformat() if log.created_at else None
+                })
+            
+            return jsonify({
+                'success': True,
+                'data': logs_data
+            }), 200
+            
+        except ImportError:
+            # Si no existe el modelo, devolver mensaje
+            return jsonify({
+                'success': True,
+                'data': [],
+                'message': 'Sistema de auditoría no configurado'
+            }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/incidentes-delitos', methods=['GET'])
+@jwt_required()
+@role_required(['super_admin'])
+def get_incidentes_delitos_admin():
+    """
+    Obtener todos los incidentes y delitos del sistema con información completa
+    """
+    try:
+        from backend.models.incidentes_delitos import Incidente, Delito
+        
+        # Obtener incidentes
+        incidentes = Incidente.query.order_by(Incidente.fecha_reporte.desc()).limit(50).all()
+        
+        incidentes_data = []
+        for inc in incidentes:
+            reportante = User.query.get(inc.reportado_por)
+            mesa = Location.query.get(inc.mesa_id) if inc.mesa_id else None
+            
+            # Obtener ubicación completa
+            ubicacion_completa = 'N/A'
+            if mesa:
+                puesto = Location.query.filter_by(
+                    tipo='puesto',
+                    departamento_codigo=mesa.departamento_codigo,
+                    municipio_codigo=mesa.municipio_codigo,
+                    zona_codigo=mesa.zona_codigo,
+                    puesto_codigo=mesa.puesto_codigo
+                ).first()
+                
+                municipio = Location.query.filter_by(
+                    tipo='municipio',
+                    departamento_codigo=mesa.departamento_codigo,
+                    municipio_codigo=mesa.municipio_codigo
+                ).first()
+                
+                departamento = Location.query.filter_by(
+                    tipo='departamento',
+                    departamento_codigo=mesa.departamento_codigo
+                ).first()
+                
+                ubicacion_completa = f"{departamento.departamento_nombre if departamento else 'N/A'} > {municipio.municipio_nombre if municipio else 'N/A'} > {puesto.puesto_nombre if puesto else 'N/A'} > Mesa {mesa.mesa_codigo}"
+            
+            incidentes_data.append({
+                'id': inc.id,
+                'tipo': 'incidente',
+                'titulo': inc.titulo,
+                'descripcion': inc.descripcion,
+                'tipo_incidente': inc.tipo_incidente,
+                'severidad': inc.severidad,
+                'estado': inc.estado,
+                'reportado_por': reportante.nombre if reportante else 'Usuario eliminado',
+                'reportado_por_rol': reportante.rol if reportante else 'N/A',
+                'ubicacion': ubicacion_completa,
+                'mesa_codigo': mesa.mesa_codigo if mesa else 'N/A',
+                'fecha_reporte': inc.fecha_reporte.isoformat() if inc.fecha_reporte else None,
+                'notas_resolucion': inc.notas_resolucion
+            })
+        
+        # Obtener delitos
+        delitos = Delito.query.order_by(Delito.fecha_reporte.desc()).limit(50).all()
+        
+        delitos_data = []
+        for delito in delitos:
+            reportante = User.query.get(delito.reportado_por)
+            mesa = Location.query.get(delito.mesa_id) if delito.mesa_id else None
+            
+            # Obtener ubicación completa
+            ubicacion_completa = 'N/A'
+            if mesa:
+                puesto = Location.query.filter_by(
+                    tipo='puesto',
+                    departamento_codigo=mesa.departamento_codigo,
+                    municipio_codigo=mesa.municipio_codigo,
+                    zona_codigo=mesa.zona_codigo,
+                    puesto_codigo=mesa.puesto_codigo
+                ).first()
+                
+                municipio = Location.query.filter_by(
+                    tipo='municipio',
+                    departamento_codigo=mesa.departamento_codigo,
+                    municipio_codigo=mesa.municipio_codigo
+                ).first()
+                
+                departamento = Location.query.filter_by(
+                    tipo='departamento',
+                    departamento_codigo=mesa.departamento_codigo
+                ).first()
+                
+                ubicacion_completa = f"{departamento.departamento_nombre if departamento else 'N/A'} > {municipio.municipio_nombre if municipio else 'N/A'} > {puesto.puesto_nombre if puesto else 'N/A'} > Mesa {mesa.mesa_codigo}"
+            
+            delitos_data.append({
+                'id': delito.id,
+                'tipo': 'delito',
+                'titulo': delito.titulo,
+                'descripcion': delito.descripcion,
+                'tipo_delito': delito.tipo_delito,
+                'gravedad': delito.gravedad,
+                'estado': delito.estado,
+                'reportado_por': reportante.nombre if reportante else 'Usuario eliminado',
+                'reportado_por_rol': reportante.rol if reportante else 'N/A',
+                'ubicacion': ubicacion_completa,
+                'mesa_codigo': mesa.mesa_codigo if mesa else 'N/A',
+                'fecha_reporte': delito.fecha_reporte.isoformat() if delito.fecha_reporte else None,
+                'denunciado_formalmente': delito.denunciado_formalmente,
+                'resultado_investigacion': delito.resultado_investigacion
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'incidentes': incidentes_data,
+                'delitos': delitos_data,
+                'total_incidentes': len(incidentes_data),
+                'total_delitos': len(delitos_data)
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

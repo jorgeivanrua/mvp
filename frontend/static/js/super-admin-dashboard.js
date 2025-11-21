@@ -209,74 +209,122 @@ async function updateSystemHealth() {
 /**
  * Inicializar gráficos
  */
-function initCharts() {
-    // Destruir gráficos existentes antes de crear nuevos
-    if (charts.progress) {
-        charts.progress.destroy();
+async function initCharts() {
+    try {
+        // Destruir gráficos existentes antes de crear nuevos
+        if (charts.progress) {
+            charts.progress.destroy();
+        }
+        if (charts.activity) {
+            charts.activity.destroy();
+        }
+        
+        // Cargar datos reales de monitoreo
+        await loadMonitoreoDepartamental();
+        
+    } catch (error) {
+        console.error('Error inicializando gráficos:', error);
     }
-    if (charts.activity) {
-        charts.activity.destroy();
-    }
-    
-    // Gráfico de progreso nacional
-    const progressCtx = document.getElementById('progressChart');
-    if (progressCtx) {
-        charts.progress = new Chart(progressCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Departamento 1', 'Departamento 2', 'Departamento 3', 'Departamento 4', 'Departamento 5'],
-                datasets: [{
-                    label: 'Formularios Validados',
-                    data: [65, 59, 80, 81, 56],
-                    backgroundColor: 'rgba(42, 82, 152, 0.8)',
-                    borderColor: 'rgba(42, 82, 152, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        ticks: {
-                            callback: function(value) {
-                                return value + '%';
+}
+
+/**
+ * Cargar datos de monitoreo departamental
+ */
+async function loadMonitoreoDepartamental() {
+    try {
+        const response = await APIClient.get('/super-admin/monitoreo-departamental');
+        
+        if (response.success && response.data.length > 0) {
+            const data = response.data;
+            
+            // Preparar datos para el gráfico
+            const labels = data.map(d => d.departamento);
+            const porcentajes = data.map(d => d.porcentaje_avance);
+            const validados = data.map(d => d.validados);
+            const pendientes = data.map(d => d.pendientes);
+            
+            // Gráfico de progreso nacional
+            const progressCtx = document.getElementById('progressChart');
+            if (progressCtx) {
+                charts.progress = new Chart(progressCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '% Avance',
+                            data: porcentajes,
+                            backgroundColor: 'rgba(42, 82, 152, 0.8)',
+                            borderColor: 'rgba(42, 82, 152, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    afterLabel: function(context) {
+                                        const index = context.dataIndex;
+                                        return `Validados: ${validados[index]}\nPendientes: ${pendientes[index]}`;
+                                    }
+                                }
                             }
                         }
                     }
-                }
+                });
             }
-        });
+            
+            // Actualizar tabla de monitoreo si existe
+            updateMonitoreoTable(data);
+            
+        } else {
+            console.warn('No hay datos de monitoreo disponibles');
+        }
+    } catch (error) {
+        console.error('Error cargando monitoreo departamental:', error);
     }
+}
+
+/**
+ * Actualizar tabla de monitoreo
+ */
+function updateMonitoreoTable(data) {
+    const tbody = document.getElementById('monitoreoTableBody');
+    if (!tbody) return;
     
-    // Gráfico de actividad
-    const activityCtx = document.getElementById('activityChart');
-    if (activityCtx) {
-        charts.activity = new Chart(activityCtx, {
-            type: 'line',
-            data: {
-                labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
-                datasets: [{
-                    label: 'Formularios Creados',
-                    data: [12, 19, 3, 5, 2, 3, 7],
-                    borderColor: 'rgba(42, 82, 152, 1)',
-                    backgroundColor: 'rgba(42, 82, 152, 0.1)',
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-    }
+    tbody.innerHTML = data.map(depto => {
+        const progressColor = depto.porcentaje_avance >= 80 ? 'success' : depto.porcentaje_avance >= 50 ? 'warning' : 'danger';
+        
+        return `
+            <tr>
+                <td><strong>${depto.departamento}</strong></td>
+                <td class="text-center">${Utils.formatNumber(depto.total_mesas)}</td>
+                <td class="text-center">${Utils.formatNumber(depto.validados)}</td>
+                <td class="text-center">${Utils.formatNumber(depto.pendientes)}</td>
+                <td class="text-center">${Utils.formatNumber(depto.rechazados)}</td>
+                <td class="text-center">${Utils.formatNumber(depto.sin_reporte)}</td>
+                <td>
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar bg-${progressColor}" style="width: ${depto.porcentaje_avance}%">
+                            ${depto.porcentaje_avance.toFixed(1)}%
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
 }
 
 // ============================================
@@ -853,7 +901,6 @@ async function createBackup() {
           '- Descargar respaldo en formato SQL\n\n' +
           '📝 Estado: En desarrollo\n' +
           '⚠️ Render hace respaldos automáticos de PostgreSQL');
-}
 }
 
 /**
@@ -2520,3 +2567,207 @@ async function runSystemAudit() {
         Utils.showError('Error al ejecutar auditoría: ' + error.message);
     }
 }
+
+
+/**
+ * Cargar logs de auditoría
+ */
+async function loadAuditLogs() {
+    try {
+        const response = await APIClient.get('/super-admin/audit-logs?limit=50');
+        
+        if (response.success) {
+            renderAuditLogs(response.data);
+        }
+    } catch (error) {
+        console.error('Error cargando logs de auditoría:', error);
+        const tbody = document.getElementById('auditLogsTableBody');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4"><p class="text-muted">Error al cargar logs de auditoría</p></td></tr>';
+        }
+    }
+}
+
+/**
+ * Renderizar logs de auditoría
+ */
+function renderAuditLogs(logs) {
+    const tbody = document.getElementById('auditLogsTableBody');
+    if (!tbody) return;
+    
+    if (!logs || logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4"><p class="text-muted">No hay logs de auditoría disponibles</p></td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = logs.map(log => `
+        <tr>
+            <td>${log.id}</td>
+            <td>${log.user_nombre}</td>
+            <td><span class="badge bg-info">${log.accion}</span></td>
+            <td>${log.recurso || 'N/A'}</td>
+            <td><small>${log.ip_address || 'N/A'}</small></td>
+            <td><small>${Utils.formatDateTime(log.created_at)}</small></td>
+        </tr>
+    `).join('');
+}
+
+/**
+ * Cargar incidentes y delitos
+ */
+async function loadIncidentesDelitos() {
+    try {
+        const response = await APIClient.get('/super-admin/incidentes-delitos');
+        
+        if (response.success) {
+            renderIncidentesDelitos(response.data);
+        }
+    } catch (error) {
+        console.error('Error cargando incidentes y delitos:', error);
+        Utils.showError('Error al cargar incidentes y delitos');
+    }
+}
+
+/**
+ * Renderizar incidentes y delitos
+ */
+function renderIncidentesDelitos(data) {
+    // Renderizar incidentes
+    const incidentesTbody = document.getElementById('incidentesTableBody');
+    if (incidentesTbody) {
+        if (!data.incidentes || data.incidentes.length === 0) {
+            incidentesTbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><p class="text-muted">No hay incidentes reportados</p></td></tr>';
+        } else {
+            incidentesTbody.innerHTML = data.incidentes.map(inc => {
+                const severidadBadge = getSeveridadBadge(inc.severidad);
+                const estadoBadge = getEstadoBadge(inc.estado);
+                
+                return `
+                    <tr>
+                        <td>${inc.id}</td>
+                        <td>
+                            <strong>${inc.titulo}</strong><br>
+                            <small class="text-muted">${inc.descripcion.substring(0, 50)}...</small>
+                        </td>
+                        <td>${severidadBadge}</td>
+                        <td>
+                            <strong>${inc.reportado_por}</strong><br>
+                            <small class="text-muted">${inc.reportado_por_rol}</small>
+                        </td>
+                        <td>
+                            <small>${inc.ubicacion}</small>
+                        </td>
+                        <td>${estadoBadge}</td>
+                        <td><small>${Utils.formatDateTime(inc.fecha_reporte)}</small></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    }
+    
+    // Renderizar delitos
+    const delitosTbody = document.getElementById('delitosTableBody');
+    if (delitosTbody) {
+        if (!data.delitos || data.delitos.length === 0) {
+            delitosTbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><p class="text-muted">No hay delitos reportados</p></td></tr>';
+        } else {
+            delitosTbody.innerHTML = data.delitos.map(delito => {
+                const gravedadBadge = getGravedadBadge(delito.gravedad);
+                const estadoBadge = getEstadoBadge(delito.estado);
+                
+                return `
+                    <tr>
+                        <td>${delito.id}</td>
+                        <td>
+                            <strong>${delito.titulo}</strong><br>
+                            <small class="text-muted">${delito.descripcion.substring(0, 50)}...</small>
+                        </td>
+                        <td>${gravedadBadge}</td>
+                        <td>
+                            <strong>${delito.reportado_por}</strong><br>
+                            <small class="text-muted">${delito.reportado_por_rol}</small>
+                        </td>
+                        <td>
+                            <small>${delito.ubicacion}</small>
+                        </td>
+                        <td>${estadoBadge}</td>
+                        <td><small>${Utils.formatDateTime(delito.fecha_reporte)}</small></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    }
+    
+    // Actualizar contadores
+    const incidentesCount = document.getElementById('totalIncidentes');
+    const delitosCount = document.getElementById('totalDelitos');
+    if (incidentesCount) incidentesCount.textContent = data.total_incidentes || 0;
+    if (delitosCount) delitosCount.textContent = data.total_delitos || 0;
+}
+
+/**
+ * Obtener badge de severidad
+ */
+function getSeveridadBadge(severidad) {
+    const badges = {
+        'baja': '<span class="badge bg-secondary">Baja</span>',
+        'media': '<span class="badge bg-info">Media</span>',
+        'alta': '<span class="badge bg-warning">Alta</span>',
+        'critica': '<span class="badge bg-danger">Crítica</span>'
+    };
+    return badges[severidad] || '<span class="badge bg-secondary">N/A</span>';
+}
+
+/**
+ * Obtener badge de gravedad
+ */
+function getGravedadBadge(gravedad) {
+    const badges = {
+        'leve': '<span class="badge bg-secondary">Leve</span>',
+        'grave': '<span class="badge bg-warning">Grave</span>',
+        'muy_grave': '<span class="badge bg-danger">Muy Grave</span>'
+    };
+    return badges[gravedad] || '<span class="badge bg-secondary">N/A</span>';
+}
+
+/**
+ * Obtener badge de estado
+ */
+function getEstadoBadge(estado) {
+    const badges = {
+        'reportado': '<span class="badge bg-warning">Reportado</span>',
+        'en_revision': '<span class="badge bg-info">En Revisión</span>',
+        'en_investigacion': '<span class="badge bg-info">En Investigación</span>',
+        'resuelto': '<span class="badge bg-success">Resuelto</span>',
+        'cerrado': '<span class="badge bg-secondary">Cerrado</span>',
+        'desestimado': '<span class="badge bg-secondary">Desestimado</span>'
+    };
+    return badges[estado] || '<span class="badge bg-secondary">N/A</span>';
+}
+
+// Agregar event listeners para cargar datos al cambiar de pestaña
+document.addEventListener('DOMContentLoaded', function() {
+    // Pestaña de auditoría
+    const auditTab = document.getElementById('auditoria-tab');
+    if (auditTab) {
+        auditTab.addEventListener('shown.bs.tab', function() {
+            loadAuditLogs();
+        });
+    }
+    
+    // Pestaña de incidentes
+    const incidentesTab = document.getElementById('incidentes-tab');
+    if (incidentesTab) {
+        incidentesTab.addEventListener('shown.bs.tab', function() {
+            loadIncidentesDelitos();
+        });
+    }
+    
+    // Pestaña de monitoreo
+    const monitoreoTab = document.getElementById('monitoreo-tab');
+    if (monitoreoTab) {
+        monitoreoTab.addEventListener('shown.bs.tab', function() {
+            loadMonitoreoDepartamental();
+        });
+    }
+});
