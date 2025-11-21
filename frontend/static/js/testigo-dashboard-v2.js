@@ -478,15 +478,16 @@ async function cambiarMesaFormulario() {
 }
 
 /**
- * Actualizar panel lateral con lista de mesas
+ * ⭐ MEJORADO: Actualizar panel de mesas del puesto
  */
 async function actualizarPanelMesas() {
     try {
+        const panelContainer = document.getElementById('panelMesasPuesto');
+        if (!panelContainer) return;
+        
         // Verificar que userLocation esté definido
         if (!userLocation || !userLocation.puesto_codigo) {
-            document.getElementById('assignedLocation').innerHTML = `
-                <p class="text-muted">Cargando información de mesas...</p>
-            `;
+            panelContainer.innerHTML = `<p class="text-muted text-center py-3">Cargando mesas...</p>`;
             return;
         }
         
@@ -500,6 +501,10 @@ async function actualizarPanelMesas() {
         
         const response = await APIClient.get('/locations/mesas', params);
         const mesas = response.data || [];
+        
+        // Actualizar contador
+        const totalBadge = document.getElementById('totalMesasPuesto');
+        if (totalBadge) totalBadge.textContent = mesas.length;
         
         // Obtener formularios para saber qué mesas tienen E-14
         let formularios = [];
@@ -520,53 +525,80 @@ async function actualizarPanelMesas() {
         });
         
         // Generar HTML
-        let html = '<h6 class="mb-3">Mis Mesas</h6>';
-        
         if (mesas.length === 0) {
-            html += '<p class="text-muted">No hay mesas asignadas</p>';
-        } else {
-            html += '<div class="list-group">';
-            mesas.forEach(mesa => {
-                const tieneFormularios = mesasConFormularios[mesa.id] && mesasConFormularios[mesa.id].length > 0;
-                const cantidadFormularios = tieneFormularios ? mesasConFormularios[mesa.id].length : 0;
-                const esSeleccionada = selectedMesa && selectedMesa.id === mesa.id;
-                
-                html += `
-                    <div class="list-group-item ${esSeleccionada ? 'active' : ''}" style="cursor: pointer;" onclick="seleccionarMesaDesdePanel(${mesa.id})">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="mb-1">Mesa ${mesa.mesa_codigo}</h6>
-                                <small>${mesa.puesto_nombre || 'N/A'}</small>
-                            </div>
-                            <div class="text-end">
-                                ${tieneFormularios ? 
-                                    `<span class="badge bg-success">${cantidadFormularios} E-14</span>` : 
-                                    `<span class="badge bg-secondary">Sin E-14</span>`
-                                }
-                            </div>
-                        </div>
-                        <small class="text-muted d-block mt-1">
-                            <i class="bi bi-people"></i> ${Utils.formatNumber(mesa.total_votantes_registrados || 0)} votantes
-                        </small>
-                    </div>
-                `;
-            });
-            html += '</div>';
+            panelContainer.innerHTML = '<p class="text-muted text-center py-3">No hay mesas en este puesto</p>';
+            return;
         }
         
-        document.getElementById('assignedLocation').innerHTML = html;
+        let html = '<div class="list-group list-group-flush">';
+        
+        mesas.forEach(mesa => {
+            const tieneFormulario = mesasConFormularios[mesa.id] && mesasConFormularios[mesa.id].length > 0;
+            const formulario = tieneFormulario ? mesasConFormularios[mesa.id][0] : null;
+            const esMiMesa = mesaSeleccionadaDashboard && mesaSeleccionadaDashboard.id === mesa.id;
+            
+            let estadoBadge = '';
+            let borderClass = '';
+            let icon = '';
+            
+            if (esMiMesa && presenciaVerificada) {
+                borderClass = 'border-start border-primary border-3';
+                icon = '<i class="bi bi-check-circle-fill text-primary"></i>';
+            }
+            
+            if (tieneFormulario) {
+                if (formulario.estado === 'validado') {
+                    estadoBadge = '<span class="badge bg-success">Validado</span>';
+                } else if (formulario.estado === 'pendiente') {
+                    estadoBadge = '<span class="badge bg-warning">Pendiente</span>';
+                } else if (formulario.estado === 'rechazado') {
+                    estadoBadge = '<span class="badge bg-danger">Rechazado</span>';
+                } else {
+                    estadoBadge = '<span class="badge bg-info">Borrador</span>';
+                }
+            } else {
+                estadoBadge = '<span class="badge bg-secondary">Sin E-14</span>';
+            }
+            
+            html += `
+                <div class="list-group-item ${borderClass} p-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center mb-1">
+                                ${icon}
+                                <strong class="ms-1">Mesa ${mesa.mesa_codigo}</strong>
+                            </div>
+                            <small class="text-muted d-block">
+                                <i class="bi bi-people"></i> ${Utils.formatNumber(mesa.total_votantes_registrados || 0)} votantes
+                            </small>
+                            ${esMiMesa ? '<small class="text-primary"><i class="bi bi-geo-alt-fill"></i> Mi mesa actual</small>' : ''}
+                        </div>
+                        <div class="text-end">
+                            ${estadoBadge}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        panelContainer.innerHTML = html;
+        
+        console.log('✅ Panel de mesas actualizado:', mesas.length, 'mesas');
         
     } catch (error) {
         console.error('Error actualizando panel de mesas:', error);
-        document.getElementById('assignedLocation').innerHTML = `
-            <h6 class="mb-3">Mis Mesas</h6>
-            <div class="alert alert-warning">
-                <i class="bi bi-exclamation-triangle"></i> Error al cargar mesas. 
-                <button class="btn btn-sm btn-outline-warning mt-2" onclick="actualizarPanelMesas()">
-                    Reintentar
-                </button>
-            </div>
-        `;
+        const panelContainer = document.getElementById('panelMesasPuesto');
+        if (panelContainer) {
+            panelContainer.innerHTML = `
+                <div class="text-center py-3">
+                    <p class="text-danger mb-2">Error al cargar mesas</p>
+                    <button class="btn btn-sm btn-outline-primary" onclick="actualizarPanelMesas()">
+                        <i class="bi bi-arrow-clockwise"></i> Reintentar
+                    </button>
+                </div>
+            `;
+        }
     }
 }
 

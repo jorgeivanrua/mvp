@@ -248,13 +248,18 @@
                 
                 <!-- Panel Lateral -->
                 <div class="col-md-4">
-                    <!-- Mesa Asignada -->
+                    <!-- ⭐ MEJORADO: Panel de Mesas del Puesto -->
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="mb-0">Mi Mesa Asignada</h5>
+                            <h6 class="mb-0">
+                                <i class="bi bi-table"></i> Mesas del Puesto
+                                <span class="badge bg-primary ms-2" id="totalMesasPuesto">0</span>
+                            </h6>
                         </div>
-                        <div class="card-body" id="assignedLocation">
-                            <p class="text-muted">Cargando...</p>
+                        <div class="card-body p-2" style="max-height: 400px; overflow-y: auto;">
+                            <div id="panelMesasPuesto">
+                                <p class="text-muted text-center py-3">Cargando mesas...</p>
+                            </div>
                         </div>
                     </div>
                     
