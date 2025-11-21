@@ -2268,8 +2268,8 @@ async function guardarEdicionCandidato(candidatoId) {
     }
 }
 
-// Inicializar cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', initSuperAdminDashboard);
+// Nota: La inicialización se hace desde el template HTML
+// No agregar addEventListener aquí para evitar doble inicialización
 
 
 /**
