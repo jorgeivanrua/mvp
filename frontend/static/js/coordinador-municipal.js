@@ -16,12 +16,14 @@ let chartConsolidado = null;
 document.addEventListener('DOMContentLoaded', function() {
     loadUserProfile();
     loadPuestos();
+    loadEstadisticas();
     loadConsolidadoMunicipal();
     loadDiscrepancias();
     
     // Auto-refresh cada 60 segundos
     autoRefreshInterval = setInterval(() => {
         loadPuestos();
+        loadEstadisticas();
         loadConsolidadoMunicipal();
         loadDiscrepancias();
     }, 60000);
@@ -58,6 +60,98 @@ async function loadUserProfile() {
         console.error('Error loading profile:', error);
         Utils.showError('Error al cargar perfil: ' + error.message);
     }
+}
+
+/**
+ * Cargar estadísticas detalladas del municipio
+ */
+async function loadEstadisticas() {
+    try {
+        const response = await APIClient.get('/coordinador-municipal/estadisticas');
+        
+        if (response.success) {
+            const stats = response.data;
+            renderEstadisticasDetalladas(stats);
+        } else {
+            throw new Error(response.error || 'Error al cargar estadísticas');
+        }
+    } catch (error) {
+        console.error('Error loading estadisticas:', error);
+        Utils.showError('Error al cargar estadísticas detalladas');
+    }
+}
+
+/**
+ * Renderizar estadísticas detalladas
+ */
+function renderEstadisticasDetalladas(stats) {
+    const container = document.getElementById('estadisticasDetalladas');
+    
+    if (!container) return;
+    
+    const resumen = stats.resumen_general || {};
+    const consolidado = stats.consolidado || {};
+    
+    let html = `
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">Resumen General</h6>
+                        <p><strong>Total Puestos:</strong> ${resumen.total_puestos || 0}</p>
+                        <p><strong>Puestos Completos:</strong> ${resumen.puestos_completos || 0}</p>
+                        <p><strong>Formularios Validados:</strong> ${resumen.formularios_validados || 0}</p>
+                        <p><strong>Avance:</strong> ${(resumen.porcentaje_avance || 0).toFixed(1)}%</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">Participación</h6>
+                        <p><strong>Total Votos:</strong> ${Utils.formatNumber(consolidado.total_votos || 0)}</p>
+                        <p><strong>Votantes Registrados:</strong> ${Utils.formatNumber(consolidado.total_votantes_registrados || 0)}</p>
+                        <p><strong>Participación:</strong> ${(consolidado.participacion_porcentaje || 0).toFixed(2)}%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar tasa de rechazo si existe
+    if (stats.tasa_rechazo_por_puesto && stats.tasa_rechazo_por_puesto.length > 0) {
+        html += `
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6 class="card-title">Puestos con Mayor Tasa de Rechazo</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Puesto</th>
+                                    <th>Rechazados</th>
+                                    <th>Total</th>
+                                    <th>Tasa</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${stats.tasa_rechazo_por_puesto.slice(0, 5).map(p => `
+                                    <tr>
+                                        <td>${p.puesto_nombre}</td>
+                                        <td>${p.rechazados}</td>
+                                        <td>${p.total}</td>
+                                        <td><span class="badge bg-${p.tasa_rechazo > 20 ? 'danger' : 'warning'}">${p.tasa_rechazo.toFixed(1)}%</span></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
 }
 
 /**
