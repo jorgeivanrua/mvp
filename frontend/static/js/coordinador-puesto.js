@@ -942,11 +942,54 @@ function renderE24VotosPartidos(votosPartidos) {
 }
 
 /**
- * Generar PDF del E-24
+ * ⭐ IMPLEMENTADO: Generar PDF del E-24
  */
-function generarPDFE24() {
-    Utils.showInfo('Funcionalidad de generación de PDF en desarrollo');
-    // TODO: Implementar generación de PDF
+async function generarPDFE24() {
+    try {
+        Utils.showInfo('Generando formulario E-24...');
+        
+        // Llamar al endpoint de generación de E-24
+        const response = await fetch('/api/formularios/puesto/generar-e24', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Error ${response.status}`);
+        }
+        
+        // Obtener el PDF
+        const blob = await response.blob();
+        
+        // Crear URL para descarga
+        const url = window.URL.createObjectURL(blob);
+        
+        // Crear elemento de descarga
+        const a = document.createElement('a');
+        a.href = url;
+        
+        const fecha = new Date().toISOString().split('T')[0];
+        const puestoCode = userLocation?.puesto_codigo || 'XXX';
+        a.download = `E24_Puesto_${puestoCode}_${fecha}.pdf`;
+        
+        // Descargar archivo
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        // Limpiar URL
+        window.URL.revokeObjectURL(url);
+        
+        Utils.showSuccess('✅ Formulario E-24 generado y descargado exitosamente');
+        
+    } catch (error) {
+        console.error('Error generando E-24:', error);
+        Utils.showError('Error al generar E-24: ' + error.message);
+    }
 }
 
 // Event listener para cambio de pestaña
@@ -1529,6 +1572,152 @@ document.addEventListener('DOMContentLoaded', function() {
     if (delitosTab) {
         delitosTab.addEventListener('shown.bs.tab', function() {
             cargarDelitosPuesto();
+        });
+    }
+});
+
+
+/**
+ * ⭐ NUEVA FUNCIÓN: Exportar datos del puesto
+ */
+async function exportarDatosPuesto() {
+    try {
+        // Mostrar modal de opciones de exportación
+        const modalHtml = `
+            <div class="modal fade" id="exportarModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="bi bi-download"></i> Exportar Datos del Puesto
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Seleccione el formato de exportación:</p>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-success" onclick="exportarFormato('csv')">
+                                    <i class="bi bi-filetype-csv"></i> Exportar como CSV
+                                </button>
+                                <button class="btn btn-outline-primary" onclick="exportarFormato('excel')">
+                                    <i class="bi bi-file-earmark-excel"></i> Exportar como Excel
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="exportarFormato('pdf')">
+                                    <i class="bi bi-filetype-pdf"></i> Exportar como PDF
+                                </button>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Agregar modal al DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('exportarModal'));
+        modal.show();
+        
+        // Limpiar modal al cerrar
+        document.getElementById('exportarModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+        
+    } catch (error) {
+        console.error('Error mostrando opciones de exportación:', error);
+        Utils.showError('Error al mostrar opciones de exportación');
+    }
+}
+
+/**
+ * ⭐ NUEVA FUNCIÓN: Exportar en formato específico
+ */
+async function exportarFormato(formato) {
+    try {
+        Utils.showInfo(`Generando archivo ${formato.toUpperCase()}...`);
+        
+        // Cerrar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('exportarModal'));
+        if (modal) modal.hide();
+        
+        // Llamar al endpoint de exportación
+        const response = await fetch(`/api/formularios/puesto/exportar?formato=${formato}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+        }
+        
+        // Obtener el blob del archivo
+        const blob = await response.blob();
+        
+        // Crear URL para descarga
+        const url = window.URL.createObjectURL(blob);
+        
+        // Crear elemento de descarga
+        const a = document.createElement('a');
+        a.href = url;
+        
+        // Determinar nombre del archivo
+        const fecha = new Date().toISOString().split('T')[0];
+        const puestoCode = userLocation?.puesto_codigo || 'XXX';
+        const extension = formato === 'excel' ? 'xlsx' : formato;
+        a.download = `formularios_puesto_${puestoCode}_${fecha}.${extension}`;
+        
+        // Descargar archivo
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        // Limpiar URL
+        window.URL.revokeObjectURL(url);
+        
+        Utils.showSuccess(`✅ Archivo ${formato.toUpperCase()} descargado exitosamente`);
+        
+    } catch (error) {
+        console.error('Error exportando datos:', error);
+        Utils.showError('Error al exportar datos: ' + error.message);
+    }
+}
+
+
+/**
+ * ⭐ NUEVA FUNCIÓN: Actualizar estado del equipo
+ */
+function actualizarEstadoEquipo() {
+    if (window.verificacionPresencia) {
+        window.verificacionPresencia.renderizarEstadoEquipo('estadoEquipoContainer');
+    } else {
+        console.error('VerificacionPresencia no está disponible');
+        Utils.showError('Error al cargar el sistema de verificación');
+    }
+}
+
+/**
+ * ⭐ NUEVA FUNCIÓN: Iniciar actualización automática del estado del equipo
+ */
+function iniciarMonitoreoEquipo() {
+    if (window.verificacionPresencia) {
+        window.verificacionPresencia.iniciarActualizacionEstadoEquipo('estadoEquipoContainer');
+    }
+}
+
+// Inicializar monitoreo cuando se muestra la pestaña de equipo
+document.addEventListener('DOMContentLoaded', function() {
+    const equipoTab = document.getElementById('equipo-tab');
+    if (equipoTab) {
+        equipoTab.addEventListener('shown.bs.tab', function() {
+            iniciarMonitoreoEquipo();
         });
     }
 });

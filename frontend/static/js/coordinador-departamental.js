@@ -290,19 +290,148 @@ function actualizarDatos() {
 }
 
 /**
- * Exportar datos departamentales
+ * ⭐ IMPLEMENTADO: Exportar datos departamentales
  */
-function exportarDatos() {
-    Utils.showInfo('Funcionalidad de exportación en desarrollo');
-    // TODO: Implementar exportación
+async function exportarDatos() {
+    try {
+        // Mostrar modal de opciones de exportación
+        const modalHtml = `
+            <div class="modal fade" id="exportarModalDepartamental" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="bi bi-download"></i> Exportar Datos Departamentales
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Seleccione el formato de exportación:</p>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-success" onclick="exportarFormatoDepartamental('csv')">
+                                    <i class="bi bi-filetype-csv"></i> Exportar como CSV
+                                </button>
+                                <button class="btn btn-outline-primary" onclick="exportarFormatoDepartamental('excel')">
+                                    <i class="bi bi-file-earmark-excel"></i> Exportar como Excel
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="exportarFormatoDepartamental('pdf')">
+                                    <i class="bi bi-filetype-pdf"></i> Exportar como PDF
+                                </button>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Agregar modal al DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('exportarModalDepartamental'));
+        modal.show();
+        
+        // Limpiar modal al cerrar
+        document.getElementById('exportarModalDepartamental').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+        
+    } catch (error) {
+        console.error('Error mostrando opciones de exportación:', error);
+        Utils.showError('Error al mostrar opciones de exportación');
+    }
 }
 
 /**
- * Generar reporte departamental
+ * ⭐ NUEVA FUNCIÓN: Exportar en formato específico
  */
-function generarReporte() {
-    Utils.showInfo('Funcionalidad de generación de reportes en desarrollo');
-    // TODO: Implementar generación de reportes
+async function exportarFormatoDepartamental(formato) {
+    try {
+        Utils.showInfo(`Generando archivo ${formato.toUpperCase()}...`);
+        
+        // Cerrar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('exportarModalDepartamental'));
+        if (modal) modal.hide();
+        
+        const url = `/api/coordinador-departamental/exportar?formato=${formato}`;
+        const token = localStorage.getItem('access_token');
+        
+        // Descargar archivo
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            
+            const fecha = new Date().toISOString().split('T')[0];
+            const extension = formato === 'excel' ? 'xlsx' : formato;
+            a.download = `consolidado_departamental_${fecha}.${extension}`;
+            
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            
+            Utils.showSuccess(`✅ Archivo ${formato.toUpperCase()} descargado exitosamente`);
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Error al exportar datos');
+        }
+    } catch (error) {
+        console.error('Error exporting data:', error);
+        Utils.showError('Error al exportar datos: ' + error.message);
+    }
+}
+
+/**
+ * ⭐ IMPLEMENTADO: Generar reporte departamental E-24
+ */
+async function generarReporte() {
+    try {
+        Utils.showInfo('Generando reporte E-24 departamental...');
+        
+        const url = '/api/coordinador-departamental/generar-e24';
+        const token = localStorage.getItem('access_token');
+        
+        // Llamar al endpoint
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            
+            const fecha = new Date().toISOString().split('T')[0];
+            a.download = `E24_Departamental_${fecha}.pdf`;
+            
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            
+            Utils.showSuccess('✅ Reporte E-24 generado y descargado exitosamente');
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Error al generar reporte');
+        }
+    } catch (error) {
+        console.error('Error generando reporte:', error);
+        Utils.showError('Error al generar reporte: ' + error.message);
+    }
 }
 
 /**

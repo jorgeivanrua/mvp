@@ -610,3 +610,877 @@ def obtener_testigos_puesto():
             'success': False,
             'error': str(e)
         }), 500
+
+
+# ============================================
+# ENDPOINTS DE EXPORTACIÓN Y GENERACIÓN E-24
+# ============================================
+
+@formularios_bp.route('/puesto/exportar', methods=['GET'])
+@jwt_required()
+@role_required(['coordinador_puesto'])
+def exportar_formularios_puesto():
+    """
+    Exportar formularios del puesto en diferentes formatos (CSV, Excel, PDF)
+    Query params:
+        formato: csv, excel, pdf (default: csv)
+    """
+    try:
+        from flask import send_file
+        import csv
+        import io
+        from datetime import datetime
+        from backend.models.formulario import FormularioE14
+        from backend.models.tipo_eleccion import TipoEleccion
+        
+        user_id = get_jwt_identity()
+        current_user = User.query.get(int(user_id))
+        
+        if not current_user.ubicacion_id:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
+        
+        formato = request.args.get('formato', 'csv').lower()
+        
+        # Obtener ubicación del coordinador
+        ubicacion = Location.query.get(current_user.ubicacion_id)
+        
+        if not ubicacion or ubicacion.tipo != 'puesto':
+            return jsonify({
+                'success': False,
+                'error': 'Coordinador no asignado a un puesto válido'
+            }), 400
+        
+        # Obtener todas las mesas del puesto
+        mesas = Location.query.filter_by(
+            puesto_codigo=ubicacion.puesto_codigo,
+            departamento_codigo=ubicacion.departamento_codigo,
+            municipio_codigo=ubicacion.municipio_codigo,
+            zona_codigo=ubicacion.zona_codigo,
+            tipo='mesa'
+        ).all()
+        
+        mesa_ids = [mesa.id for mesa in mesas]
+        
+        # Obtener formularios del puesto
+        formularios = FormularioE14.query.filter(
+            FormularioE14.mesa_id.in_(mesa_ids)
+        ).order_by(FormularioE14.created_at.desc()).all()
+        
+        if formato == 'csv':
+            # Generar CSV
+            output = io.StringIO()
+            writer = csv.writer(output)
+            
+            # Encabezados
+            writer.writerow([
+                'ID',
+                'Mesa Código',
+                'Mesa Nombre',
+                'Testigo',
+                'Estado',
+                'Tipo Elección',
+                'Votantes Registrados',
+                'Total Votos',
+                'Votos Válidos',
+                'Votos Nulos',
+                'Votos Blanco',
+                'Participación %',
+                'Fecha Creación',
+                'Validado Por',
+                'Fecha Validación'
+            ])
+            
+            # Datos
+            for formulario in formularios:
+                mesa = Location.query.get(formulario.mesa_id)
+                testigo = User.query.get(formulario.testigo_id)
+                validador = User.query.get(formulario.validado_por) if formulario.validado_por else None
+                tipo_eleccion = TipoEleccion.query.get(formulario.tipo_eleccion_id) if formulario.tipo_eleccion_id else None
+                
+                participacion = 0
+                if formulario.votantes_registrados and formulario.votantes_registrados > 0:
+                    participacion = round((formulario.total_votos_candidatos / formulario.votantes_registrados) * 100, 2)
+                
+                writer.writerow([
+                    formulario.id,
+                    mesa.mesa_codigo if mesa else 'N/A',
+                    mesa.nombre_completo if mesa else 'N/A',
+                    testigo.nombre if testigo else 'N/A',
+                    formulario.estado,
+                    tipo_eleccion.nombre if tipo_eleccion else 'N/A',
+                    formulario.votantes_registrados or 0,
+                    formulario.total_votos_candidatos or 0,
+                    formulario.votos_validos or 0,
+                    formulario.votos_nulos or 0,
+                    formulario.votos_blanco or 0,
+                    participacion,
+                    formulario.created_at.strftime('%Y-%m-%d %H:%M:%S') if formulario.created_at else '',
+                    validador.nombre if validador else '',
+                    formulario.validado_at.strftime('%Y-%m-%d %H:%M:%S') if formulario.validado_at else ''
+                ])
+            
+            # Preparar respuesta
+            output.seek(0)
+            return send_file(
+                io.BytesIO(output.getvalue().encode('utf-8-sig')),  # UTF-8 con BOM para Excel
+                mimetype='text/csv',
+                as_attachment=True,
+                download_name=f'formularios_puesto_{ubicacion.puesto_codigo}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+            )
+            
+        elif formato == 'excel':
+            try:
+                import pandas as pd
+                from openpyxl import Workbook
+                from openpyxl.styles import Font, PatternFill, Alignment
+                
+                # Preparar datos para DataFrame
+                data = []
+                for formulario in formularios:
+                    mesa = Location.query.get(formulario.mesa_id)
+                    testigo = User.query.get(formulario.testigo_id)
+                    validador = User.query.get(formulario.validado_por) if formulario.validado_por else None
+                    tipo_eleccion = TipoEleccion.query.get(formulario.tipo_eleccion_id) if formulario.tipo_eleccion_id else None
+                    
+                    participacion = 0
+                    if formulario.votantes_registrados and formulario.votantes_registrados > 0:
+                        participacion = round((formulario.total_votos_candidatos / formulario.votantes_registrados) * 100, 2)
+                    
+                    data.append({
+                        'ID': formulario.id,
+                        'Mesa Código': mesa.mesa_codigo if mesa else 'N/A',
+                        'Mesa Nombre': mesa.nombre_completo if mesa else 'N/A',
+                        'Testigo': testigo.nombre if testigo else 'N/A',
+                        'Estado': formulario.estado,
+                        'Tipo Elección': tipo_eleccion.nombre if tipo_eleccion else 'N/A',
+                        'Votantes Registrados': formulario.votantes_registrados or 0,
+                        'Total Votos': formulario.total_votos_candidatos or 0,
+                        'Votos Válidos': formulario.votos_validos or 0,
+                        'Votos Nulos': formulario.votos_nulos or 0,
+                        'Votos Blanco': formulario.votos_blanco or 0,
+                        'Participación %': participacion,
+                        'Fecha Creación': formulario.created_at.strftime('%Y-%m-%d %H:%M:%S') if formulario.created_at else '',
+                        'Validado Por': validador.nombre if validador else '',
+                        'Fecha Validación': formulario.validado_at.strftime('%Y-%m-%d %H:%M:%S') if formulario.validado_at else ''
+                    })
+                
+                # Crear DataFrame
+                df = pd.DataFrame(data)
+                
+                # Guardar en memoria
+                output = io.BytesIO()
+                with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                    df.to_excel(writer, sheet_name='Formularios', index=False)
+                    
+                    # Obtener el workbook y worksheet para aplicar estilos
+                    workbook = writer.book
+                    worksheet = writer.sheets['Formularios']
+                    
+                    # Aplicar estilos al encabezado
+                    for cell in worksheet[1]:
+                        cell.font = Font(bold=True, color="FFFFFF")
+                        cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+                        cell.alignment = Alignment(horizontal="center", vertical="center")
+                    
+                    # Ajustar ancho de columnas
+                    for column in worksheet.columns:
+                        max_length = 0
+                        column_letter = column[0].column_letter
+                        for cell in column:
+                            try:
+                                if len(str(cell.value)) > max_length:
+                                    max_length = len(cell.value)
+                            except:
+                                pass
+                        adjusted_width = min(max_length + 2, 50)
+                        worksheet.column_dimensions[column_letter].width = adjusted_width
+                
+                output.seek(0)
+                
+                return send_file(
+                    output,
+                    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    as_attachment=True,
+                    download_name=f'formularios_puesto_{ubicacion.puesto_codigo}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+                )
+                
+            except ImportError as e:
+                return jsonify({
+                    'success': False,
+                    'error': f'Dependencias no instaladas: {str(e)}. Use formato CSV.'
+                }), 400
+                
+        elif formato == 'pdf':
+            try:
+                from reportlab.lib.pagesizes import letter, A4, landscape
+                from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+                from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+                from reportlab.lib import colors
+                from reportlab.lib.units import inch
+                
+                # Crear PDF en memoria
+                buffer = io.BytesIO()
+                doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), topMargin=0.5*inch, bottomMargin=0.5*inch)
+                
+                # Estilos
+                styles = getSampleStyleSheet()
+                title_style = ParagraphStyle(
+                    'CustomTitle',
+                    parent=styles['Heading1'],
+                    fontSize=16,
+                    textColor=colors.HexColor('#366092'),
+                    spaceAfter=12,
+                    alignment=1  # Center
+                )
+                
+                # Contenido
+                story = []
+                
+                # Título
+                title = Paragraph(f"Formularios E-14 - Puesto {ubicacion.puesto_codigo}", title_style)
+                story.append(title)
+                story.append(Spacer(1, 12))
+                
+                # Información del puesto
+                info_text = f"<b>Puesto:</b> {ubicacion.puesto_nombre}<br/><b>Fecha:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}<br/><b>Total Formularios:</b> {len(formularios)}"
+                info = Paragraph(info_text, styles['Normal'])
+                story.append(info)
+                story.append(Spacer(1, 12))
+                
+                # Tabla de datos
+                data = [['Mesa', 'Testigo', 'Estado', 'Tipo', 'Votos Válidos', 'Part. %']]
+                
+                for formulario in formularios:
+                    mesa = Location.query.get(formulario.mesa_id)
+                    testigo = User.query.get(formulario.testigo_id)
+                    tipo_eleccion = TipoEleccion.query.get(formulario.tipo_eleccion_id) if formulario.tipo_eleccion_id else None
+                    
+                    participacion = 0
+                    if formulario.votantes_registrados and formulario.votantes_registrados > 0:
+                        participacion = round((formulario.total_votos_candidatos / formulario.votantes_registrados) * 100, 2)
+                    
+                    data.append([
+                        mesa.mesa_codigo if mesa else 'N/A',
+                        testigo.nombre[:20] if testigo else 'N/A',  # Truncar nombre
+                        formulario.estado,
+                        tipo_eleccion.nombre[:15] if tipo_eleccion else 'N/A',
+                        str(formulario.votos_validos or 0),
+                        f"{participacion}%"
+                    ])
+                
+                table = Table(data, repeatRows=1)
+                table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#366092')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 10),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                    ('FONTSIZE', (0, 1), (-1, -1), 8),
+                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
+                ]))
+                
+                story.append(table)
+                
+                # Construir PDF
+                doc.build(story)
+                buffer.seek(0)
+                
+                return send_file(
+                    buffer,
+                    mimetype='application/pdf',
+                    as_attachment=True,
+                    download_name=f'formularios_puesto_{ubicacion.puesto_codigo}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+                )
+                
+            except ImportError as e:
+                return jsonify({
+                    'success': False,
+                    'error': f'Dependencias no instaladas: {str(e)}. Use formato CSV.'
+                }), 400
+        
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'Formato no soportado: {formato}. Use csv, excel o pdf.'
+            }), 400
+        
+    except Exception as e:
+        import traceback
+        print(f"Error exportando formularios: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': f'Error al exportar formularios: {str(e)}'
+        }), 500
+
+
+@formularios_bp.route('/puesto/generar-e24', methods=['POST'])
+@jwt_required()
+@role_required(['coordinador_puesto'])
+def generar_e24_puesto():
+    """
+    Generar formulario E-24 consolidado del puesto
+    """
+    try:
+        from flask import send_file
+        import io
+        from datetime import datetime
+        from reportlab.lib.pagesizes import letter
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib import colors
+        from reportlab.lib.units import inch
+        from backend.models.formulario import FormularioE14
+        from backend.models.tipo_eleccion import TipoEleccion
+        from backend.models.partido import Partido
+        from backend.models.voto_partido import VotoPartido
+        
+        user_id = get_jwt_identity()
+        current_user = User.query.get(int(user_id))
+        
+        if not current_user.ubicacion_id:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
+        
+        # Obtener ubicación del coordinador
+        ubicacion = Location.query.get(current_user.ubicacion_id)
+        
+        if not ubicacion or ubicacion.tipo != 'puesto':
+            return jsonify({
+                'success': False,
+                'error': 'Coordinador no asignado a un puesto válido'
+            }), 400
+        
+        # Obtener todas las mesas del puesto
+        mesas = Location.query.filter_by(
+            puesto_codigo=ubicacion.puesto_codigo,
+            departamento_codigo=ubicacion.departamento_codigo,
+            municipio_codigo=ubicacion.municipio_codigo,
+            zona_codigo=ubicacion.zona_codigo,
+            tipo='mesa'
+        ).all()
+        
+        mesa_ids = [mesa.id for mesa in mesas]
+        
+        # Obtener formularios validados del puesto
+        formularios = FormularioE14.query.filter(
+            FormularioE14.mesa_id.in_(mesa_ids),
+            FormularioE14.estado == 'validado'
+        ).all()
+        
+        if not formularios:
+            return jsonify({
+                'success': False,
+                'error': 'No hay formularios validados para generar E-24'
+            }), 400
+        
+        # Consolidar datos por tipo de elección
+        consolidado_por_tipo = {}
+        
+        for formulario in formularios:
+            tipo_id = formulario.tipo_eleccion_id
+            if tipo_id not in consolidado_por_tipo:
+                tipo_eleccion = TipoEleccion.query.get(tipo_id)
+                consolidado_por_tipo[tipo_id] = {
+                    'tipo_nombre': tipo_eleccion.nombre if tipo_eleccion else 'Desconocido',
+                    'total_votantes': 0,
+                    'total_votos': 0,
+                    'total_validos': 0,
+                    'total_nulos': 0,
+                    'total_blanco': 0,
+                    'votos_por_partido': {},
+                    'mesas_reportadas': 0
+                }
+            
+            consolidado_por_tipo[tipo_id]['total_votantes'] += formulario.votantes_registrados or 0
+            consolidado_por_tipo[tipo_id]['total_votos'] += formulario.total_votos_candidatos or 0
+            consolidado_por_tipo[tipo_id]['total_validos'] += formulario.votos_validos or 0
+            consolidado_por_tipo[tipo_id]['total_nulos'] += formulario.votos_nulos or 0
+            consolidado_por_tipo[tipo_id]['total_blanco'] += formulario.votos_blanco or 0
+            consolidado_por_tipo[tipo_id]['mesas_reportadas'] += 1
+            
+            # Consolidar votos por partido
+            votos_partidos = VotoPartido.query.filter_by(formulario_id=formulario.id).all()
+            for voto in votos_partidos:
+                partido = Partido.query.get(voto.partido_id)
+                if partido:
+                    partido_nombre = partido.nombre
+                    if partido_nombre not in consolidado_por_tipo[tipo_id]['votos_por_partido']:
+                        consolidado_por_tipo[tipo_id]['votos_por_partido'][partido_nombre] = 0
+                    consolidado_por_tipo[tipo_id]['votos_por_partido'][partido_nombre] += voto.votos
+        
+        # Crear PDF E-24
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
+        
+        # Estilos
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'E24Title',
+            parent=styles['Heading1'],
+            fontSize=18,
+            textColor=colors.HexColor('#366092'),
+            spaceAfter=20,
+            alignment=1,
+            fontName='Helvetica-Bold'
+        )
+        
+        subtitle_style = ParagraphStyle(
+            'E24Subtitle',
+            parent=styles['Heading2'],
+            fontSize=14,
+            textColor=colors.HexColor('#366092'),
+            spaceAfter=12,
+            fontName='Helvetica-Bold'
+        )
+        
+        # Contenido
+        story = []
+        
+        # Encabezado oficial con diferenciación por nivel
+        title = Paragraph("FORMULARIO E-24", title_style)
+        story.append(title)
+        
+        subtitle = Paragraph("CONSOLIDADO DE RESULTADOS - NIVEL PUESTO DE VOTACIÓN", subtitle_style)
+        story.append(subtitle)
+        
+        # Identificador único del E-24
+        codigo_e24 = f"E24-PUESTO-{ubicacion.puesto_codigo}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        codigo_para = Paragraph(f"<b>Código:</b> {codigo_e24}", styles['Normal'])
+        story.append(codigo_para)
+        story.append(Spacer(1, 20))
+        
+        # Información del puesto
+        info_data = [
+            ['DEPARTAMENTO:', ubicacion.departamento_nombre or 'N/A'],
+            ['MUNICIPIO:', ubicacion.municipio_nombre or 'N/A'],
+            ['ZONA:', ubicacion.zona_nombre or 'N/A'],
+            ['PUESTO:', f"{ubicacion.puesto_codigo} - {ubicacion.puesto_nombre}"],
+            ['FECHA GENERACIÓN:', datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
+            ['TOTAL MESAS:', str(len(mesas))],
+            ['MESAS REPORTADAS:', str(len(formularios))]
+        ]
+        
+        info_table = Table(info_data, colWidths=[2*inch, 4*inch])
+        info_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#E8E8E8')),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('LEFTPADDING', (0, 0), (-1, -1), 10),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ]))
+        
+        story.append(info_table)
+        story.append(Spacer(1, 20))
+        
+        # Resultados por tipo de elección
+        for tipo_id, datos in consolidado_por_tipo.items():
+            # Título del tipo de elección
+            tipo_title = Paragraph(f"<b>{datos['tipo_nombre']}</b>", subtitle_style)
+            story.append(tipo_title)
+            story.append(Spacer(1, 10))
+            
+            # Resumen general
+            participacion = 0
+            if datos['total_votantes'] > 0:
+                participacion = round((datos['total_votos'] / datos['total_votantes']) * 100, 2)
+            
+            resumen_data = [
+                ['CONCEPTO', 'CANTIDAD', '%'],
+                ['Votantes Registrados', str(datos['total_votantes']), '100%'],
+                ['Total Votos Emitidos', str(datos['total_votos']), f"{participacion}%"],
+                ['Votos Válidos', str(datos['total_validos']), f"{round((datos['total_validos']/datos['total_votos']*100) if datos['total_votos'] > 0 else 0, 2)}%"],
+                ['Votos Nulos', str(datos['total_nulos']), f"{round((datos['total_nulos']/datos['total_votos']*100) if datos['total_votos'] > 0 else 0, 2)}%"],
+                ['Votos en Blanco', str(datos['total_blanco']), f"{round((datos['total_blanco']/datos['total_votos']*100) if datos['total_votos'] > 0 else 0, 2)}%"]
+            ]
+            
+            resumen_table = Table(resumen_data, colWidths=[3*inch, 1.5*inch, 1.5*inch])
+            resumen_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#366092')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 11),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+                ('TOPPADDING', (0, 0), (-1, -1), 8),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ]))
+            
+            story.append(resumen_table)
+            story.append(Spacer(1, 15))
+            
+            # Votos por partido
+            if datos['votos_por_partido']:
+                partido_title = Paragraph("<b>Votos por Partido/Candidato:</b>", styles['Heading3'])
+                story.append(partido_title)
+                story.append(Spacer(1, 8))
+                
+                partidos_data = [['PARTIDO/CANDIDATO', 'VOTOS', '% DEL TOTAL']]
+                
+                # Ordenar partidos por votos (descendente)
+                partidos_ordenados = sorted(datos['votos_por_partido'].items(), key=lambda x: x[1], reverse=True)
+                
+                for partido_nombre, votos in partidos_ordenados:
+                    porcentaje = round((votos / datos['total_validos'] * 100) if datos['total_validos'] > 0 else 0, 2)
+                    partidos_data.append([
+                        partido_nombre,
+                        str(votos),
+                        f"{porcentaje}%"
+                    ])
+                
+                partidos_table = Table(partidos_data, colWidths=[3*inch, 1.5*inch, 1.5*inch])
+                partidos_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4CAF50')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 11),
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+                    ('TOPPADDING', (0, 0), (-1, -1), 8),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                ]))
+                
+                story.append(partidos_table)
+            
+            story.append(Spacer(1, 30))
+        
+        # Firmas
+        story.append(Spacer(1, 40))
+        firmas_data = [
+            ['_' * 40, '_' * 40],
+            ['Coordinador de Puesto', 'Auditor Electoral'],
+            [current_user.nombre, '']
+        ]
+        
+        firmas_table = Table(firmas_data, colWidths=[3*inch, 3*inch])
+        firmas_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('TOPPADDING', (0, 1), (-1, -1), 10),
+        ]))
+        
+        story.append(firmas_table)
+        
+        # Construir PDF
+        doc.build(story)
+        buffer.seek(0)
+        
+        return send_file(
+            buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f'E24_Puesto_{ubicacion.puesto_codigo}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+        )
+        
+    except Exception as e:
+        import traceback
+        print(f"Error generando E-24: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': f'Error al generar E-24: {str(e)}'
+        }), 500
+
+
+
+# ============================================
+# E-24 NIVEL MUNICIPAL
+# ============================================
+
+@formularios_bp.route('/municipal/generar-e24', methods=['POST'])
+@jwt_required()
+@role_required(['coordinador_municipal'])
+def generar_e24_municipal():
+    """
+    Generar formulario E-24 consolidado del municipio
+    """
+    try:
+        from flask import send_file
+        import io
+        from datetime import datetime
+        from reportlab.lib.pagesizes import letter, landscape
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib import colors
+        from reportlab.lib.units import inch
+        from backend.models.formulario import FormularioE14
+        from backend.models.tipo_eleccion import TipoEleccion
+        from backend.models.partido import Partido
+        from backend.models.voto_partido import VotoPartido
+        
+        user_id = get_jwt_identity()
+        current_user = User.query.get(int(user_id))
+        
+        if not current_user.ubicacion_id:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
+        
+        # Obtener ubicación del coordinador
+        ubicacion = Location.query.get(current_user.ubicacion_id)
+        
+        if not ubicacion or ubicacion.tipo != 'municipio':
+            return jsonify({
+                'success': False,
+                'error': 'Coordinador no asignado a un municipio válido'
+            }), 400
+        
+        # Obtener todos los puestos del municipio
+        puestos = Location.query.filter_by(
+            municipio_codigo=ubicacion.municipio_codigo,
+            departamento_codigo=ubicacion.departamento_codigo,
+            tipo='puesto'
+        ).all()
+        
+        puesto_ids = [puesto.id for puesto in puestos]
+        
+        # Obtener todas las mesas de los puestos
+        mesas = Location.query.filter(
+            Location.puesto_codigo.in_([p.puesto_codigo for p in puestos]),
+            Location.tipo == 'mesa',
+            Location.departamento_codigo == ubicacion.departamento_codigo,
+            Location.municipio_codigo == ubicacion.municipio_codigo
+        ).all()
+        
+        mesa_ids = [mesa.id for mesa in mesas]
+        
+        # Obtener formularios validados del municipio
+        formularios = FormularioE14.query.filter(
+            FormularioE14.mesa_id.in_(mesa_ids),
+            FormularioE14.estado == 'validado'
+        ).all()
+        
+        if not formularios:
+            return jsonify({
+                'success': False,
+                'error': 'No hay formularios validados para generar E-24'
+            }), 400
+        
+        # Consolidar datos por tipo de elección
+        consolidado_por_tipo = {}
+        
+        for formulario in formularios:
+            tipo_id = formulario.tipo_eleccion_id
+            if tipo_id not in consolidado_por_tipo:
+                tipo_eleccion = TipoEleccion.query.get(tipo_id)
+                consolidado_por_tipo[tipo_id] = {
+                    'tipo_nombre': tipo_eleccion.nombre if tipo_eleccion else 'Desconocido',
+                    'total_votantes': 0,
+                    'total_votos': 0,
+                    'total_validos': 0,
+                    'total_nulos': 0,
+                    'total_blanco': 0,
+                    'votos_por_partido': {},
+                    'mesas_reportadas': 0
+                }
+            
+            consolidado_por_tipo[tipo_id]['total_votantes'] += formulario.votantes_registrados or 0
+            consolidado_por_tipo[tipo_id]['total_votos'] += formulario.total_votos_candidatos or 0
+            consolidado_por_tipo[tipo_id]['total_validos'] += formulario.votos_validos or 0
+            consolidado_por_tipo[tipo_id]['total_nulos'] += formulario.votos_nulos or 0
+            consolidado_por_tipo[tipo_id]['total_blanco'] += formulario.votos_blanco or 0
+            consolidado_por_tipo[tipo_id]['mesas_reportadas'] += 1
+            
+            # Consolidar votos por partido
+            votos_partidos = VotoPartido.query.filter_by(formulario_id=formulario.id).all()
+            for voto in votos_partidos:
+                partido = Partido.query.get(voto.partido_id)
+                if partido:
+                    partido_nombre = partido.nombre
+                    if partido_nombre not in consolidado_por_tipo[tipo_id]['votos_por_partido']:
+                        consolidado_por_tipo[tipo_id]['votos_por_partido'][partido_nombre] = 0
+                    consolidado_por_tipo[tipo_id]['votos_por_partido'][partido_nombre] += voto.votos
+        
+        # Crear PDF E-24 Municipal
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=landscape(letter), topMargin=0.5*inch, bottomMargin=0.5*inch)
+        
+        # Estilos
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'E24Title',
+            parent=styles['Heading1'],
+            fontSize=18,
+            textColor=colors.HexColor('#366092'),
+            spaceAfter=20,
+            alignment=1,
+            fontName='Helvetica-Bold'
+        )
+        
+        subtitle_style = ParagraphStyle(
+            'E24Subtitle',
+            parent=styles['Heading2'],
+            fontSize=14,
+            textColor=colors.HexColor('#366092'),
+            spaceAfter=12,
+            fontName='Helvetica-Bold'
+        )
+        
+        # Contenido
+        story = []
+        
+        # Encabezado oficial - NIVEL MUNICIPAL
+        title = Paragraph("FORMULARIO E-24", title_style)
+        story.append(title)
+        
+        subtitle = Paragraph("CONSOLIDADO DE RESULTADOS - NIVEL MUNICIPAL", subtitle_style)
+        story.append(subtitle)
+        
+        # Identificador único del E-24
+        codigo_e24 = f"E24-MUNICIPAL-{ubicacion.municipio_codigo}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        codigo_para = Paragraph(f"<b>Código:</b> {codigo_e24}", styles['Normal'])
+        story.append(codigo_para)
+        story.append(Spacer(1, 20))
+        
+        # Información del municipio
+        info_data = [
+            ['DEPARTAMENTO:', ubicacion.departamento_nombre or 'N/A'],
+            ['MUNICIPIO:', f"{ubicacion.municipio_codigo} - {ubicacion.municipio_nombre}"],
+            ['FECHA GENERACIÓN:', datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
+            ['TOTAL PUESTOS:', str(len(puestos))],
+            ['TOTAL MESAS:', str(len(mesas))],
+            ['MESAS REPORTADAS:', str(len(formularios))]
+        ]
+        
+        info_table = Table(info_data, colWidths=[2*inch, 4*inch])
+        info_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#E8E8E8')),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('LEFTPADDING', (0, 0), (-1, -1), 10),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ]))
+        
+        story.append(info_table)
+        story.append(Spacer(1, 20))
+        
+        # Resultados por tipo de elección (mismo código que puesto)
+        for tipo_id, datos in consolidado_por_tipo.items():
+            tipo_title = Paragraph(f"<b>{datos['tipo_nombre']}</b>", subtitle_style)
+            story.append(tipo_title)
+            story.append(Spacer(1, 10))
+            
+            participacion = 0
+            if datos['total_votantes'] > 0:
+                participacion = round((datos['total_votos'] / datos['total_votantes']) * 100, 2)
+            
+            resumen_data = [
+                ['CONCEPTO', 'CANTIDAD', '%'],
+                ['Votantes Registrados', str(datos['total_votantes']), '100%'],
+                ['Total Votos Emitidos', str(datos['total_votos']), f"{participacion}%"],
+                ['Votos Válidos', str(datos['total_validos']), f"{round((datos['total_validos']/datos['total_votos']*100) if datos['total_votos'] > 0 else 0, 2)}%"],
+                ['Votos Nulos', str(datos['total_nulos']), f"{round((datos['total_nulos']/datos['total_votos']*100) if datos['total_votos'] > 0 else 0, 2)}%"],
+                ['Votos en Blanco', str(datos['total_blanco']), f"{round((datos['total_blanco']/datos['total_votos']*100) if datos['total_votos'] > 0 else 0, 2)}%"]
+            ]
+            
+            resumen_table = Table(resumen_data, colWidths=[3*inch, 1.5*inch, 1.5*inch])
+            resumen_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#366092')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 11),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+                ('TOPPADDING', (0, 0), (-1, -1), 8),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ]))
+            
+            story.append(resumen_table)
+            story.append(Spacer(1, 15))
+            
+            # Votos por partido
+            if datos['votos_por_partido']:
+                partido_title = Paragraph("<b>Votos por Partido/Candidato:</b>", styles['Heading3'])
+                story.append(partido_title)
+                story.append(Spacer(1, 8))
+                
+                partidos_data = [['PARTIDO/CANDIDATO', 'VOTOS', '% DEL TOTAL']]
+                partidos_ordenados = sorted(datos['votos_por_partido'].items(), key=lambda x: x[1], reverse=True)
+                
+                for partido_nombre, votos in partidos_ordenados:
+                    porcentaje = round((votos / datos['total_validos'] * 100) if datos['total_validos'] > 0 else 0, 2)
+                    partidos_data.append([
+                        partido_nombre,
+                        str(votos),
+                        f"{porcentaje}%"
+                    ])
+                
+                partidos_table = Table(partidos_data, colWidths=[3*inch, 1.5*inch, 1.5*inch])
+                partidos_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4CAF50')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 11),
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+                    ('TOPPADDING', (0, 0), (-1, -1), 8),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                ]))
+                
+                story.append(partidos_table)
+            
+            story.append(Spacer(1, 30))
+        
+        # Firmas
+        story.append(Spacer(1, 40))
+        firmas_data = [
+            ['_' * 40, '_' * 40],
+            ['Coordinador Municipal', 'Auditor Electoral'],
+            [current_user.nombre, '']
+        ]
+        
+        firmas_table = Table(firmas_data, colWidths=[3*inch, 3*inch])
+        firmas_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('TOPPADDING', (0, 1), (-1, -1), 10),
+        ]))
+        
+        story.append(firmas_table)
+        
+        # Construir PDF
+        doc.build(story)
+        buffer.seek(0)
+        
+        return send_file(
+            buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f'E24_Municipal_{ubicacion.municipio_codigo}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+        )
+        
+    except Exception as e:
+        import traceback
+        print(f"Error generando E-24 municipal: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': f'Error al generar E-24: {str(e)}'
+        }), 500

@@ -2771,3 +2771,338 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+
+// ============================================
+// FUNCIONES DE IMPORTACIÓN DE DATOS
+// ============================================
+
+/**
+ * Descargar template de partidos
+ */
+async function descargarTemplatePartidos() {
+    try {
+        const response = await fetch('/api/admin/import/partidos/template', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `template_partidos_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            Utils.showSuccess('✅ Plantilla descargada');
+        } else {
+            throw new Error('Error al descargar plantilla');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al descargar plantilla');
+    }
+}
+
+/**
+ * Descargar template de candidatos
+ */
+async function descargarTemplateCandidatos() {
+    try {
+        const response = await fetch('/api/admin/import/candidatos/template', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `template_candidatos_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            Utils.showSuccess('✅ Plantilla descargada');
+        } else {
+            throw new Error('Error al descargar plantilla');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al descargar plantilla');
+    }
+}
+
+/**
+ * Importar partidos desde CSV
+ */
+async function importarPartidos() {
+    try {
+        const fileInput = document.getElementById('filePartidos');
+        const resultadoDiv = document.getElementById('resultadoPartidos');
+        
+        if (!fileInput.files || fileInput.files.length === 0) {
+            Utils.showError('Seleccione un archivo CSV');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        
+        Utils.showInfo('Importando partidos...');
+        resultadoDiv.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Procesando...';
+        
+        const response = await fetch('/api/admin/import/partidos', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const { creados, actualizados, errores } = data.data;
+            
+            let html = `
+                <div class="alert alert-success">
+                    <strong>✅ Importación completada</strong><br>
+                    Creados: ${creados}<br>
+                    Actualizados: ${actualizados}
+                </div>
+            `;
+            
+            if (errores && errores.length > 0) {
+                html += `
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Errores encontrados:</strong>
+                        <ul class="mb-0 mt-2">
+                            ${errores.map(e => `<li>${e}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            resultadoDiv.innerHTML = html;
+            Utils.showSuccess(`✅ ${creados} partidos creados, ${actualizados} actualizados`);
+            
+            // Limpiar input
+            fileInput.value = '';
+        } else {
+            throw new Error(data.error || 'Error al importar');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('resultadoPartidos').innerHTML = `
+            <div class="alert alert-danger">
+                <strong>❌ Error:</strong> ${error.message}
+            </div>
+        `;
+        Utils.showError('Error al importar partidos');
+    }
+}
+
+/**
+ * Importar candidatos desde CSV
+ */
+async function importarCandidatos() {
+    try {
+        const fileInput = document.getElementById('fileCandidatos');
+        const resultadoDiv = document.getElementById('resultadoCandidatos');
+        
+        if (!fileInput.files || fileInput.files.length === 0) {
+            Utils.showError('Seleccione un archivo CSV');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        
+        Utils.showInfo('Importando candidatos...');
+        resultadoDiv.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Procesando...';
+        
+        const response = await fetch('/api/admin/import/candidatos', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const { creados, actualizados, errores } = data.data;
+            
+            let html = `
+                <div class="alert alert-success">
+                    <strong>✅ Importación completada</strong><br>
+                    Creados: ${creados}<br>
+                    Actualizados: ${actualizados}
+                </div>
+            `;
+            
+            if (errores && errores.length > 0) {
+                html += `
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Errores encontrados:</strong>
+                        <ul class="mb-0 mt-2">
+                            ${errores.map(e => `<li>${e}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            resultadoDiv.innerHTML = html;
+            Utils.showSuccess(`✅ ${creados} candidatos creados, ${actualizados} actualizados`);
+            
+            // Limpiar input
+            fileInput.value = '';
+        } else {
+            throw new Error(data.error || 'Error al importar');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('resultadoCandidatos').innerHTML = `
+            <div class="alert alert-danger">
+                <strong>❌ Error:</strong> ${error.message}
+            </div>
+        `;
+        Utils.showError('Error al importar candidatos');
+    }
+}
+
+/**
+ * Subir logo de partido
+ */
+async function subirLogoPartido() {
+    try {
+        const codigoInput = document.getElementById('codigoPartidoLogo');
+        const fileInput = document.getElementById('logoPartido');
+        const resultadoDiv = document.getElementById('resultadoLogo');
+        
+        const codigo = codigoInput.value.trim();
+        
+        if (!codigo) {
+            Utils.showError('Ingrese el código del partido');
+            return;
+        }
+        
+        if (!fileInput.files || fileInput.files.length === 0) {
+            Utils.showError('Seleccione un archivo de imagen');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        
+        Utils.showInfo('Subiendo logo...');
+        resultadoDiv.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Subiendo...';
+        
+        const response = await fetch(`/api/admin/import/logos/partido/${codigo}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            resultadoDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <strong>✅ Logo subido exitosamente</strong><br>
+                    <img src="${data.data.logo_url}" alt="Logo" style="max-width: 100px; margin-top: 10px;">
+                </div>
+            `;
+            Utils.showSuccess('✅ Logo subido exitosamente');
+            
+            // Limpiar inputs
+            codigoInput.value = '';
+            fileInput.value = '';
+        } else {
+            throw new Error(data.error || 'Error al subir logo');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('resultadoLogo').innerHTML = `
+            <div class="alert alert-danger">
+                <strong>❌ Error:</strong> ${error.message}
+            </div>
+        `;
+        Utils.showError('Error al subir logo');
+    }
+}
+
+/**
+ * Subir foto de candidato
+ */
+async function subirFotoCandidato() {
+    try {
+        const codigoInput = document.getElementById('codigoCandidatoFoto');
+        const fileInput = document.getElementById('fotoCandidato');
+        const resultadoDiv = document.getElementById('resultadoFoto');
+        
+        const codigo = codigoInput.value.trim();
+        
+        if (!codigo) {
+            Utils.showError('Ingrese el código del candidato');
+            return;
+        }
+        
+        if (!fileInput.files || fileInput.files.length === 0) {
+            Utils.showError('Seleccione un archivo de imagen');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        
+        Utils.showInfo('Subiendo foto...');
+        resultadoDiv.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Subiendo...';
+        
+        const response = await fetch(`/api/admin/import/fotos/candidato/${codigo}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            resultadoDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <strong>✅ Foto subida exitosamente</strong><br>
+                    <img src="${data.data.foto_url}" alt="Foto" style="max-width: 100px; margin-top: 10px;">
+                </div>
+            `;
+            Utils.showSuccess('✅ Foto subida exitosamente');
+            
+            // Limpiar inputs
+            codigoInput.value = '';
+            fileInput.value = '';
+        } else {
+            throw new Error(data.error || 'Error al subir foto');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('resultadoFoto').innerHTML = `
+            <div class="alert alert-danger">
+                <strong>❌ Error:</strong> ${error.message}
+            </div>
+        `;
+        Utils.showError('Error al subir foto');
+    }
+}

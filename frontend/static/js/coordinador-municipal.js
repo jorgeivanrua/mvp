@@ -698,11 +698,71 @@ async function confirmarGenerarE24() {
 }
 
 /**
- * Exportar datos
+ * ⭐ MEJORADO: Exportar datos con opciones de formato
  */
 async function exportarDatos() {
     try {
-        const formato = 'csv'; // Por ahora solo CSV
+        // Mostrar modal de opciones de exportación
+        const modalHtml = `
+            <div class="modal fade" id="exportarModalMunicipal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="bi bi-download"></i> Exportar Datos Municipales
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Seleccione el formato de exportación:</p>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-success" onclick="exportarFormatoMunicipal('csv')">
+                                    <i class="bi bi-filetype-csv"></i> Exportar como CSV
+                                </button>
+                                <button class="btn btn-outline-primary" onclick="exportarFormatoMunicipal('excel')">
+                                    <i class="bi bi-file-earmark-excel"></i> Exportar como Excel
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="exportarFormatoMunicipal('pdf')">
+                                    <i class="bi bi-filetype-pdf"></i> Exportar como PDF
+                                </button>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Agregar modal al DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('exportarModalMunicipal'));
+        modal.show();
+        
+        // Limpiar modal al cerrar
+        document.getElementById('exportarModalMunicipal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+        
+    } catch (error) {
+        console.error('Error mostrando opciones de exportación:', error);
+        Utils.showError('Error al mostrar opciones de exportación');
+    }
+}
+
+/**
+ * ⭐ NUEVA FUNCIÓN: Exportar en formato específico
+ */
+async function exportarFormatoMunicipal(formato) {
+    try {
+        Utils.showInfo(`Generando archivo ${formato.toUpperCase()}...`);
+        
+        // Cerrar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('exportarModalMunicipal'));
+        if (modal) modal.hide();
         
         const url = `/api/coordinador-municipal/exportar?formato=${formato}`;
         const token = localStorage.getItem('token');
@@ -719,14 +779,19 @@ async function exportarDatos() {
             const downloadUrl = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = downloadUrl;
-            a.download = `consolidado_municipal_${new Date().getTime()}.csv`;
+            
+            const fecha = new Date().toISOString().split('T')[0];
+            const extension = formato === 'excel' ? 'xlsx' : formato;
+            a.download = `consolidado_municipal_${fecha}.${extension}`;
+            
             document.body.appendChild(a);
             a.click();
             a.remove();
             
-            Utils.showSuccess('Datos exportados exitosamente');
+            Utils.showSuccess(`✅ Archivo ${formato.toUpperCase()} descargado exitosamente`);
         } else {
-            throw new Error('Error al exportar datos');
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Error al exportar datos');
         }
     } catch (error) {
         console.error('Error exporting data:', error);

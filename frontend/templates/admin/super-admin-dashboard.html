@@ -248,6 +248,11 @@
                 <i class="bi bi-calendar-event"></i> Campañas
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="import-tab" data-bs-toggle="tab" data-bs-target="#import" type="button">
+                <i class="bi bi-upload"></i> Importar Datos
+            </button>
+        </li>
     </ul>
 
     <!-- Contenido de Tabs -->
@@ -713,6 +718,178 @@
                 
                 <div id="temasContainer">
                     <p class="text-center text-muted">Cargando temas...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ⭐ NUEVA TAB: Importar Datos -->
+        <div class="tab-pane fade" id="import" role="tabpanel">
+            <div class="row">
+                <!-- Importar Partidos -->
+                <div class="col-md-6 mb-4">
+                    <div class="chart-card">
+                        <h5 class="mb-3">
+                            <i class="bi bi-flag"></i> Importar Partidos Políticos
+                        </h5>
+                        <p class="text-muted">Cargue partidos desde archivo CSV con información territorial.</p>
+                        
+                        <div class="mb-3">
+                            <button class="btn btn-outline-primary btn-sm" onclick="descargarTemplatePartidos()">
+                                <i class="bi bi-download"></i> Descargar Plantilla CSV
+                            </button>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Archivo CSV de Partidos:</label>
+                            <input type="file" class="form-control" id="filePartidos" accept=".csv">
+                        </div>
+                        
+                        <button class="btn btn-success" onclick="importarPartidos()">
+                            <i class="bi bi-upload"></i> Importar Partidos
+                        </button>
+                        
+                        <div id="resultadoPartidos" class="mt-3"></div>
+                    </div>
+                </div>
+
+                <!-- Importar Candidatos -->
+                <div class="col-md-6 mb-4">
+                    <div class="chart-card">
+                        <h5 class="mb-3">
+                            <i class="bi bi-person-badge"></i> Importar Candidatos
+                        </h5>
+                        <p class="text-muted">Cargue candidatos por tipo de elección y territorio.</p>
+                        
+                        <div class="mb-3">
+                            <button class="btn btn-outline-primary btn-sm" onclick="descargarTemplateCandidatos()">
+                                <i class="bi bi-download"></i> Descargar Plantilla CSV
+                            </button>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Archivo CSV de Candidatos:</label>
+                            <input type="file" class="form-control" id="fileCandidatos" accept=".csv">
+                        </div>
+                        
+                        <button class="btn btn-success" onclick="importarCandidatos()">
+                            <i class="bi bi-upload"></i> Importar Candidatos
+                        </button>
+                        
+                        <div id="resultadoCandidatos" class="mt-3"></div>
+                    </div>
+                </div>
+
+                <!-- Subir Logos de Partidos -->
+                <div class="col-md-6 mb-4">
+                    <div class="chart-card">
+                        <h5 class="mb-3">
+                            <i class="bi bi-image"></i> Logos de Partidos
+                        </h5>
+                        <p class="text-muted">Suba logos de partidos (PNG, JPG, GIF).</p>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Código del Partido:</label>
+                            <input type="text" class="form-control" id="codigoPartidoLogo" placeholder="Ej: PART001">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Logo del Partido:</label>
+                            <input type="file" class="form-control" id="logoPartido" accept="image/*">
+                        </div>
+                        
+                        <button class="btn btn-primary" onclick="subirLogoPartido()">
+                            <i class="bi bi-upload"></i> Subir Logo
+                        </button>
+                        
+                        <div id="resultadoLogo" class="mt-3"></div>
+                    </div>
+                </div>
+
+                <!-- Subir Fotos de Candidatos -->
+                <div class="col-md-6 mb-4">
+                    <div class="chart-card">
+                        <h5 class="mb-3">
+                            <i class="bi bi-person-square"></i> Fotos de Candidatos
+                        </h5>
+                        <p class="text-muted">Suba fotos de candidatos (PNG, JPG, GIF).</p>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Código del Candidato:</label>
+                            <input type="text" class="form-control" id="codigoCandidatoFoto" placeholder="Ej: CAND001">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Foto del Candidato:</label>
+                            <input type="file" class="form-control" id="fotoCandidato" accept="image/*">
+                        </div>
+                        
+                        <button class="btn btn-primary" onclick="subirFotoCandidato()">
+                            <i class="bi bi-upload"></i> Subir Foto
+                        </button>
+                        
+                        <div id="resultadoFoto" class="mt-3"></div>
+                    </div>
+                </div>
+
+                <!-- Guía de Uso -->
+                <div class="col-12">
+                    <div class="chart-card">
+                        <h5 class="mb-3">
+                            <i class="bi bi-info-circle"></i> Guía de Uso
+                        </h5>
+                        
+                        <div class="accordion" id="guiaAccordion">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#guiaPartidos">
+                                        Importar Partidos
+                                    </button>
+                                </h2>
+                                <div id="guiaPartidos" class="accordion-collapse collapse" data-bs-parent="#guiaAccordion">
+                                    <div class="accordion-body">
+                                        <p><strong>Campos del CSV:</strong></p>
+                                        <ul>
+                                            <li><code>codigo</code>: Código único del partido (Ej: PART001)</li>
+                                            <li><code>nombre</code>: Nombre completo del partido</li>
+                                            <li><code>sigla</code>: Sigla o abreviatura</li>
+                                            <li><code>color_hex</code>: Color en formato hexadecimal (Ej: #FF0000)</li>
+                                            <li><code>activo</code>: SI o NO</li>
+                                            <li><code>tipo_eleccion_codigo</code>: Código del tipo de elección</li>
+                                            <li><code>ambito_territorial</code>: nacional, departamental, municipal</li>
+                                        </ul>
+                                        <p><strong>Ejemplo:</strong></p>
+                                        <code>PART001,Partido Liberal,PL,#FF0000,SI,PRES,nacional</code>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#guiaCandidatos">
+                                        Importar Candidatos
+                                    </button>
+                                </h2>
+                                <div id="guiaCandidatos" class="accordion-collapse collapse" data-bs-parent="#guiaAccordion">
+                                    <div class="accordion-body">
+                                        <p><strong>Campos del CSV:</strong></p>
+                                        <ul>
+                                            <li><code>codigo</code>: Código único del candidato</li>
+                                            <li><code>nombre</code>: Nombre completo</li>
+                                            <li><code>partido_codigo</code>: Código del partido</li>
+                                            <li><code>tipo_eleccion_codigo</code>: Tipo de elección</li>
+                                            <li><code>numero_lista</code>: Número en la lista</li>
+                                            <li><code>ambito_territorial</code>: nacional, departamental, municipal</li>
+                                            <li><code>departamento_codigo</code>: Código del departamento (si aplica)</li>
+                                            <li><code>municipio_codigo</code>: Código del municipio (si aplica)</li>
+                                            <li><code>activo</code>: SI o NO</li>
+                                        </ul>
+                                        <p><strong>Ejemplo Municipal:</strong></p>
+                                        <code>CAND001,Juan Pérez,PART001,CONC_MUN,5,municipal,18,001,SI</code>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

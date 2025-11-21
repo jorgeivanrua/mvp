@@ -33,6 +33,19 @@
     <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
     <script src="{{ url_for('static', filename='js/sync-manager.js') }}"></script>
     <script src="{{ url_for('static', filename='js/session-manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/verificacion-presencia.js') }}"></script>
+    
+    <!-- Inicializar verificación de presencia -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar verificación de presencia para usuarios autenticados
+            if (localStorage.getItem('access_token')) {
+                if (window.verificacionPresencia) {
+                    window.verificacionPresencia.init();
+                }
+            }
+        });
+    </script>
     
     {% block extra_js %}{% endblock %}
 </body>
