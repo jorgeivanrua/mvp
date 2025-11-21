@@ -70,13 +70,17 @@ async function verificarPresencia() {
         if (response.success) {
             console.log('✅ Presencia verificada exitosamente');
             
-            // IMPORTANTE: Actualizar variables globales ANTES de llamar a habilitarBotonNuevoFormulario
+            // ⭐ CORRECCIÓN: Recargar perfil para obtener ubicación actualizada
+            await loadUserProfile();
+            
+            // IMPORTANTE: Actualizar variables globales DESPUÉS de recargar perfil
             window.presenciaVerificada = true;
             presenciaVerificada = true;
             window.mesaSeleccionadaDashboard = mesaSeleccionadaDashboard;
             
             console.log('presenciaVerificada ahora es:', presenciaVerificada);
             console.log('window.presenciaVerificada:', window.presenciaVerificada);
+            console.log('userLocation actualizada:', userLocation);
             
             // Actualizar UI
             document.getElementById('btnVerificarPresencia').classList.add('d-none');
@@ -84,8 +88,8 @@ async function verificarPresencia() {
             
             // Mostrar fecha de verificación
             const fechaElement = document.getElementById('presenciaFecha');
-            if (fechaElement) {
-                const fecha = new Date();
+            if (fechaElement && response.data.presencia_verificada_at) {
+                const fecha = new Date(response.data.presencia_verificada_at);
                 // Usar zona horaria de Colombia (America/Bogota)
                 const opciones = { 
                     timeZone: 'America/Bogota',
