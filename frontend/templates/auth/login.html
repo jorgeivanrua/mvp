@@ -9,7 +9,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Colores de la bandera de Colombia */
+    /* Fondo dinámico - se carga desde la configuración */
     background: linear-gradient(180deg, 
         #FCD116 0%, 
         #FCD116 50%, 
@@ -20,6 +20,7 @@
     );
     position: relative;
     overflow: hidden;
+    transition: background 0.5s ease;
 }
 
 /* Efecto de overlay para suavizar el fondo */
@@ -390,4 +391,63 @@
 
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/login-fixed.js') }}"></script>
+<script>
+// Cargar fondo dinámico desde la configuración
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        const response = await fetch('/api/config-sistema/fondos/activo');
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+            const fondo = data.data;
+            const container = document.querySelector('.login-container');
+            
+            if (fondo.tipo === 'gradient') {
+                const colors = [];
+                if (fondo.color1) {
+                    colors.push(`${fondo.color1} 0%`);
+                    colors.push(`${fondo.color1} 50%`);
+                }
+                if (fondo.color2) {
+                    colors.push(`${fondo.color2} 50%`);
+                    colors.push(`${fondo.color2} 75%`);
+                }
+                if (fondo.color3) {
+                    colors.push(`${fondo.color3} 75%`);
+                    colors.push(`${fondo.color3} 100%`);
+                }
+                
+                container.style.background = `linear-gradient(${fondo.direccion}, ${colors.join(', ')})`;
+                
+            } else if (fondo.tipo === 'image') {
+                container.style.backgroundImage = `url('${fondo.imagen_url}')`;
+                container.style.backgroundPosition = fondo.imagen_posicion;
+                container.style.backgroundSize = fondo.imagen_tamano;
+                container.style.backgroundRepeat = 'no-repeat';
+                
+            } else if (fondo.tipo === 'solid') {
+                container.style.background = fondo.color_solido;
+            }
+            
+            // Aplicar overlay si existe
+            if (fondo.overlay_color && fondo.overlay_opacity) {
+                const overlay = container.querySelector('::before') || container;
+                if (overlay) {
+                    overlay.style.background = `rgba(${hexToRgb(fondo.overlay_color)}, ${fondo.overlay_opacity})`;
+                }
+            }
+        }
+    } catch (error) {
+        console.log('Usando fondo predeterminado');
+    }
+});
+
+// Helper para convertir hex a rgb
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? 
+        `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : 
+        '255, 255, 255';
+}
+</script>
 {% endblock %}

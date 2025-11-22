@@ -76,11 +76,13 @@ def register_blueprints(app):
     from backend.routes.admin_data_import import admin_import_bp
     from backend.routes.verificacion_presencia import verificacion_bp
     from backend.routes.locations_geo import locations_geo_bp
+    from backend.routes.configuracion_sistema import config_sistema_bp
     
     # API routes
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(locations_bp, url_prefix='/api/locations')
     app.register_blueprint(locations_geo_bp)
+    app.register_blueprint(config_sistema_bp)
     app.register_blueprint(configuracion_bp, url_prefix='/api/configuracion')
     app.register_blueprint(formularios_bp)
     app.register_blueprint(coordinador_municipal_bp)
@@ -96,6 +98,7 @@ def register_blueprints(app):
     app.register_blueprint(admin_tools_bp)
     app.register_blueprint(admin_import_bp)
     app.register_blueprint(verificacion_bp)
+    app.register_blueprint(config_sistema_bp)
     
     # Public routes (sin autenticación)
     from backend.routes.public import public_bp
