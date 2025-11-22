@@ -462,6 +462,42 @@ class PersonalizacionSistema {
             preview.style.display = 'block';
         }
     }
+
+    /**
+     * Crear fondo con color sólido
+     */
+    async crearFondoSolido() {
+        const nombre = document.getElementById('solido-nombre').value;
+        const color = document.getElementById('solido-color').value;
+
+        if (!nombre || !color) {
+            Utils.showError('Completa todos los campos');
+            return;
+        }
+
+        try {
+            const response = await APIClient.post('/config-sistema/fondos', {
+                nombre,
+                tipo: 'solid',
+                color_solido: color
+            });
+
+            if (response.success) {
+                Utils.showSuccess('Fondo creado exitosamente');
+                await this.cargarFondos();
+                
+                // Cerrar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('crearFondoModal'));
+                if (modal) modal.hide();
+                
+                // Limpiar formulario
+                document.getElementById('form-solido').reset();
+            }
+        } catch (error) {
+            console.error('Error creando fondo:', error);
+            Utils.showError(error.message || 'Error al crear fondo');
+        }
+    }
 }
 
 // Crear instancia global
