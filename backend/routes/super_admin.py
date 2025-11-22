@@ -923,7 +923,7 @@ def toggle_partido(partido_id):
     """
     try:
         from backend.database import db
-        from backend.models.partido import Partido
+        from backend.models.configuracion_electoral import Partido
         
         partido = Partido.query.get(partido_id)
         if not partido:
@@ -961,7 +961,7 @@ def toggle_candidato(candidato_id):
     """
     try:
         from backend.database import db
-        from backend.models.candidato import Candidato
+        from backend.models.configuracion_electoral import Candidato
         
         candidato = Candidato.query.get(candidato_id)
         if not candidato:

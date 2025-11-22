@@ -6,7 +6,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.user import User
 from backend.models.location import Location
 from backend.models.formulario_e14 import FormularioE14
-from backend.models.partido import Partido
+from backend.models.configuracion_electoral import Partido
 from backend.database import db
 from backend.utils.decorators import role_required
 from backend.utils.exceptions import BaseAPIException, ValidationException, NotFoundException

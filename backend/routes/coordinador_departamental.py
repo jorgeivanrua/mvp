@@ -317,7 +317,7 @@ def get_consolidado():
                     votos_por_partido[voto.partido_id] += voto.votos
         
         # Obtener información de partidos
-        from backend.models.partido import Partido
+        from backend.models.configuracion_electoral import Partido
         partidos_data = []
         total_votos_partidos = sum(votos_por_partido.values())
         
