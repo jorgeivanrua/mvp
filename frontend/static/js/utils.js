@@ -146,11 +146,7 @@ class Utils {
     static showInfo(message, duration = 5000, containerId = 'alert-container') {
         this.showAlert(message, 'info', duration, containerId);
     }
-}
-
-window.Utils = Utils;
-
-
+    
     /**
      * Formatear fecha y hora
      */
@@ -178,53 +174,6 @@ window.Utils = Utils;
             return 'Error';
         }
     }
-    
-    /**
-     * Formatear solo fecha
-     */
-    static formatDate(dateString) {
-        if (!dateString) return 'N/A';
-        
-        try {
-            const date = new Date(dateString);
-            
-            if (isNaN(date.getTime())) {
-                return 'Fecha inválida';
-            }
-            
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const year = date.getFullYear();
-            
-            return `${day}/${month}/${year}`;
-        } catch (error) {
-            console.error('Error formateando fecha:', error);
-            return 'Error';
-        }
-    }
-    
-    /**
-     * Formatear número con separadores de miles
-     */
-    static formatNumber(number) {
-        if (number === null || number === undefined) return '0';
-        return number.toLocaleString('es-CO');
-    }
-    
-    /**
-     * Mostrar mensaje de información
-     */
-    static showInfo(message, duration = 3000, containerId = 'alert-container') {
-        this.showAlert(message, 'info', duration, containerId);
-    }
-    
-    /**
-     * Mostrar mensaje de advertencia
-     */
-    static showWarning(message, duration = 5000, containerId = 'alert-container') {
-        this.showAlert(message, 'warning', duration, containerId);
-    }
 }
 
-// Exponer Utils globalmente
 window.Utils = Utils;
