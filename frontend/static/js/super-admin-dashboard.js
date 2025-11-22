@@ -136,49 +136,21 @@ async function loadMainStats() {
  */
 async function loadRecentActivity() {
     try {
-        // TODO: Implementar endpoint real de actividad
         const container = document.getElementById('recentActivity');
         
-        const activities = [
-            {
-                user: 'Juan Pérez',
-                action: 'Creó formulario E-14',
-                time: '5 min ago',
-                icon: 'file-earmark-text',
-                color: 'primary'
-            },
-            {
-                user: 'María García',
-                action: 'Validó formulario',
-                time: '10 min ago',
-                icon: 'check-circle',
-                color: 'success'
-            },
-            {
-                user: 'Carlos López',
-                action: 'Reportó incidente',
-                time: '15 min ago',
-                icon: 'exclamation-triangle',
-                color: 'warning'
-            }
-        ];
+        if (!container) {
+            console.warn('Elemento recentActivity no encontrado');
+            return;
+        }
         
-        container.innerHTML = activities.map(activity => `
-            <div class="activity-item">
-                <div class="d-flex align-items-center">
-                    <div class="me-3">
-                        <i class="bi bi-${activity.icon} text-${activity.color}" style="font-size: 1.5rem;"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <strong>${activity.user}</strong>
-                        <br><small class="text-muted">${activity.action}</small>
-                    </div>
-                    <div>
-                        <small class="text-muted">${activity.time}</small>
-                    </div>
-                </div>
+        // Mostrar mensaje mientras se implementa el endpoint real
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="bi bi-clock-history text-muted" style="font-size: 3rem;"></i>
+                <p class="text-muted mt-3 mb-1"><strong>Actividad reciente próximamente</strong></p>
+                <small class="text-muted">El registro de actividad del sistema está en desarrollo</small>
             </div>
-        `).join('');
+        `;
         
     } catch (error) {
         console.error('Error cargando actividad:', error);
@@ -369,15 +341,22 @@ function updateMonitoreoTable(data) {
  */
 async function loadUsers() {
     try {
+        console.log('🔄 Cargando usuarios...');
         const response = await APIClient.get('/super-admin/users');
+        
+        console.log('📦 Respuesta de usuarios:', response);
         
         if (response.success) {
             allUsers = response.data;
+            console.log(`✅ ${allUsers.length} usuarios cargados`);
             renderUsers(allUsers);
+        } else {
+            console.error('❌ Error en respuesta:', response.error);
+            Utils.showError('Error al cargar usuarios: ' + (response.error || 'Error desconocido'));
         }
     } catch (error) {
-        console.error('Error cargando usuarios:', error);
-        Utils.showError('Error al cargar usuarios');
+        console.error('❌ Error cargando usuarios:', error);
+        Utils.showError('Error al cargar usuarios: ' + error.message);
     }
 }
 
@@ -387,34 +366,66 @@ async function loadUsers() {
 function renderUsers(users) {
     const tbody = document.getElementById('usersTableBody');
     
-    if (!users || users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><p class="text-muted">No hay usuarios para mostrar</p></td></tr>';
+    if (!tbody) {
+        console.error('❌ Elemento usersTableBody no encontrado en el DOM');
         return;
     }
     
-    tbody.innerHTML = users.map(user => `
-        <tr>
-            <td>${user.id}</td>
-            <td>${user.nombre}</td>
-            <td><span class="badge bg-${getRoleBadgeColor(user.rol)}">${user.rol}</span></td>
-            <td>${user.ubicacion_nombre || 'N/A'}</td>
-            <td><span class="badge bg-${user.activo ? 'success' : 'secondary'}">${user.activo ? 'Activo' : 'Inactivo'}</span></td>
-            <td>${user.ultimo_acceso ? Utils.formatDateTime(user.ultimo_acceso) : 'Nunca'}</td>
-            <td>
-                <button class="btn btn-sm btn-primary" onclick="editUser(${user.id})" title="Editar">
-                    <i class="bi bi-pencil"></i>
-                </button>
-                <button class="btn btn-sm btn-warning" onclick="resetUserPassword(${user.id})" title="Resetear contraseña">
-                    <i class="bi bi-key"></i>
-                </button>
-                <button class="btn btn-sm btn-${user.activo ? 'danger' : 'success'}" 
-                        onclick="toggleUserStatus(${user.id}, ${!user.activo})" 
-                        title="${user.activo ? 'Desactivar' : 'Activar'}">
-                    <i class="bi bi-${user.activo ? 'x-circle' : 'check-circle'}"></i>
-                </button>
-            </td>
-        </tr>
-    `).join('');
+    if (!users) {
+        console.error('❌ users es null o undefined');
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><p class="text-danger">Error: No se pudieron cargar los usuarios</p></td></tr>';
+        return;
+    }
+    
+    if (!Array.isArray(users)) {
+        console.error('❌ users no es un array:', typeof users);
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><p class="text-danger">Error: Formato de datos incorrecto</p></td></tr>';
+        return;
+    }
+    
+    if (users.length === 0) {
+        console.log('ℹ️ No hay usuarios para mostrar');
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><p class="text-muted">No hay usuarios registrados en el sistema</p></td></tr>';
+        return;
+    }
+    
+    console.log(`📊 Renderizando ${users.length} usuarios`);
+    
+    tbody.innerHTML = users.map(user => {
+        // Validar que user tenga las propiedades necesarias
+        if (!user.id || !user.nombre || !user.rol) {
+            console.warn('⚠️ Usuario con datos incompletos:', user);
+            return '';
+        }
+        
+        return `
+            <tr>
+                <td>${user.id}</td>
+                <td><strong>${user.nombre}</strong></td>
+                <td><span class="badge bg-${getRoleBadgeColor(user.rol)}">${user.rol}</span></td>
+                <td>${user.ubicacion_nombre || '<span class="text-muted">Sin asignar</span>'}</td>
+                <td><span class="badge bg-${user.activo ? 'success' : 'secondary'}">${user.activo ? 'Activo' : 'Inactivo'}</span></td>
+                <td>${user.ultimo_acceso ? Utils.formatDateTime(user.ultimo_acceso) : '<span class="text-muted">Nunca</span>'}</td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button class="btn btn-outline-primary" onclick="editUser(${user.id})" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-outline-warning" onclick="resetUserPassword(${user.id})" title="Resetear contraseña">
+                            <i class="bi bi-key"></i>
+                        </button>
+                        <button class="btn btn-outline-${user.activo ? 'danger' : 'success'}" 
+                                onclick="toggleUserStatus(${user.id}, ${!user.activo})" 
+                                title="${user.activo ? 'Desactivar' : 'Activar'}">
+                            <i class="bi bi-${user.activo ? 'x-circle' : 'check-circle'}"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+    
+    console.log('✅ Usuarios renderizados correctamente');
 }
 
 /**
