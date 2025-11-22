@@ -1721,3 +1721,83 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+
+// ============================================
+// FUNCIONES DE MAPA Y GEOLOCALIZACIÓN
+// ============================================
+
+let mapaGeo = null;
+
+/**
+ * ⭐ NUEVA FUNCIÓN: Inicializar mapa de geolocalización
+ */
+function inicializarMapa() {
+    if (!mapaGeo) {
+        mapaGeo = new MapaGeolocalizacion('mapaGeolocalizacion', {
+            zoom: 15,
+            autoUpdate: true,
+            updateInterval: 30000, // 30 segundos
+            showPuestos: true,
+            showUsuarios: true
+        });
+        
+        mapaGeo.init().then(success => {
+            if (success) {
+                console.log('Mapa inicializado correctamente');
+                // Centrar en el puesto si hay ubicación
+                if (userLocation && userLocation.latitud && userLocation.longitud) {
+                    mapaGeo.centrarEn(userLocation.latitud, userLocation.longitud, 15);
+                }
+            } else {
+                console.error('Error inicializando mapa');
+                Utils.showError('Error al cargar el mapa');
+            }
+        });
+    }
+}
+
+/**
+ * ⭐ NUEVA FUNCIÓN: Actualizar mapa
+ */
+function actualizarMapa() {
+    if (mapaGeo) {
+        mapaGeo.actualizar();
+        Utils.showSuccess('Mapa actualizado');
+    } else {
+        inicializarMapa();
+    }
+}
+
+/**
+ * ⭐ NUEVA FUNCIÓN: Centrar mapa en el puesto
+ */
+function centrarMapaEnPuesto() {
+    if (mapaGeo && userLocation && userLocation.latitud && userLocation.longitud) {
+        mapaGeo.centrarEn(userLocation.latitud, userLocation.longitud, 16);
+    } else {
+        Utils.showWarning('No hay coordenadas del puesto disponibles');
+    }
+}
+
+/**
+ * ⭐ NUEVA FUNCIÓN: Ajustar vista del mapa para mostrar todos los markers
+ */
+function ajustarVistaMapa() {
+    if (mapaGeo) {
+        mapaGeo.ajustarVista();
+    }
+}
+
+// Inicializar mapa cuando se muestra la pestaña
+document.addEventListener('DOMContentLoaded', function() {
+    const mapaTab = document.getElementById('mapa-tab');
+    if (mapaTab) {
+        mapaTab.addEventListener('shown.bs.tab', function() {
+            // Pequeño delay para asegurar que el contenedor esté visible
+            setTimeout(() => {
+                inicializarMapa();
+            }, 100);
+        });
+    }
+});

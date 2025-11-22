@@ -44,6 +44,7 @@ def verificar_presencia():
         if latitud and longitud:
             user.ultima_latitud = latitud
             user.ultima_longitud = longitud
+            user.ultima_geolocalizacion_at = datetime.now()
         
         db.session.commit()
         
@@ -301,4 +302,138 @@ def ping_presencia():
         return jsonify({
             'success': False,
             'error': f'Error en ping: {str(e)}'
+        }), 500
+
+
+
+@verificacion_bp.route('/usuarios-geolocalizados', methods=['GET'])
+@jwt_required()
+@role_required(['coordinador_puesto', 'coordinador_municipal', 'coordinador_departamental', 'super_admin', 'auditor_electoral'])
+def obtener_usuarios_geolocalizados():
+    """
+    Obtener usuarios con geolocalización activa
+    Filtra según el rol del usuario que consulta
+    """
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(int(user_id))
+        
+        if not user:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no encontrado'
+            }), 404
+        
+        # Construir query base
+        query = User.query.filter(
+            User.activo == True,
+            User.ultima_latitud.isnot(None),
+            User.ultima_longitud.isnot(None)
+        )
+        
+        # Filtrar según rol
+        if user.rol == 'coordinador_puesto' and user.ubicacion_id:
+            # Solo testigos del puesto
+            ubicacion = Location.query.get(user.ubicacion_id)
+            if ubicacion:
+                mesas = Location.query.filter_by(
+                    puesto_codigo=ubicacion.puesto_codigo,
+                    departamento_codigo=ubicacion.departamento_codigo,
+                    municipio_codigo=ubicacion.municipio_codigo,
+                    zona_codigo=ubicacion.zona_codigo,
+                    tipo='mesa'
+                ).all()
+                
+                mesa_ids = [mesa.id for mesa in mesas]
+                query = query.filter(
+                    User.ubicacion_id.in_(mesa_ids),
+                    User.rol == 'testigo_electoral'
+                )
+        
+        elif user.rol == 'coordinador_municipal' and user.ubicacion_id:
+            # Coordinadores de puesto y testigos del municipio
+            ubicacion = Location.query.get(user.ubicacion_id)
+            if ubicacion:
+                puestos = Location.query.filter_by(
+                    municipio_codigo=ubicacion.municipio_codigo,
+                    departamento_codigo=ubicacion.departamento_codigo,
+                    tipo='puesto'
+                ).all()
+                
+                puesto_ids = [puesto.id for puesto in puestos]
+                
+                # Obtener mesas de los puestos
+                mesas = Location.query.filter(
+                    Location.puesto_codigo.in_([p.puesto_codigo for p in puestos]),
+                    Location.tipo == 'mesa',
+                    Location.departamento_codigo == ubicacion.departamento_codigo,
+                    Location.municipio_codigo == ubicacion.municipio_codigo
+                ).all()
+                
+                mesa_ids = [mesa.id for mesa in mesas]
+                
+                query = query.filter(
+                    db.or_(
+                        db.and_(User.ubicacion_id.in_(puesto_ids), User.rol == 'coordinador_puesto'),
+                        db.and_(User.ubicacion_id.in_(mesa_ids), User.rol == 'testigo_electoral')
+                    )
+                )
+        
+        elif user.rol == 'coordinador_departamental' and user.ubicacion_id:
+            # Coordinadores municipales y de puesto del departamento
+            ubicacion = Location.query.get(user.ubicacion_id)
+            if ubicacion:
+                municipios = Location.query.filter_by(
+                    departamento_codigo=ubicacion.departamento_codigo,
+                    tipo='municipio'
+                ).all()
+                
+                municipio_ids = [mun.id for mun in municipios]
+                
+                query = query.filter(
+                    User.rol.in_(['coordinador_municipal', 'coordinador_puesto', 'testigo_electoral'])
+                )
+        
+        elif user.rol == 'super_admin':
+            # Todos los usuarios
+            pass
+        
+        elif user.rol == 'auditor_electoral':
+            # Todos los usuarios que puede auditar
+            pass
+        
+        # Ejecutar query
+        usuarios = query.all()
+        
+        # Formatear respuesta
+        usuarios_data = []
+        for usuario in usuarios:
+            ubicacion = Location.query.get(usuario.ubicacion_id) if usuario.ubicacion_id else None
+            
+            usuarios_data.append({
+                'id': usuario.id,
+                'nombre': usuario.nombre,
+                'rol': usuario.rol,
+                'latitud': float(usuario.ultima_latitud),
+                'longitud': float(usuario.ultima_longitud),
+                'ultima_geolocalizacion_at': usuario.ultima_geolocalizacion_at.isoformat() if usuario.ultima_geolocalizacion_at else None,
+                'ultimo_acceso': usuario.ultimo_acceso.isoformat() if usuario.ultimo_acceso else None,
+                'minutos_inactivo': calcular_minutos_inactivo(usuario.ultimo_acceso),
+                'estado': determinar_estado_usuario(usuario),
+                'ubicacion_nombre': ubicacion.nombre_completo if ubicacion else None,
+                'ubicacion_tipo': ubicacion.tipo if ubicacion else None
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': usuarios_data
+        }), 200
+        
+    except Exception as e:
+        import traceback
+        print(f"Error obteniendo usuarios geolocalizados: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': f'Error al obtener usuarios geolocalizados: {str(e)}'
         }), 500
