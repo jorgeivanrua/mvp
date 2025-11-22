@@ -6,10 +6,9 @@ from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
 from backend.models.user import User
-from backend.models.configuracion_electoral import Partido, Candidato
-from backend.models.configuracion_electoral import TipoEleccion
+from backend.models.configuracion_electoral import Partido, Candidato, TipoEleccion
 from backend.utils.decorators import role_required
-from backend.extensions import db
+from backend.database import db
 import os
 import csv
 import io
