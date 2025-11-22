@@ -65,6 +65,8 @@ def get_all_users():
     Obtener todos los usuarios del sistema
     """
     try:
+        from backend.models.location import Location
+        
         users = User.query.all()
         
         users_data = []
@@ -76,15 +78,18 @@ def get_all_users():
                 'activo': user.activo,
                 'ubicacion_id': user.ubicacion_id,
                 'ubicacion_nombre': None,
-                'ultimo_acceso': user.last_login.isoformat() if user.last_login else None,
-                'created_at': user.created_at.isoformat() if user.created_at else None
+                'ultimo_acceso': user.ultimo_acceso.isoformat() if hasattr(user, 'ultimo_acceso') and user.ultimo_acceso else None,
+                'created_at': user.created_at.isoformat() if hasattr(user, 'created_at') and user.created_at else None
             }
             
             # Obtener nombre de ubicación
             if user.ubicacion_id:
-                ubicacion = Location.query.get(user.ubicacion_id)
-                if ubicacion:
-                    user_dict['ubicacion_nombre'] = ubicacion.nombre_completo
+                try:
+                    ubicacion = Location.query.get(user.ubicacion_id)
+                    if ubicacion:
+                        user_dict['ubicacion_nombre'] = ubicacion.nombre_completo
+                except:
+                    pass
             
             users_data.append(user_dict)
         
@@ -94,6 +99,9 @@ def get_all_users():
         }), 200
         
     except Exception as e:
+        import traceback
+        print(f"Error en get_all_users: {str(e)}")
+        print(traceback.format_exc())
         return jsonify({
             'success': False,
             'error': str(e)
