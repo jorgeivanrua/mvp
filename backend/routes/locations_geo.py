@@ -118,7 +118,6 @@ def obtener_puestos_geolocalizados():
                 'departamento_codigo': puesto.departamento_codigo,
                 'departamento_nombre': puesto.departamento_nombre,
                 'zona_codigo': puesto.zona_codigo,
-                'zona_nombre': puesto.zona_nombre,
                 'direccion': puesto.direccion,
                 'latitud': float(puesto.latitud),
                 'longitud': float(puesto.longitud),

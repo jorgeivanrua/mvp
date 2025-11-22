@@ -26,6 +26,12 @@ class User(db.Model):
     presencia_verificada = db.Column(db.Boolean, default=False, nullable=False)
     presencia_verificada_at = db.Column(db.DateTime, nullable=True)
     
+    # Geolocalización
+    ultima_latitud = db.Column(db.Float, nullable=True)
+    ultima_longitud = db.Column(db.Float, nullable=True)
+    ultima_geolocalizacion_at = db.Column(db.DateTime, nullable=True)
+    precision_geolocalizacion = db.Column(db.Float, nullable=True)
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     

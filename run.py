@@ -33,7 +33,8 @@ if config_name == 'production':
                     'scripts/init_db.py',
                     'scripts/load_divipola.py',
                     'scripts/create_fixed_users.py',
-                    'scripts/init_configuracion_electoral.py'
+                    'scripts/init_configuracion_electoral.py',
+                    'backend/migrations/apply_user_geolocation.py'
                 ]
                 
                 for script in scripts:
