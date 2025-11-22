@@ -36,6 +36,12 @@ class VerificacionPresencia {
      */
     async verificarPresenciaInicial() {
         try {
+            // Verificar que hay token antes de continuar
+            if (!localStorage.getItem('access_token')) {
+                console.log('VerificacionPresencia: No hay token, saltando verificación');
+                return;
+            }
+            
             // Intentar obtener geolocalización
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
@@ -43,16 +49,21 @@ class VerificacionPresencia {
                         this.verificarPresencia(position.coords.latitude, position.coords.longitude);
                     },
                     (error) => {
-                        console.warn('Geolocalización no disponible:', error);
+                        // No mostrar error, solo log
+                        console.log('Geolocalización no disponible, continuando sin coordenadas');
                         this.verificarPresencia();
+                    },
+                    {
+                        timeout: 5000,
+                        maximumAge: 60000
                     }
                 );
             } else {
                 this.verificarPresencia();
             }
         } catch (error) {
-            console.error('Error en verificación inicial:', error);
-            this.verificarPresencia();
+            console.log('Error en verificación inicial:', error.message);
+            // No propagar el error
         }
     }
 
@@ -61,10 +72,17 @@ class VerificacionPresencia {
      */
     async verificarPresencia(latitud = null, longitud = null) {
         try {
+            // Verificar que hay token
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                console.log('VerificacionPresencia: No hay token disponible');
+                return null;
+            }
+            
             const response = await fetch('/api/verificacion/presencia', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
@@ -88,11 +106,11 @@ class VerificacionPresencia {
                 
                 return data.data;
             } else {
-                console.error('Error verificando presencia:', data.error);
+                console.log('Error verificando presencia:', data.error);
                 return null;
             }
         } catch (error) {
-            console.error('Error en verificarPresencia:', error);
+            console.log('Error en verificarPresencia:', error.message);
             return null;
         }
     }
@@ -102,10 +120,17 @@ class VerificacionPresencia {
      */
     async ping() {
         try {
+            // Verificar que hay token
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                console.log('VerificacionPresencia: No hay token para ping');
+                return false;
+            }
+            
             const response = await fetch('/api/verificacion/ping', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
             });
@@ -116,11 +141,11 @@ class VerificacionPresencia {
                 console.log('Ping exitoso:', new Date().toLocaleTimeString());
                 return true;
             } else {
-                console.error('Error en ping:', data.error);
+                console.log('Error en ping:', data.error);
                 return false;
             }
         } catch (error) {
-            console.error('Error en ping:', error);
+            console.log('Error en ping:', error.message);
             return false;
         }
     }

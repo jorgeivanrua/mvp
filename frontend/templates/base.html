@@ -46,8 +46,13 @@
     <!-- Inicializar verificación de presencia -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Inicializar verificación de presencia para usuarios autenticados
-            if (localStorage.getItem('access_token')) {
+            // NO inicializar en página de login
+            const isLoginPage = window.location.pathname.includes('/auth/login') || 
+                               window.location.pathname === '/' ||
+                               window.location.pathname === '/login';
+            
+            // Solo inicializar si hay token Y no estamos en login
+            if (!isLoginPage && localStorage.getItem('access_token')) {
                 if (window.verificacionPresencia) {
                     window.verificacionPresencia.init();
                 }
