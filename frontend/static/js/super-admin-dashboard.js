@@ -57,10 +57,28 @@ async function initSuperAdminDashboard() {
  */
 async function loadUserProfile() {
     try {
+        // Verificar que hay token
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            console.log('No hay token, redirigiendo al login...');
+            window.location.href = '/auth/login';
+            return;
+        }
+        
         const response = await APIClient.getProfile();
         
         if (response.success) {
             currentUser = response.data.user;
+            
+            // Verificar que el usuario es super admin
+            if (currentUser.rol !== 'super_admin') {
+                console.error('Usuario no es super admin');
+                Utils.showError('No tienes permisos para acceder a esta página');
+                setTimeout(() => {
+                    window.location.href = '/auth/login';
+                }, 2000);
+                return;
+            }
             
             document.getElementById('userInfo').innerHTML = `
                 <strong>${currentUser.nombre}</strong> • Super Administrador
@@ -69,6 +87,14 @@ async function loadUserProfile() {
         }
     } catch (error) {
         console.error('Error cargando perfil:', error);
+        // Si hay error de autenticación, redirigir al login
+        if (error.message && (error.message.includes('401') || error.message.includes('token') || error.message.includes('Sesión'))) {
+            console.log('Error de autenticación, redirigiendo al login...');
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user_data');
+            window.location.href = '/auth/login';
+        }
     }
 }
 

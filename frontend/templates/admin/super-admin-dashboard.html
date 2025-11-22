@@ -565,6 +565,13 @@
                 <canvas id="systemMetricsChart" height="80"></canvas>
             </div>
             
+            <!-- Mapa de Geolocalización -->
+            <div class="chart-card">
+                <h5 class="mb-3"><i class="bi bi-geo-alt"></i> Mapa de Geolocalización en Tiempo Real</h5>
+                <p class="text-muted small">Ubicación de usuarios activos en el sistema</p>
+                <div id="mapa-geolocalizacion" style="height: 500px; border-radius: 8px;"></div>
+            </div>
+            
             <div class="chart-card">
                 <h5 class="mb-3">Sesiones Activas</h5>
                 <div class="table-responsive">
@@ -1132,6 +1139,25 @@ document.addEventListener('DOMContentLoaded', function() {
             if (window.personalizacion && !window.personalizacion.initialized) {
                 window.personalizacion.init();
                 window.personalizacion.initialized = true;
+            }
+        });
+    }
+    
+    // Inicializar mapa de geolocalización cuando se abre la pestaña de monitoreo
+    const monitoringTab = document.getElementById('monitoring-tab');
+    if (monitoringTab) {
+        monitoringTab.addEventListener('shown.bs.tab', function() {
+            if (!window.mapaGeolocalizacion) {
+                console.log('Inicializando mapa de geolocalización...');
+                window.mapaGeolocalizacion = new MapaGeolocalizacion('mapa-geolocalizacion', {
+                    center: [1.6144, -75.6062], // Caquetá, Colombia
+                    zoom: 8,
+                    autoUpdate: true,
+                    updateInterval: 30000, // 30 segundos
+                    showPuestos: true,
+                    showUsuarios: true
+                });
+                window.mapaGeolocalizacion.init();
             }
         });
     }
