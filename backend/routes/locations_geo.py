@@ -5,7 +5,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.user import User
 from backend.models.location import Location
-from backend.models.formulario import FormularioE14
+from backend.models.formulario_e14 import FormularioE14
 from backend.database import db
 from backend.utils.decorators import role_required
 

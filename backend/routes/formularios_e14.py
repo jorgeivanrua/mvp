@@ -630,8 +630,8 @@ def exportar_formularios_puesto():
         import csv
         import io
         from datetime import datetime
-        from backend.models.formulario import FormularioE14
-        from backend.models.tipo_eleccion import TipoEleccion
+        from backend.models.formulario_e14 import FormularioE14
+        from backend.models.configuracion_electoral import TipoEleccion
         
         user_id = get_jwt_identity()
         current_user = User.query.get(int(user_id))
@@ -936,10 +936,10 @@ def generar_e24_puesto():
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.lib import colors
         from reportlab.lib.units import inch
-        from backend.models.formulario import FormularioE14
-        from backend.models.tipo_eleccion import TipoEleccion
+        from backend.models.formulario_e14 import FormularioE14
+        from backend.models.configuracion_electoral import TipoEleccion
         from backend.models.configuracion_electoral import Partido
-        from backend.models.voto_partido import VotoPartido
+        from backend.models.formulario_e14 import VotoPartido
         
         user_id = get_jwt_identity()
         current_user = User.query.get(int(user_id))
@@ -1220,10 +1220,10 @@ def generar_e24_municipal():
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.lib import colors
         from reportlab.lib.units import inch
-        from backend.models.formulario import FormularioE14
-        from backend.models.tipo_eleccion import TipoEleccion
+        from backend.models.formulario_e14 import FormularioE14
+        from backend.models.configuracion_electoral import TipoEleccion
         from backend.models.configuracion_electoral import Partido
-        from backend.models.voto_partido import VotoPartido
+        from backend.models.formulario_e14 import VotoPartido
         
         user_id = get_jwt_identity()
         current_user = User.query.get(int(user_id))
