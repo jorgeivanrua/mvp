@@ -8,7 +8,8 @@ let allUsers = [];
 let allPartidos = [];
 let allCandidatos = [];
 let allTiposEleccion = [];
-let charts = {};
+// Usar window.charts para evitar conflictos
+window.charts = window.charts || {};
 
 /**
  * Inicializar dashboard
@@ -212,11 +213,17 @@ async function updateSystemHealth() {
 async function initCharts() {
     try {
         // Destruir gráficos existentes antes de crear nuevos
-        if (charts.progress) {
-            charts.progress.destroy();
-        }
-        if (charts.activity) {
-            charts.activity.destroy();
+        if (window.charts) {
+            if (window.window.charts.progress) {
+                window.window.charts.progress.destroy();
+                window.window.charts.progress = null;
+            }
+            if (window.window.charts.activity) {
+                window.window.charts.activity.destroy();
+                window.window.charts.activity = null;
+            }
+        } else {
+            window.charts = {};
         }
         
         // Cargar datos reales de monitoreo
@@ -246,7 +253,7 @@ async function loadMonitoreoDepartamental() {
             // Gráfico de progreso nacional
             const progressCtx = document.getElementById('progressChart');
             if (progressCtx) {
-                charts.progress = new Chart(progressCtx, {
+                window.charts.progress = new Chart(progressCtx, {
                     type: 'bar',
                     data: {
                         labels: labels,
