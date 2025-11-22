@@ -33,8 +33,7 @@ if config_name == 'production':
                     'scripts/init_db.py',
                     'scripts/load_divipola.py',
                     'scripts/create_fixed_users.py',
-                    'scripts/init_configuracion_electoral.py',
-                    'backend/migrations/apply_user_geolocation.py'
+                    'scripts/init_configuracion_electoral.py'
                 ]
                 
                 for script in scripts:
@@ -45,6 +44,28 @@ if config_name == 'production':
                 print("✅ BD inicializada")
             else:
                 print(f"✅ BD OK ({departamentos_count} departamentos)")
+            
+            # Aplicar migración de geolocalización
+            try:
+                print(">> Aplicando migración de geolocalización...")
+                commands = [
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS ultima_latitud FLOAT;",
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS ultima_longitud FLOAT;",
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS ultima_geolocalizacion_at TIMESTAMP;",
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS precision_geolocalizacion FLOAT;"
+                ]
+                
+                for command in commands:
+                    try:
+                        db.session.execute(db.text(command))
+                    except Exception as e:
+                        if 'already exists' not in str(e).lower() and 'duplicate' not in str(e).lower():
+                            pass  # Ignorar errores de columnas existentes
+                
+                db.session.commit()
+                print("✅ Migración de geolocalización aplicada")
+            except Exception as e:
+                print(f"⚠️  Error en migración: {e}")
         except Exception as e:
             print(f"⚠️  Error verificando BD: {e}")
 
