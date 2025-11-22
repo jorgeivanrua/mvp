@@ -17,15 +17,22 @@ class VerificacionPresencia {
     init() {
         console.log('VerificacionPresencia: Inicializando...');
         
-        // Verificar presencia inicial
-        this.verificarPresenciaInicial();
+        // ⚠️ NO verificar presencia automáticamente
+        // La presencia se verifica SOLO cuando el testigo hace clic en "Verificar Presencia"
+        // después de seleccionar su mesa
         
-        // Iniciar ping automático
-        this.iniciarPingAutomatico();
+        // Iniciar ping automático solo si ya hay presencia verificada
+        const presenciaYaVerificada = sessionStorage.getItem('presencia_verificada');
+        if (presenciaYaVerificada) {
+            console.log('Presencia ya verificada previamente, iniciando ping automático');
+            this.iniciarPingAutomatico();
+        } else {
+            console.log('Presencia no verificada aún, esperando acción del usuario');
+        }
         
         // Detectar cuando el usuario vuelve a la pestaña
         document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
+            if (!document.hidden && presenciaYaVerificada) {
                 this.ping();
             }
         });
@@ -96,12 +103,18 @@ class VerificacionPresencia {
             if (data.success) {
                 console.log('Presencia verificada:', data.data);
                 
-                // Mostrar notificación solo la primera vez
-                if (!sessionStorage.getItem('presencia_verificada')) {
-                    if (typeof Utils !== 'undefined') {
-                        Utils.showSuccess('✅ Presencia verificada exitosamente');
-                    }
-                    sessionStorage.setItem('presencia_verificada', 'true');
+                // Marcar presencia como verificada
+                sessionStorage.setItem('presencia_verificada', 'true');
+                
+                // Iniciar ping automático después de verificar presencia
+                if (!this.pingInterval) {
+                    console.log('Iniciando ping automático después de verificar presencia');
+                    this.iniciarPingAutomatico();
+                }
+                
+                // Mostrar notificación
+                if (typeof Utils !== 'undefined') {
+                    Utils.showSuccess('✅ Presencia verificada exitosamente');
                 }
                 
                 return data.data;
