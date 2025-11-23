@@ -101,6 +101,63 @@ window.cambiarMesa = function() {
 };
 
 // ============================================================================
+// FUNCIÓN NUEVA: Pre-cargar datos del formulario
+// ============================================================================
+window.precargarDatosFormulario = function() {
+    if (!window.mesaSeleccionadaDashboard) {
+        console.warn('⚠️ No hay mesa seleccionada para pre-cargar datos');
+        return;
+    }
+    
+    const mesa = window.mesaSeleccionadaDashboard;
+    console.log('📝 Pre-cargando datos del formulario para mesa:', mesa);
+    
+    // Pre-cargar votantes registrados
+    const votantesInput = document.getElementById('votantesRegistrados');
+    if (votantesInput && mesa.total_votantes_registrados) {
+        votantesInput.value = mesa.total_votantes_registrados;
+        console.log('✅ Votantes registrados cargados:', mesa.total_votantes_registrados);
+    }
+    
+    // Pre-seleccionar la mesa en el formulario
+    const mesaSelect = document.getElementById('mesaFormulario');
+    if (mesaSelect && mesa.id) {
+        mesaSelect.value = mesa.id;
+        console.log('✅ Mesa pre-seleccionada en formulario:', mesa.id);
+    }
+    
+    // Calcular totales iniciales
+    if (typeof calcularTotales === 'function') {
+        calcularTotales();
+    }
+};
+
+// ============================================================================
+// FUNCIÓN: cambiarMesaFormulario - Actualizar votantes al cambiar mesa
+// ============================================================================
+window.cambiarMesaFormulario = function() {
+    const mesaSelect = document.getElementById('mesaFormulario');
+    if (!mesaSelect || !mesaSelect.value) return;
+    
+    const selectedOption = mesaSelect.options[mesaSelect.selectedIndex];
+    if (selectedOption && selectedOption.dataset.mesa) {
+        const mesaData = JSON.parse(selectedOption.dataset.mesa);
+        
+        // Actualizar votantes registrados
+        const votantesInput = document.getElementById('votantesRegistrados');
+        if (votantesInput && mesaData.total_votantes_registrados) {
+            votantesInput.value = mesaData.total_votantes_registrados;
+            console.log('✅ Votantes actualizados para mesa:', mesaData.mesa_codigo, '-', mesaData.total_votantes_registrados);
+        }
+        
+        // Recalcular totales
+        if (typeof calcularTotales === 'function') {
+            calcularTotales();
+        }
+    }
+};
+
+// ============================================================================
 // FUNCIÓN 3: verificarPresencia - MANUAL
 // ============================================================================
 window.verificarPresencia = async function() {
