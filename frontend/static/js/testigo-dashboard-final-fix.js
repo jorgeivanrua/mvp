@@ -42,33 +42,13 @@ window.loadUserProfile = async function() {
                 updateElement('formulariosRechazados', stats.rechazados);
             }
             
-            // IMPORTANTE: NO verificar presencia automáticamente
-            // Solo restaurar estado si YA estaba verificado
-            if (window.currentUser.presencia_verificada && window.userLocation && window.userLocation.tipo === 'mesa') {
-                window.mesaSeleccionadaDashboard = window.userLocation;
-                window.presenciaVerificada = true;
-                
-                const btnVerificar = document.getElementById('btnVerificarPresencia');
-                const alertaVerificada = document.getElementById('alertaPresenciaVerificada');
-                
-                if (btnVerificar) btnVerificar.classList.add('d-none');
-                if (alertaVerificada) {
-                    alertaVerificada.classList.remove('d-none');
-                    const fechaEl = document.getElementById('presenciaFecha');
-                    if (fechaEl && window.currentUser.presencia_verificada_at) {
-                        const fecha = new Date(window.currentUser.presencia_verificada_at);
-                        fechaEl.textContent = `Verificada el ${fecha.toLocaleDateString()} a las ${fecha.toLocaleTimeString()}`;
-                    }
-                }
-                
-                habilitarBotonNuevoFormulario();
-            }
+            // IMPORTANTE: El testigo SIEMPRE debe verificar presencia manualmente
+            // NO restaurar estado automáticamente - debe seleccionar mesa y verificar cada vez
+            console.log('ℹ️ Testigo debe seleccionar mesa y verificar presencia manualmente');
             
             // Cargar mesas del puesto
             if (window.userLocation && window.userLocation.puesto_codigo) {
-                if (typeof loadMesas === 'function') {
-                    await loadMesas();
-                }
+                await window.loadMesasTestigo();
             } else if (window.userLocation) {
                 console.log('ℹ️ Usuario tiene ubicación pero sin puesto_codigo:', window.userLocation.tipo);
             } else {
@@ -77,6 +57,59 @@ window.loadUserProfile = async function() {
         }
     } catch (error) {
         console.error('❌ Error al cargar perfil:', error);
+    }
+};
+
+// ============================================================================
+// FUNCIÓN: loadMesasTestigo - Cargar mesas del puesto
+// ============================================================================
+window.loadMesasTestigo = async function() {
+    try {
+        if (!window.userLocation || !window.userLocation.puesto_codigo) {
+            console.warn('⚠️ No se puede cargar mesas: falta ubicación o puesto_codigo');
+            return;
+        }
+        
+        const params = {
+            puesto_codigo: window.userLocation.puesto_codigo,
+            zona_codigo: window.userLocation.zona_codigo,
+            municipio_codigo: window.userLocation.municipio_codigo,
+            departamento_codigo: window.userLocation.departamento_codigo
+        };
+        
+        console.log('📍 Cargando mesas con params:', params);
+        
+        const response = await APIClient.get('/locations/mesas', params);
+        const mesas = response.data || [];
+        
+        console.log('✅ Mesas cargadas:', mesas.length);
+        
+        const selector = document.getElementById('mesa');
+        if (!selector) {
+            console.warn('⚠️ Selector de mesa no encontrado');
+            return;
+        }
+        
+        selector.innerHTML = '<option value="">Seleccione mesa...</option>';
+        
+        mesas.forEach(mesa => {
+            const option = document.createElement('option');
+            option.value = mesa.id;
+            option.textContent = `Mesa ${mesa.mesa_codigo} - ${mesa.puesto_nombre || ''}`;
+            option.dataset.mesa = JSON.stringify(mesa);
+            selector.appendChild(option);
+        });
+        
+        // Actualizar panel de mesas
+        if (typeof window.actualizarPanelMesas === 'function') {
+            await window.actualizarPanelMesas();
+        }
+        
+    } catch (error) {
+        console.error('❌ Error cargando mesas:', error);
+        if (typeof Utils !== 'undefined' && Utils.showError) {
+            Utils.showError('Error cargando mesas del puesto');
+        }
     }
 };
 
