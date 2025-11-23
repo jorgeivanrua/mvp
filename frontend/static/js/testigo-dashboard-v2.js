@@ -301,21 +301,28 @@ async function loadUserProfile() {
                 mostrarContextoTestigo(contexto);
             }
             
-            // Si el testigo ya verificó presencia, su ubicación es una mesa
+            // SOLO para testigos: verificar presencia manualmente
+            // Los otros roles se verifican automáticamente
             if (userLocation) {
-                // Si es una mesa y ya verificó presencia, usar esa mesa como seleccionada
-                if (userLocation.tipo === 'mesa' && currentUser.presencia_verificada) {
+                // Si es testigo y ya verificó presencia
+                if (currentUser.rol === 'testigo_electoral' && userLocation.tipo === 'mesa' && currentUser.presencia_verificada) {
                     mesaSeleccionadaDashboard = userLocation;
                     presenciaVerificada = true;
                     
                     // Mostrar que ya verificó presencia
-                    document.getElementById('btnVerificarPresencia').classList.add('d-none');
-                    document.getElementById('alertaPresenciaVerificada').classList.remove('d-none');
+                    const btnVerificar = document.getElementById('btnVerificarPresencia');
+                    const alertaVerificada = document.getElementById('alertaPresenciaVerificada');
+                    
+                    if (btnVerificar) btnVerificar.classList.add('d-none');
+                    if (alertaVerificada) alertaVerificada.classList.remove('d-none');
                     
                     if (currentUser.presencia_verificada_at) {
                         const fecha = new Date(currentUser.presencia_verificada_at);
-                        document.getElementById('presenciaFecha').textContent = 
-                            `Verificada el ${fecha.toLocaleDateString()} a las ${fecha.toLocaleTimeString()}`;
+                        const fechaElement = document.getElementById('presenciaFecha');
+                        if (fechaElement) {
+                            fechaElement.textContent = 
+                                `Verificada el ${fecha.toLocaleDateString()} a las ${fecha.toLocaleTimeString()}`;
+                        }
                     }
                     
                     // Habilitar botón de nuevo formulario
@@ -326,10 +333,6 @@ async function loadUserProfile() {
                 if (userLocation.puesto_codigo) {
                     await loadMesas();
                     await actualizarPanelMesas();
-                } else {
-                    document.getElementById('assignedLocation').innerHTML = `
-                        <p class="text-muted">No hay ubicación asignada</p>
-                    `;
                 }
             }
         }

@@ -33,85 +33,138 @@ Sistema web para la gestión y registro de formularios E-14 (Actas de Escrutinio
 - SQLite (incluido)
 - Navegador web moderno
 
-## 🔧 Instalación
+## 🔧 Instalación y Configuración
 
-### 1. Clonar el repositorio
+### Opción 1: Instalación Automática (Recomendada) ⚡
+
+**Windows:**
+```bash
+setup.bat
+```
+
+**Linux/Mac:**
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+Este script automáticamente:
+- ✅ Crea el entorno virtual
+- ✅ Instala todas las dependencias
+- ✅ Inicializa la base de datos
+- ✅ Carga las ubicaciones (DIVIPOLA)
+- ✅ Crea los usuarios del sistema
+- ✅ Aplica todas las migraciones
+- ✅ Configura el sistema electoral
+
+### Opción 2: Instalación Manual 🔧
+
+#### 1. Clonar el repositorio
 ```bash
 git clone https://github.com/jorgeivanrua/testigos.git
 cd testigos/mvp
 ```
 
-### 2. Crear entorno virtual
-```bash
-python -m venv .venv
-```
-
-### 3. Activar entorno virtual
+#### 2. Crear y activar entorno virtual
 
 **Windows:**
 ```bash
+python -m venv .venv
 .venv\Scripts\activate
 ```
 
 **Linux/Mac:**
 ```bash
+python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-### 4. Instalar dependencias
+#### 3. Instalar dependencias
 ```bash
 pip install -r requirements.txt
 ```
 
-### 5. Configurar variables de entorno
+#### 4. Inicializar el sistema
 ```bash
-# Copiar archivo de ejemplo
-copy .env.example .env
-
-# Editar .env con tus configuraciones
-```
-
-### 6. Inicializar base de datos
-```bash
-# Crear estructura de base de datos
-python scripts/init_db.py
-
-# Cargar datos de ubicaciones (DIVIPOLA)
-python scripts/load_divipola.py
-
-# Crear usuarios de prueba
-python scripts/create_test_users.py
-
-# Cargar configuración electoral
-python scripts/init_configuracion_electoral.py
-
-# Crear tablas de formularios E-14
-python scripts/create_formularios_e14_tables.py
+python setup.py
 ```
 
 ## 🚀 Ejecutar la Aplicación
 
-### Opción 1: Script de inicio (Windows)
+### Desarrollo Local
+
+**Windows:**
 ```bash
 start.bat
 ```
 
-### Opción 2: Python directo
+**Linux/Mac:**
+```bash
+chmod +x start.sh
+./start.sh
+```
+
+**O directamente con Python:**
 ```bash
 python run.py
 ```
 
 La aplicación estará disponible en: `http://localhost:5000`
 
-## 👥 Usuarios de Prueba
+### Despliegue en Render.com 🌐
 
-Después de ejecutar `create_test_users.py`:
+1. **Conectar repositorio a Render**
+   - Ve a [render.com](https://render.com)
+   - Crea una nueva Web Service
+   - Conecta tu repositorio de GitHub
 
+2. **Configuración automática**
+   - Render detectará automáticamente el archivo `render.yaml`
+   - La inicialización se ejecutará automáticamente con `render_setup.py`
+
+3. **Variables de entorno** (opcional)
+   - `SECRET_KEY`: Se genera automáticamente
+   - `JWT_SECRET_KEY`: Se genera automáticamente
+   - `DATABASE_URL`: Para usar PostgreSQL (recomendado en producción)
+
+4. **Archivo DIVIPOLA**
+   - Coloca el archivo `divipola.csv` en la carpeta `todos los datos/`
+   - O súbelo manualmente después del despliegue
+
+## 👥 Usuarios del Sistema
+
+Después de la inicialización, tendrás acceso con estas credenciales:
+
+### Super Administrador
+| Usuario | Contraseña | Descripción |
+|---------|-----------|-------------|
+| admin | admin123 | Acceso completo al sistema |
+
+### Administradores
 | Usuario | Contraseña | Rol |
 |---------|-----------|-----|
-| admin@test.com | admin123 | Administrador |
-| coordinador@test.com | coord123 | Coordinador |
-| testigo@test.com | test123 | Testigo |
+| admin_caqueta | admin123 | Admin Departamental |
+| admin_florencia | admin123 | Admin Municipal |
+
+### Coordinadores
+| Usuario | Contraseña | Rol |
+|---------|-----------|-----|
+| coord_dpto_caqueta | coord123 | Coordinador Departamental |
+| coord_mun_florencia | coord123 | Coordinador Municipal |
+| coord_puesto_XX | coord123 | Coordinador de Puesto |
+
+### Testigos
+| Usuario | Contraseña | Rol |
+|---------|-----------|-----|
+| testigo_XX_1 | testigo123 | Testigo Electoral |
+| testigo_XX_2 | testigo123 | Testigo Electoral |
+
+### Auditor
+| Usuario | Contraseña | Rol |
+|---------|-----------|-----|
+| auditor_caqueta | auditor123 | Auditor Electoral |
+
+⚠️ **IMPORTANTE**: Cambia todas las contraseñas después del primer acceso en producción
 
 ## 📁 Estructura del Proyecto
 
@@ -176,11 +229,17 @@ mvp/
 - `POST /api/formularios-e14/{id}/validar` - Validar/rechazar
 - `DELETE /api/formularios-e14/{id}` - Eliminar formulario
 
-## 📖 Documentación Adicional
+## 📖 Documentación
 
-- [FORMULARIOS_E14_IMPLEMENTADOS.md](FORMULARIOS_E14_IMPLEMENTADOS.md) - Documentación completa del sistema de formularios
-- [DASHBOARDS_IMPLEMENTADOS.md](DASHBOARDS_IMPLEMENTADOS.md) - Guía de dashboards
-- [COMO_INICIAR.md](COMO_INICIAR.md) - Guía de inicio rápido
+### Guías de Inicio
+- **[INICIO_RAPIDO.md](INICIO_RAPIDO.md)** - ⚡ Empieza en 2 minutos
+- **[GUIA_DESPLIEGUE.md](GUIA_DESPLIEGUE.md)** - 🚀 Despliegue completo (Local, Render, Heroku, VPS)
+- **[GUIA_PRUEBAS_MANUALES.md](GUIA_PRUEBAS_MANUALES.md)** - 🧪 Cómo probar el sistema
+
+### Documentación Técnica
+- [FORMULARIOS_E14_IMPLEMENTADOS.md](FORMULARIOS_E14_IMPLEMENTADOS.md) - Sistema de formularios
+- [DASHBOARDS_IMPLEMENTADOS.md](DASHBOARDS_IMPLEMENTADOS.md) - Dashboards por rol
+- [ESTADO_FINAL_SISTEMA.md](ESTADO_FINAL_SISTEMA.md) - Estado actual del proyecto
 
 ## 🛠️ Tecnologías Utilizadas
 
@@ -197,24 +256,35 @@ mvp/
 
 ## 🔄 Estado del Proyecto
 
-### ✅ Completado
-- Sistema de autenticación JWT
-- Gestión de usuarios por rol
-- Configuración electoral dinámica
-- Formularios E-14 completos
-- API REST completa
-- Dashboards funcionales
+### ✅ Completado (v1.0.0 - Nov 22, 2025)
+- ✅ Sistema de autenticación JWT
+- ✅ Gestión de usuarios por rol
+- ✅ Configuración electoral dinámica
+- ✅ Formularios E-14 completos con todas las funcionalidades
+- ✅ API REST completa
+- ✅ Dashboards funcionales para todos los roles
+- ✅ Verificación de presencia con geolocalización
+- ✅ Sistema de sincronización offline
+- ✅ Carga de imágenes de formularios
+- ✅ Validación de formularios por coordinadores
+- ✅ Reportes y estadísticas por rol
+- ✅ Sistema de inicialización automatizado
+- ✅ Scripts de despliegue para Render
+- ✅ Documentación completa
+- ✅ Correcciones de errores aplicadas
 
-### 🔄 En Desarrollo
-- Sistema de carga de imágenes
-- Dashboard de validación para coordinadores
-- Reportes y estadísticas
+### 🎯 Estado Actual
+**LISTO PARA PRODUCCIÓN** ✅
 
-### 📋 Pendiente
-- Formularios E-24
-- Sistema de notificaciones
-- Exportación de datos
-- Modo offline
+El sistema está completamente funcional y listo para:
+- ✓ Desarrollo local
+- ✓ Despliegue en Render
+- ✓ Uso en producción
+
+### 📋 Próximas Versiones
+- v1.1: Formularios E-24, notificaciones, exportación
+- v1.2: Modo completamente offline, PWA
+- v2.0: App móvil nativa, ML para detección de anomalías
 
 ## 🤝 Contribuir
 
