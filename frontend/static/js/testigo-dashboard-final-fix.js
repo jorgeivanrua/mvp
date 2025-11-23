@@ -66,7 +66,13 @@ window.loadUserProfile = async function() {
             
             // Cargar mesas del puesto
             if (window.userLocation && window.userLocation.puesto_codigo) {
-                await loadMesas();
+                if (typeof loadMesas === 'function') {
+                    await loadMesas();
+                }
+            } else if (window.userLocation) {
+                console.log('ℹ️ Usuario tiene ubicación pero sin puesto_codigo:', window.userLocation.tipo);
+            } else {
+                console.warn('⚠️ Usuario sin ubicación asignada');
             }
         }
     } catch (error) {
@@ -340,7 +346,7 @@ window.showCreateForm = async function() {
         
         // Cargar mesas
         const mesaSelect = document.getElementById('mesaFormulario');
-        if (mesaSelect && window.userLocation) {
+        if (mesaSelect && window.userLocation && window.userLocation.puesto_codigo) {
             const params = {
                 puesto_codigo: window.userLocation.puesto_codigo,
                 zona_codigo: window.userLocation.zona_codigo,
