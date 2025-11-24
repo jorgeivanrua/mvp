@@ -83,3 +83,9 @@ def super_admin_dashboard():
 def gestion_usuarios():
     """Gestión automática de usuarios"""
     return render_template('admin/gestion-usuarios.html')
+
+
+@frontend_bp.route('/monitoreo/dashboard')
+def monitoreo_dashboard():
+    """Dashboard de monitoreo en tiempo real"""
+    return render_template('monitoreo/dashboard.html')

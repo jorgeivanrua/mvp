@@ -51,7 +51,8 @@ class User(db.Model):
                 'coordinador_municipal',
                 'coordinador_puesto',
                 'testigo_electoral',
-                'auditor_electoral'
+                'auditor_electoral',
+                'monitoreo'  # Rol para monitoreo en tiempo real
             ]),
             name='check_rol_valido'
         ),
