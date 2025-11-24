@@ -122,7 +122,7 @@ function handleRoleChange(rol) {
     
     clearLocationSelectors();
     
-    if (!rol || rol === 'super_admin') {
+    if (!rol || rol === 'super_admin' || rol === 'monitoreo') {
         return;
     }
     

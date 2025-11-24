@@ -37,8 +37,8 @@ class AuthService:
         location = AuthService._find_location_by_hierarchy(rol, ubicacion_data)
         logger.info(f"Ubicación encontrada: {location.id if location else None}")
         
-        # Super admin no necesita ubicación
-        if rol == 'super_admin':
+        # Super admin y monitoreo no necesitan ubicación
+        if rol in ['super_admin', 'monitoreo']:
             user = User.query.filter_by(
                 rol=rol,
                 ubicacion_id=None,
