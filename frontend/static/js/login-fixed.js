@@ -252,7 +252,8 @@ async function handleLogin() {
         
         const requiredFields = ['rol', 'password'];
         
-        if (rol !== 'super_admin') {
+        // Super admin y monitoreo no requieren ubicación
+        if (rol !== 'super_admin' && rol !== 'monitoreo') {
             requiredFields.push('departamento');
             
             if (['admin_municipal', 'coordinador_municipal', 'coordinador_puesto', 'testigo_electoral'].includes(rol)) {
@@ -317,7 +318,8 @@ function redirectToDashboard(rol) {
         'coordinador_municipal': '/coordinador/municipal',
         'coordinador_puesto': '/coordinador/puesto',
         'testigo_electoral': '/testigo/dashboard',
-        'auditor_electoral': '/auditor/dashboard'
+        'auditor_electoral': '/auditor/dashboard',
+        'monitoreo': '/monitoreo/dashboard'
     };
     
     const dashboard = dashboards[rol] || '/dashboard';
