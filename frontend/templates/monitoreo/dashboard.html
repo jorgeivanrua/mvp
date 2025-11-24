@@ -99,6 +99,64 @@
         </div>
     </div>
 
+    <!-- Filtros -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-funnel"></i> Filtros
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Tipo de Usuario</label>
+                            <select class="form-select" id="filtro-tipo-usuario">
+                                <option value="">Todos</option>
+                                <option value="testigo_electoral">Solo Testigos</option>
+                                <option value="coordinadores">Solo Coordinadores</option>
+                                <option value="coordinador_departamental">Coordinadores Departamentales</option>
+                                <option value="coordinador_municipal">Coordinadores Municipales</option>
+                                <option value="coordinador_puesto">Coordinadores de Puesto</option>
+                                <option value="auditor_electoral">Auditores</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Departamento</label>
+                            <select class="form-select" id="filtro-departamento">
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Municipio</label>
+                            <select class="form-select" id="filtro-municipio" disabled>
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Zona</label>
+                            <select class="form-select" id="filtro-zona" disabled>
+                                <option value="">Todas</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Puesto</label>
+                            <select class="form-select" id="filtro-puesto" disabled>
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button class="btn btn-secondary w-100" onclick="limpiarFiltros()">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Mapa y Leyenda -->
     <div class="row">
         <div class="col-lg-9">
@@ -185,6 +243,14 @@
 let mapa;
 let marcadores = [];
 let autoRefreshInterval;
+let todosLosUsuarios = []; // Cache de todos los usuarios
+let filtros = {
+    tipoUsuario: '',
+    departamento: '',
+    municipio: '',
+    zona: '',
+    puesto: ''
+};
 
 // Inicializar mapa
 function initMapa() {
@@ -195,6 +261,206 @@ function initMapa() {
         attribution: '© OpenStreetMap contributors',
         maxZoom: 19
     }).addTo(mapa);
+}
+
+// Cargar ubicaciones para filtros
+async function cargarUbicaciones() {
+    try {
+        // Cargar departamentos
+        const deptosResponse = await APIClient.get('/locations/departamentos');
+        const deptos = deptosResponse.data || [];
+        
+        const selectDepto = document.getElementById('filtro-departamento');
+        selectDepto.innerHTML = '<option value="">Todos</option>';
+        deptos.forEach(depto => {
+            const option = document.createElement('option');
+            option.value = depto.codigo;
+            option.textContent = depto.nombre;
+            selectDepto.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error cargando ubicaciones:', error);
+    }
+}
+
+// Manejar cambio de departamento
+async function onDepartamentoChange() {
+    const deptoSelect = document.getElementById('filtro-departamento');
+    const muniSelect = document.getElementById('filtro-municipio');
+    const zonaSelect = document.getElementById('filtro-zona');
+    const puestoSelect = document.getElementById('filtro-puesto');
+    
+    filtros.departamento = deptoSelect.value;
+    filtros.municipio = '';
+    filtros.zona = '';
+    filtros.puesto = '';
+    
+    muniSelect.innerHTML = '<option value="">Todos</option>';
+    zonaSelect.innerHTML = '<option value="">Todas</option>';
+    puestoSelect.innerHTML = '<option value="">Todos</option>';
+    
+    if (filtros.departamento) {
+        try {
+            const response = await APIClient.get(`/locations/municipios/${filtros.departamento}`);
+            const municipios = response.data || [];
+            
+            municipios.forEach(muni => {
+                const option = document.createElement('option');
+                option.value = muni.codigo;
+                option.textContent = muni.nombre;
+                muniSelect.appendChild(option);
+            });
+            
+            muniSelect.disabled = false;
+        } catch (error) {
+            console.error('Error cargando municipios:', error);
+        }
+    } else {
+        muniSelect.disabled = true;
+        zonaSelect.disabled = true;
+        puestoSelect.disabled = true;
+    }
+    
+    aplicarFiltros();
+}
+
+// Manejar cambio de municipio
+async function onMunicipioChange() {
+    const muniSelect = document.getElementById('filtro-municipio');
+    const zonaSelect = document.getElementById('filtro-zona');
+    const puestoSelect = document.getElementById('filtro-puesto');
+    
+    filtros.municipio = muniSelect.value;
+    filtros.zona = '';
+    filtros.puesto = '';
+    
+    zonaSelect.innerHTML = '<option value="">Todas</option>';
+    puestoSelect.innerHTML = '<option value="">Todos</option>';
+    
+    if (filtros.municipio) {
+        try {
+            const response = await APIClient.get(`/locations/zonas/${filtros.departamento}/${filtros.municipio}`);
+            const zonas = response.data || [];
+            
+            zonas.forEach(zona => {
+                const option = document.createElement('option');
+                option.value = zona.codigo;
+                option.textContent = `Zona ${zona.codigo}`;
+                zonaSelect.appendChild(option);
+            });
+            
+            zonaSelect.disabled = false;
+        } catch (error) {
+            console.error('Error cargando zonas:', error);
+        }
+    } else {
+        zonaSelect.disabled = true;
+        puestoSelect.disabled = true;
+    }
+    
+    aplicarFiltros();
+}
+
+// Manejar cambio de zona
+async function onZonaChange() {
+    const zonaSelect = document.getElementById('filtro-zona');
+    const puestoSelect = document.getElementById('filtro-puesto');
+    
+    filtros.zona = zonaSelect.value;
+    filtros.puesto = '';
+    
+    puestoSelect.innerHTML = '<option value="">Todos</option>';
+    
+    if (filtros.zona) {
+        try {
+            const response = await APIClient.get(`/locations/puestos/${filtros.departamento}/${filtros.municipio}/${filtros.zona}`);
+            const puestos = response.data || [];
+            
+            puestos.forEach(puesto => {
+                const option = document.createElement('option');
+                option.value = puesto.codigo;
+                option.textContent = puesto.nombre;
+                puestoSelect.appendChild(option);
+            });
+            
+            puestoSelect.disabled = false;
+        } catch (error) {
+            console.error('Error cargando puestos:', error);
+        }
+    } else {
+        puestoSelect.disabled = true;
+    }
+    
+    aplicarFiltros();
+}
+
+// Limpiar filtros
+function limpiarFiltros() {
+    filtros = {
+        tipoUsuario: '',
+        departamento: '',
+        municipio: '',
+        zona: '',
+        puesto: ''
+    };
+    
+    document.getElementById('filtro-tipo-usuario').value = '';
+    document.getElementById('filtro-departamento').value = '';
+    document.getElementById('filtro-municipio').value = '';
+    document.getElementById('filtro-zona').value = '';
+    document.getElementById('filtro-puesto').value = '';
+    
+    document.getElementById('filtro-municipio').disabled = true;
+    document.getElementById('filtro-zona').disabled = true;
+    document.getElementById('filtro-puesto').disabled = true;
+    
+    aplicarFiltros();
+}
+
+// Aplicar filtros
+function aplicarFiltros() {
+    let usuariosFiltrados = todosLosUsuarios;
+    
+    // Filtrar por tipo de usuario
+    if (filtros.tipoUsuario) {
+        if (filtros.tipoUsuario === 'coordinadores') {
+            usuariosFiltrados = usuariosFiltrados.filter(u => 
+                u.rol.includes('coordinador')
+            );
+        } else {
+            usuariosFiltrados = usuariosFiltrados.filter(u => 
+                u.rol === filtros.tipoUsuario
+            );
+        }
+    }
+    
+    // Filtrar por ubicación
+    if (filtros.departamento) {
+        usuariosFiltrados = usuariosFiltrados.filter(u => 
+            u.ubicacion && u.ubicacion.departamento_codigo === filtros.departamento
+        );
+    }
+    
+    if (filtros.municipio) {
+        usuariosFiltrados = usuariosFiltrados.filter(u => 
+            u.ubicacion && u.ubicacion.municipio_codigo === filtros.municipio
+        );
+    }
+    
+    if (filtros.zona) {
+        usuariosFiltrados = usuariosFiltrados.filter(u => 
+            u.ubicacion && u.ubicacion.zona_codigo === filtros.zona
+        );
+    }
+    
+    if (filtros.puesto) {
+        usuariosFiltrados = usuariosFiltrados.filter(u => 
+            u.ubicacion && u.ubicacion.puesto_codigo === filtros.puesto
+        );
+    }
+    
+    // Actualizar mapa con usuarios filtrados
+    actualizarMapa(usuariosFiltrados);
 }
 
 // Obtener color según rol y estado
@@ -223,6 +489,55 @@ function createCustomIcon(color) {
     });
 }
 
+// Actualizar mapa con usuarios
+function actualizarMapa(usuarios) {
+    // Limpiar marcadores anteriores
+    marcadores.forEach(m => mapa.removeLayer(m));
+    marcadores = [];
+    
+    // Agregar nuevos marcadores
+    usuarios.forEach(usuario => {
+        const color = getMarkerColor(usuario);
+        const icon = createCustomIcon(color);
+        
+        const marker = L.marker([usuario.latitud, usuario.longitud], { icon: icon })
+            .addTo(mapa);
+        
+        // Popup con información
+        let popupContent = `
+            <div style="min-width: 200px;">
+                <h6><strong>${usuario.nombre}</strong></h6>
+                <p class="mb-1"><small><strong>Rol:</strong> ${usuario.rol}</small></p>
+        `;
+        
+        if (usuario.ubicacion) {
+            popupContent += `<p class="mb-1"><small><strong>Ubicación:</strong> ${usuario.ubicacion.nombre_completo}</small></p>`;
+        }
+        
+        if (usuario.rol === 'testigo_electoral') {
+            popupContent += `<p class="mb-1"><small><strong>Presencia:</strong> ${usuario.presencia_verificada ? '✅ Verificada' : '⏳ Pendiente'}</small></p>`;
+        }
+        
+        if (usuario.ultima_actualizacion) {
+            const fecha = new Date(usuario.ultima_actualizacion);
+            popupContent += `<p class="mb-0"><small><strong>Actualizado:</strong> ${fecha.toLocaleString()}</small></p>`;
+        }
+        
+        popupContent += `</div>`;
+        
+        marker.bindPopup(popupContent);
+        marcadores.push(marker);
+    });
+    
+    document.getElementById('usuarios-activos-badge').textContent = `${usuarios.length} usuarios activos`;
+    
+    // Ajustar vista del mapa si hay usuarios
+    if (usuarios.length > 0) {
+        const bounds = L.latLngBounds(usuarios.map(u => [u.latitud, u.longitud]));
+        mapa.fitBounds(bounds, { padding: [50, 50] });
+    }
+}
+
 // Cargar datos
 async function cargarDatos() {
     try {
@@ -245,47 +560,8 @@ async function cargarDatos() {
         // Cargar usuarios activos
         const usuariosResponse = await APIClient.get('/monitoreo/api/usuarios-activos');
         if (usuariosResponse.success) {
-            const usuarios = usuariosResponse.data;
-            
-            // Limpiar marcadores anteriores
-            marcadores.forEach(m => mapa.removeLayer(m));
-            marcadores = [];
-            
-            // Agregar nuevos marcadores
-            usuarios.forEach(usuario => {
-                const color = getMarkerColor(usuario);
-                const icon = createCustomIcon(color);
-                
-                const marker = L.marker([usuario.latitud, usuario.longitud], { icon: icon })
-                    .addTo(mapa);
-                
-                // Popup con información
-                let popupContent = `
-                    <div style="min-width: 200px;">
-                        <h6><strong>${usuario.nombre}</strong></h6>
-                        <p class="mb-1"><small><strong>Rol:</strong> ${usuario.rol}</small></p>
-                `;
-                
-                if (usuario.ubicacion) {
-                    popupContent += `<p class="mb-1"><small><strong>Ubicación:</strong> ${usuario.ubicacion.nombre_completo}</small></p>`;
-                }
-                
-                if (usuario.rol === 'testigo_electoral') {
-                    popupContent += `<p class="mb-1"><small><strong>Presencia:</strong> ${usuario.presencia_verificada ? '✅ Verificada' : '⏳ Pendiente'}</small></p>`;
-                }
-                
-                if (usuario.ultima_actualizacion) {
-                    const fecha = new Date(usuario.ultima_actualizacion);
-                    popupContent += `<p class="mb-0"><small><strong>Actualizado:</strong> ${fecha.toLocaleString()}</small></p>`;
-                }
-                
-                popupContent += `</div>`;
-                
-                marker.bindPopup(popupContent);
-                marcadores.push(marker);
-            });
-            
-            document.getElementById('usuarios-activos-badge').textContent = `${usuarios.length} usuarios activos`;
+            todosLosUsuarios = usuariosResponse.data;
+            aplicarFiltros();
         }
         
         // Actualizar timestamp
@@ -317,8 +593,26 @@ function setupAutoRefresh() {
 // Inicializar
 document.addEventListener('DOMContentLoaded', function() {
     initMapa();
+    cargarUbicaciones();
     cargarDatos();
     setupAutoRefresh();
+    
+    // Event listeners para filtros
+    document.getElementById('filtro-tipo-usuario').addEventListener('change', function() {
+        filtros.tipoUsuario = this.value;
+        aplicarFiltros();
+    });
+    
+    document.getElementById('filtro-departamento').addEventListener('change', onDepartamentoChange);
+    document.getElementById('filtro-municipio').addEventListener('change', onMunicipioChange);
+    document.getElementById('filtro-zona').addEventListener('change', function() {
+        filtros.zona = this.value;
+        aplicarFiltros();
+    });
+    document.getElementById('filtro-puesto').addEventListener('change', function() {
+        filtros.puesto = this.value;
+        aplicarFiltros();
+    });
 });
 </script>
 {% endblock %}
