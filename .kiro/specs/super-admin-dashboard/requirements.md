@@ -2,7 +2,7 @@
 
 ## Introduction
 
-El Dashboard del Super Admin es una interfaz web de administración completa que permite gestionar todo el sistema electoral a nivel nacional. Incluye gestión de usuarios, configuración electoral, monitoreo del sistema, y acceso a todos los datos sin restricciones geográficas. Es la herramienta de control y supervisión de más alto nivel del sistema.
+El Dashboard del Super Admin es una interfaz web de administración completa que permite gestionar todo el sistema electoral a nivel nacional. Incluye gestión de usuarios, configuración electoral, personalización de fondos de login, gestión de campañas electorales, herramientas de administración avanzadas, monitoreo del sistema, y acceso a todos los datos sin restricciones geográficas. Es la herramienta de control y supervisión de más alto nivel del sistema, con capacidades de personalización visual y gestión masiva de datos.
 
 ## Glossary
 
@@ -13,6 +13,13 @@ El Dashboard del Super Admin es una interfaz web de administración completa que
 - **Gestión de Usuarios**: Creación, modificación y desactivación de usuarios del sistema
 - **Monitoreo del Sistema**: Supervisión de salud, rendimiento y uso del sistema
 - **Vista Nacional**: Acceso a datos de todos los departamentos sin restricciones
+- **Fondo de Login**: Imagen, gradiente o color que se muestra como fondo en la página de inicio de sesión
+- **Gradiente**: Transición suave entre dos o más colores en una dirección específica
+- **Preview**: Vista previa en tiempo real de cómo se verá un fondo antes de aplicarlo
+- **Campaña Electoral**: Período electoral específico con sus propios partidos, candidatos y configuración
+- **Tema Visual**: Conjunto de colores y estilos que definen la apariencia de la interfaz
+- **Herramientas de Administración**: Utilidades avanzadas para gestión, diagnóstico e importación de datos
+- **Importación Masiva**: Proceso de cargar múltiples registros desde un archivo CSV
 
 ## Requirements
 
@@ -262,3 +269,64 @@ El Dashboard del Super Admin es una interfaz web de administración completa que
 4. THE Sistema SHALL registrar accesos a datos sensibles
 5. THE Sistema SHALL permitir a otros super admins revisar el log de acciones
 6. THE Sistema SHALL prohibir al super admin eliminar o modificar sus propios logs
+
+### Requirement 21: Personalización de Fondos de Login
+
+**User Story:** Como super admin, quiero personalizar el fondo de la página de login, para adaptar la apariencia del sistema a la identidad visual de la organización.
+
+#### Acceptance Criteria
+
+1. WHERE el usuario tiene rol de Super Admin, THE Sistema SHALL permitir crear fondos de login de tres tipos: gradientes, imágenes personalizadas, y colores sólidos
+2. WHEN se crea un fondo de tipo gradiente, THE Sistema SHALL permitir seleccionar hasta 3 colores y 6 direcciones (horizontal, vertical, diagonal, radial, etc.)
+3. WHEN se crea un fondo de tipo imagen, THE Sistema SHALL permitir subir imágenes en formatos PNG, JPG, JPEG, GIF, WEBP con tamaño máximo de 5MB
+4. WHEN se crea un fondo de tipo color sólido, THE Sistema SHALL permitir seleccionar un color mediante selector visual o input hexadecimal
+5. THE Sistema SHALL mostrar un preview en tiempo real del fondo mientras se configura
+6. THE Sistema SHALL proporcionar 7 fondos predefinidos: Bandera de Colombia, Azul Institucional, Amarillo Vibrante, Rojo Patriótico, Azul Oscuro, Gradiente Amanecer, Gradiente Océano
+7. THE Sistema SHALL permitir al super admin activar un fondo para que se muestre en la página de login
+8. THE Sistema SHALL permitir al super admin eliminar fondos personalizados (excepto el fondo activo)
+9. THE Sistema SHALL cargar dinámicamente el fondo activo en la página de login sin requerir actualización
+10. THE Sistema SHALL validar tipos de archivo y tamaño máximo antes de subir imágenes
+11. THE Sistema SHALL sanitizar nombres de archivo usando UUID para evitar conflictos
+12. THE Sistema SHALL almacenar fondos en directorio `frontend/static/uploads/fondos/`
+
+### Requirement 22: Herramientas de Administración Avanzadas
+
+**User Story:** Como super admin, quiero herramientas de administración avanzadas, para gestionar el sistema de forma eficiente.
+
+#### Acceptance Criteria
+
+1. WHERE el usuario tiene rol de Super Admin, THE Sistema SHALL proporcionar herramientas de importación masiva de datos
+2. THE Sistema SHALL permitir al super admin importar usuarios desde archivo CSV con validación de formato
+3. THE Sistema SHALL permitir al super admin importar ubicaciones DIVIPOLA desde archivo CSV
+4. THE Sistema SHALL mostrar el estado de salud del sistema con métricas de base de datos, memoria, y CPU
+5. THE Sistema SHALL permitir al super admin ejecutar scripts de diagnóstico del sistema
+6. THE Sistema SHALL proporcionar herramientas de limpieza de datos antiguos o huérfanos
+7. THE Sistema SHALL permitir al super admin ver estadísticas de uso de almacenamiento
+8. THE Sistema SHALL registrar todas las operaciones de herramientas de administración en el log de auditoría
+
+### Requirement 23: Gestión de Campañas Electorales
+
+**User Story:** Como super admin, quiero gestionar múltiples campañas electorales, para permitir que el sistema maneje diferentes elecciones de forma independiente.
+
+#### Acceptance Criteria
+
+1. WHERE el usuario tiene rol de Super Admin, THE Sistema SHALL permitir crear campañas electorales con nombre, fecha de inicio, fecha de fin, y descripción
+2. THE Sistema SHALL permitir al super admin activar o desactivar campañas electorales
+3. THE Sistema SHALL asociar partidos, candidatos y tipos de elección a campañas específicas
+4. THE Sistema SHALL permitir al super admin cambiar entre campañas para ver datos históricos
+5. THE Sistema SHALL validar que solo una campaña esté activa a la vez
+6. THE Sistema SHALL filtrar formularios E-14 por campaña electoral
+7. THE Sistema SHALL mantener la integridad referencial entre campañas y sus datos asociados
+
+### Requirement 24: Configuración de Temas Visuales
+
+**User Story:** Como super admin, quiero configurar temas visuales por rol o tipo de elección, para personalizar la experiencia de usuario.
+
+#### Acceptance Criteria
+
+1. WHERE el usuario tiene rol de Super Admin, THE Sistema SHALL permitir crear temas visuales con colores primarios, secundarios, y de acento
+2. THE Sistema SHALL permitir al super admin asignar temas a roles específicos (testigo, coordinador, admin)
+3. THE Sistema SHALL permitir al super admin asignar temas a tipos de elección específicos
+4. THE Sistema SHALL aplicar el tema correspondiente automáticamente según el rol del usuario
+5. THE Sistema SHALL proporcionar un preview del tema antes de aplicarlo
+6. THE Sistema SHALL validar que los colores tengan contraste suficiente para accesibilidad

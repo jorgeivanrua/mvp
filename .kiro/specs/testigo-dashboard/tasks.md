@@ -2,7 +2,7 @@
 
 ## Overview
 
-Este plan documenta la implementación del Dashboard del Testigo Electoral, que ya está completamente funcional. Las tareas marcadas como completadas representan el estado actual del sistema.
+Este plan documenta la implementación del Dashboard del Testigo Electoral, que ya está completamente funcional. Las 37 tareas están completadas y el sistema está en producción con todas las funcionalidades implementadas, incluyendo geolocalización GPS, tracking de ubicación, y mapas interactivos.
 
 ## Tasks
 
@@ -334,11 +334,73 @@ Este plan documenta la implementación del Dashboard del Testigo Electoral, que 
   - Comentarios de secciones con separadores visuales
   - _Requirements: Mantenibilidad_
 
+- [x] 32. Implementar verificación de presencia con geolocalización
+  - Crear archivo `frontend/static/js/verificacion-presencia.js`
+  - Implementar función `verificarPresencia()` con captura de GPS
+  - Solicitar permiso de geolocalización al usuario
+  - Capturar coordenadas GPS (latitud, longitud)
+  - Capturar precisión de geolocalización
+  - Enviar datos a endpoint `/api/verificacion/presencia`
+  - Mostrar confirmación con coordenadas capturadas
+  - Manejar error si usuario no otorga permiso
+  - Permitir verificación sin GPS con advertencia
+  - _Requirements: 2.2, 2.3, 2.4, 2.5, 2.6, 2.9_
+
+- [x] 33. Implementar tracking de ubicación y ping automático
+  - Iniciar ping automático después de verificar presencia
+  - Implementar función `iniciarPingAutomatico()` cada 15 minutos
+  - Actualizar última ubicación en cada ping
+  - Almacenar timestamp de última geolocalización
+  - Detener ping al cerrar sesión
+  - Guardar pings localmente si no hay conexión
+  - Sincronizar pings cuando recupera conexión
+  - _Requirements: 21.1, 21.2, 21.3, 21.4, 21.7_
+
+- [x] 34. Agregar campos de geolocalización al modelo User
+  - Agregar campo `ultima_latitud` (FLOAT) a modelo User
+  - Agregar campo `ultima_longitud` (FLOAT) a modelo User
+  - Agregar campo `ultima_geolocalizacion_at` (TIMESTAMP) a modelo User
+  - Agregar campo `precision_geolocalizacion` (FLOAT) a modelo User
+  - Crear migración SQL para agregar campos
+  - Aplicar migración en base de datos
+  - _Requirements: 2.4, 2.8, 21.2, 21.3_
+
+- [x] 35. Implementar endpoints de geolocalización
+  - Crear endpoint `POST /api/verificacion/presencia` en `backend/routes/verificacion_presencia.py`
+  - Crear endpoint `GET /api/locations/puestos-geolocalizados` en `backend/routes/locations_geo.py`
+  - Crear endpoint `GET /api/verificacion/usuarios-geolocalizados` en `backend/routes/locations_geo.py`
+  - Validar coordenadas GPS en backend
+  - Almacenar ubicación en base de datos
+  - Notificar a coordinador sobre verificación
+  - _Requirements: 2.4, 2.6, 22.1, 22.2, 22.3_
+
+- [x] 36. Implementar mapa de puestos y testigos geolocalizados
+  - Crear archivo `frontend/static/js/mapa-geolocalizacion.js`
+  - Integrar librería de mapas (Leaflet o Google Maps)
+  - Cargar puestos electorales con coordenadas GPS
+  - Mostrar marcadores de puestos en el mapa
+  - Cargar testigos con última ubicación conocida
+  - Mostrar marcadores de testigos en el mapa
+  - Usar colores diferentes para puestos y testigos
+  - Mostrar información al hacer clic en marcador
+  - Implementar filtros por departamento/municipio/puesto
+  - Actualizar mapa automáticamente con nuevas ubicaciones
+  - Mostrar precisión GPS en tooltip
+  - _Requirements: 22.1, 22.2, 22.3, 22.4, 22.5, 22.6, 22.7, 22.8_
+
+- [x] 37. Corregir verificación automática de presencia
+  - Eliminar verificación automática en `init()`
+  - Verificar presencia SOLO cuando testigo hace clic en botón
+  - Iniciar ping automático DESPUÉS de verificar presencia
+  - Mejorar manejo de `sessionStorage`
+  - Prevenir llamadas automáticas a `/api/verificacion/presencia`
+  - _Requirements: 2.7_
+
 ## Estado Actual
 
 ✅ **Dashboard Testigo Electoral 100% Funcional**
 
-Todas las 31 tareas están completadas y el sistema está en producción. El dashboard incluye:
+Todas las 37 tareas están completadas y el sistema está en producción. El dashboard incluye:
 
 ### Funcionalidades Principales
 - ✅ **Gestión completa de formularios E-14**
@@ -390,24 +452,53 @@ Todas las 31 tareas están completadas y el sistema está en producción. El das
   - Cierre de sesión seguro
   - Logs de todas las acciones
 
+- ✅ **Verificación de presencia con geolocalización**
+  - Captura de coordenadas GPS (latitud, longitud)
+  - Registro de precisión de geolocalización
+  - Verificación manual (no automática)
+  - Almacenamiento de última ubicación
+  - Timestamp de última geolocalización
+  - Notificación a coordinador con ubicación
+
+- ✅ **Tracking de ubicación y ping automático**
+  - Ping automático cada 15 minutos después de verificar presencia
+  - Actualización de última ubicación en cada ping
+  - Almacenamiento de timestamp de última geolocalización
+  - Sincronización de pings cuando hay conexión
+
+- ✅ **Mapa de puestos y testigos geolocalizados**
+  - Mapa interactivo con marcadores de puestos
+  - Marcadores de testigos con última ubicación
+  - Información al hacer clic en marcadores
+  - Actualización automática del mapa
+  - Visualización de precisión GPS
+
 ### Archivos Implementados
 - `frontend/templates/testigo/dashboard.html` - Template HTML
-- `frontend/static/js/testigo-dashboard-new.js` - Lógica principal (1570 líneas)
+- `frontend/static/js/testigo-dashboard-final-fix.js` - Lógica principal corregida
+- `frontend/static/js/testigo-presencia-simple.js` - Verificación de presencia
+- `frontend/static/js/verificacion-presencia.js` - Geolocalización completa
+- `frontend/static/js/mapa-geolocalizacion.js` - Mapa interactivo
 - `frontend/static/js/sync-manager.js` - Sincronización universal
 - `frontend/static/js/api-client.js` - Cliente API con métodos
+- `backend/routes/testigo.py` - Endpoints específicos del testigo
 - `backend/routes/formularios_e14.py` - Endpoints de formularios
 - `backend/routes/incidentes_delitos.py` - Endpoints de incidentes/delitos
-- `backend/routes/auth.py` - Endpoint de verificación de presencia
+- `backend/routes/verificacion_presencia.py` - Verificación con GPS
+- `backend/routes/locations_geo.py` - Puestos y usuarios geolocalizados
+- `backend/models/user.py` - Campos de geolocalización (ultima_latitud, ultima_longitud, ultima_geolocalizacion_at, precision_geolocalizacion)
 - `backend/routes/frontend.py` - Ruta `/testigo/dashboard`
 
 ## Mejoras Futuras (Opcionales)
 
 - [ ] Implementar PWA con Service Workers
 - [ ] Agregar soporte para modo oscuro
-- [ ] Implementar notificaciones push
+- [ ] Implementar notificaciones push en tiempo real
 - [ ] Agregar gráficos de resultados en tiempo real
 - [ ] Implementar chat con coordinador
-- [ ] Agregar geolocalización para verificar ubicación
 - [ ] Implementar firma digital de formularios
 - [ ] Agregar exportación de formularios a PDF
+- [ ] Agregar validación de ubicación vs mesa asignada (geofencing)
+- [ ] Implementar alertas cuando el testigo se aleja del puesto
+- [ ] Agregar historial de ubicaciones del testigo
 

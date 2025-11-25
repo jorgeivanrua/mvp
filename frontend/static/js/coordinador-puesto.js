@@ -154,6 +154,11 @@ function renderFormulariosTable(formularios) {
                     <small class="text-muted">${form.mesa_nombre || ''}</small>
                 </td>
                 <td>${form.testigo_nombre || 'N/A'}</td>
+                <td>
+                    <span class="badge bg-primary" style="font-size: 0.75rem;">
+                        ${form.tipo_eleccion_nombre || 'N/A'}
+                    </span>
+                </td>
                 <td>${estadoBadge}</td>
                 <td><strong>${Utils.formatNumber(form.total_votos)}</strong></td>
                 <td>

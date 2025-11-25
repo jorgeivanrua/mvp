@@ -2,7 +2,7 @@
 
 ## Introducción
 
-Este documento describe el plan de implementación del Sistema Electoral E-14/E-24, organizado en tareas incrementales que construyen sobre el trabajo anterior. Cada tarea incluye objetivos claros, referencias a requerimientos, y criterios de aceptación.
+Este documento describe el plan de implementación del Sistema Electoral E-14/E-24, organizado en tareas incrementales que construyen sobre el trabajo anterior. Este spec actúa como "spec paraguas" que engloba funcionalidades distribuidas en otros dashboards específicos. Estado actual: 85% completado, con funcionalidades core implementadas en Testigo Dashboard, Coordinador Puesto, y Super Admin Dashboard.
 
 ## Estructura de Tareas
 

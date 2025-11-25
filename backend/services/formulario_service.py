@@ -5,6 +5,7 @@ from backend.database import db
 from backend.models.formulario_e14 import FormularioE14, VotoPartido, VotoCandidato, HistorialFormulario
 from backend.models.location import Location
 from backend.models.user import User
+from backend.models.configuracion_electoral import TipoEleccion
 from backend.utils.exceptions import ValidationException, NotFoundException
 from datetime import datetime
 from sqlalchemy import and_, or_
@@ -45,6 +46,22 @@ class FormularioService:
         testigo = User.query.get(testigo_id)
         if not testigo:
             raise ValidationException({'testigo_id': ['Testigo no encontrado']})
+        
+        # Validar que no exista ya un formulario para esta mesa y tipo de elección
+        formulario_existente = FormularioE14.query.filter_by(
+            mesa_id=data['mesa_id'],
+            tipo_eleccion_id=data['tipo_eleccion_id']
+        ).first()
+        
+        if formulario_existente:
+            tipo_eleccion = TipoEleccion.query.get(data['tipo_eleccion_id'])
+            tipo_nombre = tipo_eleccion.nombre if tipo_eleccion else 'esta elección'
+            raise ValidationException({
+                'mesa_tipo_eleccion': [
+                    f'Ya existe un formulario para esta mesa y {tipo_nombre}. '
+                    f'Cada mesa solo puede tener un formulario por tipo de elección.'
+                ]
+            })
         
         # Validar coherencia de datos
         FormularioService._validar_coherencia_datos(data)

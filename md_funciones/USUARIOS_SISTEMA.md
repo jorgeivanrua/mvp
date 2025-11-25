@@ -70,6 +70,25 @@ Rol: auditor_electoral
 Ubicación: Departamento Caquetá
 ```
 
+### Usuario de Monitoreo
+```
+Usuario: monitoreo
+Password: Monitoreo2025!
+Rol: monitoreo
+Ubicación: Sin ubicación (acceso global)
+```
+
+**Descripción:**
+El usuario de monitoreo tiene visibilidad completa del sistema sin restricciones de jurisdicción. Puede ver todos los usuarios, formularios, incidentes y delitos de todas las ubicaciones.
+
+**Dashboard:** `http://localhost:5000/monitoreo/dashboard`
+
+**Funcionalidades:**
+- 🗺️ Mapa global de usuarios geolocalizados
+- 📊 Estadísticas globales del sistema
+- 🎛️ Filtros avanzados por ubicación
+- 🔄 Auto-refresh cada 30 segundos
+
 ## Estructura de Nombres de Usuario
 
 ### Patrón de Nombres
@@ -81,6 +100,7 @@ Ubicación: Departamento Caquetá
 - **Coordinadores de Puesto**: `coord_puesto_{codigo_puesto}`
 - **Testigos**: `testigo_{codigo_puesto}_{numero}`
 - **Auditores**: `auditor_{ubicacion}`
+- **Monitoreo**: `monitoreo`
 
 ### Ejemplos
 
@@ -94,6 +114,7 @@ coord_puesto_01         → Coordinador Puesto 01
 testigo_01_1            → Testigo 1 del Puesto 01
 testigo_01_2            → Testigo 2 del Puesto 01
 auditor_caqueta         → Auditor Electoral Caquetá
+monitoreo               → Usuario de Monitoreo (acceso global)
 ```
 
 ## Login en el Sistema
@@ -147,6 +168,7 @@ Password: testigo123
 | Coordinador de Puesto | coord123 |
 | Testigo Electoral | testigo123 |
 | Auditor Electoral | auditor123 |
+| Monitoreo | Monitoreo2025! |
 
 ## Seguridad
 

@@ -3,6 +3,8 @@
 {% block title %}Dashboard Coordinador de Puesto{% endblock %}
 
 {% block extra_css %}
+<!-- Incluir CSS mejorado -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/coordinador-puesto-v2.css') }}">
 <style>
 .stats-card {
     border-left: 4px solid;
@@ -126,61 +128,46 @@
 
 {% block content %}
 <div class="container-fluid py-4">
-    <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-12 d-flex justify-content-between align-items-center">
-            <div>
-                <h2>Dashboard - Coordinador de Puesto</h2>
-                <p class="text-muted mb-0" id="puestoInfo">Cargando información del puesto...</p>
+    <!-- Header Mejorado -->
+    <div class="dashboard-header">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div class="flex-grow-1">
+                <h2><i class="bi bi-building"></i> Coordinador de Puesto</h2>
+                <p id="puestoInfo">Cargando información del puesto...</p>
             </div>
-            <button class="btn btn-outline-danger" onclick="logout()">
-                <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+            <button class="btn btn-light btn-touch" onclick="logout()">
+                <i class="bi bi-box-arrow-right"></i>
+                <span class="d-none d-md-inline">Cerrar Sesión</span>
             </button>
         </div>
     </div>
 
-    <!-- Estadísticas -->
-    <div class="row mb-4">
-        <div class="col-md-3 col-sm-6 mb-3">
-            <div class="card stats-card pendientes">
-                <div class="card-body">
-                    <h6 class="text-muted mb-2">Pendientes</h6>
-                    <h3 class="mb-0" id="statPendientes">0</h3>
-                    <small class="text-muted">Por validar</small>
-                </div>
-            </div>
+    <!-- Estadísticas Mejoradas -->
+    <div class="stats-grid">
+        <div class="stat-card pendientes">
+            <h6>Pendientes</h6>
+            <h3 id="statPendientes">0</h3>
+            <small>Por validar</small>
         </div>
-        <div class="col-md-3 col-sm-6 mb-3">
-            <div class="card stats-card validados">
-                <div class="card-body">
-                    <h6 class="text-muted mb-2">Validados</h6>
-                    <h3 class="mb-0" id="statValidados">0</h3>
-                    <small class="text-muted">Aprobados</small>
-                </div>
-            </div>
+        <div class="stat-card validados">
+            <h6>Validados</h6>
+            <h3 id="statValidados">0</h3>
+            <small>Aprobados</small>
         </div>
-        <div class="col-md-3 col-sm-6 mb-3">
-            <div class="card stats-card rechazados">
-                <div class="card-body">
-                    <h6 class="text-muted mb-2">Rechazados</h6>
-                    <h3 class="mb-0" id="statRechazados">0</h3>
-                    <small class="text-muted">Devueltos</small>
-                </div>
-            </div>
+        <div class="stat-card rechazados">
+            <h6>Rechazados</h6>
+            <h3 id="statRechazados">0</h3>
+            <small>Devueltos</small>
         </div>
-        <div class="col-md-3 col-sm-6 mb-3">
-            <div class="card stats-card progreso">
-                <div class="card-body">
-                    <h6 class="text-muted mb-2">Progreso</h6>
-                    <h3 class="mb-0" id="statProgreso">0%</h3>
-                    <small class="text-muted" id="statMesas">0 de 0 mesas</small>
-                </div>
-            </div>
+        <div class="stat-card progreso">
+            <h6>Progreso</h6>
+            <h3 id="statProgreso">0%</h3>
+            <small id="statMesas">0 de 0 mesas</small>
         </div>
     </div>
 
-    <!-- Pestañas -->
-    <ul class="nav nav-tabs mb-3" id="dashboardTabs" role="tablist">
+    <!-- Pestañas (Ocultas en móvil, se usa bottom nav) -->
+    <ul class="nav nav-tabs mb-3 d-none d-md-flex" id="dashboardTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="formularios-tab" data-bs-toggle="tab" data-bs-target="#formularios" type="button" role="tab">
                 <i class="bi bi-file-earmark-text"></i> Formularios E-14
@@ -188,7 +175,7 @@
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="e24-tab" data-bs-toggle="tab" data-bs-target="#e24" type="button" role="tab">
-                <i class="bi bi-table"></i> Consolidado E-24 Puesto
+                <i class="bi bi-table"></i> Consolidado E-24
             </button>
         </li>
         <li class="nav-item" role="presentation">
@@ -205,12 +192,12 @@
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="equipo-tab" data-bs-toggle="tab" data-bs-target="#equipo" type="button" role="tab">
-                <i class="bi bi-people"></i> Estado del Equipo
+                <i class="bi bi-people"></i> Equipo
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="mapa-tab" data-bs-toggle="tab" data-bs-target="#mapa" type="button" role="tab">
-                <i class="bi bi-geo-alt"></i> Mapa en Tiempo Real
+                <i class="bi bi-geo-alt"></i> Mapa
             </button>
         </li>
     </ul>
@@ -222,43 +209,77 @@
                 <!-- Tabla de Formularios -->
                 <div class="col-lg-8 mb-4">
                     <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">Formularios E-14</h5>
-                            <div class="btn-group btn-group-sm" role="group" id="filterButtons">
-                                <button type="button" class="btn btn-outline-primary active" onclick="filtrarPorEstado('')">Todos</button>
-                                <button type="button" class="btn btn-outline-warning" onclick="filtrarPorEstado('pendiente')">Pendientes</button>
-                                <button type="button" class="btn btn-outline-success" onclick="filtrarPorEstado('validado')">Validados</button>
-                                <button type="button" class="btn btn-outline-danger" onclick="filtrarPorEstado('rechazado')">Rechazados</button>
+                        <div class="card-header">
+                            <h5 class="mb-3 d-md-none">Formularios E-14</h5>
+                            <h5 class="mb-0 d-none d-md-block">Formularios E-14</h5>
+                            
+                            <!-- Barra de Búsqueda -->
+                            <div class="search-bar mt-3">
+                                <input type="search" 
+                                       class="form-control" 
+                                       placeholder="🔍 Buscar por mesa o testigo..." 
+                                       oninput="buscarFormularios(this.value)">
+                            </div>
+                            
+                            <!-- Filtros con Chips -->
+                            <div class="filter-chips mt-3">
+                                <button class="chip active" onclick="filtrarPorEstado('')">
+                                    Todos <span class="badge" id="badgeTodos">0</span>
+                                </button>
+                                <button class="chip" onclick="filtrarPorEstado('pendiente')">
+                                    Pendientes <span class="badge bg-warning" id="badgePendientes">0</span>
+                                </button>
+                                <button class="chip" onclick="filtrarPorEstado('validado')">
+                                    Validados <span class="badge bg-success" id="badgeValidados">0</span>
+                                </button>
+                                <button class="chip" onclick="filtrarPorEstado('rechazado')">
+                                    Rechazados <span class="badge bg-danger" id="badgeRechazados">0</span>
+                                </button>
                             </div>
                         </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover" id="formulariosTable">
-                            <thead>
-                                <tr>
-                                    <th>Mesa</th>
-                                    <th>Testigo</th>
-                                    <th>Estado</th>
-                                    <th>Total Votos</th>
-                                    <th>Fecha</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="6" class="text-center py-4">
-                                        <div class="spinner-border text-primary" role="status">
-                                            <span class="visually-hidden">Cargando...</span>
-                                        </div>
-                                        <p class="text-muted mt-2">Cargando formularios...</p>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="card-body">
+                            <!-- Vista de Cards para Móvil -->
+                            <div id="formulariosCards" class="d-md-none">
+                                <!-- Se llenará dinámicamente con JavaScript -->
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                    <p class="text-muted mt-2">Cargando formularios...</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Vista de Tabla para Desktop -->
+                            <div class="d-none d-md-block">
+                                <div class="table-responsive">
+                                    <table class="table table-hover formulario-table" id="formulariosTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Mesa</th>
+                                                <th>Testigo</th>
+                                                <th>Tipo Elección</th>
+                                                <th>Estado</th>
+                                                <th>Total Votos</th>
+                                                <th>Fecha</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td colspan="6" class="text-center py-4">
+                                                    <div class="spinner-border text-primary" role="status">
+                                                        <span class="visually-hidden">Cargando...</span>
+                                                    </div>
+                                                    <p class="text-muted mt-2">Cargando formularios...</p>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
                 <!-- Panel Lateral -->
                 <div class="col-lg-4">
@@ -795,10 +816,33 @@
     </div>
 </div>
 
+<!-- Bottom Navigation (Solo Móvil) -->
+<nav class="bottom-nav d-md-none">
+    <a href="#" class="bottom-nav-item active" data-tab="formularios" onclick="cambiarTab('formularios'); return false;">
+        <i class="bi bi-file-earmark-text"></i>
+        <span>Formularios</span>
+        <span class="badge bg-warning" id="navBadgeFormularios" style="display: none;">0</span>
+    </a>
+    <a href="#" class="bottom-nav-item" data-tab="alertas" onclick="cambiarTab('alertas'); return false;">
+        <i class="bi bi-exclamation-triangle"></i>
+        <span>Alertas</span>
+        <span class="badge bg-danger" id="navBadgeAlertas" style="display: none;">0</span>
+    </a>
+    <a href="#" class="bottom-nav-item" data-tab="equipo" onclick="cambiarTab('equipo'); return false;">
+        <i class="bi bi-people"></i>
+        <span>Equipo</span>
+    </a>
+    <a href="#" class="bottom-nav-item" data-tab="mapa" onclick="cambiarTab('mapa'); return false;">
+        <i class="bi bi-geo-alt"></i>
+        <span>Mapa</span>
+    </a>
+</nav>
+
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="{{ url_for('static', filename='js/incidentes-delitos.js') }}"></script>
 <script src="{{ url_for('static', filename='js/coordinador-puesto.js') }}"></script>
+<script src="{{ url_for('static', filename='js/coordinador-puesto-mejoras.js') }}"></script>
 {% endblock %}

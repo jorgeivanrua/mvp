@@ -3,12 +3,14 @@
 {% block title %}Login - Sistema Electoral{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard-universal-v2.css') }}">
 <style>
 .login-container {
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 1rem;
     /* Fondo dinámico - se carga desde la configuración */
     background: linear-gradient(180deg, 
         #FCD116 0%, 
@@ -39,12 +41,20 @@
     background: white;
     border-radius: 20px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    padding: 2.5rem;
+    padding: 2rem;
     width: 100%;
     max-width: 500px;
     position: relative;
     z-index: 1;
     border: 3px solid rgba(252, 209, 22, 0.3);
+}
+
+@media (max-width: 576px) {
+    .login-card {
+        padding: 1.5rem;
+        border-radius: 16px;
+        margin: 0.5rem;
+    }
 }
 
 .login-header {
@@ -114,25 +124,36 @@
 }
 
 .form-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
 }
 
 .form-label {
-    font-weight: 500;
+    font-weight: 600;
     color: #333;
     margin-bottom: 0.5rem;
+    font-size: 0.9rem;
 }
 
 .form-select, .form-control {
-    border-radius: 8px;
+    border-radius: 10px;
     border: 2px solid #e1e5e9;
-    padding: 0.75rem 1rem;
+    padding: 0.85rem 1rem;
     transition: all 0.3s ease;
+    font-size: 1rem;
+    min-height: 48px; /* Táctil optimizado */
 }
 
 .form-select:focus, .form-control:focus {
     border-color: #003893;
-    box-shadow: 0 0 0 0.2rem rgba(0, 56, 147, 0.25);
+    box-shadow: 0 0 0 0.25rem rgba(0, 56, 147, 0.15);
+    outline: none;
+}
+
+@media (max-width: 576px) {
+    .form-select, .form-control {
+        font-size: 16px; /* Evita zoom en iOS */
+        padding: 0.9rem 1rem;
+    }
 }
 
 .location-section {
@@ -146,21 +167,39 @@
 .btn-login {
     background: linear-gradient(135deg, #003893 0%, #001f5c 100%);
     border: none;
-    border-radius: 10px;
-    padding: 0.85rem 2rem;
-    font-weight: 600;
+    border-radius: 12px;
+    padding: 1rem 2rem;
+    font-weight: 700;
     width: 100%;
     transition: all 0.3s ease;
     color: white;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    font-size: 0.95rem;
+    font-size: 1rem;
+    min-height: 52px; /* Táctil optimizado */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
 }
 
 .btn-login:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0, 56, 147, 0.4);
     background: linear-gradient(135deg, #001f5c 0%, #003893 100%);
+    color: white;
+}
+
+.btn-login:active {
+    transform: translateY(0);
+}
+
+@media (max-width: 576px) {
+    .btn-login {
+        padding: 1.1rem 2rem;
+        font-size: 1.05rem;
+        min-height: 56px;
+    }
 }
 
 .alert {
@@ -247,19 +286,50 @@
     margin-left: 0.5rem;
 }
 
+/* Botón de mostrar/ocultar contraseña */
+.input-group .btn-outline-secondary {
+    border-color: #e1e5e9;
+    color: #666;
+    min-height: 48px;
+    border-radius: 0 10px 10px 0;
+}
+
+.input-group .btn-outline-secondary:hover {
+    background-color: #f8f9fa;
+    border-color: #003893;
+    color: #003893;
+}
+
+.input-group .form-control {
+    border-right: none;
+    border-radius: 10px 0 0 10px;
+}
+
 /* Responsive */
 @media (max-width: 576px) {
-    .login-card {
-        margin: 1rem;
-        padding: 1.5rem;
-    }
-    
     .logo-dia-d {
         font-size: 3rem;
     }
     
     .login-header h1 {
         font-size: 1.2rem;
+    }
+    
+    .logo-subtitle {
+        font-size: 0.8rem;
+    }
+    
+    .bandera-decorativa {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .location-section {
+        padding: 1rem;
+    }
+    
+    .alert {
+        font-size: 0.8rem;
     }
 }
 
@@ -317,18 +387,20 @@
         <form id="loginForm">
             <!-- Rol -->
             <div class="form-group">
-                <label for="rol" class="form-label">Rol</label>
+                <label for="rol" class="form-label">
+                    <i class="bi bi-person-badge"></i> Rol
+                </label>
                 <select class="form-select" id="rol" name="rol" required>
                     <option value="">Seleccione su rol</option>
-                    <option value="super_admin">Super Administrador</option>
-                    <option value="admin_departamental">Admin Departamental</option>
-                    <option value="admin_municipal">Admin Municipal</option>
-                    <option value="coordinador_departamental">Coordinador Departamental</option>
-                    <option value="coordinador_municipal">Coordinador Municipal</option>
-                    <option value="coordinador_puesto">Coordinador de Puesto</option>
-                    <option value="testigo_electoral">Testigo Electoral</option>
-                    <option value="auditor_electoral">Auditor Electoral</option>
-                    <option value="monitoreo">Monitoreo</option>
+                    <option value="super_admin">🔐 Super Administrador</option>
+                    <option value="admin_departamental">🏛️ Admin Departamental</option>
+                    <option value="admin_municipal">🏢 Admin Municipal</option>
+                    <option value="coordinador_departamental">🗺️ Coordinador Departamental</option>
+                    <option value="coordinador_municipal">🏛️ Coordinador Municipal</option>
+                    <option value="coordinador_puesto">📍 Coordinador de Puesto</option>
+                    <option value="testigo_electoral">👤 Testigo Electoral</option>
+                    <option value="auditor_electoral">🔍 Auditor Electoral</option>
+                    <option value="monitoreo">📊 Monitoreo</option>
                 </select>
             </div>
             
@@ -371,10 +443,14 @@
             
             <!-- Contraseña -->
             <div class="form-group">
-                <label for="password" class="form-label">Contraseña</label>
+                <label for="password" class="form-label">
+                    <i class="bi bi-lock"></i> Contraseña
+                </label>
                 <div class="input-group">
-                    <input type="password" class="form-control" id="password" name="password" required>
-                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                    <input type="password" class="form-control" id="password" name="password" 
+                           placeholder="Ingrese su contraseña" required autocomplete="current-password">
+                    <button class="btn btn-outline-secondary" type="button" id="togglePassword" 
+                            aria-label="Mostrar/Ocultar contraseña">
                         <i class="bi bi-eye" id="eyeIcon"></i>
                     </button>
                 </div>
@@ -382,6 +458,7 @@
             
             <!-- Botón Login -->
             <button type="submit" class="btn btn-primary btn-login" id="loginBtn">
+                <i class="bi bi-box-arrow-in-right"></i>
                 <span id="loginText">Iniciar Sesión</span>
                 <span id="loginSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
             </button>
@@ -392,6 +469,8 @@
 
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/login-fixed.js') }}"></script>
+<!-- Mejoras UI/UX Mobile-First -->
+<script src="{{ url_for('static', filename='js/login-mejoras.js') }}"></script>
 <script>
 // Cargar fondo dinámico desde la configuración
 document.addEventListener('DOMContentLoaded', async function() {

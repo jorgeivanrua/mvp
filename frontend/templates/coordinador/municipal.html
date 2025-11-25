@@ -3,6 +3,7 @@
 {% block title %}Dashboard Coordinador Municipal{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard-universal-v2.css') }}">
 <style>
     .badge-status {
         font-size: 0.75rem;
@@ -22,176 +23,247 @@
         position: relative;
         top: -2px;
     }
-    .stat-card {
-        border-left: 4px solid #0d6efd;
-        margin-bottom: 1rem;
+    
+    /* Cards de puestos para móvil */
+    .puesto-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s;
     }
-    .stat-card.success {
-        border-left-color: #198754;
+    .puesto-card:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
     }
-    .stat-card.warning {
-        border-left-color: #ffc107;
-    }
-    .stat-card.danger {
-        border-left-color: #dc3545;
+    .puesto-card.selected {
+        border-color: #0d6efd;
+        background-color: #e7f3ff;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Navbar -->
-<nav class="navbar navbar-dark bg-primary">
-    <div class="container-fluid">
-        <span class="navbar-brand">
-            <i class="bi bi-building"></i> Dashboard Coordinador Municipal
-        </span>
-        <div class="d-flex align-items-center">
-            <span id="municipioInfo" class="text-white me-3"></span>
-            <button class="btn btn-outline-light btn-sm" onclick="logout()">
-                <i class="bi bi-box-arrow-right"></i> Salir
-            </button>
+<div class="container-fluid py-3 pb-5 pb-md-3">
+    <!-- Header Mejorado -->
+    <div class="dashboard-header">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h2><i class="bi bi-building"></i> Coordinador Municipal</h2>
+                <p class="mb-0">Municipio: <span id="municipioInfo">Cargando...</span></p>
+            </div>
+            <div class="d-none d-md-flex gap-2">
+                <button class="btn btn-outline-primary btn-sm" onclick="loadPuestos()">
+                    <i class="bi bi-arrow-clockwise"></i> Actualizar
+                </button>
+                <button class="btn btn-outline-danger btn-sm" onclick="logout()">
+                    <i class="bi bi-box-arrow-right"></i> Salir
+                </button>
+            </div>
         </div>
     </div>
-</nav>
 
-<div class="container-fluid py-4">
-    <div class="row">
-        <!-- Panel izquierdo: Estadísticas y Consolidado -->
-        <div class="col-lg-3 col-md-4">
-            <!-- Estadísticas Generales -->
-            <div class="card mb-3">
-                <div class="card-header bg-primary text-white">
-                    <h6 class="mb-0"><i class="bi bi-bar-chart"></i> Estadísticas Generales</h6>
+    <!-- Stats Cards Mejoradas -->
+    <div class="stats-grid">
+        <div class="stat-card primary">
+            <h6>Puestos</h6>
+            <h3 id="statPuestos">0</h3>
+            <small>Total</small>
+        </div>
+        <div class="stat-card success">
+            <h6>Validados</h6>
+            <h3 id="statValidados">0</h3>
+            <small>Formularios</small>
+        </div>
+        <div class="stat-card warning">
+            <h6>Pendientes</h6>
+            <h3 id="statPendientes">0</h3>
+            <small>Por revisar</small>
+        </div>
+        <div class="stat-card info">
+            <h6>Progreso</h6>
+            <h3 id="statProgreso">0%</h3>
+            <small>Completado</small>
+        </div>
+    </div>
+
+    <!-- Tabs Desktop (ocultos en móvil) -->
+    <ul class="nav nav-tabs mb-3 d-none d-md-flex" id="municipalTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="puestos-tab" data-bs-toggle="tab" data-bs-target="#puestos" type="button" role="tab">
+                <i class="bi bi-geo-alt"></i> Puestos
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="consolidado-tab" data-bs-toggle="tab" data-bs-target="#consolidado" type="button" role="tab">
+                <i class="bi bi-pie-chart"></i> Consolidado
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="reportes-tab" data-bs-toggle="tab" data-bs-target="#reportes" type="button" role="tab">
+                <i class="bi bi-bar-chart"></i> Reportes
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="mapa-tab" data-bs-toggle="tab" data-bs-target="#mapa" type="button" role="tab">
+                <i class="bi bi-map"></i> Mapa
+            </button>
+        </li>
+    </ul>
+
+    <!-- Contenido de las pestañas -->
+    <div class="tab-content" id="municipalTabsContent">
+        <!-- Tab 1: Puestos -->
+        <div class="tab-pane fade show active" id="puestos" role="tabpanel">
+            <!-- Botones de Acción Rápida (Móvil) -->
+            <div class="quick-actions d-md-none mb-3">
+                <button class="btn-touch btn-primary-touch btn-touch-block" onclick="generarE24Municipal()">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                    Generar E-24 Municipal
+                </button>
+                <button class="btn-touch btn-info-touch btn-touch-block" onclick="exportarDatos()">
+                    <i class="bi bi-download"></i>
+                    Exportar Datos
+                </button>
+            </div>
+
+            <!-- Filtros -->
+            <div class="mb-3">
+                <div class="search-bar">
+                    <i class="bi bi-search"></i>
+                    <input type="text" class="search-input" id="searchPuesto" 
+                           placeholder="Buscar puesto..." onkeyup="buscarPuesto()">
                 </div>
-                <div class="card-body">
-                    <div id="estadisticasGenerales">
-                        <div class="text-center py-3">
-                            <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                <span class="visually-hidden">Cargando...</span>
+                
+                <div class="filter-chips">
+                    <button class="filter-chip active" onclick="filtrarPuestos('')">
+                        Todos <span class="badge" id="badgeTodos">0</span>
+                    </button>
+                    <button class="filter-chip" onclick="filtrarPuestos('completo')">
+                        Completos <span class="badge bg-success" id="badgeCompletos">0</span>
+                    </button>
+                    <button class="filter-chip" onclick="filtrarPuestos('incompleto')">
+                        Incompletos <span class="badge bg-warning" id="badgeIncompletos">0</span>
+                    </button>
+                    <button class="filter-chip" onclick="filtrarPuestos('con_discrepancias')">
+                        Discrepancias <span class="badge bg-danger" id="badgeDiscrepancias">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Lista de Puestos -->
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-geo-alt"></i> Puestos de Votación</h5>
+                            <button class="btn btn-sm btn-outline-primary d-none d-md-inline-flex" onclick="loadPuestos()">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <!-- Vista de Cards para Móvil -->
+                            <div class="d-md-none" id="puestosCardsMobile">
+                                <div class="text-center py-4 text-muted">
+                                    <i class="bi bi-geo-alt" style="font-size: 3rem;"></i>
+                                    <p class="mt-2">Cargando puestos...</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Vista de Tabla para Desktop -->
+                            <div class="table-responsive d-none d-md-block" style="max-height: 600px; overflow-y: auto;">
+                                <table class="table table-hover table-sm" id="puestosTable">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th>Puesto</th>
+                                            <th>Coordinador</th>
+                                            <th class="text-center">Avance</th>
+                                            <th class="text-center">Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td colspan="4" class="text-center py-4">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Cargando...</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel lateral: Detalle y Alertas -->
+                <div class="col-lg-4 d-none d-lg-block">
+                    <!-- Detalle de Puesto Seleccionado -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="bi bi-info-circle"></i> Detalle de Puesto</h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="detallePuesto">
+                                <p class="text-muted text-center">
+                                    <i class="bi bi-hand-index"></i><br>
+                                    Seleccione un puesto
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alertas y Discrepancias -->
+                    <div class="card">
+                        <div class="card-header bg-warning">
+                            <h6 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Alertas</h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="discrepanciasPanel">
+                                <div class="text-center py-3">
+                                    <div class="spinner-border spinner-border-sm text-warning" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+        <!-- Fin Tab Puestos -->
 
-            <!-- Consolidado Municipal -->
-            <div class="card mb-3">
-                <div class="card-header bg-success text-white">
-                    <h6 class="mb-0"><i class="bi bi-pie-chart"></i> Consolidado Municipal</h6>
+        <!-- Tab 2: Consolidado -->
+        <div class="tab-pane fade" id="consolidado" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Consolidado Municipal</h5>
                 </div>
                 <div class="card-body">
                     <div id="consolidadoMunicipal">
-                        <div class="text-center py-3">
-                            <div class="spinner-border spinner-border-sm text-success" role="status">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-success" role="status">
                                 <span class="visually-hidden">Cargando...</span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+        <!-- Fin Tab Consolidado -->
 
-            <!-- Acciones Rápidas -->
+        <!-- Tab 3: Reportes -->
+        <div class="tab-pane fade" id="reportes" role="tabpanel">
             <div class="card">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-lightning"></i> Acciones</h6>
+                    <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Reportes y Estadísticas</h5>
                 </div>
                 <div class="card-body">
-                    <button class="btn btn-primary btn-sm w-100 mb-2" onclick="generarE24Municipal()">
-                        <i class="bi bi-file-earmark-pdf"></i> Generar E-24
-                    </button>
-                    <button class="btn btn-outline-primary btn-sm w-100 mb-2" onclick="exportarDatos()">
-                        <i class="bi bi-download"></i> Exportar Datos
-                    </button>
-                    <button class="btn btn-outline-secondary btn-sm w-100" onclick="abrirComparacion()">
-                        <i class="bi bi-bar-chart-line"></i> Comparar Puestos
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Panel central: Lista de Puestos -->
-        <div class="col-lg-6 col-md-8">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-geo-alt"></i> Puestos de Votación</h5>
-                    <button class="btn btn-sm btn-outline-primary" onclick="loadPuestos()">
-                        <i class="bi bi-arrow-clockwise"></i>
-                    </button>
-                </div>
-                <div class="card-body">
-                    <!-- Filtros -->
-                    <div class="mb-3">
-                        <div class="btn-group btn-group-sm w-100 mb-2" id="filterButtons" role="group">
-                            <button type="button" class="btn btn-outline-secondary active" onclick="filtrarPuestos('')">
-                                Todos
-                            </button>
-                            <button type="button" class="btn btn-outline-success" onclick="filtrarPuestos('completo')">
-                                Completos
-                            </button>
-                            <button type="button" class="btn btn-outline-warning" onclick="filtrarPuestos('incompleto')">
-                                Incompletos
-                            </button>
-                            <button type="button" class="btn btn-outline-danger" onclick="filtrarPuestos('con_discrepancias')">
-                                Con Discrepancias
-                            </button>
-                        </div>
-                        <input type="text" class="form-control form-control-sm" 
-                               id="searchPuesto" placeholder="Buscar puesto por código o nombre..."
-                               onkeyup="buscarPuesto()">
-                    </div>
-
-                    <!-- Tabla de Puestos -->
-                    <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
-                        <table class="table table-hover table-sm" id="puestosTable">
-                            <thead class="table-light sticky-top">
-                                <tr>
-                                    <th>Puesto</th>
-                                    <th>Coordinador</th>
-                                    <th class="text-center">Avance</th>
-                                    <th class="text-center">Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td colspan="4" class="text-center py-4">
-                                        <div class="spinner-border text-primary" role="status">
-                                            <span class="visually-hidden">Cargando...</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Panel derecho: Detalle de Puesto y Alertas -->
-        <div class="col-lg-3 col-md-12">
-            <!-- Detalle de Puesto Seleccionado -->
-            <div class="card mb-3">
-                <div class="card-header bg-info text-white">
-                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Detalle de Puesto</h6>
-                </div>
-                <div class="card-body">
-                    <div id="detallePuesto">
-                        <p class="text-muted text-center">
-                            <i class="bi bi-hand-index"></i><br>
-                            Seleccione un puesto para ver detalles
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Alertas y Discrepancias -->
-            <div class="card">
-                <div class="card-header bg-warning">
-                    <h6 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Alertas y Discrepancias</h6>
-                </div>
-                <div class="card-body">
-                    <div id="discrepanciasPanel">
-                        <div class="text-center py-3">
-                            <div class="spinner-border spinner-border-sm text-warning" role="status">
+                    <div id="estadisticasGenerales">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
                                 <span class="visually-hidden">Cargando...</span>
                             </div>
                         </div>
@@ -199,8 +271,49 @@
                 </div>
             </div>
         </div>
+        <!-- Fin Tab Reportes -->
+
+        <!-- Tab 4: Mapa -->
+        <div class="tab-pane fade" id="mapa" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-map"></i> Mapa de Puestos</h5>
+                </div>
+                <div class="card-body">
+                    <div id="mapaContainer" style="height: 500px;">
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-map" style="font-size: 3rem;"></i>
+                            <p class="mt-2">Mapa de puestos de votación</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Fin Tab Mapa -->
+
     </div>
+    <!-- Fin Tab Content -->
 </div>
+
+<!-- Bottom Navigation (Solo Móvil) -->
+<nav class="bottom-nav d-md-none">
+    <a href="#puestos" class="bottom-nav-item active" data-bs-toggle="tab" data-tab="puestos">
+        <i class="bi bi-speedometer2-fill"></i>
+        <span>Dashboard</span>
+    </a>
+    <a href="#puestos" class="bottom-nav-item" data-bs-toggle="tab" data-tab="puestos">
+        <i class="bi bi-building-fill"></i>
+        <span>Puestos</span>
+    </a>
+    <a href="#reportes" class="bottom-nav-item" data-bs-toggle="tab" data-tab="reportes">
+        <i class="bi bi-bar-chart-fill"></i>
+        <span>Reportes</span>
+    </a>
+    <a href="#mapa" class="bottom-nav-item" data-bs-toggle="tab" data-tab="mapa">
+        <i class="bi bi-geo-alt-fill"></i>
+        <span>Mapa</span>
+    </a>
+</nav>
 
 <!-- Modal: Comparación de Puestos -->
 <div class="modal fade" id="comparacionModal" tabindex="-1">
@@ -287,4 +400,6 @@ function confirmarGenerarE24() {
 }
 </script>
 <script src="{{ url_for('static', filename='js/coordinador-municipal.js') }}"></script>
+<!-- Mejoras UI/UX Mobile-First -->
+<script src="{{ url_for('static', filename='js/coordinador-municipal-mejoras.js') }}"></script>
 {% endblock %}

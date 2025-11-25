@@ -2,7 +2,7 @@
 
 ## Introduction
 
-El Dashboard del Coordinador de Puesto es una interfaz web que permite a los coordinadores de puesto de votación supervisar, validar y consolidar los formularios E-14 enviados por los testigos electorales de todas las mesas bajo su responsabilidad. El sistema debe proporcionar herramientas de validación, visualización de datos en tiempo real, y generación de reportes consolidados por puesto.
+El Dashboard del Coordinador de Puesto es una interfaz web que permite a los coordinadores de puesto de votación supervisar, validar y consolidar los formularios E-14 enviados por los testigos electorales de todas las mesas bajo su responsabilidad. Además, permite monitorear y gestionar incidentes y delitos electorales reportados por los testigos. El sistema proporciona herramientas de validación, visualización de datos en tiempo real, gestión de reportes de incidentes y delitos, y generación de reportes consolidados por puesto.
 
 ## Glossary
 
@@ -16,6 +16,12 @@ El Dashboard del Coordinador de Puesto es una interfaz web que permite a los coo
 - **Validación**: Proceso de revisión y aprobación de un formulario E-14 por parte del coordinador
 - **Consolidado**: Suma total de votos de todas las mesas de un puesto
 - **Dashboard**: Interfaz principal del coordinador de puesto
+- **Incidente Electoral**: Problema o irregularidad en el proceso electoral que no constituye un delito
+- **Delito Electoral**: Violación grave de la ley electoral que debe ser escalada a autoridades
+- **Severidad**: Nivel de importancia de un incidente (baja, media, alta, crítica)
+- **Gravedad**: Nivel de seriedad de un delito electoral (leve, media, grave, muy grave)
+- **Seguimiento**: Proceso de monitoreo y gestión de incidentes y delitos reportados
+- **Escalamiento**: Acción de reportar un delito a autoridades superiores o competentes
 
 ## Requirements
 
@@ -158,3 +164,63 @@ El Dashboard del Coordinador de Puesto es una interfaz web que permite a los coo
 4. THE Sistema SHALL resaltar las mesas cuyos testigos no han verificado su presencia
 5. THE Sistema SHALL sincronizar el estado de presencia desde la base de datos cada 30 segundos
 6. THE Sistema SHALL mostrar un contador de testigos presentes vs total de testigos asignados
+
+### Requirement 12: Visualización de Incidentes del Puesto
+
+**User Story:** Como coordinador de puesto, quiero ver todos los incidentes reportados por los testigos de mi puesto, para monitorear problemas en el proceso electoral.
+
+#### Acceptance Criteria
+
+1. WHERE el usuario tiene rol de coordinador de puesto, THE Sistema SHALL mostrar una lista de todos los incidentes reportados por testigos de su puesto
+2. THE Sistema SHALL mostrar para cada incidente: tipo, título, severidad, descripción, testigo que reportó, mesa, fecha y hora
+3. THE Sistema SHALL usar colores distintivos según severidad: baja (verde), media (amarillo), alta (naranja), crítica (rojo)
+4. THE Sistema SHALL permitir filtrar incidentes por severidad, tipo, mesa, o testigo
+5. THE Sistema SHALL permitir al coordinador ver el detalle completo de cada incidente
+6. THE Sistema SHALL mostrar un contador de incidentes por severidad en el dashboard
+7. THE Sistema SHALL actualizar la lista de incidentes automáticamente cada 30 segundos
+8. THE Sistema SHALL permitir al coordinador agregar comentarios o seguimiento a los incidentes
+
+### Requirement 13: Visualización de Delitos Electorales del Puesto
+
+**User Story:** Como coordinador de puesto, quiero ver todos los delitos electorales reportados por los testigos de mi puesto, para escalar a las autoridades competentes.
+
+#### Acceptance Criteria
+
+1. WHERE el usuario tiene rol de coordinador de puesto, THE Sistema SHALL mostrar una lista de todos los delitos electorales reportados por testigos de su puesto
+2. THE Sistema SHALL mostrar para cada delito: tipo, título, gravedad, descripción, testigos adicionales, testigo que reportó, mesa, fecha y hora
+3. THE Sistema SHALL usar colores distintivos según gravedad: leve (amarillo), media (naranja), grave (rojo), muy grave (rojo oscuro)
+4. THE Sistema SHALL permitir filtrar delitos por gravedad, tipo, mesa, o testigo
+5. THE Sistema SHALL permitir al coordinador ver el detalle completo de cada delito
+6. THE Sistema SHALL mostrar un contador de delitos por gravedad en el dashboard
+7. THE Sistema SHALL actualizar la lista de delitos automáticamente cada 30 segundos
+8. THE Sistema SHALL permitir al coordinador marcar delitos como escalados a autoridades
+9. THE Sistema SHALL mostrar una advertencia visual prominente cuando hay delitos reportados
+
+### Requirement 14: Gestión y Seguimiento de Reportes
+
+**User Story:** Como coordinador de puesto, quiero gestionar el seguimiento de incidentes y delitos, para asegurar que todos sean atendidos adecuadamente.
+
+#### Acceptance Criteria
+
+1. WHERE el usuario tiene rol de coordinador de puesto, THE Sistema SHALL permitir agregar comentarios de seguimiento a incidentes y delitos
+2. THE Sistema SHALL permitir al coordinador cambiar el estado de incidentes (pendiente, en revisión, resuelto)
+3. THE Sistema SHALL permitir al coordinador cambiar el estado de delitos (reportado, escalado, en investigación, resuelto)
+4. THE Sistema SHALL registrar todos los cambios de estado con timestamp y usuario
+5. THE Sistema SHALL notificar al testigo que reportó cuando el coordinador agrega un comentario
+6. THE Sistema SHALL mostrar el historial completo de seguimiento de cada reporte
+7. THE Sistema SHALL permitir al coordinador asignar prioridad a incidentes y delitos
+8. THE Sistema SHALL generar reportes consolidados de incidentes y delitos del puesto
+
+### Requirement 15: Alertas de Incidentes y Delitos Críticos
+
+**User Story:** Como coordinador de puesto, quiero recibir alertas inmediatas cuando se reportan incidentes críticos o delitos, para poder responder rápidamente.
+
+#### Acceptance Criteria
+
+1. WHEN un testigo reporta un incidente con severidad crítica, THE Sistema SHALL mostrar una alerta visual prominente en el dashboard del coordinador
+2. WHEN un testigo reporta un delito electoral, THE Sistema SHALL mostrar una alerta visual prominente en el dashboard del coordinador
+3. THE Sistema SHALL reproducir un sonido de notificación cuando se recibe una alerta crítica
+4. THE Sistema SHALL mostrar un contador de alertas no atendidas en el header del dashboard
+5. THE Sistema SHALL permitir al coordinador marcar alertas como atendidas
+6. THE Sistema SHALL mantener un historial de todas las alertas recibidas
+7. THE Sistema SHALL enviar notificación por email al coordinador para delitos muy graves

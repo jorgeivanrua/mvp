@@ -224,3 +224,151 @@
   - Crear guía de usuario para coordinadores
   - Documentar estructura de base de datos
   - _Requirements: All_
+
+- [x] 15. Implementar visualización de incidentes del puesto
+  - Crear sección de incidentes en el dashboard
+  - Función `cargarIncidentes()` para listar incidentes del puesto
+  - Tabla de incidentes con filtros por severidad, tipo, mesa
+  - Colores distintivos según severidad (baja, media, alta, crítica)
+  - Modal de detalle de incidente
+  - Contador de incidentes por severidad
+  - Actualización automática cada 30 segundos
+  - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7_
+
+- [x] 16. Implementar visualización de delitos electorales del puesto
+  - Crear sección de delitos en el dashboard
+  - Función `cargarDelitos()` para listar delitos del puesto
+  - Tabla de delitos con filtros por gravedad, tipo, mesa
+  - Colores distintivos según gravedad (leve, media, grave, muy grave)
+  - Modal de detalle de delito
+  - Contador de delitos por gravedad
+  - Actualización automática cada 30 segundos
+  - Advertencia visual prominente cuando hay delitos
+  - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5, 13.6, 13.7, 13.8, 13.9_
+
+- [x] 17. Implementar gestión y seguimiento de reportes
+  - Función `agregarComentario()` para seguimiento
+  - Función `cambiarEstadoIncidente()` con estados (pendiente, en revisión, resuelto)
+  - Función `cambiarEstadoDelito()` con estados (reportado, escalado, en investigación, resuelto)
+  - Registro de cambios con timestamp y usuario
+  - Notificación al testigo cuando se agrega comentario
+  - Historial completo de seguimiento
+  - Asignación de prioridad a reportes
+  - Generación de reportes consolidados
+  - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.6, 14.7, 14.8_
+
+- [x] 18. Implementar alertas de incidentes y delitos críticos
+  - Alerta visual prominente para incidentes críticos
+  - Alerta visual prominente para delitos electorales
+  - Sonido de notificación para alertas críticas
+  - Contador de alertas no atendidas en header
+  - Función `marcarAlertaAtendida()` para gestionar alertas
+  - Historial de alertas recibidas
+  - Notificación por email para delitos muy graves
+  - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6, 15.7_
+
+- [x] 19. Integrar endpoints de incidentes y delitos
+  - Endpoint `GET /api/incidentes-delitos/incidentes` - Listar incidentes del puesto
+  - Endpoint `GET /api/incidentes-delitos/delitos` - Listar delitos del puesto
+  - Endpoint `POST /api/incidentes-delitos/incidentes/:id/comentario` - Agregar comentario
+  - Endpoint `PUT /api/incidentes-delitos/incidentes/:id/estado` - Cambiar estado
+  - Endpoint `PUT /api/incidentes-delitos/delitos/:id/estado` - Cambiar estado
+  - Filtrado por puesto del coordinador
+  - Validación de permisos
+  - _Requirements: 12.1, 13.1, 14.1, 14.2, 14.3_
+
+- [x] 20. Actualizar dashboard con pestañas de incidentes y delitos
+  - Agregar pestañas de navegación (Formularios, Incidentes, Delitos)
+  - Cargar incidentes al mostrar pestaña
+  - Cargar delitos al mostrar pestaña
+  - Badges con contadores en pestañas
+  - Actualización automática de contadores
+  - _Requirements: 12.6, 13.6, 15.4_
+
+## Estado Actual
+
+✅ **Dashboard Coordinador de Puesto 75% Funcional**
+
+15 de 20 tareas completadas. El sistema tiene implementadas las funcionalidades principales de validación de formularios E-14 y gestión de incidentes y delitos electorales.
+
+### Funcionalidades Implementadas
+
+- ✅ **Modelos de base de datos**
+  - FormularioE14, VotoPartido, VotoCandidato, HistorialFormulario
+  - IncidenteElectoral, DelitoElectoral, SeguimientoReporte
+
+- ✅ **Visualización de formularios del puesto**
+  - Tabla con todos los formularios E-14
+  - Filtros por estado
+  - Actualización automática cada 30 segundos
+  - Indicador de progreso
+
+- ✅ **Validación de formularios E-14**
+  - Modal de revisión con imagen y datos
+  - Validaciones automáticas
+  - Aprobar y rechazar formularios
+  - Registro de validaciones
+
+- ✅ **Gestión de mesas del puesto**
+  - Lista de mesas con estado
+  - Indicador de presencia de testigos
+  - Sincronización con base de datos
+
+- ✅ **Visualización de incidentes**
+  - Lista de incidentes del puesto
+  - Filtros por severidad, tipo, mesa
+  - Colores distintivos
+  - Contador por severidad
+  - Actualización automática
+
+- ✅ **Visualización de delitos electorales**
+  - Lista de delitos del puesto
+  - Filtros por gravedad, tipo, mesa
+  - Colores distintivos
+  - Contador por gravedad
+  - Advertencia visual prominente
+
+- ✅ **Gestión y seguimiento de reportes**
+  - Agregar comentarios
+  - Cambiar estados
+  - Historial de seguimiento
+  - Asignación de prioridad
+  - Reportes consolidados
+
+- ✅ **Alertas de incidentes y delitos críticos**
+  - Alertas visuales prominentes
+  - Sonido de notificación
+  - Contador de alertas no atendidas
+  - Historial de alertas
+
+### Funcionalidades Pendientes (25%)
+
+- ⏳ **Migraciones de base de datos** (Tarea 2)
+- ⏳ **Servicios de validación** (Tarea 3.2)
+- ⏳ **Rutas API completas** (Tarea 4)
+- ⏳ **Sistema de notificaciones** (Tarea 7)
+- ⏳ **Generación de reportes PDF** (Tarea 8)
+
+### Archivos Implementados
+
+**Frontend:**
+- `frontend/templates/coordinador/puesto.html` - Dashboard principal
+- `frontend/static/js/coordinador-puesto.js` - Lógica principal
+
+**Backend:**
+- `backend/routes/coordinador_puesto.py` - Endpoints específicos
+- `backend/routes/formularios_e14.py` - Gestión de formularios
+- `backend/routes/incidentes_delitos.py` - Gestión de incidentes y delitos
+- `backend/models/formulario_e14.py` - Modelos de formularios
+- `backend/models/incidentes_delitos.py` - Modelos de incidentes y delitos
+
+## Mejoras Futuras (Opcionales)
+
+- [ ] Implementar chat en tiempo real con testigos
+- [ ] Agregar notificaciones push para alertas críticas
+- [ ] Implementar dashboard de métricas con gráficos avanzados
+- [ ] Agregar exportación de reportes en múltiples formatos
+- [ ] Implementar sistema de firma digital para E-24
+- [ ] Agregar análisis predictivo de participación
+- [ ] Implementar geolocalización de incidentes en mapa
+- [ ] Agregar integración con sistemas de autoridades electorales

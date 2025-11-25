@@ -9,6 +9,11 @@ class FormularioE14(db.Model):
     """Formulario E-14 de mesa electoral"""
     __tablename__ = 'formularios_e14'
     
+    # Restricción única: una mesa solo puede tener un formulario por tipo de elección
+    __table_args__ = (
+        db.UniqueConstraint('mesa_id', 'tipo_eleccion_id', name='uq_mesa_tipo_eleccion'),
+    )
+    
     id = db.Column(db.Integer, primary_key=True)
     mesa_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=False)
     testigo_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)

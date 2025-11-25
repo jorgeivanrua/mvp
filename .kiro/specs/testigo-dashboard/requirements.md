@@ -2,7 +2,7 @@
 
 ## Introduction
 
-El Dashboard del Testigo Electoral es una interfaz web móvil-first diseñada para que los testigos electorales reporten datos desde las mesas de votación. Permite crear formularios E-14, reportar incidentes y delitos electorales, y verificar presencia en la mesa asignada. El sistema funciona offline con sincronización automática cuando hay conexión.
+El Dashboard del Testigo Electoral es una interfaz web móvil-first diseñada para que los testigos electorales reporten datos desde las mesas de votación. Permite crear formularios E-14, reportar incidentes y delitos electorales, verificar presencia con geolocalización GPS, y hacer tracking de ubicación en tiempo real. El sistema funciona offline con sincronización automática cuando hay conexión, y proporciona herramientas de monitoreo geográfico para coordinadores.
 
 ## Glossary
 
@@ -16,6 +16,11 @@ El Dashboard del Testigo Electoral es una interfaz web móvil-first diseñada pa
 - **Borrador**: Formulario guardado localmente que no ha sido enviado
 - **Incidente**: Problema o irregularidad en el proceso electoral
 - **Delito Electoral**: Violación grave de la ley electoral
+- **Geolocalización**: Proceso de capturar las coordenadas GPS (latitud, longitud) del dispositivo
+- **Ping Automático**: Actualización periódica de la ubicación del testigo cada 15 minutos
+- **Precisión GPS**: Margen de error en metros de las coordenadas GPS capturadas
+- **Tracking**: Seguimiento de la última ubicación conocida de un testigo
+- **Mapa Interactivo**: Visualización geográfica de puestos y testigos con marcadores
 
 ## Requirements
 
@@ -31,17 +36,22 @@ El Dashboard del Testigo Electoral es una interfaz web móvil-first diseñada pa
 4. THE Sistema SHALL permitir al testigo seleccionar una mesa para trabajar con ella
 5. THE Sistema SHALL mostrar un panel lateral con la lista de mesas y su estado
 
-### Requirement 2: Verificación de Presencia
+### Requirement 2: Verificación de Presencia con Geolocalización
 
-**User Story:** Como testigo electoral, quiero verificar mi presencia en la mesa, para registrar que estoy cumpliendo mi función.
+**User Story:** Como testigo electoral, quiero verificar mi presencia en la mesa con mi ubicación GPS, para registrar que estoy cumpliendo mi función en el lugar correcto.
 
 #### Acceptance Criteria
 
 1. WHERE el usuario tiene rol de testigo electoral, THE Sistema SHALL mostrar un botón de "Verificar Presencia"
-2. WHEN el testigo hace clic en verificar presencia, THE Sistema SHALL registrar la fecha y hora de verificación
-3. THE Sistema SHALL mostrar confirmación visual de presencia verificada
-4. THE Sistema SHALL notificar al coordinador de puesto sobre la verificación
-5. THE Sistema SHALL permitir verificar presencia solo una vez por día
+2. WHEN el testigo hace clic en verificar presencia, THE Sistema SHALL solicitar permiso para acceder a la ubicación GPS del dispositivo
+3. WHEN el testigo otorga permiso de ubicación, THE Sistema SHALL capturar las coordenadas GPS (latitud, longitud) y la precisión de la geolocalización
+4. THE Sistema SHALL registrar la fecha, hora, coordenadas GPS y precisión de la verificación
+5. THE Sistema SHALL mostrar confirmación visual de presencia verificada con las coordenadas capturadas
+6. THE Sistema SHALL notificar al coordinador de puesto sobre la verificación con la ubicación
+7. THE Sistema SHALL permitir verificar presencia manualmente (no automáticamente al cargar el dashboard)
+8. THE Sistema SHALL almacenar la última ubicación del testigo para tracking
+9. IF el testigo no otorga permiso de ubicación, THE Sistema SHALL permitir verificar presencia sin coordenadas GPS pero con advertencia
+10. THE Sistema SHALL mostrar un mapa con la ubicación del puesto electoral y la ubicación actual del testigo
 
 ### Requirement 3: Creación de Formularios E-14
 
@@ -274,4 +284,34 @@ El Dashboard del Testigo Electoral es una interfaz web móvil-first diseñada pa
 3. THE Sistema SHALL mostrar el partido con más votos en la mesa
 4. THE Sistema SHALL aclarar que el ganador se calcula a nivel municipal (E-24)
 5. THE Sistema SHALL actualizar el resumen en tiempo real
+
+### Requirement 21: Tracking de Ubicación y Ping Automático
+
+**User Story:** Como coordinador de puesto, quiero saber que los testigos están presentes en sus mesas asignadas, para monitorear la cobertura del puesto.
+
+#### Acceptance Criteria
+
+1. WHEN el testigo verifica su presencia exitosamente, THE Sistema SHALL iniciar un ping automático de ubicación cada 15 minutos
+2. THE Sistema SHALL actualizar la última ubicación del testigo en cada ping automático
+3. THE Sistema SHALL almacenar el timestamp de la última geolocalización del testigo
+4. THE Sistema SHALL detener el ping automático cuando el testigo cierra sesión
+5. THE Sistema SHALL mostrar al coordinador la última ubicación conocida de cada testigo
+6. THE Sistema SHALL indicar visualmente si un testigo no ha enviado ping en más de 30 minutos
+7. IF el testigo pierde conexión, THE Sistema SHALL guardar los pings localmente y sincronizarlos cuando recupere conexión
+8. THE Sistema SHALL permitir al testigo desactivar el ping automático manualmente
+
+### Requirement 22: Mapa de Puestos y Testigos Geolocalizados
+
+**User Story:** Como coordinador de puesto, quiero ver un mapa con la ubicación de los puestos y testigos, para visualizar la distribución geográfica.
+
+#### Acceptance Criteria
+
+1. WHERE el usuario tiene rol de coordinador o superior, THE Sistema SHALL mostrar un mapa interactivo con los puestos electorales
+2. THE Sistema SHALL mostrar marcadores en el mapa para cada puesto electoral con coordenadas GPS
+3. THE Sistema SHALL mostrar marcadores en el mapa para cada testigo con su última ubicación conocida
+4. THE Sistema SHALL usar colores diferentes para distinguir puestos de testigos
+5. THE Sistema SHALL mostrar información al hacer clic en un marcador (nombre, última actualización, estado)
+6. THE Sistema SHALL permitir filtrar el mapa por departamento, municipio o puesto
+7. THE Sistema SHALL actualizar el mapa automáticamente cuando se reciben nuevas ubicaciones
+8. THE Sistema SHALL mostrar la precisión de la geolocalización en el tooltip del marcador
 

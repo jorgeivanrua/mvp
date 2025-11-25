@@ -3,6 +3,7 @@
 {% block title %}Dashboard Testigo Electoral{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard-universal-v2.css') }}">
 <style>
 .image-preview {
     min-height: 150px;
@@ -82,98 +83,65 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<div class="container-fluid py-3 pb-5 pb-md-3">
     <!-- Contenedor de alertas -->
     <div id="alert-container" class="mb-3"></div>
     
-    <div class="row mb-3">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                <div class="flex-grow-1">
-                    <h2 class="mb-1">Dashboard - Testigo Electoral</h2>
-                    <p class="text-muted mb-0 small">Bienvenido al sistema de recolección de datos electorales</p>
-                </div>
-                <div class="d-flex gap-2 flex-wrap">
-                    <button class="btn btn-outline-primary btn-sm" onclick="window.syncManager && window.syncManager.syncAll()" title="Sincronizar datos locales con el servidor">
-                        <i class="bi bi-arrow-repeat"></i> <span class="d-none d-md-inline">Sincronizar</span>
-                    </button>
-                    <button class="btn btn-outline-danger btn-sm" onclick="logout()">
-                        <i class="bi bi-box-arrow-right"></i> <span class="d-none d-md-inline">Cerrar Sesión</span>
-                    </button>
-                </div>
+    <!-- Header Mejorado -->
+    <div class="dashboard-header">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h2><i class="bi bi-person-check"></i> Testigo Electoral</h2>
+                <p class="mb-0">Mesa: <span id="mesaInfo">Seleccione una mesa</span></p>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary btn-sm d-none d-md-inline-flex" onclick="window.syncManager && window.syncManager.syncAll()" title="Sincronizar datos">
+                    <i class="bi bi-arrow-repeat"></i> Sincronizar
+                </button>
+                <button class="btn btn-outline-danger btn-sm d-none d-md-inline-flex" onclick="logout()">
+                    <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- ⭐ NUEVO: Panel de Estadísticas del Testigo -->
-    <div class="row mb-3" id="estadisticasTestigo" style="display: none;">
-        <div class="col-md-3 col-6 mb-2">
-            <div class="card border-primary">
-                <div class="card-body p-2 p-md-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <small class="text-muted d-block">Total Formularios</small>
-                            <h4 class="mb-0" id="totalFormularios">0</h4>
-                        </div>
-                        <i class="bi bi-file-earmark-text text-primary" style="font-size: 1.5rem;"></i>
-                    </div>
-                </div>
-            </div>
+    <!-- Stats Cards Mejoradas -->
+    <div class="stats-grid">
+        <div class="stat-card success">
+            <h6>Estado</h6>
+            <h3 id="statEstado">-</h3>
+            <small id="statEstadoTexto">Sin verificar</small>
         </div>
-        <div class="col-md-3 col-6 mb-2">
-            <div class="card border-success">
-                <div class="card-body p-2 p-md-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <small class="text-muted d-block">Validados</small>
-                            <h4 class="mb-0 text-success" id="formulariosValidados">0</h4>
-                        </div>
-                        <i class="bi bi-check-circle text-success" style="font-size: 1.5rem;"></i>
-                    </div>
-                </div>
-            </div>
+        <div class="stat-card primary">
+            <h6>Formularios</h6>
+            <h3 id="statFormularios">0</h3>
+            <small>Enviados</small>
         </div>
-        <div class="col-md-3 col-6 mb-2">
-            <div class="card border-warning">
-                <div class="card-body p-2 p-md-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <small class="text-muted d-block">Pendientes</small>
-                            <h4 class="mb-0 text-warning" id="formulariosPendientes">0</h4>
-                        </div>
-                        <i class="bi bi-hourglass-split text-warning" style="font-size: 1.5rem;"></i>
-                    </div>
-                </div>
-            </div>
+        <div class="stat-card warning">
+            <h6>Incidentes</h6>
+            <h3 id="statIncidentes">0</h3>
+            <small>Reportados</small>
         </div>
-        <div class="col-md-3 col-6 mb-2">
-            <div class="card border-danger">
-                <div class="card-body p-2 p-md-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <small class="text-muted d-block">Rechazados</small>
-                            <h4 class="mb-0 text-danger" id="formulariosRechazados">0</h4>
-                        </div>
-                        <i class="bi bi-x-circle text-danger" style="font-size: 1.5rem;"></i>
-                    </div>
-                </div>
-            </div>
+        <div class="stat-card info">
+            <h6>Votantes</h6>
+            <h3 id="statVotantes">0</h3>
+            <small>Registrados</small>
         </div>
     </div>
 
-    <!-- Pestañas de navegación -->
-    <ul class="nav nav-tabs mb-3 mb-md-4" id="testigoTabs" role="tablist" style="overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch;">
-        <li class="nav-item" role="presentation" style="flex-shrink: 0;">
+    <!-- Tabs Desktop (ocultos en móvil) -->
+    <ul class="nav nav-tabs mb-3 d-none d-md-flex" id="testigoTabs" role="tablist">
+        <li class="nav-item" role="presentation">
             <button class="nav-link active" id="formularios-tab" data-bs-toggle="tab" data-bs-target="#formularios" type="button" role="tab">
-                <i class="bi bi-file-earmark-text"></i> <span class="d-none d-sm-inline">Formularios</span> E-14
+                <i class="bi bi-file-earmark-text"></i> Formularios E-14
             </button>
         </li>
-        <li class="nav-item" role="presentation" style="flex-shrink: 0;">
+        <li class="nav-item" role="presentation">
             <button class="nav-link" id="incidentes-tab" data-bs-toggle="tab" data-bs-target="#incidentes" type="button" role="tab">
                 <i class="bi bi-exclamation-triangle"></i> Incidentes
             </button>
         </li>
-        <li class="nav-item" role="presentation" style="flex-shrink: 0;">
+        <li class="nav-item" role="presentation">
             <button class="nav-link" id="delitos-tab" data-bs-toggle="tab" data-bs-target="#delitos" type="button" role="tab">
                 <i class="bi bi-shield-exclamation"></i> Delitos
             </button>
@@ -186,21 +154,21 @@
         <!-- Tab 1: Formularios E-14 -->
         <div class="tab-pane fade show active" id="formularios" role="tabpanel">
             <!-- Selector de Mesa y Verificación de Presencia -->
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Mesa</label>
-                        <select class="form-select" id="mesa" required onchange="cambiarMesa()">
+            <div class="row mb-3">
+                <div class="col-md-6 mb-3">
+                    <div class="form-group-touch">
+                        <label class="form-label-touch">Mesa</label>
+                        <select class="form-control-touch" id="mesa" required onchange="cambiarMesa()">
                             <option value="">Seleccione mesa...</option>
                         </select>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Verificación de Presencia</label>
+                <div class="col-md-6 mb-3">
+                    <div class="form-group-touch">
+                        <label class="form-label-touch">Verificación de Presencia</label>
                         <div id="presenciaContainer">
-                            <button class="btn btn-success w-100" id="btnVerificarPresencia" onclick="verificarPresencia()">
-                                <i class="bi bi-check-circle"></i> Verificar Mi Presencia en la Mesa
+                            <button class="btn-touch btn-success-touch btn-touch-block" id="btnVerificarPresencia" onclick="verificarPresencia()">
+                                <i class="bi bi-check-circle"></i> Verificar Mi Presencia
                             </button>
                             <div class="alert alert-success mt-2 d-none" id="alertaPresenciaVerificada">
                                 <i class="bi bi-check-circle-fill"></i> Presencia verificada
@@ -211,22 +179,48 @@
                 </div>
             </div>
 
+            <!-- Botones de Acción Rápida (Móvil) -->
+            <div class="quick-actions d-md-none mb-3">
+                <button class="btn-touch btn-primary-touch btn-touch-block" id="btnNuevoFormularioMobile" onclick="showCreateForm()" disabled>
+                    <i class="bi bi-camera"></i>
+                    Capturar Formulario E-14
+                </button>
+                <button class="btn-touch btn-warning-touch btn-touch-block" onclick="reportarIncidente()">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Reportar Incidente
+                </button>
+                <button class="btn-touch btn-danger-touch btn-touch-block" onclick="reportarDelito()">
+                    <i class="bi bi-shield-exclamation"></i>
+                    Reportar Delito
+                </button>
+            </div>
+
             <div class="row">
                 <!-- Tabla de Formularios -->
                 <div class="col-md-8">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">Mis Formularios E-14</h5>
-                            <button class="btn btn-primary" id="btnNuevoFormulario" onclick="showCreateForm()" disabled title="Debe seleccionar una mesa y verificar presencia primero">
+                            <button class="btn btn-primary d-none d-md-inline-flex" id="btnNuevoFormulario" onclick="showCreateForm()" disabled title="Debe seleccionar una mesa y verificar presencia primero">
                                 <i class="bi bi-plus-circle"></i> Nuevo Formulario
                             </button>
                         </div>
                         <div class="card-body">
-                            <div class="table-responsive">
+                            <!-- Vista de Cards para Móvil -->
+                            <div class="d-md-none" id="formsCardsMobile">
+                                <div class="text-center py-4 text-muted">
+                                    <i class="bi bi-file-earmark-text" style="font-size: 3rem;"></i>
+                                    <p class="mt-2">No hay formularios registrados</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Vista de Tabla para Desktop -->
+                            <div class="table-responsive d-none d-md-block">
                                 <table class="table table-striped" id="formsTable">
                                     <thead>
                                         <tr>
                                             <th>Mesa</th>
+                                            <th>Tipo Elección</th>
                                             <th>Estado</th>
                                             <th>Total Votos</th>
                                             <th>Fecha</th>
@@ -235,7 +229,7 @@
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <td colspan="5" class="text-center py-4">
+                                            <td colspan="6" class="text-center py-4">
                                                 <p class="text-muted">No hay formularios registrados</p>
                                             </td>
                                         </tr>
@@ -284,23 +278,33 @@
 
         <!-- Tab 2: Incidentes y Problemas -->
         <div class="tab-pane fade" id="incidentes" role="tabpanel">
+            <!-- Botón de acción rápida móvil -->
+            <div class="d-md-none mb-3">
+                <button class="btn-touch btn-warning-touch btn-touch-block" onclick="reportarIncidente()">
+                    <i class="bi bi-plus-circle"></i> Reportar Incidente
+                </button>
+            </div>
+            
             <div class="row">
                 <div class="col-md-8">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">Incidentes Reportados</h5>
-                            <button class="btn btn-warning" onclick="reportarIncidente()">
+                            <button class="btn btn-warning d-none d-md-inline-flex" onclick="reportarIncidente()">
                                 <i class="bi bi-plus-circle"></i> Reportar Incidente
                             </button>
                         </div>
                         <div class="card-body">
                             <div id="incidentesLista">
-                                <p class="text-muted text-center py-4">No hay incidentes reportados</p>
+                                <div class="text-center py-4 text-muted">
+                                    <i class="bi bi-exclamation-triangle" style="font-size: 3rem;"></i>
+                                    <p class="mt-2">No hay incidentes reportados</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4 d-none d-md-block">
                     <div class="card">
                         <div class="card-header">
                             <h5 class="mb-0">Tipos de Incidentes</h5>
@@ -322,12 +326,19 @@
 
         <!-- Tab 3: Reporte de Delitos -->
         <div class="tab-pane fade" id="delitos" role="tabpanel">
+            <!-- Botón de acción rápida móvil -->
+            <div class="d-md-none mb-3">
+                <button class="btn-touch btn-danger-touch btn-touch-block" onclick="reportarDelito()">
+                    <i class="bi bi-plus-circle"></i> Reportar Delito Electoral
+                </button>
+            </div>
+            
             <div class="row">
                 <div class="col-md-8">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">Delitos Electorales Reportados</h5>
-                            <button class="btn btn-danger" onclick="reportarDelito()">
+                            <button class="btn btn-danger d-none d-md-inline-flex" onclick="reportarDelito()">
                                 <i class="bi bi-plus-circle"></i> Reportar Delito
                             </button>
                         </div>
@@ -337,12 +348,15 @@
                                 <strong>Importante:</strong> Los delitos electorales son graves. Reporte solo situaciones que constituyan una violación clara de la ley electoral.
                             </div>
                             <div id="delitosLista">
-                                <p class="text-muted text-center py-4">No hay delitos reportados</p>
+                                <div class="text-center py-4 text-muted">
+                                    <i class="bi bi-shield-exclamation" style="font-size: 3rem;"></i>
+                                    <p class="mt-2">No hay delitos reportados</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4 d-none d-md-block">
                     <div class="card">
                         <div class="card-header">
                             <h5 class="mb-0">Tipos de Delitos</h5>
@@ -371,6 +385,26 @@
     </div>
     <!-- Fin Tab Content -->
 </div>
+
+<!-- Bottom Navigation (Solo Móvil) -->
+<nav class="bottom-nav d-md-none">
+    <a href="#formularios" class="bottom-nav-item active" data-bs-toggle="tab" data-tab="formularios">
+        <i class="bi bi-house-fill"></i>
+        <span>Inicio</span>
+    </a>
+    <a href="#formularios" class="bottom-nav-item" data-bs-toggle="tab" onclick="showCreateForm()">
+        <i class="bi bi-camera-fill"></i>
+        <span>Capturar</span>
+    </a>
+    <a href="#incidentes" class="bottom-nav-item" data-bs-toggle="tab" data-tab="incidentes">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>Incidentes</span>
+    </a>
+    <a href="#delitos" class="bottom-nav-item" data-bs-toggle="tab" data-tab="delitos">
+        <i class="bi bi-shield-fill-exclamation"></i>
+        <span>Delitos</span>
+    </a>
+</nav>
 
 <!-- Modal para crear/editar formulario E-14 -->
 <div class="modal fade" id="formModal" tabindex="-1">
@@ -407,9 +441,12 @@
                         <h6>📸 Foto del Formulario E-14</h6>
                         <div class="row">
                             <div class="col-12 mb-3">
-                                <input type="file" class="form-control d-none" id="imagen" name="imagen" accept="image/*" capture="environment">
-                                <button type="button" class="btn btn-outline-primary w-100" onclick="document.getElementById('imagen').click()">
-                                    <i class="bi bi-camera"></i> Tomar Foto / Seleccionar Imagen
+                                <input type="file" class="form-control d-none" id="imagen" name="imagen" accept="image/*">
+                                <button type="button" class="btn btn-primary w-100 mb-2" onclick="abrirCamara()">
+                                    <i class="bi bi-camera-fill"></i> Tomar Foto del Formulario
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary w-100" onclick="document.getElementById('imagen').click()">
+                                    <i class="bi bi-image"></i> Seleccionar desde Galería
                                 </button>
                                 <small class="text-muted d-block mt-1">Tome una foto clara del formulario completo</small>
                             </div>
@@ -639,4 +676,8 @@
 <script src="{{ url_for('static', filename='js/testigo-presencia-simple.js') }}"></script>
 <!-- Solución definitiva que sobrescribe las funciones problemáticas -->
 <script src="{{ url_for('static', filename='js/testigo-dashboard-final-fix.js') }}"></script>
+<!-- Fix para problema de sesión al tomar fotos -->
+<script src="{{ url_for('static', filename='js/testigo-session-fix.js') }}"></script>
+<!-- Mejoras UI/UX Mobile-First -->
+<script src="{{ url_for('static', filename='js/testigo-mejoras.js') }}"></script>
 {% endblock %}
