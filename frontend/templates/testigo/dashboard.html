@@ -179,21 +179,7 @@
                 </div>
             </div>
 
-            <!-- Botones de Acción Rápida (Móvil) -->
-            <div class="quick-actions d-md-none mb-3">
-                <button class="btn-touch btn-primary-touch btn-touch-block" id="btnNuevoFormularioMobile" onclick="showCreateForm()" disabled>
-                    <i class="bi bi-camera"></i>
-                    Capturar Formulario E-14
-                </button>
-                <button class="btn-touch btn-warning-touch btn-touch-block" onclick="reportarIncidente()">
-                    <i class="bi bi-exclamation-triangle"></i>
-                    Reportar Incidente
-                </button>
-                <button class="btn-touch btn-danger-touch btn-touch-block" onclick="reportarDelito()">
-                    <i class="bi bi-shield-exclamation"></i>
-                    Reportar Delito
-                </button>
-            </div>
+
 
             <div class="row">
                 <!-- Tabla de Formularios -->
@@ -389,12 +375,8 @@
 <!-- Bottom Navigation (Solo Móvil) -->
 <nav class="bottom-nav d-md-none">
     <a href="#formularios" class="bottom-nav-item active" data-bs-toggle="tab" data-tab="formularios">
-        <i class="bi bi-house-fill"></i>
-        <span>Inicio</span>
-    </a>
-    <a href="#formularios" class="bottom-nav-item" data-bs-toggle="tab" onclick="showCreateForm()">
-        <i class="bi bi-camera-fill"></i>
-        <span>Capturar</span>
+        <i class="bi bi-file-earmark-text-fill"></i>
+        <span>Formularios</span>
     </a>
     <a href="#incidentes" class="bottom-nav-item" data-bs-toggle="tab" data-tab="incidentes">
         <i class="bi bi-exclamation-triangle-fill"></i>
@@ -403,6 +385,10 @@
     <a href="#delitos" class="bottom-nav-item" data-bs-toggle="tab" data-tab="delitos">
         <i class="bi bi-shield-fill-exclamation"></i>
         <span>Delitos</span>
+    </a>
+    <a href="#" class="bottom-nav-item" onclick="logout()">
+        <i class="bi bi-box-arrow-right"></i>
+        <span>Salir</span>
     </a>
 </nav>
 
