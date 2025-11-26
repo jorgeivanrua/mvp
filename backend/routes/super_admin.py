@@ -998,6 +998,44 @@ def toggle_candidato(candidato_id):
         }), 500
 
 
+@super_admin_bp.route('/tipos-eleccion/<int:tipo_id>/toggle', methods=['PUT'])
+@jwt_required()
+@role_required(['super_admin'])
+def toggle_tipo_eleccion(tipo_id):
+    """
+    Habilitar/deshabilitar un tipo de elección para recolección de datos
+    """
+    try:
+        from backend.database import db
+        from backend.models.configuracion_electoral import TipoEleccion
+        
+        tipo = TipoEleccion.query.get(tipo_id)
+        if not tipo:
+            return jsonify({
+                'success': False,
+                'error': 'Tipo de elección no encontrado'
+            }), 404
+        
+        data = request.get_json()
+        tipo.activo = data.get('activo', not tipo.activo)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Tipo de elección {"habilitado" if tipo.activo else "deshabilitado"} exitosamente',
+            'data': tipo.to_dict()
+        }), 200
+        
+    except Exception as e:
+        from backend.database import db
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @super_admin_bp.route('/download/template/<template_type>', methods=['GET'])
 @jwt_required()
 @role_required(['super_admin'])
