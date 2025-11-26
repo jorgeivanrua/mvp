@@ -1467,10 +1467,10 @@ async function editarBorradorLocal(localId) {
         // Abrir el modal
         document.getElementById('e14Form').reset();
         
-        // Cargar mesa y DESHABILITAR selector (no se puede cambiar)
+        // Cargar mesa (permitir cambiar si es necesario)
         const mesaSelect = document.getElementById('mesaFormulario');
         mesaSelect.value = borrador.mesa_id;
-        mesaSelect.disabled = true; // NO PERMITIR CAMBIAR MESA
+        mesaSelect.disabled = false; // PERMITIR CAMBIAR MESA
         cambiarMesaFormulario();
         
         // Cargar tipo de elección y DESHABILITAR (no se puede cambiar)
@@ -1557,10 +1557,10 @@ async function editForm(formId) {
         // Abrir el modal
         document.getElementById('e14Form').reset();
         
-        // Cargar mesa y DESHABILITAR selector (no se puede cambiar)
+        // Cargar mesa (permitir cambiar si es necesario)
         const mesaSelect = document.getElementById('mesaFormulario');
         mesaSelect.value = formulario.mesa_id;
-        mesaSelect.disabled = true; // NO PERMITIR CAMBIAR MESA
+        mesaSelect.disabled = false; // PERMITIR CAMBIAR MESA
         cambiarMesaFormulario();
         
         // Cargar tipo de elección y DESHABILITAR (no se puede cambiar)
