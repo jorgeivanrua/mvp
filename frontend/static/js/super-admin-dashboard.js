@@ -798,7 +798,10 @@ function renderPartidos() {
     container.innerHTML = allPartidos.map(partido => `
         <div class="d-flex align-items-center justify-content-between mb-2 p-2 border rounded ${!partido.activo ? 'opacity-50' : ''}">
             <div class="d-flex align-items-center flex-grow-1">
-                <div style="width: 30px; height: 30px; background-color: ${partido.color}; border-radius: 4px; margin-right: 10px;"></div>
+                ${partido.logo_url ? 
+                    `<img src="${partido.logo_url}" alt="${partido.nombre}" style="width: 40px; height: 40px; object-fit: contain; margin-right: 10px; border: 1px solid #ddd; border-radius: 4px; padding: 2px; background: white;">` :
+                    `<div style="width: 40px; height: 40px; background-color: ${partido.color}; border-radius: 4px; margin-right: 10px;"></div>`
+                }
                 <div>
                     <strong>${partido.nombre}</strong>
                     <br><small class="text-muted">${partido.nombre_corto || 'Sin sigla'}</small>
@@ -1836,27 +1839,6 @@ async function toggleCandidato(candidatoId, activo) {
     } catch (error) {
         console.error('Error:', error);
         Utils.showError('Error al actualizar candidato');
-    }
-}
-
-/**
- * Habilitar/Deshabilitar partido
- */
-async function togglePartido(partidoId, activo) {
-    try {
-        const response = await APIClient.put(`/super-admin/partidos/${partidoId}/toggle`, {
-            activo: activo
-        });
-        
-        if (response.success) {
-            Utils.showSuccess(`Partido ${activo ? 'habilitado' : 'deshabilitado'} para recolección de datos`);
-            await loadPartidos();
-        } else {
-            Utils.showError(response.error || 'Error al actualizar partido');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        Utils.showError('Error al actualizar partido');
     }
 }
 
