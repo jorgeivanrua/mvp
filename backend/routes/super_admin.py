@@ -922,6 +922,55 @@ def update_tipo_eleccion(tipo_id):
         }), 500
 
 
+@super_admin_bp.route('/partidos/<int:partido_id>', methods=['PUT'])
+@jwt_required()
+@role_required(['super_admin'])
+def update_partido(partido_id):
+    """
+    Actualizar un partido político
+    """
+    try:
+        from backend.database import db
+        from backend.models.configuracion_electoral import Partido
+        
+        partido = Partido.query.get(partido_id)
+        if not partido:
+            return jsonify({
+                'success': False,
+                'error': 'Partido no encontrado'
+            }), 404
+        
+        data = request.get_json()
+        
+        # Actualizar campos
+        if 'nombre' in data:
+            partido.nombre = data['nombre']
+        if 'nombre_corto' in data:
+            partido.nombre_corto = data['nombre_corto']
+        if 'sigla' in data:
+            partido.sigla = data['sigla']
+        if 'color' in data:
+            partido.color = data['color']
+        if 'logo_url' in data:
+            partido.logo_url = data['logo_url']
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Partido actualizado exitosamente',
+            'data': partido.to_dict()
+        }), 200
+        
+    except Exception as e:
+        from backend.database import db
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @super_admin_bp.route('/partidos/<int:partido_id>/toggle', methods=['PUT'])
 @jwt_required()
 @role_required(['super_admin'])
@@ -949,6 +998,61 @@ def toggle_partido(partido_id):
             'success': True,
             'message': f'Partido {"habilitado" if partido.activo else "deshabilitado"} exitosamente',
             'data': partido.to_dict()
+        }), 200
+        
+    except Exception as e:
+        from backend.database import db
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/candidatos/<int:candidato_id>', methods=['PUT'])
+@jwt_required()
+@role_required(['super_admin'])
+def update_candidato(candidato_id):
+    """
+    Actualizar un candidato
+    """
+    try:
+        from backend.database import db
+        from backend.models.configuracion_electoral import Candidato
+        
+        candidato = Candidato.query.get(candidato_id)
+        if not candidato:
+            return jsonify({
+                'success': False,
+                'error': 'Candidato no encontrado'
+            }), 404
+        
+        data = request.get_json()
+        
+        # Actualizar campos
+        if 'nombre_completo' in data:
+            candidato.nombre_completo = data['nombre_completo']
+        if 'nombre' in data:
+            candidato.nombre = data['nombre']
+        if 'partido_id' in data:
+            candidato.partido_id = data['partido_id'] if data['partido_id'] else None
+        if 'tipo_eleccion_id' in data:
+            candidato.tipo_eleccion_id = data['tipo_eleccion_id']
+        if 'numero_lista' in data:
+            candidato.numero_lista = data['numero_lista'] if data['numero_lista'] else None
+        if 'foto_url' in data:
+            candidato.foto_url = data['foto_url'] if data['foto_url'] else None
+        if 'es_independiente' in data:
+            candidato.es_independiente = data['es_independiente']
+        if 'es_cabeza_lista' in data:
+            candidato.es_cabeza_lista = data['es_cabeza_lista']
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Candidato actualizado exitosamente',
+            'data': candidato.to_dict()
         }), 200
         
     except Exception as e:
