@@ -612,11 +612,89 @@ async function editUser(userId) {
             return;
         }
         
-        Utils.showInfo(`Editar usuario: ${user.nombre} (en desarrollo)`);
-        // TODO: Implementar modal de edición
+        // Crear modal de edición
+        const modalHtml = `
+            <div class="modal fade" id="editUserModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Editar Usuario</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Nombre Completo *</label>
+                                <input type="text" class="form-control" id="editUserNombre" value="${user.nombre}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Rol *</label>
+                                <select class="form-select" id="editUserRol">
+                                    <option value="testigo_electoral" ${user.rol === 'testigo_electoral' ? 'selected' : ''}>Testigo Electoral</option>
+                                    <option value="coordinador_puesto" ${user.rol === 'coordinador_puesto' ? 'selected' : ''}>Coordinador de Puesto</option>
+                                    <option value="coordinador_municipal" ${user.rol === 'coordinador_municipal' ? 'selected' : ''}>Coordinador Municipal</option>
+                                    <option value="coordinador_departamental" ${user.rol === 'coordinador_departamental' ? 'selected' : ''}>Coordinador Departamental</option>
+                                    <option value="auditor_electoral" ${user.rol === 'auditor_electoral' ? 'selected' : ''}>Auditor Electoral</option>
+                                    <option value="super_admin" ${user.rol === 'super_admin' ? 'selected' : ''}>Super Admin</option>
+                                    <option value="monitoreo" ${user.rol === 'monitoreo' ? 'selected' : ''}>Monitoreo</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Ubicación</label>
+                                <input type="text" class="form-control" id="editUserUbicacion" value="${user.ubicacion || ''}" readonly>
+                                <small class="text-muted">La ubicación se gestiona desde la asignación de mesa/puesto</small>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-primary" onclick="guardarEdicionUser(${userId})">Guardar Cambios</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
+        modal.show();
+        
+        document.getElementById('editUserModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+        
     } catch (error) {
         console.error('Error editando usuario:', error);
         Utils.showError('Error al editar usuario');
+    }
+}
+
+/**
+ * Guardar edición de usuario
+ */
+async function guardarEdicionUser(userId) {
+    const nombre = document.getElementById('editUserNombre').value.trim();
+    const rol = document.getElementById('editUserRol').value;
+    
+    if (!nombre || !rol) {
+        Utils.showError('El nombre y rol son requeridos');
+        return;
+    }
+    
+    try {
+        const response = await APIClient.put(`/super-admin/users/${userId}`, {
+            nombre: nombre,
+            rol: rol
+        });
+        
+        if (response.success) {
+            Utils.showSuccess('Usuario actualizado exitosamente');
+            bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
+            await loadUsers();
+        } else {
+            Utils.showError(response.error || 'Error al actualizar usuario');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al actualizar usuario');
     }
 }
 
@@ -723,7 +801,7 @@ function renderPartidos() {
                 <div style="width: 30px; height: 30px; background-color: ${partido.color}; border-radius: 4px; margin-right: 10px;"></div>
                 <div>
                     <strong>${partido.nombre}</strong>
-                    <br><small class="text-muted">${partido.nombre_corto || partido.sigla}</small>
+                    <br><small class="text-muted">${partido.nombre_corto || 'Sin sigla'}</small>
                     ${!partido.activo ? '<br><span class="badge bg-secondary">Deshabilitado</span>' : '<br><span class="badge bg-success">Habilitado</span>'}
                 </div>
             </div>
@@ -971,17 +1049,8 @@ function filterAuditLogs() {
 // FUNCIONES DE EDICIÓN
 // ============================================
 
-function editPartido(id) {
-    Utils.showInfo('Funcionalidad de edición en desarrollo');
-}
-
-function editTipoEleccion(id) {
-    Utils.showInfo('Funcionalidad de edición en desarrollo');
-}
-
-function editCandidato(id) {
-    Utils.showInfo('Funcionalidad de edición en desarrollo');
-}
+// Las funciones editPartido, editTipoEleccion y editCandidato 
+// están implementadas completamente más abajo (líneas 2075+)
 
 function showCreatePartyModal() {
     Utils.showInfo('Funcionalidad en desarrollo');
@@ -1420,6 +1489,48 @@ async function toggleCandidato(candidatoId, activo) {
     } catch (error) {
         console.error('Error:', error);
         Utils.showError('Error al actualizar candidato');
+    }
+}
+
+/**
+ * Habilitar/Deshabilitar partido
+ */
+async function togglePartido(partidoId, activo) {
+    try {
+        const response = await APIClient.put(`/super-admin/partidos/${partidoId}/toggle`, {
+            activo: activo
+        });
+        
+        if (response.success) {
+            Utils.showSuccess(`Partido ${activo ? 'habilitado' : 'deshabilitado'} para recolección de datos`);
+            await loadPartidos();
+        } else {
+            Utils.showError(response.error || 'Error al actualizar partido');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al actualizar partido');
+    }
+}
+
+/**
+ * Habilitar/Deshabilitar tipo de elección
+ */
+async function toggleTipoEleccion(tipoId, activo) {
+    try {
+        const response = await APIClient.put(`/super-admin/tipos-eleccion/${tipoId}/toggle`, {
+            activo: activo
+        });
+        
+        if (response.success) {
+            Utils.showSuccess(`Tipo de elección ${activo ? 'habilitado' : 'deshabilitado'} para recolección de datos`);
+            await loadElectionTypes();
+        } else {
+            Utils.showError(response.error || 'Error al actualizar tipo de elección');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al actualizar tipo de elección');
     }
 }
 
@@ -2053,7 +2164,7 @@ async function editPartido(partidoId) {
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Nombre Corto / Sigla *</label>
-                            <input type="text" class="form-control" id="editPartidoNombreCorto" value="${partido.nombre_corto || partido.sigla || ''}">
+                            <input type="text" class="form-control" id="editPartidoNombreCorto" value="${partido.nombre_corto || ''}">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Color</label>

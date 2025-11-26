@@ -947,8 +947,6 @@ def update_partido(partido_id):
             partido.nombre = data['nombre']
         if 'nombre_corto' in data:
             partido.nombre_corto = data['nombre_corto']
-        if 'sigla' in data:
-            partido.sigla = data['sigla']
         if 'color' in data:
             partido.color = data['color']
         if 'logo_url' in data:
@@ -1032,8 +1030,6 @@ def update_candidato(candidato_id):
         # Actualizar campos
         if 'nombre_completo' in data:
             candidato.nombre_completo = data['nombre_completo']
-        if 'nombre' in data:
-            candidato.nombre = data['nombre']
         if 'partido_id' in data:
             candidato.partido_id = data['partido_id'] if data['partido_id'] else None
         if 'tipo_eleccion_id' in data:
