@@ -169,9 +169,34 @@
     // ============================================
     
     function syncFormButtons() {
-        // Ya no necesitamos sincronizar botones móviles separados
-        // porque usamos el bottom navigation para acceder a las funciones
-        console.log('✅ Botones sincronizados via bottom navigation');
+        const btnDesktop = document.getElementById('btnNuevoFormulario');
+        const btnMobile = document.getElementById('btnNuevoFormularioMobile');
+        
+        if (btnDesktop && btnMobile) {
+            // Sincronizar estado inicial
+            btnMobile.disabled = btnDesktop.disabled;
+            
+            // Sincronizar cambios
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.attributeName === 'disabled') {
+                        const isDisabled = btnDesktop.disabled;
+                        btnMobile.disabled = isDisabled;
+                        
+                        if (isDisabled) {
+                            btnMobile.title = 'Debe seleccionar una mesa y verificar presencia primero';
+                            btnMobile.classList.add('disabled');
+                        } else {
+                            btnMobile.title = '';
+                            btnMobile.classList.remove('disabled');
+                        }
+                    }
+                });
+            });
+            
+            observer.observe(btnDesktop, { attributes: true });
+            console.log('✅ Botones sincronizados correctamente');
+        }
     }
 
     // ============================================
