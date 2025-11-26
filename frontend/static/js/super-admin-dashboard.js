@@ -820,6 +820,57 @@ function renderPartidos() {
 }
 
 /**
+ * Cargar logos de partidos desde Wikipedia
+ */
+async function cargarLogosPartidos() {
+    if (!confirm('¿Desea cargar los logos de los partidos políticos colombianos desde Wikipedia?\n\nEsto actualizará los logos de los partidos que coincidan con los nombres estándar.')) {
+        return;
+    }
+    
+    try {
+        Utils.showInfo('Cargando logos de partidos...');
+        
+        const response = await APIClient.post('/admin/cargar-logos-partidos', {});
+        
+        if (response.success) {
+            const data = response.data;
+            
+            // Mostrar resultado detallado
+            let mensaje = `✅ Logos cargados exitosamente:\n\n`;
+            mensaje += `📊 Total de partidos: ${data.total_partidos}\n`;
+            mensaje += `✅ Logos actualizados: ${data.total_actualizados}\n`;
+            mensaje += `ℹ️  Sin cambios: ${data.total_sin_cambios}\n`;
+            mensaje += `⚠️  Sin logo encontrado: ${data.total_sin_logo}\n\n`;
+            
+            if (data.actualizados.length > 0) {
+                mensaje += `Partidos actualizados:\n`;
+                data.actualizados.forEach(p => {
+                    mensaje += `  • ${p.nombre}\n`;
+                });
+            }
+            
+            if (data.sin_logo.length > 0) {
+                mensaje += `\nPartidos sin logo:\n`;
+                data.sin_logo.forEach(p => {
+                    mensaje += `  • ${p.nombre}\n`;
+                });
+            }
+            
+            alert(mensaje);
+            Utils.showSuccess(response.message);
+            
+            // Recargar lista de partidos
+            await loadPartidos();
+        } else {
+            Utils.showError(response.error || 'Error al cargar logos');
+        }
+    } catch (error) {
+        console.error('Error cargando logos:', error);
+        Utils.showError('Error al cargar logos: ' + error.message);
+    }
+}
+
+/**
  * Cargar tipos de elección
  */
 async function loadTiposEleccion() {

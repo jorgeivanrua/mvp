@@ -78,6 +78,7 @@ def register_blueprints(app):
     from backend.routes.locations_geo import locations_geo_bp
     from backend.routes.configuracion_sistema import config_sistema_bp
     from backend.routes.monitoreo import monitoreo_bp
+    from backend.routes.cargar_logos import cargar_logos_bp
     
     # API routes
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -100,6 +101,7 @@ def register_blueprints(app):
     app.register_blueprint(admin_import_bp)
     app.register_blueprint(verificacion_bp)
     app.register_blueprint(monitoreo_bp)
+    app.register_blueprint(cargar_logos_bp)
     
     # Public routes (sin autenticación)
     from backend.routes.public import public_bp
