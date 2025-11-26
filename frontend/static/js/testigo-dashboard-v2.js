@@ -35,6 +35,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 30000);
     
+    // ⭐ SINCRONIZACIÓN AUTOMÁTICA cada 5 minutos
+    setInterval(() => {
+        sincronizarTodosDatosLocales(true);  // Sincronizar silenciosamente
+    }, 300000);  // 5 minutos
+    
+    // Sincronizar al cargar (después de 10 segundos)
+    setTimeout(() => {
+        sincronizarTodosDatosLocales(true);
+    }, 10000);
+    
     // setupImagePreview se llama cuando se abre el modal
 });
 
