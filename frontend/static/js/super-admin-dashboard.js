@@ -1104,15 +1104,311 @@ function filterAuditLogs() {
 // están implementadas completamente más abajo (líneas 2075+)
 
 function showCreatePartyModal() {
-    Utils.showInfo('Funcionalidad en desarrollo');
+    const modalHtml = `
+        <div class="modal fade" id="createPartyModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Crear Nuevo Partido</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Código *</label>
+                            <input type="text" class="form-control" id="newPartidoCodigo" placeholder="Ej: PL, PC, CD">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nombre Completo *</label>
+                            <input type="text" class="form-control" id="newPartidoNombre" placeholder="Ej: Partido Liberal Colombiano">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nombre Corto / Sigla *</label>
+                            <input type="text" class="form-control" id="newPartidoNombreCorto" placeholder="Ej: Liberal, PL">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Color</label>
+                            <input type="color" class="form-control" id="newPartidoColor" value="#FF0000">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Logo URL (opcional)</label>
+                            <input type="text" class="form-control" id="newPartidoLogo" placeholder="https://...">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="guardarNuevoPartido()">Crear Partido</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('createPartyModal'));
+    modal.show();
+    
+    document.getElementById('createPartyModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+async function guardarNuevoPartido() {
+    const codigo = document.getElementById('newPartidoCodigo').value.trim();
+    const nombre = document.getElementById('newPartidoNombre').value.trim();
+    const nombreCorto = document.getElementById('newPartidoNombreCorto').value.trim();
+    const color = document.getElementById('newPartidoColor').value;
+    const logoUrl = document.getElementById('newPartidoLogo').value.trim();
+    
+    if (!codigo || !nombre || !nombreCorto) {
+        Utils.showError('El código, nombre y nombre corto son requeridos');
+        return;
+    }
+    
+    try {
+        const response = await APIClient.post('/configuracion/partidos', {
+            codigo: codigo,
+            nombre: nombre,
+            nombre_corto: nombreCorto,
+            color: color,
+            logo_url: logoUrl || null
+        });
+        
+        if (response.success) {
+            Utils.showSuccess('Partido creado exitosamente');
+            bootstrap.Modal.getInstance(document.getElementById('createPartyModal')).hide();
+            await loadPartidos();
+        } else {
+            Utils.showError(response.error || 'Error al crear partido');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al crear partido');
+    }
 }
 
 function showCreateElectionTypeModal() {
-    Utils.showInfo('Funcionalidad en desarrollo');
+    const modalHtml = `
+        <div class="modal fade" id="createElectionTypeModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Crear Tipo de Elección</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Código *</label>
+                            <input type="text" class="form-control" id="newTipoCodigo" placeholder="Ej: PRES, SEN, CAM">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nombre *</label>
+                            <input type="text" class="form-control" id="newTipoNombre" placeholder="Ej: Presidente, Senado">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control" id="newTipoDescripcion" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de Elección</label>
+                            <select class="form-select" id="newTipoCategoria">
+                                <option value="uninominal">Uninominal (Presidente, Gobernador, Alcalde)</option>
+                                <option value="corporacion">Por Corporación (Senado, Cámara, Asamblea, Concejo)</option>
+                            </select>
+                        </div>
+                        <div id="newOpcionesLista" style="display:none;">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="newListaCerrada" checked>
+                                <label class="form-check-label" for="newListaCerrada">
+                                    Permite lista cerrada
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="newListaAbierta">
+                                <label class="form-check-label" for="newListaAbierta">
+                                    Permite lista abierta (voto preferente)
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="newCoaliciones">
+                                <label class="form-check-label" for="newCoaliciones">
+                                    Permite coaliciones
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="guardarNuevoTipoEleccion()">Crear Tipo</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('createElectionTypeModal'));
+    
+    // Manejar cambio de categoría
+    document.getElementById('newTipoCategoria').addEventListener('change', function() {
+        const opcionesLista = document.getElementById('newOpcionesLista');
+        opcionesLista.style.display = this.value === 'corporacion' ? 'block' : 'none';
+    });
+    
+    modal.show();
+    
+    document.getElementById('createElectionTypeModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+async function guardarNuevoTipoEleccion() {
+    const codigo = document.getElementById('newTipoCodigo').value.trim();
+    const nombre = document.getElementById('newTipoNombre').value.trim();
+    const descripcion = document.getElementById('newTipoDescripcion').value.trim();
+    const categoria = document.getElementById('newTipoCategoria').value;
+    
+    if (!codigo || !nombre) {
+        Utils.showError('El código y nombre son requeridos');
+        return;
+    }
+    
+    const esUninominal = categoria === 'uninominal';
+    const listaCerrada = !esUninominal && document.getElementById('newListaCerrada').checked;
+    const listaAbierta = !esUninominal && document.getElementById('newListaAbierta').checked;
+    const coaliciones = !esUninominal && document.getElementById('newCoaliciones').checked;
+    
+    try {
+        const response = await APIClient.post('/super-admin/tipos-eleccion', {
+            codigo: codigo,
+            nombre: nombre,
+            descripcion: descripcion,
+            es_uninominal: esUninominal,
+            permite_lista_cerrada: listaCerrada,
+            permite_lista_abierta: listaAbierta,
+            permite_coaliciones: coaliciones
+        });
+        
+        if (response.success) {
+            Utils.showSuccess('Tipo de elección creado exitosamente');
+            bootstrap.Modal.getInstance(document.getElementById('createElectionTypeModal')).hide();
+            await loadTiposEleccion();
+        } else {
+            Utils.showError(response.error || 'Error al crear tipo de elección');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al crear tipo de elección');
+    }
 }
 
 function showCreateCandidateModal() {
-    Utils.showInfo('Funcionalidad en desarrollo');
+    const modalHtml = `
+        <div class="modal fade" id="createCandidateModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Crear Nuevo Candidato</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Código *</label>
+                            <input type="text" class="form-control" id="newCandidatoCodigo" placeholder="Se genera automáticamente">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nombre Completo *</label>
+                            <input type="text" class="form-control" id="newCandidatoNombre" placeholder="Ej: Juan Pérez García">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Partido</label>
+                            <select class="form-select" id="newCandidatoPartido">
+                                <option value="">Independiente</option>
+                                ${allPartidos.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de Elección *</label>
+                            <select class="form-select" id="newCandidatoTipoEleccion">
+                                ${allTiposEleccion.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Número de Lista (opcional)</label>
+                            <input type="number" class="form-control" id="newCandidatoNumeroLista" min="1">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Foto URL (opcional)</label>
+                            <input type="text" class="form-control" id="newCandidatoFoto" placeholder="https://...">
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="newCandidatoIndependiente">
+                            <label class="form-check-label" for="newCandidatoIndependiente">
+                                Candidato Independiente
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="newCandidatoCabezaLista">
+                            <label class="form-check-label" for="newCandidatoCabezaLista">
+                                Cabeza de Lista
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="guardarNuevoCandidato()">Crear Candidato</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('createCandidateModal'));
+    modal.show();
+    
+    document.getElementById('createCandidateModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+async function guardarNuevoCandidato() {
+    const codigo = document.getElementById('newCandidatoCodigo').value.trim();
+    const nombre = document.getElementById('newCandidatoNombre').value.trim();
+    const partidoId = document.getElementById('newCandidatoPartido').value;
+    const tipoEleccionId = document.getElementById('newCandidatoTipoEleccion').value;
+    const numeroLista = document.getElementById('newCandidatoNumeroLista').value;
+    const fotoUrl = document.getElementById('newCandidatoFoto').value.trim();
+    const esIndependiente = document.getElementById('newCandidatoIndependiente').checked;
+    const esCabezaLista = document.getElementById('newCandidatoCabezaLista').checked;
+    
+    if (!nombre || !tipoEleccionId) {
+        Utils.showError('El nombre y tipo de elección son requeridos');
+        return;
+    }
+    
+    try {
+        const response = await APIClient.post('/configuracion/candidatos', {
+            codigo: codigo || `CAND_${Date.now()}`,
+            nombre_completo: nombre,
+            partido_id: partidoId || null,
+            tipo_eleccion_id: parseInt(tipoEleccionId),
+            numero_lista: numeroLista ? parseInt(numeroLista) : null,
+            foto_url: fotoUrl || null,
+            es_independiente: esIndependiente,
+            es_cabeza_lista: esCabezaLista
+        });
+        
+        if (response.success) {
+            Utils.showSuccess('Candidato creado exitosamente');
+            bootstrap.Modal.getInstance(document.getElementById('createCandidateModal')).hide();
+            await loadCandidatos();
+        } else {
+            Utils.showError(response.error || 'Error al crear candidato');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al crear candidato');
+    }
 }
 
 // ============================================
