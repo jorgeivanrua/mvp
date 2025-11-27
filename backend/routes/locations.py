@@ -6,7 +6,7 @@ from flask_jwt_extended import jwt_required
 from backend.database import db
 from backend.models.location import Location
 
-locations_bp = Blueprint('locations', __name__, url_prefix='/api/locations')
+locations_bp = Blueprint('locations', __name__)
 
 
 @locations_bp.route('/departamentos', methods=['GET'])
