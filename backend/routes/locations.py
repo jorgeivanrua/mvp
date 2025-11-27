@@ -1,26 +1,40 @@
 """
-Rutas de Ubicaciones (DIVIPOLA) - Accesible para todos los roles
+Rutas de Ubicaciones (DIVIPOLA) - Accesible para todos
+Endpoints públicos necesarios para el proceso de login
 """
-from flask import Blueprint, jsonify
-from flask_jwt_extended import jwt_required
+from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required, jwt_required, get_jwt_identity
+from functools import wraps
 from backend.database import db
 from backend.models.location import Location
 
 locations_bp = Blueprint('locations', __name__)
 
+# Constante para el código de Caquetá
+CAQUETA_CODE = '44'
+
+def validate_caqueta_code(code):
+    """Validar que el código pertenece a Caquetá"""
+    if not code:
+        return False
+    return code.startswith(CAQUETA_CODE)
+
 
 @locations_bp.route('/departamentos', methods=['GET'])
-@jwt_required()
 def get_departamentos():
     """
     Obtener departamento de Caquetá únicamente
-    Accesible para todos los roles autenticados
+    Endpoint público (necesario para login)
+    
+    Returns:
+        JSON con lista de departamentos (solo Caquetá)
     """
     try:
         # Solo retornar Caquetá (código 44)
-        departamento = db.session.query(Location).filter(
-            Location.tipo == 'departamento',
-            Location.departamento_codigo == '44'
+        departamento = Location.query.filter_by(
+            tipo='departamento',
+            departamento_codigo=CAQUETA_CODE,
+            activo=True
         ).first()
         
         if departamento:
@@ -30,38 +44,56 @@ def get_departamentos():
                     'departamento_codigo': departamento.departamento_codigo,
                     'departamento_nombre': departamento.departamento_nombre
                 }]
-            })
+            }), 200
         else:
             return jsonify({
-                'success': True,
+                'success': False,
+                'error': 'No se encontró el departamento de Caquetá',
                 'data': []
-            })
+            }), 404
+            
     except Exception as e:
+        print(f"Error en get_departamentos: {str(e)}")
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Error al obtener departamentos'
         }), 500
 
 
 @locations_bp.route('/municipios/<departamento_codigo>', methods=['GET'])
-@jwt_required()
 def get_municipios(departamento_codigo):
     """
     Obtener municipios de Caquetá
-    Accesible para todos los roles autenticados
+    Endpoint público (necesario para login)
+    
+    Args:
+        departamento_codigo: Código del departamento (debe ser 44)
+        
+    Returns:
+        JSON con lista de municipios
     """
     try:
-        # Solo permitir consultas para Caquetá
-        if departamento_codigo != '44':
+        # Validar que sea Caquetá
+        if departamento_codigo != CAQUETA_CODE:
             return jsonify({
-                'success': True,
+                'success': False,
+                'error': f'Solo se permiten consultas para Caquetá (código {CAQUETA_CODE})',
                 'data': []
-            })
+            }), 400
         
-        municipios = db.session.query(Location).filter(
-            Location.tipo == 'municipio',
-            Location.departamento_codigo == '44'
+        # Obtener municipios activos
+        municipios = Location.query.filter_by(
+            tipo='municipio',
+            departamento_codigo=CAQUETA_CODE,
+            activo=True
         ).order_by(Location.municipio_nombre).all()
+        
+        if not municipios:
+            return jsonify({
+                'success': False,
+                'error': 'No se encontraron municipios',
+                'data': []
+            }), 404
         
         return jsonify({
             'success': True,
@@ -69,26 +101,43 @@ def get_municipios(departamento_codigo):
                 'municipio_codigo': muni.municipio_codigo,
                 'municipio_nombre': muni.municipio_nombre
             } for muni in municipios]
-        })
+        }), 200
+        
     except Exception as e:
+        print(f"Error en get_municipios: {str(e)}")
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Error al obtener municipios'
         }), 500
 
 
 @locations_bp.route('/zonas/<municipio_codigo>', methods=['GET'])
-@jwt_required()
 def get_zonas(municipio_codigo):
     """
     Obtener zonas de un municipio de Caquetá
-    Accesible para todos los roles autenticados
+    Endpoint público (necesario para login)
+    
+    Args:
+        municipio_codigo: Código del municipio (debe empezar con 44)
+        
+    Returns:
+        JSON con lista de zonas
     """
     try:
-        zonas = db.session.query(Location).filter(
-            Location.tipo == 'zona',
-            Location.departamento_codigo == '44',
-            Location.municipio_codigo == municipio_codigo
+        # Validar que pertenece a Caquetá
+        if not validate_caqueta_code(municipio_codigo):
+            return jsonify({
+                'success': False,
+                'error': 'Código de municipio inválido',
+                'data': []
+            }), 400
+        
+        # Obtener zonas activas
+        zonas = Location.query.filter_by(
+            tipo='zona',
+            departamento_codigo=CAQUETA_CODE,
+            municipio_codigo=municipio_codigo,
+            activo=True
         ).order_by(Location.zona_codigo).all()
         
         return jsonify({
@@ -97,26 +146,43 @@ def get_zonas(municipio_codigo):
                 'zona_codigo': zona.zona_codigo,
                 'zona_nombre': f"Zona {zona.zona_codigo[-2:]}"
             } for zona in zonas]
-        })
+        }), 200
+        
     except Exception as e:
+        print(f"Error en get_zonas: {str(e)}")
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Error al obtener zonas'
         }), 500
 
 
 @locations_bp.route('/puestos/<zona_codigo>', methods=['GET'])
-@jwt_required()
 def get_puestos(zona_codigo):
     """
     Obtener puestos de una zona de Caquetá
-    Accesible para todos los roles autenticados
+    Endpoint público (necesario para login)
+    
+    Args:
+        zona_codigo: Código de la zona (debe empezar con 44)
+        
+    Returns:
+        JSON con lista de puestos
     """
     try:
-        puestos = db.session.query(Location).filter(
-            Location.tipo == 'puesto',
-            Location.departamento_codigo == '44',
-            Location.zona_codigo == zona_codigo
+        # Validar que pertenece a Caquetá
+        if not validate_caqueta_code(zona_codigo):
+            return jsonify({
+                'success': False,
+                'error': 'Código de zona inválido',
+                'data': []
+            }), 400
+        
+        # Obtener puestos activos
+        puestos = Location.query.filter_by(
+            tipo='puesto',
+            departamento_codigo=CAQUETA_CODE,
+            zona_codigo=zona_codigo,
+            activo=True
         ).order_by(Location.puesto_nombre).all()
         
         return jsonify({
@@ -125,26 +191,43 @@ def get_puestos(zona_codigo):
                 'puesto_codigo': puesto.puesto_codigo,
                 'puesto_nombre': puesto.puesto_nombre
             } for puesto in puestos]
-        })
+        }), 200
+        
     except Exception as e:
+        print(f"Error en get_puestos: {str(e)}")
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Error al obtener puestos'
         }), 500
 
 
 @locations_bp.route('/mesas/<puesto_codigo>', methods=['GET'])
-@jwt_required()
 def get_mesas(puesto_codigo):
     """
     Obtener mesas de un puesto de Caquetá
-    Accesible para todos los roles autenticados
+    Endpoint público (necesario para login)
+    
+    Args:
+        puesto_codigo: Código del puesto (debe empezar con 44)
+        
+    Returns:
+        JSON con lista de mesas
     """
     try:
-        mesas = db.session.query(Location).filter(
-            Location.tipo == 'mesa',
-            Location.departamento_codigo == '44',
-            Location.puesto_codigo == puesto_codigo
+        # Validar que pertenece a Caquetá
+        if not validate_caqueta_code(puesto_codigo):
+            return jsonify({
+                'success': False,
+                'error': 'Código de puesto inválido',
+                'data': []
+            }), 400
+        
+        # Obtener mesas activas
+        mesas = Location.query.filter_by(
+            tipo='mesa',
+            departamento_codigo=CAQUETA_CODE,
+            puesto_codigo=puesto_codigo,
+            activo=True
         ).order_by(Location.mesa_codigo).all()
         
         return jsonify({
@@ -153,11 +236,13 @@ def get_mesas(puesto_codigo):
                 'mesa_codigo': mesa.mesa_codigo,
                 'mesa_nombre': mesa.mesa_nombre
             } for mesa in mesas]
-        })
+        }), 200
+        
     except Exception as e:
+        print(f"Error en get_mesas: {str(e)}")
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Error al obtener mesas'
         }), 500
 
 

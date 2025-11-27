@@ -63,20 +63,22 @@ async function loadTiposEleccionForSelect(selectId) {
 
 /**
  * Cargar departamentos en select (solo Caquetá)
+ * Endpoint público - no requiere autenticación
  */
 async function loadDepartamentosForSelect(selectId) {
-    // Verificar que el usuario esté autenticado
-    if (!localStorage.getItem('access_token')) {
-        console.warn('Usuario no autenticado, no se pueden cargar departamentos');
-        return;
-    }
-    
     try {
         const response = await APIClient.get('/locations/departamentos');
         const select = document.getElementById(selectId);
-        if (response.success && select) {
+        
+        if (!select) {
+            console.warn(`Select con id '${selectId}' no encontrado`);
+            return;
+        }
+        
+        if (response && response.success && response.data && response.data.length > 0) {
             // Limpiar opciones existentes (excepto la primera)
             select.innerHTML = '<option value="">Seleccionar departamento...</option>';
+            
             // Agregar departamentos (solo Caquetá)
             response.data.forEach(depto => {
                 const option = document.createElement('option');
@@ -89,24 +91,46 @@ async function loadDepartamentosForSelect(selectId) {
             if (response.data.length === 1) {
                 select.value = response.data[0].departamento_codigo;
                 // Disparar evento change para cargar municipios
-                select.dispatchEvent(new Event('change'));
+                const event = new Event('change', { bubbles: true });
+                select.dispatchEvent(event);
             }
+        } else {
+            console.error('No se recibieron datos de departamentos:', response);
+            select.innerHTML = '<option value="">Error cargando departamentos</option>';
         }
     } catch (error) {
         console.error('Error cargando departamentos:', error);
+        const select = document.getElementById(selectId);
+        if (select) {
+            select.innerHTML = '<option value="">Error de conexión</option>';
+        }
     }
 }
 
 /**
  * Cargar municipios en select
+ * Endpoint público - no requiere autenticación
  */
 async function loadMunicipiosForSelect(selectId, departamentoId) {
+    const select = document.getElementById(selectId);
+    
+    if (!select) {
+        console.warn(`Select con id '${selectId}' no encontrado`);
+        return;
+    }
+    
+    if (!departamentoId) {
+        select.innerHTML = '<option value="">Seleccione departamento primero</option>';
+        return;
+    }
+    
     try {
         const response = await APIClient.get(`/locations/municipios/${departamentoId}`);
-        const select = document.getElementById(selectId);
-        if (response.success && select) {
-            // Limpiar opciones existentes (excepto la primera)
+        
+        if (response && response.success && response.data) {
+            // Limpiar opciones existentes
             select.innerHTML = '<option value="">Seleccionar municipio...</option>';
+            
             // Agregar municipios
             response.data.forEach(muni => {
                 const option = document.createElement('option');
@@ -114,9 +138,12 @@ async function loadMunicipiosForSelect(selectId, departamentoId) {
                 option.textContent = muni.municipio_nombre;
                 select.appendChild(option);
             });
+        } else {
+            select.innerHTML = '<option value="">No hay municipios disponibles</option>';
         }
     } catch (error) {
         console.error('Error cargando municipios:', error);
+        select.innerHTML = '<option value="">Error de conexión</option>';
     }
 }
 
