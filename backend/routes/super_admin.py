@@ -2029,3 +2029,169 @@ def get_incidentes_delitos_admin():
             'success': False,
             'error': str(e)
         }), 500
+
+
+# ============================================================================
+# ENDPOINTS DE UBICACIONES (DIVIPOLA) - SOLO CAQUETÁ
+# ============================================================================
+
+@super_admin_bp.route('/locations/departamentos', methods=['GET'])
+@jwt_required()
+@role_required(['super_admin'])
+def get_departamentos():
+    """
+    Obtener departamento de Caquetá únicamente
+    """
+    try:
+        from backend.models.location import Location
+        
+        # Solo retornar Caquetá (código 44)
+        departamento = db.session.query(Location).filter(
+            Location.tipo == 'departamento',
+            Location.departamento_codigo == '44'
+        ).first()
+        
+        if departamento:
+            return jsonify({
+                'success': True,
+                'data': [{
+                    'departamento_codigo': departamento.departamento_codigo,
+                    'departamento_nombre': departamento.departamento_nombre
+                }]
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'data': []
+            })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/locations/municipios/<departamento_codigo>', methods=['GET'])
+@jwt_required()
+@role_required(['super_admin'])
+def get_municipios(departamento_codigo):
+    """
+    Obtener municipios de Caquetá
+    """
+    try:
+        from backend.models.location import Location
+        
+        # Solo permitir consultas para Caquetá
+        if departamento_codigo != '44':
+            return jsonify({
+                'success': True,
+                'data': []
+            })
+        
+        municipios = db.session.query(Location).filter(
+            Location.tipo == 'municipio',
+            Location.departamento_codigo == '44'
+        ).order_by(Location.municipio_nombre).all()
+        
+        return jsonify({
+            'success': True,
+            'data': [{
+                'municipio_codigo': muni.municipio_codigo,
+                'municipio_nombre': muni.municipio_nombre
+            } for muni in municipios]
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/locations/zonas/<municipio_codigo>', methods=['GET'])
+@jwt_required()
+@role_required(['super_admin'])
+def get_zonas(municipio_codigo):
+    """
+    Obtener zonas de un municipio de Caquetá
+    """
+    try:
+        from backend.models.location import Location
+        
+        zonas = db.session.query(Location).filter(
+            Location.tipo == 'zona',
+            Location.departamento_codigo == '44',
+            Location.municipio_codigo == municipio_codigo
+        ).order_by(Location.zona_codigo).all()
+        
+        return jsonify({
+            'success': True,
+            'data': [{
+                'zona_codigo': zona.zona_codigo,
+                'zona_nombre': f"Zona {zona.zona_codigo[-2:]}"
+            } for zona in zonas]
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/locations/puestos/<zona_codigo>', methods=['GET'])
+@jwt_required()
+@role_required(['super_admin'])
+def get_puestos(zona_codigo):
+    """
+    Obtener puestos de una zona de Caquetá
+    """
+    try:
+        from backend.models.location import Location
+        
+        puestos = db.session.query(Location).filter(
+            Location.tipo == 'puesto',
+            Location.departamento_codigo == '44',
+            Location.zona_codigo == zona_codigo
+        ).order_by(Location.puesto_nombre).all()
+        
+        return jsonify({
+            'success': True,
+            'data': [{
+                'puesto_codigo': puesto.puesto_codigo,
+                'puesto_nombre': puesto.puesto_nombre
+            } for puesto in puestos]
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/locations/mesas/<puesto_codigo>', methods=['GET'])
+@jwt_required()
+@role_required(['super_admin'])
+def get_mesas(puesto_codigo):
+    """
+    Obtener mesas de un puesto de Caquetá
+    """
+    try:
+        from backend.models.location import Location
+        
+        mesas = db.session.query(Location).filter(
+            Location.tipo == 'mesa',
+            Location.departamento_codigo == '44',
+            Location.puesto_codigo == puesto_codigo
+        ).order_by(Location.mesa_codigo).all()
+        
+        return jsonify({
+            'success': True,
+            'data': [{
+                'mesa_codigo': mesa.mesa_codigo,
+                'mesa_nombre': mesa.mesa_nombre
+            } for mesa in mesas]
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
