@@ -34,14 +34,14 @@ def create_fixed_users():
         florencia = Location.query.filter_by(
             tipo='municipio',
             departamento_codigo='44',
-            municipio_codigo='01'
+            municipio_codigo='4401'
         ).first()
         
         # Obtener todos los puestos de Florencia
         puestos_florencia = Location.query.filter_by(
             tipo='puesto',
             departamento_codigo='44',
-            municipio_codigo='01'
+            municipio_codigo='4401'
         ).order_by(Location.puesto_codigo).all()
         
         if not caqueta or not florencia:
