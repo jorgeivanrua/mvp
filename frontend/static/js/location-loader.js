@@ -7,6 +7,12 @@
  * Cargar partidos en select
  */
 async function loadPartidosForSelect(selectId) {
+    // Verificar que el usuario esté autenticado
+    if (!localStorage.getItem('access_token')) {
+        console.warn('Usuario no autenticado, no se pueden cargar partidos');
+        return;
+    }
+    
     try {
         const response = await APIClient.get('/locations/partidos');
         const select = document.getElementById(selectId);
@@ -30,6 +36,12 @@ async function loadPartidosForSelect(selectId) {
  * Cargar tipos de elección en select
  */
 async function loadTiposEleccionForSelect(selectId) {
+    // Verificar que el usuario esté autenticado
+    if (!localStorage.getItem('access_token')) {
+        console.warn('Usuario no autenticado, no se pueden cargar tipos de elección');
+        return;
+    }
+    
     try {
         const response = await APIClient.get('/locations/tipos-eleccion');
         const select = document.getElementById(selectId);
@@ -53,6 +65,12 @@ async function loadTiposEleccionForSelect(selectId) {
  * Cargar departamentos en select (solo Caquetá)
  */
 async function loadDepartamentosForSelect(selectId) {
+    // Verificar que el usuario esté autenticado
+    if (!localStorage.getItem('access_token')) {
+        console.warn('Usuario no autenticado, no se pueden cargar departamentos');
+        return;
+    }
+    
     try {
         const response = await APIClient.get('/locations/departamentos');
         const select = document.getElementById(selectId);
