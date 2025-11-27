@@ -106,10 +106,10 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 ### Caquetá (Código 44)
 - **Departamento:** 1 (Caquetá)
-- **Municipios:** 16
-- **Zonas:** Variable por municipio
-- **Puestos:** Variable por zona
-- **Mesas:** Variable por puesto
+- **Municipios:** 16 (Albania, Belén de los Andaquíes, Cartagena del Chairá, Curillo, El Doncello, El Paujil, Florencia, La Montañita, Milán, Morelia, Puerto Rico, San José del Fragua, San Vicente del Caguán, Solano, Solita, Valparaíso)
+- **Zonas:** 38
+- **Puestos:** 150
+- **Mesas:** 196
 
 ### Partidos y Tipos de Elección
 - Solo se cargan los registros marcados como `activo=True`
