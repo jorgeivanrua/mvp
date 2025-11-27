@@ -48,29 +48,37 @@ def load_divipola_from_csv(csv_path):
             reader = csv.DictReader(file)
             
             for row in reader:
-                dd = row['dd']  # Departamento
+                dd = row['dd'].strip().zfill(2)  # Departamento
                 
                 # SOLO CARGAR CAQUETÁ (código 44)
                 if dd != '44':
                     continue
                 
-                mm = row['mm']  # Municipio
-                zz = row['zz']  # Zona
-                pp = row['pp']  # Puesto
-                mesa = row['mesa']
+                mm = row['mm'].strip().zfill(2)  # Municipio
+                zz = row['zz'].strip().zfill(2)  # Zona
+                pp = row['pp'].strip().zfill(2)  # Puesto
+                mesa = row['mesa'].strip().zfill(2)
                 
-                departamento_nombre = row['departamento']
-                municipio_nombre = row['municipio']
-                puesto_nombre = row['puesto']
-                mesa_nombre = row['mesa_nombre']
+                departamento_nombre = row['departamento'].strip()
+                municipio_nombre = row['municipio'].strip()
+                puesto_nombre = row['puesto'].strip()
+                mesa_nombre = row['mesa_nombre'].strip()
+                
+                # Códigos completos
+                depto_codigo = dd
+                muni_codigo = f"{dd}{mm}"
+                zona_codigo = f"{dd}{mm}{zz}"
+                puesto_codigo = f"{dd}{mm}{zz}{pp}"
+                mesa_codigo = f"{dd}{mm}{zz}{pp}{mesa}"
                 
                 # Crear departamento si no existe
                 if dd not in departamentos:
                     dept = Location(
-                        departamento_codigo=dd,
+                        departamento_codigo=depto_codigo,
                         departamento_nombre=departamento_nombre,
                         nombre_completo=departamento_nombre,
-                        tipo='departamento'
+                        tipo='departamento',
+                        activo=True
                     )
                     db.session.add(dept)
                     db.session.flush()
@@ -79,16 +87,17 @@ def load_divipola_from_csv(csv_path):
                     print(f"  + Departamento: {departamento_nombre}")
                 
                 # Crear municipio si no existe
-                muni_key = f"{dd}-{mm}"
+                muni_key = muni_codigo
                 if muni_key not in municipios:
                     muni = Location(
-                        departamento_codigo=dd,
-                        municipio_codigo=mm,
+                        departamento_codigo=depto_codigo,
+                        municipio_codigo=muni_codigo,
                         departamento_nombre=departamento_nombre,
                         municipio_nombre=municipio_nombre,
                         nombre_completo=f"{departamento_nombre} - {municipio_nombre}",
                         tipo='municipio',
-                        parent_id=departamentos[dd]
+                        parent_id=departamentos[dd],
+                        activo=True
                     )
                     db.session.add(muni)
                     db.session.flush()
@@ -96,17 +105,18 @@ def load_divipola_from_csv(csv_path):
                     locations_added += 1
                 
                 # Crear zona si no existe
-                zona_key = f"{dd}-{mm}-{zz}"
+                zona_key = zona_codigo
                 if zona_key not in zonas:
                     zona = Location(
-                        departamento_codigo=dd,
-                        municipio_codigo=mm,
-                        zona_codigo=zz,
+                        departamento_codigo=depto_codigo,
+                        municipio_codigo=muni_codigo,
+                        zona_codigo=zona_codigo,
                         departamento_nombre=departamento_nombre,
                         municipio_nombre=municipio_nombre,
                         nombre_completo=f"{departamento_nombre} - {municipio_nombre} - Zona {zz}",
                         tipo='zona',
-                        parent_id=municipios[muni_key]
+                        parent_id=municipios[muni_key],
+                        activo=True
                     )
                     db.session.add(zona)
                     db.session.flush()
@@ -114,23 +124,24 @@ def load_divipola_from_csv(csv_path):
                     locations_added += 1
                 
                 # Crear puesto si no existe
-                puesto_key = f"{dd}-{mm}-{zz}-{pp}"
+                puesto_key = puesto_codigo
                 if puesto_key not in puestos:
                     puesto = Location(
-                        departamento_codigo=dd,
-                        municipio_codigo=mm,
-                        zona_codigo=zz,
-                        puesto_codigo=pp,
+                        departamento_codigo=depto_codigo,
+                        municipio_codigo=muni_codigo,
+                        zona_codigo=zona_codigo,
+                        puesto_codigo=puesto_codigo,
                         departamento_nombre=departamento_nombre,
                         municipio_nombre=municipio_nombre,
                         puesto_nombre=puesto_nombre,
                         nombre_completo=f"{departamento_nombre} - {municipio_nombre} - Zona {zz} - {puesto_nombre}",
                         tipo='puesto',
-                        direccion=row.get('direccion'),
-                        comuna=row.get('comuna'),
-                        latitud=float(row['LATITUD']) if row.get('LATITUD') else None,
-                        longitud=float(row['LONGITUD']) if row.get('LONGITUD') else None,
-                        parent_id=zonas[zona_key]
+                        direccion=row.get('direccion', '').strip() or None,
+                        comuna=row.get('comuna', '').strip() or None,
+                        latitud=float(row['LATITUD']) if row.get('LATITUD', '').strip() else None,
+                        longitud=float(row['LONGITUD']) if row.get('LONGITUD', '').strip() else None,
+                        parent_id=zonas[zona_key],
+                        activo=True
                     )
                     db.session.add(puesto)
                     db.session.flush()
@@ -139,25 +150,26 @@ def load_divipola_from_csv(csv_path):
                 
                 # Crear mesa
                 mesa_location = Location(
-                    departamento_codigo=dd,
-                    municipio_codigo=mm,
-                    zona_codigo=zz,
-                    puesto_codigo=pp,
-                    mesa_codigo=mesa,
+                    departamento_codigo=depto_codigo,
+                    municipio_codigo=muni_codigo,
+                    zona_codigo=zona_codigo,
+                    puesto_codigo=puesto_codigo,
+                    mesa_codigo=mesa_codigo,
                     departamento_nombre=departamento_nombre,
                     municipio_nombre=municipio_nombre,
                     puesto_nombre=puesto_nombre,
                     mesa_nombre=mesa_nombre,
                     nombre_completo=f"{departamento_nombre} - {municipio_nombre} - Zona {zz} - {puesto_nombre} - Mesa {mesa}",
                     tipo='mesa',
-                    total_votantes_registrados=int(row.get('total_mesa', 0)),
-                    mujeres=int(row.get('mujeres_mesa', 0)),
-                    hombres=int(row.get('hombres_mesa', 0)),
-                    direccion=row.get('direccion'),
-                    comuna=row.get('comuna'),
-                    latitud=float(row['LATITUD']) if row.get('LATITUD') else None,
-                    longitud=float(row['LONGITUD']) if row.get('LONGITUD') else None,
-                    parent_id=puestos[puesto_key]
+                    total_votantes_registrados=int(row.get('total_mesa', 0) or 0),
+                    mujeres=int(row.get('mujeres_mesa', 0) or 0),
+                    hombres=int(row.get('hombres_mesa', 0) or 0),
+                    direccion=row.get('direccion', '').strip() or None,
+                    comuna=row.get('comuna', '').strip() or None,
+                    latitud=float(row['LATITUD']) if row.get('LATITUD', '').strip() else None,
+                    longitud=float(row['LONGITUD']) if row.get('LONGITUD', '').strip() else None,
+                    parent_id=puestos[puesto_key],
+                    activo=True
                 )
                 db.session.add(mesa_location)
                 locations_added += 1
