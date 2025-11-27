@@ -39,8 +39,9 @@ def cargar_divipola():
     print()
     
     # Verificar que existe el archivo CSV
-    if not os.path.exists('divipola1.csv'):
-        print("❌ Error: No se encontró el archivo divipola1.csv")
+    csv_file = 'divipola.csv' if os.path.exists('divipola.csv') else 'divipola1.csv'
+    if not os.path.exists(csv_file):
+        print(f"❌ Error: No se encontró el archivo {csv_file}")
         return
     
     # Obtener URL de la BD
@@ -61,8 +62,8 @@ def cargar_divipola():
         print()
         
         # Leer CSV
-        print("📖 Leyendo archivo divipola1.csv...")
-        with open('divipola1.csv', 'r', encoding='utf-8') as f:
+        print(f"📖 Leyendo archivo {csv_file}...")
+        with open(csv_file, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             rows = list(reader)
         
