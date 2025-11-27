@@ -1,175 +1,207 @@
 """
-Rutas de ubicaciones
+Rutas de Ubicaciones (DIVIPOLA) - Accesible para todos los roles
 """
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask import Blueprint, jsonify
+from flask_jwt_extended import jwt_required
+from backend.database import db
 from backend.models.location import Location
 
-locations_bp = Blueprint('locations', __name__)
+locations_bp = Blueprint('locations', __name__, url_prefix='/api/locations')
 
 
 @locations_bp.route('/departamentos', methods=['GET'])
+@jwt_required()
 def get_departamentos():
-    """Obtener lista de departamentos"""
+    """
+    Obtener departamento de Caquetá únicamente
+    Accesible para todos los roles autenticados
+    """
     try:
-        departamentos = Location.query.filter_by(tipo='departamento').all()
+        # Solo retornar Caquetá (código 44)
+        departamento = db.session.query(Location).filter(
+            Location.tipo == 'departamento',
+            Location.departamento_codigo == '44'
+        ).first()
         
-        return jsonify({
-            'success': True,
-            'data': [{
-                'id': d.id,
-                'departamento_codigo': d.departamento_codigo,
-                'departamento_nombre': d.departamento_nombre
-            } for d in departamentos]
-        }), 200
+        if departamento:
+            return jsonify({
+                'success': True,
+                'data': [{
+                    'departamento_codigo': departamento.departamento_codigo,
+                    'departamento_nombre': departamento.departamento_nombre
+                }]
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'data': []
+            })
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@locations_bp.route('/municipios', methods=['GET'])
-def get_municipios():
-    """Obtener municipios filtrados por departamento"""
-    try:
-        dept_codigo = request.args.get('departamento_codigo')
-        query = Location.query.filter_by(tipo='municipio')
-        
-        if dept_codigo:
-            query = query.filter_by(departamento_codigo=dept_codigo)
-        
-        municipios = query.all()
-        
         return jsonify({
-            'success': True,
-            'data': [{
-                'id': m.id,
-                'codigo': m.municipio_codigo,  # Mantener compatibilidad
-                'nombre': m.municipio_nombre,  # Mantener compatibilidad
-                'municipio_codigo': m.municipio_codigo,
-                'municipio_nombre': m.municipio_nombre,
-                'departamento_codigo': m.departamento_codigo,
-                'departamento_nombre': m.departamento_nombre
-            } for m in municipios]
-        }), 200
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+            'success': False,
+            'error': str(e)
+        }), 500
 
 
-@locations_bp.route('/zonas', methods=['GET'])
-def get_zonas():
-    """Obtener zonas filtradas"""
+@locations_bp.route('/municipios/<departamento_codigo>', methods=['GET'])
+@jwt_required()
+def get_municipios(departamento_codigo):
+    """
+    Obtener municipios de Caquetá
+    Accesible para todos los roles autenticados
+    """
     try:
-        muni_codigo = request.args.get('municipio_codigo')
-        query = Location.query.filter_by(tipo='zona')
-        
-        if muni_codigo:
-            query = query.filter_by(municipio_codigo=muni_codigo)
-        
-        zonas = query.all()
-        
-        return jsonify({
-            'success': True,
-            'data': [{
-                'id': z.id,
-                'codigo': z.zona_codigo,
-                'nombre_completo': z.nombre_completo
-            } for z in zonas]
-        }), 200
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@locations_bp.route('/puestos', methods=['GET'])
-def get_puestos():
-    """Obtener puestos filtrados"""
-    try:
-        zona_codigo = request.args.get('zona_codigo')
-        municipio_codigo = request.args.get('municipio_codigo')
-        departamento_codigo = request.args.get('departamento_codigo')
-        
-        query = Location.query.filter_by(tipo='puesto')
-        
-        if zona_codigo:
-            query = query.filter_by(zona_codigo=zona_codigo)
-        if municipio_codigo:
-            query = query.filter_by(municipio_codigo=municipio_codigo)
-        if departamento_codigo:
-            query = query.filter_by(departamento_codigo=departamento_codigo)
-        
-        puestos = query.all()
-        
-        # Contar mesas por puesto
-        result = []
-        for p in puestos:
-            total_mesas = Location.query.filter_by(
-                tipo='mesa',
-                puesto_codigo=p.puesto_codigo,
-                zona_codigo=p.zona_codigo,
-                municipio_codigo=p.municipio_codigo,
-                departamento_codigo=p.departamento_codigo
-            ).count()
-            
-            result.append({
-                'id': p.id,
-                'puesto_codigo': p.puesto_codigo,
-                'puesto_nombre': p.puesto_nombre,
-                'municipio_codigo': p.municipio_codigo,
-                'municipio_nombre': p.municipio_nombre,
-                'departamento_codigo': p.departamento_codigo,
-                'departamento_nombre': p.departamento_nombre,
-                'zona_codigo': p.zona_codigo,
-                'total_mesas': total_mesas
+        # Solo permitir consultas para Caquetá
+        if departamento_codigo != '44':
+            return jsonify({
+                'success': True,
+                'data': []
             })
         
-        return jsonify({
-            'success': True,
-            'data': result
-        }), 200
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@locations_bp.route('/mesas', methods=['GET'])
-@jwt_required()
-def get_mesas():
-    """Obtener mesas filtradas"""
-    try:
-        puesto_codigo = request.args.get('puesto_codigo')
-        departamento_codigo = request.args.get('departamento_codigo')
-        municipio_codigo = request.args.get('municipio_codigo')
-        zona_codigo = request.args.get('zona_codigo')
-        
-        query = Location.query.filter_by(tipo='mesa')
-        
-        if departamento_codigo:
-            query = query.filter_by(departamento_codigo=departamento_codigo)
-        if municipio_codigo:
-            query = query.filter_by(municipio_codigo=municipio_codigo)
-        if zona_codigo:
-            query = query.filter_by(zona_codigo=zona_codigo)
-        if puesto_codigo:
-            query = query.filter_by(puesto_codigo=puesto_codigo)
-        
-        mesas = query.all()
+        municipios = db.session.query(Location).filter(
+            Location.tipo == 'municipio',
+            Location.departamento_codigo == '44'
+        ).order_by(Location.municipio_nombre).all()
         
         return jsonify({
             'success': True,
             'data': [{
-                'id': m.id,
-                'mesa_codigo': m.mesa_codigo,
-                'mesa_nombre': m.mesa_nombre,
-                'puesto_codigo': m.puesto_codigo,
-                'puesto_nombre': m.puesto_nombre,
-                'zona_codigo': m.zona_codigo,
-                'municipio_codigo': m.municipio_codigo,
-                'municipio_nombre': m.municipio_nombre,
-                'departamento_codigo': m.departamento_codigo,
-                'departamento_nombre': m.departamento_nombre,
-                'nombre_completo': m.nombre_completo,
-                'total_votantes_registrados': m.total_votantes_registrados,
-                'hombres': m.hombres,
-                'mujeres': m.mujeres,
-                'direccion': m.direccion
-            } for m in mesas]
-        }), 200
+                'municipio_codigo': muni.municipio_codigo,
+                'municipio_nombre': muni.municipio_nombre
+            } for muni in municipios]
+        })
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@locations_bp.route('/zonas/<municipio_codigo>', methods=['GET'])
+@jwt_required()
+def get_zonas(municipio_codigo):
+    """
+    Obtener zonas de un municipio de Caquetá
+    Accesible para todos los roles autenticados
+    """
+    try:
+        zonas = db.session.query(Location).filter(
+            Location.tipo == 'zona',
+            Location.departamento_codigo == '44',
+            Location.municipio_codigo == municipio_codigo
+        ).order_by(Location.zona_codigo).all()
+        
+        return jsonify({
+            'success': True,
+            'data': [{
+                'zona_codigo': zona.zona_codigo,
+                'zona_nombre': f"Zona {zona.zona_codigo[-2:]}"
+            } for zona in zonas]
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@locations_bp.route('/puestos/<zona_codigo>', methods=['GET'])
+@jwt_required()
+def get_puestos(zona_codigo):
+    """
+    Obtener puestos de una zona de Caquetá
+    Accesible para todos los roles autenticados
+    """
+    try:
+        puestos = db.session.query(Location).filter(
+            Location.tipo == 'puesto',
+            Location.departamento_codigo == '44',
+            Location.zona_codigo == zona_codigo
+        ).order_by(Location.puesto_nombre).all()
+        
+        return jsonify({
+            'success': True,
+            'data': [{
+                'puesto_codigo': puesto.puesto_codigo,
+                'puesto_nombre': puesto.puesto_nombre
+            } for puesto in puestos]
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@locations_bp.route('/mesas/<puesto_codigo>', methods=['GET'])
+@jwt_required()
+def get_mesas(puesto_codigo):
+    """
+    Obtener mesas de un puesto de Caquetá
+    Accesible para todos los roles autenticados
+    """
+    try:
+        mesas = db.session.query(Location).filter(
+            Location.tipo == 'mesa',
+            Location.departamento_codigo == '44',
+            Location.puesto_codigo == puesto_codigo
+        ).order_by(Location.mesa_codigo).all()
+        
+        return jsonify({
+            'success': True,
+            'data': [{
+                'mesa_codigo': mesa.mesa_codigo,
+                'mesa_nombre': mesa.mesa_nombre
+            } for mesa in mesas]
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@locations_bp.route('/partidos', methods=['GET'])
+@jwt_required()
+def get_partidos():
+    """
+    Obtener todos los partidos activos
+    Accesible para todos los roles autenticados
+    """
+    try:
+        from backend.models.configuracion_electoral import Partido
+        
+        partidos = Partido.query.filter_by(activo=True).order_by(Partido.nombre).all()
+        
+        return jsonify({
+            'success': True,
+            'data': [partido.to_dict() for partido in partidos]
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@locations_bp.route('/tipos-eleccion', methods=['GET'])
+@jwt_required()
+def get_tipos_eleccion():
+    """
+    Obtener todos los tipos de elección activos
+    Accesible para todos los roles autenticados
+    """
+    try:
+        from backend.models.configuracion_electoral import TipoEleccion
+        
+        tipos = TipoEleccion.query.filter_by(activo=True).order_by(TipoEleccion.nombre).all()
+        
+        return jsonify({
+            'success': True,
+            'data': [tipo.to_dict() for tipo in tipos]
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
