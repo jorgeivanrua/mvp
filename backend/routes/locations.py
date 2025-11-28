@@ -216,7 +216,7 @@ def _auto_create_users():
             print(f"[AUTO-USERS] Ya existen {total_users} usuarios, omitiendo creación")
             return True
         
-        print("[AUTO-USERS] No hay usuarios, creando usuarios básicos...")
+        print("[AUTO-USERS] No hay usuarios, creando usuarios de prueba...")
         
         # Obtener ubicaciones necesarias
         caqueta = Location.query.filter_by(
@@ -230,34 +230,90 @@ def _auto_create_users():
             municipio_codigo='4401'
         ).first()
         
+        # Obtener algunos puestos para testigos y coordinadores
+        puestos = Location.query.filter_by(
+            tipo='puesto',
+            departamento_codigo='44',
+            municipio_codigo='4401'
+        ).limit(3).all()
+        
         if not caqueta or not florencia:
             print("[AUTO-USERS] ERROR: No se encontraron ubicaciones necesarias")
             return False
         
-        # Crear usuarios básicos
+        # Crear usuarios de prueba
         usuarios = [
             # Super Admin - Contraseña fija admin123
             {
                 'nombre': 'admin',
                 'rol': 'super_admin',
                 'ubicacion_id': None,
-                'password': 'admin123'  # Contraseña fija para Super Admin
+                'password': 'admin123'
             },
-            # Admin Departamental - Contraseña test123 (modificable)
+            # Administradores
             {
                 'nombre': 'admin_caqueta',
                 'rol': 'admin_departamental',
                 'ubicacion_id': caqueta.id,
                 'password': 'test123'
             },
-            # Admin Municipal - Contraseña test123 (modificable)
             {
                 'nombre': 'admin_florencia',
                 'rol': 'admin_municipal',
                 'ubicacion_id': florencia.id,
                 'password': 'test123'
+            },
+            # Coordinadores
+            {
+                'nombre': 'coord_dpto',
+                'rol': 'coordinador_departamental',
+                'ubicacion_id': caqueta.id,
+                'password': 'test123'
+            },
+            {
+                'nombre': 'coord_muni',
+                'rol': 'coordinador_municipal',
+                'ubicacion_id': florencia.id,
+                'password': 'test123'
+            },
+            # Auditor
+            {
+                'nombre': 'auditor',
+                'rol': 'auditor_electoral',
+                'ubicacion_id': caqueta.id,
+                'password': 'test123'
+            },
+            # Monitoreo
+            {
+                'nombre': 'monitoreo',
+                'rol': 'monitoreo',
+                'ubicacion_id': None,
+                'password': 'test123'
             }
         ]
+        
+        # Agregar coordinadores de puesto y testigos
+        for i, puesto in enumerate(puestos, 1):
+            # Coordinador de puesto
+            usuarios.append({
+                'nombre': f'coord_puesto_{i}',
+                'rol': 'coordinador_puesto',
+                'ubicacion_id': puesto.id,
+                'password': 'test123'
+            })
+            # Testigos (2 por puesto)
+            usuarios.append({
+                'nombre': f'testigo_{i}_1',
+                'rol': 'testigo_electoral',
+                'ubicacion_id': puesto.id,
+                'password': 'test123'
+            })
+            usuarios.append({
+                'nombre': f'testigo_{i}_2',
+                'rol': 'testigo_electoral',
+                'ubicacion_id': puesto.id,
+                'password': 'test123'
+            })
         
         for user_data in usuarios:
             user = User(
@@ -311,15 +367,29 @@ def _auto_load_partidos_candidatos():
             tipos_creados[tipo_data['codigo']] = tipo
             print(f"[AUTO-PARTIDOS] Tipo: {tipo_data['nombre']}")
         
-        # Crear partidos
+        # Crear partidos con logos
         partidos_data = [
-            {'codigo': 'LIBERAL', 'nombre': 'Partido Liberal Colombiano', 'sigla': 'PLC', 'color': '#FF0000', 'activo': True},
-            {'codigo': 'CONSERVADOR', 'nombre': 'Partido Conservador Colombiano', 'sigla': 'PCC', 'color': '#0000FF', 'activo': True},
-            {'codigo': 'PACTO', 'nombre': 'Pacto Histórico', 'sigla': 'PH', 'color': '#FF1493', 'activo': True},
-            {'codigo': 'CENTRO_DEM', 'nombre': 'Centro Democrático', 'sigla': 'CD', 'color': '#00BFFF', 'activo': True},
-            {'codigo': 'CAMBIO_RAD', 'nombre': 'Cambio Radical', 'sigla': 'CR', 'color': '#FFD700', 'activo': True},
-            {'codigo': 'VERDE', 'nombre': 'Alianza Verde', 'sigla': 'AV', 'color': '#00FF00', 'activo': True},
-            {'codigo': 'VOTO_BLANCO', 'nombre': 'Voto en Blanco', 'sigla': 'BLANCO', 'color': '#FFFFFF', 'activo': True}
+            {'codigo': 'LIBERAL', 'nombre': 'Partido Liberal Colombiano', 'sigla': 'PLC', 'color': '#FF0000', 
+             'logo_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Partido_Liberal_Colombiano_logo.svg/200px-Partido_Liberal_Colombiano_logo.svg.png', 'activo': True},
+            {'codigo': 'CONSERVADOR', 'nombre': 'Partido Conservador Colombiano', 'sigla': 'PCC', 'color': '#0000FF',
+             'logo_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Partido_Conservador_Colombiano_logo.svg/200px-Partido_Conservador_Colombiano_logo.svg.png', 'activo': True},
+            {'codigo': 'PACTO', 'nombre': 'Pacto Histórico', 'sigla': 'PH', 'color': '#FF1493',
+             'logo_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Pacto_Hist%C3%B3rico_logo.svg/200px-Pacto_Hist%C3%B3rico_logo.svg.png', 'activo': True},
+            {'codigo': 'CENTRO_DEM', 'nombre': 'Centro Democrático', 'sigla': 'CD', 'color': '#00BFFF',
+             'logo_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Centro_Democr%C3%A1tico_logo.svg/200px-Centro_Democr%C3%A1tico_logo.svg.png', 'activo': True},
+            {'codigo': 'CAMBIO_RAD', 'nombre': 'Cambio Radical', 'sigla': 'CR', 'color': '#FFD700',
+             'logo_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Cambio_Radical_logo.svg/200px-Cambio_Radical_logo.svg.png', 'activo': True},
+            {'codigo': 'VERDE', 'nombre': 'Alianza Verde', 'sigla': 'AV', 'color': '#00FF00',
+             'logo_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Alianza_Verde_logo.svg/200px-Alianza_Verde_logo.svg.png', 'activo': True},
+            {'codigo': 'POLO', 'nombre': 'Polo Democrático Alternativo', 'sigla': 'PDA', 'color': '#FFD700',
+             'logo_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Polo_Democr%C3%A1tico_Alternativo_logo.svg/200px-Polo_Democr%C3%A1tico_Alternativo_logo.svg.png', 'activo': True},
+            {'codigo': 'MIRA', 'nombre': 'MIRA', 'sigla': 'MIRA', 'color': '#800080',
+             'logo_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/MIRA_logo.svg/200px-MIRA_logo.svg.png', 'activo': True},
+            {'codigo': 'U', 'nombre': 'Partido de la U', 'sigla': 'U', 'color': '#FFA500',
+             'logo_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Partido_de_la_U_logo.svg/200px-Partido_de_la_U_logo.svg.png', 'activo': True},
+            {'codigo': 'COMUNES', 'nombre': 'Comunes', 'sigla': 'COMUNES', 'color': '#DC143C',
+             'logo_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Comunes_logo.svg/200px-Comunes_logo.svg.png', 'activo': True},
+            {'codigo': 'VOTO_BLANCO', 'nombre': 'Voto en Blanco', 'sigla': 'BLANCO', 'color': '#CCCCCC', 'logo_url': None, 'activo': True}
         ]
         
         partidos_creados = {}
@@ -330,16 +400,35 @@ def _auto_load_partidos_candidatos():
             partidos_creados[partido_data['codigo']] = partido
             print(f"[AUTO-PARTIDOS] Partido: {partido_data['sigla']}")
         
-        # Crear algunos candidatos de ejemplo
+        # Crear candidatos de ejemplo (más completo)
         candidatos_data = [
-            # Senado
+            # SENADO
             {'nombre': 'Gustavo Bolívar', 'partido': 'PACTO', 'tipo': 'SENADO', 'numero_lista': 1},
+            {'nombre': 'María José Pizarro', 'partido': 'PACTO', 'tipo': 'SENADO', 'numero_lista': 2},
+            {'nombre': 'Iván Cepeda', 'partido': 'PACTO', 'tipo': 'SENADO', 'numero_lista': 3},
             {'nombre': 'Paloma Valencia', 'partido': 'CENTRO_DEM', 'tipo': 'SENADO', 'numero_lista': 1},
+            {'nombre': 'Miguel Uribe Turbay', 'partido': 'CENTRO_DEM', 'tipo': 'SENADO', 'numero_lista': 2},
+            {'nombre': 'María Fernanda Cabal', 'partido': 'CENTRO_DEM', 'tipo': 'SENADO', 'numero_lista': 3},
             {'nombre': 'Angélica Lozano', 'partido': 'VERDE', 'tipo': 'SENADO', 'numero_lista': 1},
-            # Cámara Caquetá
+            {'nombre': 'Ariel Ávila', 'partido': 'VERDE', 'tipo': 'SENADO', 'numero_lista': 2},
+            {'nombre': 'Efraín Cepeda', 'partido': 'CONSERVADOR', 'tipo': 'SENADO', 'numero_lista': 1},
+            {'nombre': 'David Barguil', 'partido': 'CONSERVADOR', 'tipo': 'SENADO', 'numero_lista': 2},
+            {'nombre': 'Juan Fernando Cristo', 'partido': 'LIBERAL', 'tipo': 'SENADO', 'numero_lista': 1},
+            {'nombre': 'Alejandro Gaviria', 'partido': 'LIBERAL', 'tipo': 'SENADO', 'numero_lista': 2},
+            {'nombre': 'Germán Varón', 'partido': 'CAMBIO_RAD', 'tipo': 'SENADO', 'numero_lista': 1},
+            {'nombre': 'Carlos Fernando Motoa', 'partido': 'CAMBIO_RAD', 'tipo': 'SENADO', 'numero_lista': 2},
+            
+            # CÁMARA - CAQUETÁ
             {'nombre': 'Hernán Banguero', 'partido': 'LIBERAL', 'tipo': 'CAMARA', 'numero_lista': 1, 'depto': '44'},
+            {'nombre': 'Deisy Gómez', 'partido': 'LIBERAL', 'tipo': 'CAMARA', 'numero_lista': 2, 'depto': '44'},
             {'nombre': 'Carlos Ramírez', 'partido': 'CONSERVADOR', 'tipo': 'CAMARA', 'numero_lista': 1, 'depto': '44'},
-            {'nombre': 'Ana María Torres', 'partido': 'PACTO', 'tipo': 'CAMARA', 'numero_lista': 1, 'depto': '44'}
+            {'nombre': 'Martha Villalba', 'partido': 'CONSERVADOR', 'tipo': 'CAMARA', 'numero_lista': 2, 'depto': '44'},
+            {'nombre': 'Ana María Torres', 'partido': 'PACTO', 'tipo': 'CAMARA', 'numero_lista': 1, 'depto': '44'},
+            {'nombre': 'Luis Eduardo Díaz', 'partido': 'PACTO', 'tipo': 'CAMARA', 'numero_lista': 2, 'depto': '44'},
+            {'nombre': 'Jorge Enrique Rojas', 'partido': 'CENTRO_DEM', 'tipo': 'CAMARA', 'numero_lista': 1, 'depto': '44'},
+            {'nombre': 'Sandra Milena Gutiérrez', 'partido': 'VERDE', 'tipo': 'CAMARA', 'numero_lista': 1, 'depto': '44'},
+            {'nombre': 'Pedro Nel Jiménez', 'partido': 'CAMBIO_RAD', 'tipo': 'CAMARA', 'numero_lista': 1, 'depto': '44'},
+            {'nombre': 'Gloria Stella Díaz', 'partido': 'U', 'tipo': 'CAMARA', 'numero_lista': 1, 'depto': '44'}
         ]
         
         for cand_data in candidatos_data:
