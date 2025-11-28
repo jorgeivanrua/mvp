@@ -3,9 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistema Electoral - Recolección de Datos Electorales en Tiempo Real">
+    <meta name="keywords" content="sistema electoral, testigos electorales, formularios E-14, monitoreo electoral">
     <title>Sistema Electoral - Inicio</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
     <style>
         :root {
             --primary-color: #1e3c72;
@@ -177,6 +185,7 @@
                             <div>
                                 <strong>Modo Offline</strong>
                                 <br><small class="text-muted">Funciona sin conexión</small>
+                                <br><small class="text-muted">reconexion para actualizacion de datos</small>
                             </div>
                         </div>
                     </div>
@@ -212,7 +221,7 @@
                 
                 <!-- Testing Mode Info -->
                 <div class="testing-mode mt-3">
-                    <h6 class="mb-2"><i class="bi bi-info-circle-fill"></i> Usuarios de Prueba Disponibles</h6>
+                    <h6 class="mb-2"><i class="bi bi-info-circle-fill"></i> Usuarios Disponibles</h6>
                     <p class="small mb-2">Contraseña para todos: <strong>test123</strong></p>
                     <p class="small text-muted mb-2">
                         <i class="bi bi-info-circle"></i> 
@@ -221,7 +230,7 @@
                     <div class="row small">
                         <div class="col-md-6">
                             <ul class="list-unstyled mb-0">
-                                <li><i class="bi bi-shield-check"></i> <strong>Super Admin</strong></li>
+                                <li><i class="bi bi-shield-check"></i> <strong>Monitoreo</strong></li>
                                 <li><i class="bi bi-eye"></i> <strong>Auditor Electoral</strong></li>
                                 <li><i class="bi bi-building"></i> <strong>Coord. Departamental</strong></li>
                             </ul>
