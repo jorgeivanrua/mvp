@@ -121,23 +121,23 @@ class APIClient {
     }
     
     static async getMunicipios(departamentoId) {
-        return this.get('/locations/municipios', { departamento_codigo: departamentoId });
+        return this.get(`/locations/municipios/${departamentoId}`);
     }
     
     static async getZonas(municipioId) {
-        return this.get('/locations/zonas', { municipio_codigo: municipioId });
+        return this.get(`/locations/zonas/${municipioId}`);
     }
     
     static async getPuestos(zonaId) {
-        return this.get('/locations/puestos', { zona_codigo: zonaId });
+        return this.get(`/locations/puestos/${zonaId}`);
     }
     
-    static async getMesas(params = {}) {
-        // Si params es un string, asumimos que es el puesto_codigo (retrocompatibilidad)
-        if (typeof params === 'string') {
-            params = { puesto_codigo: params };
+    static async getMesas(puestoId) {
+        // Si params es un objeto, extraer puesto_codigo
+        if (typeof puestoId === 'object' && puestoId.puesto_codigo) {
+            puestoId = puestoId.puesto_codigo;
         }
-        return this.get('/locations/mesas', params);
+        return this.get(`/locations/mesas/${puestoId}`);
     }
     
     // Métodos de configuración electoral

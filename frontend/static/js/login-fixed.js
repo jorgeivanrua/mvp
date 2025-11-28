@@ -206,7 +206,7 @@ async function handleMunicipioChange(municipioId) {
         console.log('[LOGIN] Zonas recibidas:', response);
         
         if (response && response.success && response.data) {
-            Utils.populateSelect('zona', response.data, 'codigo', 'nombre_completo', 'Seleccione zona');
+            Utils.populateSelect('zona', response.data, 'zona_codigo', 'zona_nombre', 'Seleccione zona');
             Utils.enableSelect('zona', true);
             Utils.enableSelect('puesto', false);
         }
