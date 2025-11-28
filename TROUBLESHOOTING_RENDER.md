@@ -138,7 +138,37 @@ python render_setup.py
 - **Documentación Render:** https://render.com/docs
 - **Repositorio GitHub:** https://github.com/jorgeivanrua/mvp
 
+## 🧪 Script de Verificación
+
+Ejecuta este script para verificar que los endpoints funcionan:
+
+```bash
+python test_render_endpoints.py
+```
+
+Este script probará:
+- `/api/locations/departamentos` - Debe retornar Caquetá
+- `/api/locations/municipios/44` - Debe retornar municipios
+- `/api/locations/zonas/4401` - Debe retornar zonas de Florencia
+- `/auth/login` - Debe cargar la página de login
+
+## ⏱️ Tiempos de Despliegue
+
+- **Build:** 3-5 minutos
+- **Deploy:** 2-3 minutos
+- **Total:** 5-8 minutos aproximadamente
+
+**Nota:** Los servicios gratuitos de Render se duermen después de 15 minutos de inactividad. La primera petición puede tardar 30-60 segundos en responder mientras el servicio se "despierta".
+
+## 🔍 Verificar Estado del Despliegue
+
+1. Ve a: https://dashboard.render.com
+2. Busca el servicio "dia-d"
+3. Verifica que diga "Live" (verde)
+4. Si dice "Building" o "Deploying", espera a que termine
+5. Si dice "Failed", revisa los logs
+
 ---
 
 **Última actualización:** 2025-11-27  
-**Estado:** Esperando redespliegue en Render
+**Estado:** Cambios pusheados - Esperando redespliegue automático en Render (~5-8 minutos)
