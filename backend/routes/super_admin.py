@@ -151,6 +151,110 @@ def get_monitoreo_departamental():
             'success': False,
             'error': str(e)
         }), 500
+
+
+@super_admin_bp.route('/users', methods=['POST'])
+@jwt_required()
+@role_required(['super_admin'])
+def create_user():
+    """
+    Crear nuevo usuario
+    """
+    try:
+        from backend.database import db
+        from backend.models.location import Location
+        
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No se proporcionaron datos'
+            }), 400
+        
+        nombre = data.get('nombre')
+        rol = data.get('rol')
+        password = data.get('password')
+        ubicacion_data = data.get('ubicacion_data', {})
+        
+        if not nombre or not rol or not password:
+            return jsonify({
+                'success': False,
+                'error': 'Nombre, rol y contraseña son requeridos'
+            }), 400
+        
+        # Verificar si el usuario ya existe
+        existing_user = User.query.filter_by(nombre=nombre).first()
+        if existing_user:
+            return jsonify({
+                'success': False,
+                'error': f'Ya existe un usuario con el nombre "{nombre}"'
+            }), 400
+        
+        # Buscar ubicación si es necesario
+        ubicacion_id = None
+        if rol != 'super_admin' and ubicacion_data:
+            tipo = ubicacion_data.get('tipo')
+            
+            if tipo == 'departamento':
+                ubicacion = Location.query.filter_by(
+                    tipo='departamento',
+                    departamento_codigo=ubicacion_data.get('departamento_codigo')
+                ).first()
+            elif tipo == 'municipio':
+                ubicacion = Location.query.filter_by(
+                    tipo='municipio',
+                    departamento_codigo=ubicacion_data.get('departamento_codigo'),
+                    municipio_codigo=ubicacion_data.get('municipio_codigo')
+                ).first()
+            elif tipo == 'puesto':
+                ubicacion = Location.query.filter_by(
+                    tipo='puesto',
+                    departamento_codigo=ubicacion_data.get('departamento_codigo'),
+                    municipio_codigo=ubicacion_data.get('municipio_codigo'),
+                    zona_codigo=ubicacion_data.get('zona_codigo'),
+                    puesto_codigo=ubicacion_data.get('puesto_codigo')
+                ).first()
+            else:
+                ubicacion = None
+            
+            if ubicacion:
+                ubicacion_id = ubicacion.id
+            elif tipo:  # Si se especificó tipo pero no se encontró
+                return jsonify({
+                    'success': False,
+                    'error': 'No se encontró la ubicación especificada'
+                }), 404
+        
+        # Crear usuario
+        new_user = User(
+            nombre=nombre,
+            rol=rol,
+            ubicacion_id=ubicacion_id,
+            activo=data.get('activo', True)
+        )
+        new_user.set_password(password)
+        
+        db.session.add(new_user)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Usuario creado exitosamente',
+            'data': {
+                'id': new_user.id,
+                'nombre': new_user.nombre,
+                'rol': new_user.rol,
+                'ubicacion_id': new_user.ubicacion_id
+            }
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
         
     except Exception as e:
         import traceback
@@ -303,48 +407,6 @@ def reset_user_password(user_id):
     except Exception as e:
         from backend.database import db
         db.session.rollback()
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-
-@super_admin_bp.route('/system-health', methods=['GET'])
-@jwt_required()
-@role_required(['super_admin'])
-def get_system_health():
-    """
-    Obtener estado de salud del sistema
-    """
-    try:
-        from backend.database import db
-        import psutil
-        import time
-        
-        # Verificar conexión a BD
-        try:
-            db.session.execute('SELECT 1')
-            db_status = 'healthy'
-        except:
-            db_status = 'unhealthy'
-        
-        # Métricas del sistema
-        cpu_percent = psutil.cpu_percent(interval=1)
-        memory = psutil.virtual_memory()
-        
-        return jsonify({
-            'success': True,
-            'data': {
-                'status': 'healthy' if db_status == 'healthy' and cpu_percent < 80 else 'warning',
-                'database': db_status,
-                'cpu_percent': cpu_percent,
-                'memory_percent': memory.percent,
-                'memory_available_mb': memory.available / (1024 * 1024),
-                'timestamp': time.time()
-            }
-        }), 200
-        
-    except Exception as e:
         return jsonify({
             'success': False,
             'error': str(e)

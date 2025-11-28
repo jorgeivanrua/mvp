@@ -454,15 +454,15 @@ function filterUsers() {
 /**
  * Mostrar modal de crear usuario
  */
-function showCreateUserModal() {
+async function showCreateUserModal() {
     // Crear modal dinámicamente
     const modalHtml = `
         <div class="modal fade" id="createUserModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Crear Nuevo Usuario</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title"><i class="bi bi-person-plus"></i> Crear Nuevo Usuario</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
                         <form id="createUserForm">
@@ -474,7 +474,7 @@ function showCreateUserModal() {
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Rol *</label>
-                                    <select class="form-select" id="userRole" required>
+                                    <select class="form-select" id="userRole" required onchange="handleRoleChange()">
                                         <option value="">Seleccione...</option>
                                         <option value="super_admin">Super Admin</option>
                                         <option value="admin_departamental">Admin Departamental</option>
@@ -487,6 +487,48 @@ function showCreateUserModal() {
                                     </select>
                                 </div>
                             </div>
+                            
+                            <!-- Sección de Ubicación (dinámica según rol) -->
+                            <div id="locationSection" style="display: none;">
+                                <div class="card bg-light mb-3">
+                                    <div class="card-body">
+                                        <h6 class="card-title"><i class="bi bi-geo-alt"></i> Ubicación</h6>
+                                        
+                                        <!-- Departamento -->
+                                        <div id="departamentoGroup" class="mb-3" style="display: none;">
+                                            <label class="form-label">Departamento *</label>
+                                            <select class="form-select" id="userDepartamento">
+                                                <option value="">Cargando...</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <!-- Municipio -->
+                                        <div id="municipioGroup" class="mb-3" style="display: none;">
+                                            <label class="form-label">Municipio *</label>
+                                            <select class="form-select" id="userMunicipio" disabled>
+                                                <option value="">Seleccione departamento primero</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <!-- Zona -->
+                                        <div id="zonaGroup" class="mb-3" style="display: none;">
+                                            <label class="form-label">Zona *</label>
+                                            <select class="form-select" id="userZona" disabled>
+                                                <option value="">Seleccione municipio primero</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <!-- Puesto -->
+                                        <div id="puestoGroup" class="mb-3" style="display: none;">
+                                            <label class="form-label">Puesto *</label>
+                                            <select class="form-select" id="userPuesto" disabled>
+                                                <option value="">Seleccione zona primero</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Contraseña *</label>
@@ -498,16 +540,13 @@ function showCreateUserModal() {
                                     <input type="password" class="form-control" id="userPasswordConfirm" required>
                                 </div>
                             </div>
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle"></i>
-                                <strong>Nota:</strong> La ubicación se asignará según el rol seleccionado.
-                                Para roles que requieren ubicación específica, use la gestión de usuarios avanzada.
-                            </div>
                         </form>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-primary" onclick="guardarNuevoUsuario()">Crear Usuario</button>
+                        <button type="button" class="btn btn-primary" onclick="guardarNuevoUsuario()">
+                            <i class="bi bi-check-lg"></i> Crear Usuario
+                        </button>
                     </div>
                 </div>
             </div>
@@ -519,9 +558,155 @@ function showCreateUserModal() {
         document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
     
+    // Cargar departamentos
+    await loadDepartamentosForUser();
+    
+    // Configurar eventos de cascada
+    setupUserLocationCascade();
+    
     // Mostrar modal
     const modal = new bootstrap.Modal(document.getElementById('createUserModal'));
     modal.show();
+    
+    // Limpiar modal al cerrar
+    document.getElementById('createUserModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+/**
+ * Manejar cambio de rol para mostrar ubicaciones correspondientes
+ */
+function handleRoleChange() {
+    const rol = document.getElementById('userRole').value;
+    const locationSection = document.getElementById('locationSection');
+    const departamentoGroup = document.getElementById('departamentoGroup');
+    const municipioGroup = document.getElementById('municipioGroup');
+    const zonaGroup = document.getElementById('zonaGroup');
+    const puestoGroup = document.getElementById('puestoGroup');
+    
+    // Ocultar todo por defecto
+    locationSection.style.display = 'none';
+    departamentoGroup.style.display = 'none';
+    municipioGroup.style.display = 'none';
+    zonaGroup.style.display = 'none';
+    puestoGroup.style.display = 'none';
+    
+    // Super admin no necesita ubicación
+    if (!rol || rol === 'super_admin') {
+        return;
+    }
+    
+    // Mostrar sección de ubicación
+    locationSection.style.display = 'block';
+    
+    // Mostrar campos según el rol
+    switch (rol) {
+        case 'admin_departamental':
+        case 'coordinador_departamental':
+        case 'auditor_electoral':
+            departamentoGroup.style.display = 'block';
+            break;
+            
+        case 'admin_municipal':
+        case 'coordinador_municipal':
+            departamentoGroup.style.display = 'block';
+            municipioGroup.style.display = 'block';
+            break;
+            
+        case 'coordinador_puesto':
+        case 'testigo_electoral':
+            departamentoGroup.style.display = 'block';
+            municipioGroup.style.display = 'block';
+            zonaGroup.style.display = 'block';
+            puestoGroup.style.display = 'block';
+            break;
+    }
+}
+
+/**
+ * Cargar departamentos para el formulario de usuario
+ */
+async function loadDepartamentosForUser() {
+    try {
+        const response = await APIClient.getDepartamentos();
+        if (response.success && response.data) {
+            Utils.populateSelect('userDepartamento', response.data, 'departamento_codigo', 'departamento_nombre', 'Seleccione departamento');
+        }
+    } catch (error) {
+        console.error('Error cargando departamentos:', error);
+    }
+}
+
+/**
+ * Configurar cascada de ubicaciones para formulario de usuario
+ */
+function setupUserLocationCascade() {
+    // Departamento change
+    document.getElementById('userDepartamento')?.addEventListener('change', async (e) => {
+        const deptoId = e.target.value;
+        if (!deptoId) {
+            Utils.enableSelect('userMunicipio', false);
+            Utils.enableSelect('userZona', false);
+            Utils.enableSelect('userPuesto', false);
+            return;
+        }
+        
+        try {
+            Utils.setLoading('userMunicipio', true);
+            const response = await APIClient.getMunicipios(deptoId);
+            Utils.populateSelect('userMunicipio', response.data, 'municipio_codigo', 'municipio_nombre', 'Seleccione municipio');
+            Utils.enableSelect('userMunicipio', true);
+            Utils.enableSelect('userZona', false);
+            Utils.enableSelect('userPuesto', false);
+        } catch (error) {
+            console.error('Error:', error);
+        } finally {
+            Utils.setLoading('userMunicipio', false);
+        }
+    });
+    
+    // Municipio change
+    document.getElementById('userMunicipio')?.addEventListener('change', async (e) => {
+        const muniId = e.target.value;
+        if (!muniId) {
+            Utils.enableSelect('userZona', false);
+            Utils.enableSelect('userPuesto', false);
+            return;
+        }
+        
+        try {
+            Utils.setLoading('userZona', true);
+            const response = await APIClient.getZonas(muniId);
+            Utils.populateSelect('userZona', response.data, 'zona_codigo', 'zona_nombre', 'Seleccione zona');
+            Utils.enableSelect('userZona', true);
+            Utils.enableSelect('userPuesto', false);
+        } catch (error) {
+            console.error('Error:', error);
+        } finally {
+            Utils.setLoading('userZona', false);
+        }
+    });
+    
+    // Zona change
+    document.getElementById('userZona')?.addEventListener('change', async (e) => {
+        const zonaId = e.target.value;
+        if (!zonaId) {
+            Utils.enableSelect('userPuesto', false);
+            return;
+        }
+        
+        try {
+            Utils.setLoading('userPuesto', true);
+            const response = await APIClient.getPuestos(zonaId);
+            Utils.populateSelect('userPuesto', response.data, 'puesto_codigo', 'puesto_nombre', 'Seleccione puesto');
+            Utils.enableSelect('userPuesto', true);
+        } catch (error) {
+            console.error('Error:', error);
+        } finally {
+            Utils.setLoading('userPuesto', false);
+        }
+    });
 }
 
 /**
@@ -549,6 +734,42 @@ async function guardarNuevoUsuario() {
         return;
     }
     
+    // Obtener ubicación según el rol
+    let ubicacion_data = {};
+    if (rol !== 'super_admin') {
+        const departamento = document.getElementById('userDepartamento')?.value;
+        const municipio = document.getElementById('userMunicipio')?.value;
+        const zona = document.getElementById('userZona')?.value;
+        const puesto = document.getElementById('userPuesto')?.value;
+        
+        // Validar ubicación según rol
+        if (['admin_departamental', 'coordinador_departamental', 'auditor_electoral'].includes(rol)) {
+            if (!departamento) {
+                Utils.showError('Debe seleccionar un departamento');
+                return;
+            }
+            ubicacion_data = { departamento_codigo: departamento, tipo: 'departamento' };
+        } else if (['admin_municipal', 'coordinador_municipal'].includes(rol)) {
+            if (!departamento || !municipio) {
+                Utils.showError('Debe seleccionar departamento y municipio');
+                return;
+            }
+            ubicacion_data = { departamento_codigo: departamento, municipio_codigo: municipio, tipo: 'municipio' };
+        } else if (['coordinador_puesto', 'testigo_electoral'].includes(rol)) {
+            if (!departamento || !municipio || !zona || !puesto) {
+                Utils.showError('Debe seleccionar departamento, municipio, zona y puesto');
+                return;
+            }
+            ubicacion_data = { 
+                departamento_codigo: departamento, 
+                municipio_codigo: municipio,
+                zona_codigo: zona,
+                puesto_codigo: puesto,
+                tipo: 'puesto'
+            };
+        }
+    }
+    
     try {
         Utils.showInfo('Creando usuario...');
         
@@ -556,6 +777,7 @@ async function guardarNuevoUsuario() {
             nombre: nombre,
             rol: rol,
             password: password,
+            ubicacion_data: ubicacion_data,
             activo: true
         });
         
