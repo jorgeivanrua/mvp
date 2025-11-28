@@ -20,6 +20,189 @@ def validate_caqueta_code(code):
     return code.startswith(CAQUETA_CODE)
 
 
+def _auto_load_divipola():
+    """
+    Cargar datos de DIVIPOLA automáticamente si la BD está vacía
+    """
+    import os
+    import csv
+    
+    try:
+        # Verificar si ya hay datos
+        total_locations = Location.query.count()
+        if total_locations > 0:
+            print(f"[AUTO-LOAD] BD ya tiene {total_locations} ubicaciones, omitiendo carga")
+            return True
+        
+        print("[AUTO-LOAD] BD vacía, cargando DIVIPOLA automáticamente...")
+        
+        # Buscar archivo CSV
+        csv_paths = ['divipola.csv', 'todos los datos/divipola.csv', 'data/divipola.csv']
+        csv_path = None
+        for path in csv_paths:
+            if os.path.exists(path):
+                csv_path = path
+                break
+        
+        if not csv_path:
+            print("[AUTO-LOAD] ERROR: No se encontró divipola.csv")
+            return False
+        
+        print(f"[AUTO-LOAD] Cargando desde: {csv_path}")
+        
+        # Cargar datos
+        locations_added = 0
+        departamentos = {}
+        municipios = {}
+        zonas = {}
+        puestos = {}
+        
+        with open(csv_path, 'r', encoding='utf-8') as file:
+            reader = csv.DictReader(file)
+            
+            for row in reader:
+                dd = row['dd'].strip().zfill(2)
+                
+                # SOLO CAQUETÁ
+                if dd != '44':
+                    continue
+                
+                mm = row['mm'].strip().zfill(2)
+                zz = row['zz'].strip().zfill(2)
+                pp = row['pp'].strip().zfill(2)
+                mesa = row['mesa'].strip().zfill(2)
+                
+                departamento_nombre = row['departamento'].strip()
+                municipio_nombre = row['municipio'].strip()
+                puesto_nombre = row['puesto'].strip()
+                mesa_nombre = row['mesa_nombre'].strip()
+                
+                depto_codigo = dd
+                muni_codigo = f"{dd}{mm}"
+                zona_codigo = f"{dd}{mm}{zz}"
+                puesto_codigo = f"{dd}{mm}{zz}{pp}"
+                mesa_codigo = f"{dd}{mm}{zz}{pp}{mesa}"
+                
+                # Departamento
+                if dd not in departamentos:
+                    dept = Location(
+                        departamento_codigo=depto_codigo,
+                        departamento_nombre=departamento_nombre,
+                        nombre_completo=departamento_nombre,
+                        tipo='departamento',
+                        activo=True
+                    )
+                    db.session.add(dept)
+                    db.session.flush()
+                    departamentos[dd] = dept.id
+                    locations_added += 1
+                
+                # Municipio
+                if muni_codigo not in municipios:
+                    muni = Location(
+                        departamento_codigo=depto_codigo,
+                        municipio_codigo=muni_codigo,
+                        departamento_nombre=departamento_nombre,
+                        municipio_nombre=municipio_nombre,
+                        nombre_completo=f"{departamento_nombre} - {municipio_nombre}",
+                        tipo='municipio',
+                        parent_id=departamentos[dd],
+                        activo=True
+                    )
+                    db.session.add(muni)
+                    db.session.flush()
+                    municipios[muni_codigo] = muni.id
+                    locations_added += 1
+                
+                # Zona
+                if zona_codigo not in zonas:
+                    zona = Location(
+                        departamento_codigo=depto_codigo,
+                        municipio_codigo=muni_codigo,
+                        zona_codigo=zona_codigo,
+                        departamento_nombre=departamento_nombre,
+                        municipio_nombre=municipio_nombre,
+                        nombre_completo=f"{departamento_nombre} - {municipio_nombre} - Zona {zz}",
+                        tipo='zona',
+                        parent_id=municipios[muni_codigo],
+                        activo=True
+                    )
+                    db.session.add(zona)
+                    db.session.flush()
+                    zonas[zona_codigo] = zona.id
+                    locations_added += 1
+                
+                # Puesto
+                if puesto_codigo not in puestos:
+                    puesto = Location(
+                        departamento_codigo=depto_codigo,
+                        municipio_codigo=muni_codigo,
+                        zona_codigo=zona_codigo,
+                        puesto_codigo=puesto_codigo,
+                        departamento_nombre=departamento_nombre,
+                        municipio_nombre=municipio_nombre,
+                        puesto_nombre=puesto_nombre,
+                        nombre_completo=f"{departamento_nombre} - {municipio_nombre} - Zona {zz} - {puesto_nombre}",
+                        tipo='puesto',
+                        direccion=row.get('direccion', '').strip() or None,
+                        comuna=row.get('comuna', '').strip() or None,
+                        latitud=float(row['LATITUD']) if row.get('LATITUD', '').strip() else None,
+                        longitud=float(row['LONGITUD']) if row.get('LONGITUD', '').strip() else None,
+                        parent_id=zonas[zona_codigo],
+                        activo=True
+                    )
+                    db.session.add(puesto)
+                    db.session.flush()
+                    puestos[puesto_codigo] = puesto.id
+                    locations_added += 1
+                
+                # Mesa
+                mesa_location = Location(
+                    departamento_codigo=depto_codigo,
+                    municipio_codigo=muni_codigo,
+                    zona_codigo=zona_codigo,
+                    puesto_codigo=puesto_codigo,
+                    mesa_codigo=mesa_codigo,
+                    departamento_nombre=departamento_nombre,
+                    municipio_nombre=municipio_nombre,
+                    puesto_nombre=puesto_nombre,
+                    mesa_nombre=mesa_nombre,
+                    nombre_completo=f"{departamento_nombre} - {municipio_nombre} - Zona {zz} - {puesto_nombre} - Mesa {mesa}",
+                    tipo='mesa',
+                    total_votantes_registrados=int(row.get('total_mesa', 0) or 0),
+                    mujeres=int(row.get('mujeres_mesa', 0) or 0),
+                    hombres=int(row.get('hombres_mesa', 0) or 0),
+                    direccion=row.get('direccion', '').strip() or None,
+                    comuna=row.get('comuna', '').strip() or None,
+                    latitud=float(row['LATITUD']) if row.get('LATITUD', '').strip() else None,
+                    longitud=float(row['LONGITUD']) if row.get('LONGITUD', '').strip() else None,
+                    parent_id=puestos[puesto_codigo],
+                    activo=True
+                )
+                db.session.add(mesa_location)
+                locations_added += 1
+                
+                if locations_added % 100 == 0:
+                    db.session.commit()
+        
+        db.session.commit()
+        
+        print(f"[AUTO-LOAD] ✅ Carga completada: {locations_added} ubicaciones")
+        print(f"[AUTO-LOAD]   - Departamentos: {len(departamentos)}")
+        print(f"[AUTO-LOAD]   - Municipios: {len(municipios)}")
+        print(f"[AUTO-LOAD]   - Zonas: {len(zonas)}")
+        print(f"[AUTO-LOAD]   - Puestos: {len(puestos)}")
+        
+        return True
+        
+    except Exception as e:
+        import traceback
+        print(f"[AUTO-LOAD] ❌ Error: {str(e)}")
+        print(f"[AUTO-LOAD] Traceback: {traceback.format_exc()}")
+        db.session.rollback()
+        return False
+
+
 @locations_bp.route('/departamentos', methods=['GET'])
 def get_departamentos():
     """
@@ -30,33 +213,52 @@ def get_departamentos():
         JSON con lista de departamentos (solo Caquetá)
     """
     try:
-        # Solo retornar Caquetá (código 44)
-        departamento = Location.query.filter_by(
+        # Verificar si hay datos, si no, cargar automáticamente
+        total_locations = Location.query.count()
+        if total_locations == 0:
+            print("[DEPARTAMENTOS] BD vacía, intentando carga automática...")
+            _auto_load_divipola()
+        
+        # Buscar departamento de Caquetá
+        departamentos = Location.query.filter_by(
             tipo='departamento',
             departamento_codigo=CAQUETA_CODE,
             activo=True
-        ).first()
+        ).all()
         
-        if departamento:
+        if departamentos:
+            data = [{
+                'departamento_codigo': dept.departamento_codigo,
+                'departamento_nombre': dept.departamento_nombre
+            } for dept in departamentos]
+            
             return jsonify({
                 'success': True,
-                'data': [{
-                    'departamento_codigo': departamento.departamento_codigo,
-                    'departamento_nombre': departamento.departamento_nombre
-                }]
+                'data': data
             }), 200
         else:
+            # Si aún no hay datos después de intentar cargar
+            total_deptos = Location.query.filter_by(tipo='departamento').count()
+            
             return jsonify({
                 'success': False,
-                'error': 'No se encontró el departamento de Caquetá',
-                'data': []
+                'error': 'No se encontró el departamento de Caquetá. La base de datos puede estar vacía o el archivo divipola.csv no está disponible.',
+                'data': [],
+                'debug': {
+                    'total_departamentos': total_deptos,
+                    'total_locations': Location.query.count(),
+                    'buscando_codigo': CAQUETA_CODE
+                }
             }), 404
             
     except Exception as e:
-        print(f"Error en get_departamentos: {str(e)}")
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"[ERROR] Error en get_departamentos: {str(e)}")
+        print(f"[ERROR] Traceback: {error_trace}")
         return jsonify({
             'success': False,
-            'error': 'Error al obtener departamentos'
+            'error': f'Error al obtener departamentos: {str(e)}'
         }), 500
 
 
