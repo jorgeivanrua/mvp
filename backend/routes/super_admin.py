@@ -1852,69 +1852,6 @@ def system_audit():
         }), 500
 
 
-@super_admin_bp.route('/monitoreo-departamental', methods=['GET'])
-@jwt_required()
-@role_required(['super_admin'])
-def get_monitoreo_departamental():
-    """
-    Obtener datos de monitoreo por departamento para gráficos
-    """
-    try:
-        from backend.models.formulario_e14 import FormularioE14
-        
-        # Obtener todos los departamentos
-        departamentos = Location.query.filter_by(tipo='departamento', activo=True).all()
-        
-        monitoreo_data = []
-        
-        for depto in departamentos:
-            # Obtener todas las mesas del departamento
-            mesas = Location.query.filter_by(
-                tipo='mesa',
-                departamento_codigo=depto.departamento_codigo,
-                activo=True
-            ).all()
-            
-            mesa_ids = [m.id for m in mesas]
-            
-            # Obtener formularios
-            formularios = FormularioE14.query.filter(
-                FormularioE14.mesa_id.in_(mesa_ids)
-            ).all() if mesa_ids else []
-            
-            validados = sum(1 for f in formularios if f.estado == 'validado')
-            pendientes = sum(1 for f in formularios if f.estado == 'pendiente')
-            rechazados = sum(1 for f in formularios if f.estado == 'rechazado')
-            
-            porcentaje_avance = round((validados / len(mesas) * 100), 2) if mesas else 0
-            
-            monitoreo_data.append({
-                'departamento': depto.departamento_nombre,
-                'codigo': depto.departamento_codigo,
-                'total_mesas': len(mesas),
-                'total_formularios': len(formularios),
-                'validados': validados,
-                'pendientes': pendientes,
-                'rechazados': rechazados,
-                'sin_reporte': len(mesas) - len(formularios),
-                'porcentaje_avance': porcentaje_avance
-            })
-        
-        # Ordenar por porcentaje de avance descendente
-        monitoreo_data.sort(key=lambda x: x['porcentaje_avance'], reverse=True)
-        
-        return jsonify({
-            'success': True,
-            'data': monitoreo_data
-        }), 200
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-
 @super_admin_bp.route('/audit-logs', methods=['GET'])
 @jwt_required()
 @role_required(['super_admin'])
