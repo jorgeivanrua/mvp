@@ -266,62 +266,6 @@ def create_user():
         }), 500
 
 
-@super_admin_bp.route('/users', methods=['POST'])
-@jwt_required()
-@role_required(['super_admin'])
-def create_user():
-    """
-    Crear un nuevo usuario
-    """
-    try:
-        from backend.database import db
-        
-        data = request.get_json()
-        
-        # Validar datos requeridos
-        required_fields = ['nombre', 'password', 'rol']
-        for field in required_fields:
-            if field not in data:
-                return jsonify({
-                    'success': False,
-                    'error': f'Campo requerido: {field}'
-                }), 400
-        
-        # Verificar que el nombre no exista
-        existing_user = User.query.filter_by(nombre=data['nombre']).first()
-        if existing_user:
-            return jsonify({
-                'success': False,
-                'error': 'Ya existe un usuario con ese nombre'
-            }), 400
-        
-        # Crear usuario
-        user = User(
-            nombre=data['nombre'],
-            rol=data['rol'],
-            ubicacion_id=data.get('ubicacion_id'),
-            activo=data.get('activo', True)
-        )
-        user.set_password(data['password'])
-        
-        db.session.add(user)
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Usuario creado exitosamente',
-            'data': user.to_dict()
-        }), 201
-        
-    except Exception as e:
-        from backend.database import db
-        db.session.rollback()
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-
 @super_admin_bp.route('/users/<int:user_id>', methods=['PUT'])
 @jwt_required()
 @role_required(['super_admin'])
