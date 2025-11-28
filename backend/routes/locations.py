@@ -400,14 +400,14 @@ def _auto_load_partidos_candidatos():
             partidos_creados[partido_data['codigo']] = partido
             print(f"[AUTO-PARTIDOS] Partido: {partido_data['sigla']}")
         
-        # Crear candidatos de ejemplo (más completo)
+        # Crear candidatos por listas (más realista)
         candidatos_data = [
-            # SENADO
+            # ========== SENADO - LISTAS COMPLETAS ==========
+            
+            # PACTO HISTÓRICO - Lista Senado (5 candidatos)
             {'nombre': 'Gustavo Bolívar', 'partido': 'PACTO', 'tipo': 'SENADO', 'numero_lista': 1},
             {'nombre': 'María José Pizarro', 'partido': 'PACTO', 'tipo': 'SENADO', 'numero_lista': 2},
-            {'nombre': 'Iván Cepeda', 'partido': 'PACTO', 'tipo': 'SENADO', 'numero_lista': 3},
-            {'nombre': 'Paloma Valencia', 'partido': 'CENTRO_DEM', 'tipo': 'SENADO', 'numero_lista': 1},
-            {'nombre': 'Miguel Uribe Turbay', 'partido': 'CENTRO_DEM', 'tipo': 'SENADO', 'numero_lista': 2},
+            {'nombre': 'Iván Cepeda', 'partido': 'PACTO', 'tipo': 'SENADO',o': 'SENADO', 'numero_lista': 2},
             {'nombre': 'María Fernanda Cabal', 'partido': 'CENTRO_DEM', 'tipo': 'SENADO', 'numero_lista': 3},
             {'nombre': 'Angélica Lozano', 'partido': 'VERDE', 'tipo': 'SENADO', 'numero_lista': 1},
             {'nombre': 'Ariel Ávila', 'partido': 'VERDE', 'tipo': 'SENADO', 'numero_lista': 2},

@@ -294,6 +294,23 @@ El sistema está completamente funcional y listo para:
 4. Push a la rama (`git push origin feature/AmazingFeature`)
 5. Abre un Pull Request
 
+## 📚 Documentación
+
+### Sistema de Monitoreo
+Para documentación completa del sistema de monitoreo electoral:
+- **[README_MONITOREO.md](README_MONITOREO.md)** - Índice principal del sistema de monitoreo
+- **[docs/INICIO_RAPIDO_MONITOREO.md](docs/INICIO_RAPIDO_MONITOREO.md)** - Guía de inicio rápido
+- **[docs/GUIA_COMPLETA_MONITOREO.md](docs/GUIA_COMPLETA_MONITOREO.md)** - Guía completa
+
+### Documentación Técnica
+- **[docs/ESTRUCTURA_PROYECTO_MONITOREO.md](docs/ESTRUCTURA_PROYECTO_MONITOREO.md)** - Estructura del proyecto
+- **[docs/VERIFICACION_MONITOREO_BD.md](docs/VERIFICACION_MONITOREO_BD.md)** - Verificación de BD
+- **[docs/optimizaciones/](docs/optimizaciones/)** - Optimizaciones implementadas
+
+### Documentación Histórica
+- **[docs/historico/](docs/historico/)** - Correcciones y mejoras históricas
+- **[docs/features/](docs/features/)** - Documentación de features específicas
+
 ## 📝 Licencia
 
 Este proyecto está bajo la Licencia MIT.
