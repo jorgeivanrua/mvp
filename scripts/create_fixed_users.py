@@ -63,68 +63,68 @@ def create_fixed_users():
         print("-" * 80)
         
         usuarios_fijos = [
-            # Super Admin (sin ubicación)
+            # Super Admin (sin ubicación) - Contraseña FIJA admin123
             {
                 'nombre': 'admin',
                 'nombre_completo': 'Super Administrador',
                 'rol': 'super_admin',
                 'ubicacion_id': None,
-                'password': 'admin123'
+                'password': 'admin123'  # ⚠️ CONTRASEÑA FIJA - NO MODIFICABLE
             },
             
-            # Administradores
+            # Administradores - Contraseña test123 (modificable)
             {
                 'nombre': 'admin_caqueta',
                 'nombre_completo': 'Admin Departamental Caquetá',
                 'rol': 'admin_departamental',
                 'ubicacion_id': caqueta.id,
-                'password': 'admin123'
+                'password': 'test123'
             },
             {
                 'nombre': 'admin_florencia',
                 'nombre_completo': 'Admin Municipal Florencia',
                 'rol': 'admin_municipal',
                 'ubicacion_id': florencia.id,
-                'password': 'admin123'
+                'password': 'test123'
             },
             
-            # Coordinadores
+            # Coordinadores - Contraseña test123 (modificable)
             {
                 'nombre': 'coord_dpto_caqueta',
                 'nombre_completo': 'Coordinador Departamental Caquetá',
                 'rol': 'coordinador_departamental',
                 'ubicacion_id': caqueta.id,
-                'password': 'coord123'
+                'password': 'test123'
             },
             {
                 'nombre': 'coord_mun_florencia',
                 'nombre_completo': 'Coordinador Municipal Florencia',
                 'rol': 'coordinador_municipal',
                 'ubicacion_id': florencia.id,
-                'password': 'coord123'
+                'password': 'test123'
             },
             
-            # Auditor
+            # Auditor - Contraseña test123 (modificable)
             {
                 'nombre': 'auditor_caqueta',
                 'nombre_completo': 'Auditor Electoral Caquetá',
                 'rol': 'auditor_electoral',
                 'ubicacion_id': caqueta.id,
-                'password': 'auditor123'
+                'password': 'test123'
             }
         ]
         
-        # Agregar coordinadores de puesto (uno por cada puesto)
+        # Agregar coordinadores de puesto (uno por cada puesto) - Contraseña test123
         for i, puesto in enumerate(puestos_florencia[:10], 1):  # Máximo 10 coordinadores
             usuarios_fijos.append({
                 'nombre': f'coord_puesto_{puesto.puesto_codigo}',
                 'nombre_completo': f'Coordinador {puesto.puesto_nombre}',
                 'rol': 'coordinador_puesto',
                 'ubicacion_id': puesto.id,
-                'password': 'coord123'
+                'password': 'test123'
             })
         
-        # Agregar testigos (2-3 por cada puesto)
+        # Agregar testigos (2-3 por cada puesto) - Contraseña test123
         for i, puesto in enumerate(puestos_florencia[:5], 1):  # Máximo 5 puestos con testigos
             # Testigo 1
             usuarios_fijos.append({
@@ -132,7 +132,7 @@ def create_fixed_users():
                 'nombre_completo': f'Testigo 1 - {puesto.puesto_nombre}',
                 'rol': 'testigo_electoral',
                 'ubicacion_id': puesto.id,
-                'password': 'testigo123'
+                'password': 'test123'
             })
             # Testigo 2
             usuarios_fijos.append({
@@ -140,7 +140,7 @@ def create_fixed_users():
                 'nombre_completo': f'Testigo 2 - {puesto.puesto_nombre}',
                 'rol': 'testigo_electoral',
                 'ubicacion_id': puesto.id,
-                'password': 'testigo123'
+                'password': 'test123'
             })
         
         # Crear usuarios
@@ -193,25 +193,24 @@ def create_fixed_users():
         print("CREDENCIALES DE ACCESO")
         print("=" * 80)
         print()
-        print("SUPER ADMIN:")
+        print("⚠️  SUPER ADMIN (Contraseña FIJA - NO modificable):")
         print("  Usuario: admin")
         print("  Password: admin123")
         print()
-        print("COORDINADORES:")
-        print("  Usuario: coord_dpto_caqueta / coord_mun_florencia / coord_puesto_XX")
-        print("  Password: coord123")
+        print("✅ TODOS LOS DEMÁS USUARIOS (Contraseña modificable):")
+        print("  Password por defecto: test123")
         print()
-        print("TESTIGOS:")
-        print("  Usuario: testigo_XX_1 / testigo_XX_2")
-        print("  Password: testigo123")
+        print("  - Administradores: admin_caqueta / admin_florencia")
+        print("  - Coordinadores: coord_dpto_caqueta / coord_mun_florencia / coord_puesto_XX")
+        print("  - Testigos: testigo_XX_1 / testigo_XX_2")
+        print("  - Auditor: auditor_caqueta")
         print()
-        print("ADMINISTRADORES:")
-        print("  Usuario: admin_caqueta / admin_florencia")
-        print("  Password: admin123")
-        print()
-        print("AUDITOR:")
-        print("  Usuario: auditor_caqueta")
-        print("  Password: auditor123")
+        print("=" * 80)
+        print("NOTAS IMPORTANTES:")
+        print("=" * 80)
+        print("1. La contraseña del Super Admin (admin123) NO puede ser modificada desde el sistema")
+        print("2. Todas las demás contraseñas (test123) pueden ser modificadas por los usuarios")
+        print("3. Para cambiar contraseña: Ir a Perfil > Cambiar Contraseña")
         print()
         print("=" * 80)
         print("✅ USUARIOS FIJOS CREADOS EXITOSAMENTE")

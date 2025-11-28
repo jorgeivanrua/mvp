@@ -203,6 +203,85 @@ def _auto_load_divipola():
         return False
 
 
+def _auto_create_users():
+    """
+    Crear usuarios automáticamente si no existen
+    """
+    from backend.models.user import User
+    
+    try:
+        # Verificar si ya hay usuarios
+        total_users = User.query.count()
+        if total_users > 0:
+            print(f"[AUTO-USERS] Ya existen {total_users} usuarios, omitiendo creación")
+            return True
+        
+        print("[AUTO-USERS] No hay usuarios, creando usuarios básicos...")
+        
+        # Obtener ubicaciones necesarias
+        caqueta = Location.query.filter_by(
+            tipo='departamento',
+            departamento_codigo='44'
+        ).first()
+        
+        florencia = Location.query.filter_by(
+            tipo='municipio',
+            departamento_codigo='44',
+            municipio_codigo='4401'
+        ).first()
+        
+        if not caqueta or not florencia:
+            print("[AUTO-USERS] ERROR: No se encontraron ubicaciones necesarias")
+            return False
+        
+        # Crear usuarios básicos
+        usuarios = [
+            # Super Admin - Contraseña fija admin123
+            {
+                'nombre': 'admin',
+                'rol': 'super_admin',
+                'ubicacion_id': None,
+                'password': 'admin123'  # Contraseña fija para Super Admin
+            },
+            # Admin Departamental - Contraseña test123 (modificable)
+            {
+                'nombre': 'admin_caqueta',
+                'rol': 'admin_departamental',
+                'ubicacion_id': caqueta.id,
+                'password': 'test123'
+            },
+            # Admin Municipal - Contraseña test123 (modificable)
+            {
+                'nombre': 'admin_florencia',
+                'rol': 'admin_municipal',
+                'ubicacion_id': florencia.id,
+                'password': 'test123'
+            }
+        ]
+        
+        for user_data in usuarios:
+            user = User(
+                nombre=user_data['nombre'],
+                rol=user_data['rol'],
+                ubicacion_id=user_data['ubicacion_id'],
+                activo=True
+            )
+            user.set_password(user_data['password'])
+            db.session.add(user)
+            print(f"[AUTO-USERS] Creado: {user_data['nombre']} ({user_data['rol']})")
+        
+        db.session.commit()
+        print(f"[AUTO-USERS] ✅ {len(usuarios)} usuarios creados")
+        return True
+        
+    except Exception as e:
+        import traceback
+        print(f"[AUTO-USERS] ❌ Error: {str(e)}")
+        print(f"[AUTO-USERS] Traceback: {traceback.format_exc()}")
+        db.session.rollback()
+        return False
+
+
 @locations_bp.route('/departamentos', methods=['GET'])
 def get_departamentos():
     """
@@ -218,6 +297,8 @@ def get_departamentos():
         if total_locations == 0:
             print("[DEPARTAMENTOS] BD vacía, intentando carga automática...")
             _auto_load_divipola()
+            # Crear usuarios después de cargar ubicaciones
+            _auto_create_users()
         
         # Buscar departamento de Caquetá
         departamentos = Location.query.filter_by(

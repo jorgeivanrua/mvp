@@ -162,6 +162,12 @@ class AuthService:
         if not user:
             raise ValidationException({'user': ['Usuario no encontrado']})
         
+        # ⚠️ PROTECCIÓN: Super Admin no puede cambiar su contraseña desde el código
+        if user.rol == 'super_admin':
+            raise ValidationException({
+                'user': ['La contraseña del Super Administrador no puede ser modificada desde el sistema. Contacte al administrador del sistema.']
+            })
+        
         # Verificar contraseña actual
         if not user.check_password(current_password):
             raise ValidationException({'current_password': ['Contraseña actual incorrecta']})
