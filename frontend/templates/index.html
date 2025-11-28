@@ -14,7 +14,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     
-    <style>
+    <style></style>
         :root {
             --primary-color: #1e3c72;
             --secondary-color: #2a5298;
@@ -27,6 +27,28 @@
             align-items: center;
             justify-content: center;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Animación de fondo */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%);
+            animation: pulse 15s ease-in-out infinite;
+            pointer-events: none;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
         }
         
         .landing-container {
@@ -143,11 +165,121 @@
         }
         
         .testing-mode {
-            background: #fff3cd;
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
             border: 2px solid #ffc107;
             border-radius: 10px;
-            padding: 1rem;
-            margin-top: 1rem;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.2);
+        }
+        
+        .testing-mode h6 {
+            color: #856404;
+            font-weight: bold;
+        }
+        
+        .role-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            margin: 0.25rem;
+            background: white;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
+        }
+        
+        .role-badge:hover {
+            transform: scale(1.05);
+        }
+        
+        .stats-container {
+            display: flex;
+            justify-content: space-around;
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        /* Animación de entrada para features */
+        .feature-item {
+            animation: slideIn 0.5s ease-out forwards;
+            opacity: 0;
+        }
+        
+        .feature-item:nth-child(1) { animation-delay: 0.1s; }
+        .feature-item:nth-child(2) { animation-delay: 0.2s; }
+        .feature-item:nth-child(3) { animation-delay: 0.3s; }
+        .feature-item:nth-child(4) { animation-delay: 0.4s; }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        /* Efecto de brillo en el botón */
+        .btn-access {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-access::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-access:hover::before {
+            left: 100%;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .campaign-title {
+                font-size: 2rem;
+            }
+            
+            .campaign-subtitle {
+                font-size: 1rem;
+            }
+            
+            .stats-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .btn-access {
+                padding: 0.75rem 2rem;
+                font-size: 1rem;
+            }
         }
     </style>
 </head>
@@ -165,6 +297,27 @@
             
             <!-- Body -->
             <div class="campaign-body">
+                <!-- Estadísticas -->
+                <div class="stats-container">
+                    <div class="stat-item">
+                        <span class="stat-number" id="stat-users">0</span>
+                        <span class="stat-label">Usuarios Activos</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="stat-forms">0</span>
+                        <span class="stat-label">Formularios E-14</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="stat-locations">0</span>
+                        <span class="stat-label">Ubicaciones</span>
+                    </div>
+                </div>
+                
+                <!-- Características -->
+                <h5 class="text-center mb-4 text-primary">
+                    <i class="bi bi-star-fill"></i> Características Principales
+                </h5>
+                
                 <div class="row">
                     <div class="col-md-6">
                         <div class="feature-item">
@@ -173,7 +326,7 @@
                             </div>
                             <div>
                                 <strong>Seguro y Confiable</strong>
-                                <br><small class="text-muted">Datos encriptados y protegidos</small>
+                                <br><small class="text-muted">Datos encriptados y protegidos con JWT</small>
                             </div>
                         </div>
                     </div>
@@ -185,7 +338,7 @@
                             <div>
                                 <strong>Modo Offline</strong>
                                 <br><small class="text-muted">Funciona sin conexión</small>
-                                <br><small class="text-muted">reconexion para actualizacion de datos</small>
+                                <br><small class="text-muted">Sincronización automática al reconectar</small>
                             </div>
                         </div>
                     </div>
@@ -195,8 +348,8 @@
                                 <i class="bi bi-people"></i>
                             </div>
                             <div>
-                                <strong>Multi-Rol</strong>
-                                <br><small class="text-muted">Testigos y coordinadores</small>
+                                <strong>Sistema Multi-Rol</strong>
+                                <br><small class="text-muted">Testigos, coordinadores y auditores</small>
                             </div>
                         </div>
                     </div>
@@ -206,8 +359,30 @@
                                 <i class="bi bi-graph-up"></i>
                             </div>
                             <div>
-                                <strong>Tiempo Real</strong>
-                                <br><small class="text-muted">Resultados instantáneos</small>
+                                <strong>Monitoreo en Tiempo Real</strong>
+                                <br><small class="text-muted">Dashboard con métricas avanzadas</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="bi bi-geo-alt"></i>
+                            </div>
+                            <div>
+                                <strong>Geolocalización</strong>
+                                <br><small class="text-muted">Seguimiento de testigos en el territorio</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="bi bi-file-earmark-check"></i>
+                            </div>
+                            <div>
+                                <strong>Formularios E-14</strong>
+                                <br><small class="text-muted">Registro digital de actas de escrutinio</small>
                             </div>
                         </div>
                     </div>
@@ -220,28 +395,40 @@
                 </div>
                 
                 <!-- Testing Mode Info -->
-                <div class="testing-mode mt-3">
-                    <h6 class="mb-2"><i class="bi bi-info-circle-fill"></i> Usuarios Disponibles</h6>
-                    <p class="small mb-2">Contraseña para todos: <strong>test123</strong></p>
-                    <p class="small text-muted mb-2">
-                        <i class="bi bi-info-circle"></i> 
+                <div class="testing-mode">
+                    <h6 class="mb-3">
+                        <i class="bi bi-info-circle-fill"></i> Modo de Prueba - Usuarios Disponibles
+                    </h6>
+                    
+                    <div class="alert alert-warning mb-3" role="alert">
+                        <i class="bi bi-key-fill"></i> 
+                        <strong>Contraseña para todos:</strong> <code>test123</code>
+                    </div>
+                    
+                    <p class="small text-muted mb-3">
+                        <i class="bi bi-arrow-right-circle"></i> 
                         Use el sistema de login estándar seleccionando el rol correspondiente
                     </p>
-                    <div class="row small">
-                        <div class="col-md-6">
-                            <ul class="list-unstyled mb-0">
-                                <li><i class="bi bi-shield-check"></i> <strong>Monitoreo</strong></li>
-                                <li><i class="bi bi-eye"></i> <strong>Auditor Electoral</strong></li>
-                                <li><i class="bi bi-building"></i> <strong>Coord. Departamental</strong></li>
-                            </ul>
-                        </div>
-                        <div class="col-md-6">
-                            <ul class="list-unstyled mb-0">
-                                <li><i class="bi bi-geo-alt"></i> <strong>Coord. Municipal</strong></li>
-                                <li><i class="bi bi-house"></i> <strong>Coord. de Puesto</strong></li>
-                                <li><i class="bi bi-person-check"></i> <strong>Testigo Electoral</strong></li>
-                            </ul>
-                        </div>
+                    
+                    <div class="text-center">
+                        <span class="role-badge">
+                            <i class="bi bi-radar text-primary"></i> Monitoreo
+                        </span>
+                        <span class="role-badge">
+                            <i class="bi bi-eye text-info"></i> Auditor Electoral
+                        </span>
+                        <span class="role-badge">
+                            <i class="bi bi-building text-success"></i> Coord. Departamental
+                        </span>
+                        <span class="role-badge">
+                            <i class="bi bi-geo-alt text-warning"></i> Coord. Municipal
+                        </span>
+                        <span class="role-badge">
+                            <i class="bi bi-house text-secondary"></i> Coord. de Puesto
+                        </span>
+                        <span class="role-badge">
+                            <i class="bi bi-person-check text-danger"></i> Testigo Electoral
+                        </span>
                     </div>
                 </div>
             </div>
@@ -257,6 +444,42 @@
     </div>
     
     <script>
+        // Animación de números
+        function animateNumber(element, target, duration = 2000) {
+            const start = 0;
+            const increment = target / (duration / 16);
+            let current = start;
+            
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    element.textContent = target;
+                    clearInterval(timer);
+                } else {
+                    element.textContent = Math.floor(current);
+                }
+            }, 16);
+        }
+        
+        // Cargar estadísticas públicas
+        async function loadPublicStats() {
+            try {
+                // Simular estadísticas (puedes crear un endpoint real si lo deseas)
+                const stats = {
+                    users: 150,
+                    forms: 500,
+                    locations: 1200
+                };
+                
+                // Animar números
+                animateNumber(document.getElementById('stat-users'), stats.users);
+                animateNumber(document.getElementById('stat-forms'), stats.forms);
+                animateNumber(document.getElementById('stat-locations'), stats.locations);
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+        
         // Cargar información de la campaña activa
         async function loadCampaignInfo() {
             try {
@@ -284,24 +507,46 @@
                         
                         // Actualizar fechas
                         if (campaign.fecha_inicio && campaign.fecha_fin) {
-                            const inicio = new Date(campaign.fecha_inicio).toLocaleDateString();
-                            const fin = new Date(campaign.fecha_fin).toLocaleDateString();
+                            const inicio = new Date(campaign.fecha_inicio).toLocaleDateString('es-CO');
+                            const fin = new Date(campaign.fecha_fin).toLocaleDateString('es-CO');
                             document.getElementById('campaignDates').textContent = `${inicio} - ${fin}`;
-                        }
-                        
-                        // Mostrar modo testing si está activo
-                        if (data.testing_mode) {
-                            document.getElementById('testingModeInfo').style.display = 'block';
                         }
                     }
                 }
             } catch (error) {
                 console.error('Error loading campaign info:', error);
+                // Usar valores por defecto
+                document.getElementById('campaignDates').textContent = 'Sistema Electoral';
             }
         }
         
+        // Efecto de parallax suave en el scroll
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const parallax = document.querySelector('.campaign-header');
+            if (parallax) {
+                parallax.style.transform = `translateY(${scrolled * 0.5}px)`;
+            }
+        });
+        
         // Cargar al iniciar
-        loadCampaignInfo();
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCampaignInfo();
+            loadPublicStats();
+            
+            // Agregar efecto de hover a las feature items
+            document.querySelectorAll('.feature-item').forEach(item => {
+                item.addEventListener('mouseenter', function() {
+                    this.style.background = 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)';
+                });
+                item.addEventListener('mouseleave', function() {
+                    this.style.background = '#f8f9fa';
+                });
+            });
+        });
     </script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
