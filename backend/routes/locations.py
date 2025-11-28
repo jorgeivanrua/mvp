@@ -658,31 +658,95 @@ def get_puestos(zona_codigo):
         }), 500
 
 
-@locations_bp.route('/mesas/<puesto_codigo>', methods=['GET'])
-def get_mesas(puesto_codigo):
+@locations_bp.route('/mesas', methods=['GET'])
+def get_mesas_query():
     """
-    Obtener mesas de un puesto de Caquetá
-    Endpoint público (necesario para login)
+    Obtener mesas de un puesto usando query params
+    Endpoint público (necesario para testigos)
     
-    Args:
-        puesto_codigo: Código del puesto (debe empezar con 44)
+    Query params:
+        puesto_codigo: Código del puesto
+        zona_codigo: Código de la zona (opcional)
+        municipio_codigo: Código del municipio (opcional)
+        departamento_codigo: Código del departamento (opcional)
         
     Returns:
         JSON con lista de mesas
     """
     try:
-        # Validar que pertenece a Caquetá
-        if not validate_caqueta_code(puesto_codigo):
+        puesto_codigo = request.args.get('puesto_codigo')
+        
+        if not puesto_codigo:
             return jsonify({
                 'success': False,
-                'error': 'Código de puesto inválido',
+                'error': 'puesto_codigo es requerido',
                 'data': []
             }), 400
         
+        # Construir query
+        query = Location.query.filter_by(
+            tipo='mesa',
+            puesto_codigo=puesto_codigo,
+            activo=True
+        )
+        
+        # Filtros opcionales
+        zona_codigo = request.args.get('zona_codigo')
+        if zona_codigo:
+            query = query.filter_by(zona_codigo=zona_codigo)
+            
+        municipio_codigo = request.args.get('municipio_codigo')
+        if municipio_codigo:
+            query = query.filter_by(municipio_codigo=municipio_codigo)
+            
+        departamento_codigo = request.args.get('departamento_codigo')
+        if departamento_codigo:
+            query = query.filter_by(departamento_codigo=departamento_codigo)
+        
+        # Obtener mesas
+        mesas = query.order_by(Location.mesa_codigo).all()
+        
+        return jsonify({
+            'success': True,
+            'data': [{
+                'id': mesa.id,
+                'mesa_codigo': mesa.mesa_codigo,
+                'mesa_nombre': mesa.mesa_nombre,
+                'puesto_codigo': mesa.puesto_codigo,
+                'puesto_nombre': mesa.puesto_nombre,
+                'zona_codigo': mesa.zona_codigo,
+                'municipio_codigo': mesa.municipio_codigo,
+                'departamento_codigo': mesa.departamento_codigo
+            } for mesa in mesas]
+        }), 200
+        
+    except Exception as e:
+        print(f"Error en get_mesas_query: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': f'Error al obtener mesas: {str(e)}',
+            'data': []
+        }), 500
+
+
+@locations_bp.route('/mesas/<puesto_codigo>', methods=['GET'])
+def get_mesas(puesto_codigo):
+    """
+    Obtener mesas de un puesto usando path param
+    Endpoint público (necesario para login)
+    
+    Args:
+        puesto_codigo: Código del puesto
+        
+    Returns:
+        JSON con lista de mesas
+    """
+    try:
         # Obtener mesas activas
         mesas = Location.query.filter_by(
             tipo='mesa',
-            departamento_codigo=CAQUETA_CODE,
             puesto_codigo=puesto_codigo,
             activo=True
         ).order_by(Location.mesa_codigo).all()
@@ -690,8 +754,11 @@ def get_mesas(puesto_codigo):
         return jsonify({
             'success': True,
             'data': [{
+                'id': mesa.id,
                 'mesa_codigo': mesa.mesa_codigo,
-                'mesa_nombre': mesa.mesa_nombre
+                'mesa_nombre': mesa.mesa_nombre,
+                'puesto_codigo': mesa.puesto_codigo,
+                'puesto_nombre': mesa.puesto_nombre
             } for mesa in mesas]
         }), 200
         
@@ -699,7 +766,8 @@ def get_mesas(puesto_codigo):
         print(f"Error en get_mesas: {str(e)}")
         return jsonify({
             'success': False,
-            'error': 'Error al obtener mesas'
+            'error': 'Error al obtener mesas',
+            'data': []
         }), 500
 
 
