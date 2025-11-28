@@ -11,6 +11,7 @@ Este documento sirve como índice principal para toda la documentación del proy
 ```
 docs/
 ├── INDICE_DOCUMENTACION.md (este archivo)
+├── INICIALIZACION_AUTOMATICA.md  # 🆕 Guía de inicialización automática
 ├── optimizaciones/          # Documentación de optimizaciones del dashboard
 │   ├── README.md
 │   ├── README_OPTIMIZACIONES.md
@@ -24,6 +25,29 @@ docs/
 │
 └── [otras carpetas de documentación]
 ```
+
+---
+
+## 🎉 Inicialización Automática de Datos
+
+### 📄 Documento: `INICIALIZACION_AUTOMATICA.md`
+
+Documentación completa del sistema de inicialización automática de datos.
+
+**Acceso rápido**: [docs/INICIALIZACION_AUTOMATICA.md](./INICIALIZACION_AUTOMATICA.md)
+
+**Contenido**:
+- Datos cargados automáticamente
+- Guía de uso
+- Scripts disponibles
+- Solución de problemas
+
+**Datos incluidos**:
+1. DIVIPOLA (22 departamentos, 1122 municipios, 13405 puestos)
+2. Partidos Políticos (9 partidos)
+3. Candidatos (7 candidatos de ejemplo)
+4. Tipos de Elección (6 tipos)
+5. Usuarios del Sistema (6 usuarios)
 
 ---
 
@@ -54,6 +78,7 @@ Documentación completa de las optimizaciones implementadas en el Dashboard de S
 ## 📖 Documentos por Categoría
 
 ### 🎯 Para Comenzar
+- [INICIALIZACION_AUTOMATICA.md](./INICIALIZACION_AUTOMATICA.md) - 🆕 Inicialización automática de datos
 - [README_OPTIMIZACIONES.md](./optimizaciones/README_OPTIMIZACIONES.md) - Resumen ejecutivo
 - [RESUMEN_VISUAL.txt](./optimizaciones/RESUMEN_VISUAL.txt) - Vista rápida
 

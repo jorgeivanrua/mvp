@@ -52,8 +52,12 @@ Este script automáticamente:
 - ✅ Crea el entorno virtual
 - ✅ Instala todas las dependencias
 - ✅ Inicializa la base de datos
-- ✅ Carga las ubicaciones (DIVIPOLA)
-- ✅ Crea los usuarios del sistema
+- ✅ **Carga automáticamente todos los datos:**
+  - 📍 DIVIPOLA (22 departamentos, 1122 municipios, 13405 puestos)
+  - 🎨 Partidos políticos (9 partidos con colores)
+  - 👤 Candidatos (7 candidatos de ejemplo)
+  - 🗳️ Tipos de elección (6 tipos)
+  - 👥 Usuarios del sistema (6 usuarios)
 - ✅ Aplica todas las migraciones
 - ✅ Configura el sistema electoral
 
@@ -133,36 +137,35 @@ La aplicación estará disponible en: `http://localhost:5000`
 
 ## 👥 Usuarios del Sistema
 
-Después de la inicialización, tendrás acceso con estas credenciales:
+### 🎉 Inicialización Automática de Datos
 
-### Super Administrador
-| Usuario | Contraseña | Descripción |
-|---------|-----------|-------------|
-| admin | admin123 | Acceso completo al sistema |
+El sistema ahora carga automáticamente todos los datos necesarios en cada instalación o deploy:
 
-### Administradores
-| Usuario | Contraseña | Rol |
-|---------|-----------|-----|
-| admin_caqueta | admin123 | Admin Departamental |
-| admin_florencia | admin123 | Admin Municipal |
+```bash
+# Inicialización automática (se ejecuta automáticamente en setup)
+python scripts/inicializar_datos_automatico.py
 
-### Coordinadores
-| Usuario | Contraseña | Rol |
-|---------|-----------|-----|
-| coord_dpto_caqueta | coord123 | Coordinador Departamental |
-| coord_mun_florencia | coord123 | Coordinador Municipal |
-| coord_puesto_XX | coord123 | Coordinador de Puesto |
+# Verificar datos cargados
+python scripts/verificar_y_cargar_datos_completo.py
+```
 
-### Testigos
-| Usuario | Contraseña | Rol |
-|---------|-----------|-----|
-| testigo_XX_1 | testigo123 | Testigo Electoral |
-| testigo_XX_2 | testigo123 | Testigo Electoral |
+### Usuarios Creados Automáticamente
 
-### Auditor
-| Usuario | Contraseña | Rol |
-|---------|-----------|-----|
-| auditor_caqueta | auditor123 | Auditor Electoral |
+| Usuario | Contraseña | Rol | Descripción |
+|---------|-----------|-----|-------------|
+| **monitoreo** | **Monitoreo2025!** | Monitoreo | Dashboard de monitoreo en tiempo real |
+| auditor | test123 | Auditor Electoral | Auditoría del sistema |
+| coord_dept | test123 | Coordinador Departamental | Coordinación departamental |
+| coord_mun | test123 | Coordinador Municipal | Coordinación municipal |
+| coord_puesto | test123 | Coordinador de Puesto | Coordinación de puesto |
+| testigo1 | test123 | Testigo Electoral | Testigo electoral |
+
+### Datos Cargados Automáticamente
+
+- ✅ **DIVIPOLA**: 22 departamentos, 1122 municipios, 13405 puestos
+- ✅ **Partidos Políticos**: 9 partidos (Pacto Histórico, Liberal, Conservador, Verde, Centro Democrático, Cambio Radical, La U, MIRA, Otros)
+- ✅ **Candidatos**: 7 candidatos de ejemplo (Gustavo Bolívar, María José Pizarro, Iván Cepeda, Juan Fernando Cristo, Efraín Cepeda, Angélica Lozano, María Fernanda Cabal)
+- ✅ **Tipos de Elección**: 6 tipos (Senado, Cámara, Gobernación, Asamblea, Alcaldía, Concejo)
 
 ⚠️ **IMPORTANTE**: Cambia todas las contraseñas después del primer acceso en producción
 

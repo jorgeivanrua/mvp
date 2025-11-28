@@ -7,11 +7,35 @@
 scripts\instalar_monitoreo_completo.bat
 ```
 
+### 🎉 Inicialización Automática de Datos
+El sistema ahora carga automáticamente todos los datos necesarios:
+- ✅ **DIVIPOLA**: 22 departamentos, 1122 municipios, 13405 puestos
+- ✅ **Partidos**: 9 partidos políticos con colores
+- ✅ **Candidatos**: 7 candidatos de ejemplo
+- ✅ **Usuarios**: 6 usuarios del sistema (monitoreo, auditor, coordinadores, testigo)
+
+```bash
+# Inicialización automática (se ejecuta en cada deploy)
+python scripts/inicializar_datos_automatico.py
+
+# Verificar datos cargados
+python scripts/verificar_y_cargar_datos_completo.py
+```
+
 ### Acceso al Dashboard
 ```
 URL: http://localhost:5000/monitoreo/dashboard
 Usuario: monitoreo
 Contraseña: Monitoreo2025!
+```
+
+### Otros Usuarios de Prueba
+```
+auditor / test123
+coord_dept / test123
+coord_mun / test123
+coord_puesto / test123
+testigo1 / test123
 ```
 
 ---
@@ -41,6 +65,13 @@ Contraseña: Monitoreo2025!
 ### Instalación
 ```bash
 scripts\instalar_monitoreo_completo.bat    # Instalación completa automatizada
+```
+
+### Inicialización de Datos
+```bash
+python scripts\inicializar_datos_automatico.py        # Cargar todos los datos automáticamente
+python scripts\verificar_y_cargar_datos_completo.py   # Verificar estado de los datos
+scripts\inicializar_datos.bat                         # Inicializar en Windows
 ```
 
 ### Verificación
