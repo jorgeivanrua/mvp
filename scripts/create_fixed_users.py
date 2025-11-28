@@ -125,13 +125,15 @@ def create_fixed_users():
             })
         
         # Agregar testigos (2-3 por cada puesto) - Contraseña test123
+        # Los testigos se crean con ubicación de PUESTO (no mesa)
+        # Esto permite que puedan reportar desde cualquier mesa del puesto
         for i, puesto in enumerate(puestos_florencia[:5], 1):  # Máximo 5 puestos con testigos
             # Testigo 1
             usuarios_fijos.append({
                 'nombre': f'testigo_{puesto.puesto_codigo}_1',
                 'nombre_completo': f'Testigo 1 - {puesto.puesto_nombre}',
                 'rol': 'testigo_electoral',
-                'ubicacion_id': puesto.id,
+                'ubicacion_id': puesto.id,  # Ubicación = PUESTO (incluye depto, muni, zona, puesto)
                 'password': 'test123'
             })
             # Testigo 2
@@ -139,7 +141,7 @@ def create_fixed_users():
                 'nombre': f'testigo_{puesto.puesto_codigo}_2',
                 'nombre_completo': f'Testigo 2 - {puesto.puesto_nombre}',
                 'rol': 'testigo_electoral',
-                'ubicacion_id': puesto.id,
+                'ubicacion_id': puesto.id,  # Ubicación = PUESTO (incluye depto, muni, zona, puesto)
                 'password': 'test123'
             })
         
@@ -211,6 +213,16 @@ def create_fixed_users():
         print("1. La contraseña del Super Admin (admin123) NO puede ser modificada desde el sistema")
         print("2. Todas las demás contraseñas (test123) pueden ser modificadas por los usuarios")
         print("3. Para cambiar contraseña: Ir a Perfil > Cambiar Contraseña")
+        print()
+        print("UBICACIONES DE USUARIOS:")
+        print("- Super Admin: Sin ubicación (acceso global)")
+        print("- Admin Departamental: Departamento")
+        print("- Admin Municipal: Municipio")
+        print("- Coordinador Departamental: Departamento")
+        print("- Coordinador Municipal: Municipio")
+        print("- Coordinador Puesto: Puesto (incluye depto, muni, zona, puesto)")
+        print("- Testigo Electoral: Puesto (incluye depto, muni, zona, puesto)")
+        print("- Auditor: Departamento")
         print()
         print("=" * 80)
         print("✅ USUARIOS FIJOS CREADOS EXITOSAMENTE")
