@@ -282,6 +282,89 @@ def _auto_create_users():
         return False
 
 
+def _auto_load_partidos_candidatos():
+    """
+    Cargar partidos y candidatos automáticamente si no existen
+    """
+    from backend.models.configuracion_electoral import Partido, TipoEleccion, Candidato
+    
+    try:
+        # Verificar si ya hay partidos
+        total_partidos = Partido.query.count()
+        if total_partidos > 0:
+            print(f"[AUTO-PARTIDOS] Ya existen {total_partidos} partidos, omitiendo carga")
+            return True
+        
+        print("[AUTO-PARTIDOS] No hay partidos, cargando datos electorales...")
+        
+        # Crear tipos de elección
+        tipos_eleccion = [
+            {'codigo': 'SENADO', 'nombre': 'Senado de la República', 'descripcion': 'Elección para Senadores', 'activo': True},
+            {'codigo': 'CAMARA', 'nombre': 'Cámara de Representantes', 'descripcion': 'Elección para Representantes', 'activo': True}
+        ]
+        
+        tipos_creados = {}
+        for tipo_data in tipos_eleccion:
+            tipo = TipoEleccion(**tipo_data)
+            db.session.add(tipo)
+            db.session.flush()
+            tipos_creados[tipo_data['codigo']] = tipo
+            print(f"[AUTO-PARTIDOS] Tipo: {tipo_data['nombre']}")
+        
+        # Crear partidos
+        partidos_data = [
+            {'codigo': 'LIBERAL', 'nombre': 'Partido Liberal Colombiano', 'sigla': 'PLC', 'color': '#FF0000', 'activo': True},
+            {'codigo': 'CONSERVADOR', 'nombre': 'Partido Conservador Colombiano', 'sigla': 'PCC', 'color': '#0000FF', 'activo': True},
+            {'codigo': 'PACTO', 'nombre': 'Pacto Histórico', 'sigla': 'PH', 'color': '#FF1493', 'activo': True},
+            {'codigo': 'CENTRO_DEM', 'nombre': 'Centro Democrático', 'sigla': 'CD', 'color': '#00BFFF', 'activo': True},
+            {'codigo': 'CAMBIO_RAD', 'nombre': 'Cambio Radical', 'sigla': 'CR', 'color': '#FFD700', 'activo': True},
+            {'codigo': 'VERDE', 'nombre': 'Alianza Verde', 'sigla': 'AV', 'color': '#00FF00', 'activo': True},
+            {'codigo': 'VOTO_BLANCO', 'nombre': 'Voto en Blanco', 'sigla': 'BLANCO', 'color': '#FFFFFF', 'activo': True}
+        ]
+        
+        partidos_creados = {}
+        for partido_data in partidos_data:
+            partido = Partido(**partido_data)
+            db.session.add(partido)
+            db.session.flush()
+            partidos_creados[partido_data['codigo']] = partido
+            print(f"[AUTO-PARTIDOS] Partido: {partido_data['sigla']}")
+        
+        # Crear algunos candidatos de ejemplo
+        candidatos_data = [
+            # Senado
+            {'nombre': 'Gustavo Bolívar', 'partido': 'PACTO', 'tipo': 'SENADO', 'numero_lista': 1},
+            {'nombre': 'Paloma Valencia', 'partido': 'CENTRO_DEM', 'tipo': 'SENADO', 'numero_lista': 1},
+            {'nombre': 'Angélica Lozano', 'partido': 'VERDE', 'tipo': 'SENADO', 'numero_lista': 1},
+            # Cámara Caquetá
+            {'nombre': 'Hernán Banguero', 'partido': 'LIBERAL', 'tipo': 'CAMARA', 'numero_lista': 1, 'depto': '44'},
+            {'nombre': 'Carlos Ramírez', 'partido': 'CONSERVADOR', 'tipo': 'CAMARA', 'numero_lista': 1, 'depto': '44'},
+            {'nombre': 'Ana María Torres', 'partido': 'PACTO', 'tipo': 'CAMARA', 'numero_lista': 1, 'depto': '44'}
+        ]
+        
+        for cand_data in candidatos_data:
+            candidato = Candidato(
+                nombre=cand_data['nombre'],
+                partido_id=partidos_creados[cand_data['partido']].id,
+                tipo_eleccion_id=tipos_creados[cand_data['tipo']].id,
+                numero_lista=cand_data['numero_lista'],
+                departamento_codigo=cand_data.get('depto'),
+                activo=True
+            )
+            db.session.add(candidato)
+        
+        db.session.commit()
+        print(f"[AUTO-PARTIDOS] ✅ {len(partidos_creados)} partidos y {len(candidatos_data)} candidatos creados")
+        return True
+        
+    except Exception as e:
+        import traceback
+        print(f"[AUTO-PARTIDOS] ❌ Error: {str(e)}")
+        print(f"[AUTO-PARTIDOS] Traceback: {traceback.format_exc()}")
+        db.session.rollback()
+        return False
+
+
 @locations_bp.route('/departamentos', methods=['GET'])
 def get_departamentos():
     """
@@ -299,6 +382,8 @@ def get_departamentos():
             _auto_load_divipola()
             # Crear usuarios después de cargar ubicaciones
             _auto_create_users()
+            # Cargar partidos y candidatos
+            _auto_load_partidos_candidatos()
         
         # Buscar departamento de Caquetá
         departamentos = Location.query.filter_by(
