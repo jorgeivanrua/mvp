@@ -15,16 +15,18 @@
         
         touchElements.forEach(element => {
             element.addEventListener('focus', function() {
-                if (navigator.vibrate) {
-                    navigator.vibrate(5);
-                }
+                // Vibración deshabilitada para evitar advertencias de Chrome
+                // if (navigator.vibrate) {
+                //     navigator.vibrate(5);
+                // }
             });
             
             if (element.classList.contains('btn-login') || element.classList.contains('btn-outline-secondary')) {
                 element.addEventListener('click', function() {
-                    if (navigator.vibrate) {
-                        navigator.vibrate(10);
-                    }
+                    // Vibración deshabilitada para evitar advertencias de Chrome
+                    // if (navigator.vibrate) {
+                    //     navigator.vibrate(10);
+                    // }
                 });
             }
         });
@@ -101,10 +103,10 @@
                     eyeIcon.classList.add('bi-eye');
                 }
                 
-                // Vibración
-                if (navigator.vibrate) {
-                    navigator.vibrate(10);
-                }
+                // Vibración deshabilitada para evitar advertencias de Chrome
+                // if (navigator.vibrate) {
+                //     navigator.vibrate(10);
+                // }
             });
         }
     }
@@ -129,10 +131,10 @@
                 if (loginText) loginText.textContent = 'Iniciando...';
                 if (loginSpinner) loginSpinner.classList.remove('d-none');
                 
-                // Vibración
-                if (navigator.vibrate) {
-                    navigator.vibrate([10, 50, 10]);
-                }
+                // Vibración deshabilitada para evitar advertencias de Chrome
+                // if (navigator.vibrate) {
+                //     navigator.vibrate([10, 50, 10]);
+                // }
             });
         }
     }
