@@ -143,6 +143,17 @@ def main():
             "Inicializar configuración electoral"
         )
     
+    # PASO 6: Inicialización automática de datos
+    print_header("PASO 6: INICIALIZACIÓN AUTOMÁTICA DE DATOS")
+    init_script = 'scripts/inicializar_datos_automatico.py'
+    if os.path.exists(init_script):
+        run_command(
+            f"{sys.executable} {init_script}",
+            "Cargar datos básicos automáticamente"
+        )
+    else:
+        print("⚠️  Script de inicialización automática no encontrado")
+    
     # RESUMEN
     print_header("INICIALIZACIÓN COMPLETADA")
     print("✅ El sistema está listo para funcionar en Render")
