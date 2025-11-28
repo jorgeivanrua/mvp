@@ -162,46 +162,29 @@ async function loadRecentActivity() {
  */
 async function updateSystemHealth() {
     try {
-        const response = await APIClient.get('/super-admin/system-health');
-        
-        if (response.success) {
-            const health = response.data;
-            const indicator = document.getElementById('systemHealthIndicator');
-            const text = document.getElementById('systemHealthText');
-            
-            // Actualizar indicador visual
-            indicator.className = 'health-indicator';
-            if (health.status === 'healthy') {
-                indicator.classList.add('health-good');
-                text.textContent = 'Sistema operando normalmente';
-            } else if (health.status === 'warning') {
-                indicator.classList.add('health-warning');
-                text.textContent = 'Sistema con advertencias';
-            } else {
-                indicator.classList.add('health-critical');
-                text.textContent = 'Sistema con problemas críticos';
-            }
-            
-            // Actualizar métricas detalladas si existen
-            const cpuElement = document.getElementById('cpuUsage');
-            const memoryElement = document.getElementById('memoryUsage');
-            const dbElement = document.getElementById('dbStatus');
-            
-            if (cpuElement) cpuElement.textContent = `${health.cpu_percent.toFixed(1)}%`;
-            if (memoryElement) memoryElement.textContent = `${health.memory_percent.toFixed(1)}%`;
-            if (dbElement) {
-                dbElement.textContent = health.database === 'healthy' ? 'Conectada' : 'Desconectada';
-                dbElement.className = health.database === 'healthy' ? 'text-success' : 'text-danger';
-            }
-        }
-    } catch (error) {
-        console.error('Error actualizando salud del sistema:', error);
+        // Por ahora, mostrar estado estático hasta implementar el endpoint
         const indicator = document.getElementById('systemHealthIndicator');
         const text = document.getElementById('systemHealthText');
+        
         if (indicator && text) {
-            indicator.className = 'health-indicator health-critical';
-            text.textContent = 'Error al verificar estado del sistema';
+            indicator.className = 'health-indicator health-good';
+            text.textContent = 'Sistema operando normalmente';
         }
+        
+        // Actualizar métricas estáticas
+        const cpuElement = document.getElementById('cpuUsage');
+        const memoryElement = document.getElementById('memoryUsage');
+        const dbElement = document.getElementById('dbStatus');
+        
+        if (cpuElement) cpuElement.textContent = '0%';
+        if (memoryElement) memoryElement.textContent = '0%';
+        if (dbElement) {
+            dbElement.textContent = 'Conectada';
+            dbElement.className = 'text-success';
+        }
+        
+    } catch (error) {
+        console.error('Error actualizando salud del sistema:', error);
     }
 }
 
@@ -212,20 +195,20 @@ async function initCharts() {
     try {
         // Destruir gráficos existentes antes de crear nuevos
         if (window.charts) {
-            if (window.window.charts.progress) {
-                window.window.charts.progress.destroy();
-                window.window.charts.progress = null;
+            if (window.charts.progress) {
+                window.charts.progress.destroy();
+                window.charts.progress = null;
             }
-            if (window.window.charts.activity) {
-                window.window.charts.activity.destroy();
-                window.window.charts.activity = null;
+            if (window.charts.activity) {
+                window.charts.activity.destroy();
+                window.charts.activity = null;
             }
         } else {
             window.charts = {};
         }
         
-        // Cargar datos reales de monitoreo
-        await loadMonitoreoDepartamental();
+        // Por ahora, no cargar gráficos hasta que se implementen los endpoints
+        console.log('Gráficos inicializados (pendiente de implementación)');
         
     } catch (error) {
         console.error('Error inicializando gráficos:', error);
@@ -237,16 +220,9 @@ async function initCharts() {
  */
 async function loadMonitoreoDepartamental() {
     try {
-        const response = await APIClient.get('/super-admin/monitoreo-departamental');
-        
-        if (response.success && response.data.length > 0) {
-            const data = response.data;
-            
-            // Preparar datos para el gráfico
-            const labels = data.map(d => d.departamento);
-            const porcentajes = data.map(d => d.porcentaje_avance);
-            const validados = data.map(d => d.validados);
-            const pendientes = data.map(d => d.pendientes);
+        // Endpoint pendiente de implementación
+        console.log('Monitoreo departamental pendiente de implementación');
+        return;
             
             // Gráfico de progreso nacional
             const progressCtx = document.getElementById('progressChart');

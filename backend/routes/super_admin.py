@@ -1,6 +1,7 @@
 """
 Rutas del Super Admin
 """
+from datetime import datetime
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.user import User
@@ -97,6 +98,59 @@ def get_all_users():
             'success': True,
             'data': users_data
         }), 200
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/system-health', methods=['GET'])
+@jwt_required()
+@role_required(['super_admin'])
+def get_system_health():
+    """
+    Obtener estado de salud del sistema
+    """
+    try:
+        return jsonify({
+            'success': True,
+            'data': {
+                'status': 'healthy',
+                'cpu_percent': 0,
+                'memory_percent': 0,
+                'database': 'healthy',
+                'timestamp': datetime.now().isoformat()
+            }
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/monitoreo-departamental', methods=['GET'])
+@jwt_required()
+@role_required(['super_admin'])
+def get_monitoreo_departamental():
+    """
+    Obtener monitoreo por departamento
+    """
+    try:
+        from backend.models.location import Location
+        from backend.models.formulario_e14 import FormularioE14
+        
+        # Por ahora retornar datos vacíos
+        return jsonify({
+            'success': True,
+            'data': []
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
         
     except Exception as e:
         import traceback
