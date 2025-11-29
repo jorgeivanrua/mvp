@@ -479,7 +479,7 @@
 {% block extra_js %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
+<!-- api-client.js ya está incluido en base.html -->
 <script>
 let mapa;
 let marcadores = [];
@@ -782,7 +782,7 @@ function actualizarMapa(usuarios) {
 // Cargar alertas
 async function cargarAlertas() {
     try {
-        const response = await APIClient.get('/monitoreo/api/alertas');
+        const response = await APIClient.get('/monitoreo/alertas');
         if (response.success) {
             const alertas = response.data;
             const container = document.getElementById('alertas-container');
@@ -830,7 +830,7 @@ async function cargarAlertas() {
 // Cargar actividad reciente
 async function cargarActividadReciente() {
     try {
-        const response = await APIClient.get('/monitoreo/api/actividad-reciente?limite=15&horas=24');
+        const response = await APIClient.get('/monitoreo/actividad-reciente', { limite: 15, horas: 24 });
         if (response.success) {
             const actividades = response.data;
             const container = document.getElementById('actividad-reciente-container');
@@ -901,7 +901,7 @@ function getRelativeTime(date) {
 // Exportar reporte
 async function exportarReporte() {
     try {
-        const response = await APIClient.get('/monitoreo/api/exportar-reporte');
+        const response = await APIClient.get('/monitoreo/exportar-reporte');
         if (response.success) {
             const reporte = response.data;
             
@@ -930,7 +930,7 @@ async function exportarReporte() {
 async function cargarDatos() {
     try {
         // Cargar estadísticas
-        const statsResponse = await APIClient.get('/monitoreo/api/estadisticas');
+        const statsResponse = await APIClient.get('/monitoreo/estadisticas');
         if (statsResponse.success) {
             const stats = statsResponse.data;
             
@@ -946,7 +946,7 @@ async function cargarDatos() {
         }
         
         // Cargar usuarios activos
-        const usuariosResponse = await APIClient.get('/monitoreo/api/usuarios-activos');
+        const usuariosResponse = await APIClient.get('/monitoreo/usuarios-activos');
         if (usuariosResponse.success) {
             todosLosUsuarios = usuariosResponse.data;
             aplicarFiltros();
@@ -996,7 +996,7 @@ let chartTendenciasHora = null;
 // Cargar métricas de rendimiento
 async function cargarMetricasRendimiento() {
     try {
-        const response = await APIClient.get('/monitoreo/api/metricas-rendimiento');
+        const response = await APIClient.get('/monitoreo/metricas-rendimiento');
         if (response.success) {
             const metricas = response.metricas;
             
@@ -1102,7 +1102,7 @@ function actualizarChartFormularios(datos) {
 // Cargar mapa de calor
 async function cargarMapaCalor() {
     try {
-        const response = await APIClient.get('/monitoreo/api/mapa-calor');
+        const response = await APIClient.get('/monitoreo/mapa-calor');
         if (response.success) {
             const tbody = document.getElementById('tabla-mapa-calor');
             tbody.innerHTML = '';
@@ -1139,7 +1139,7 @@ async function cargarMapaCalor() {
 // Cargar tendencias por hora
 async function cargarTendencias() {
     try {
-        const response = await APIClient.get('/monitoreo/api/tendencias');
+        const response = await APIClient.get('/monitoreo/tendencias');
         if (response.success) {
             const ctx = document.getElementById('chart-tendencias-hora');
             if (!ctx) return;
@@ -1203,7 +1203,7 @@ async function cargarTendencias() {
 // Cargar comparativa de departamentos
 async function cargarComparativa() {
     try {
-        const response = await APIClient.get('/monitoreo/api/comparativa-departamentos');
+        const response = await APIClient.get('/monitoreo/comparativa-departamentos');
         if (response.success) {
             // Top 5
             const topDiv = document.getElementById('top-departamentos');
@@ -1267,7 +1267,7 @@ async function cargarComparativa() {
 // Cargar predicciones
 async function cargarPredicciones() {
     try {
-        const response = await APIClient.get('/monitoreo/api/predicciones');
+        const response = await APIClient.get('/monitoreo/predicciones');
         if (response.success) {
             const pred = response.predicciones;
             

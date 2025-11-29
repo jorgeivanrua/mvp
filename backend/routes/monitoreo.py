@@ -7,6 +7,8 @@ from flask import Blueprint, render_template, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.user import User
 from backend.models.location import Location
+from backend.models.formulario_e14 import FormularioE14
+from backend.models.incidentes_delitos import IncidenteElectoral, DelitoElectoral
 from backend.database import db
 from backend.utils.decorators import role_required
 from backend.utils.cache import cache_monitoreo, cache_estadisticas, cache_ubicaciones, invalidate_cache
@@ -16,7 +18,7 @@ from sqlalchemy import func, and_, or_
 monitoreo_bp = Blueprint('monitoreo', __name__, url_prefix='/monitoreo')
 
 
-@monitoreo_bp.route('/api/usuarios-activos', methods=['GET'])
+@monitoreo_bp.route('/usuarios-activos', methods=['GET'])
 @jwt_required()
 @role_required('monitoreo')
 @cache_monitoreo(timeout=20)  # Caché de 20 segundos
@@ -76,7 +78,7 @@ def get_usuarios_activos():
         }), 500
 
 
-@monitoreo_bp.route('/api/estadisticas', methods=['GET'])
+@monitoreo_bp.route('/estadisticas', methods=['GET'])
 @jwt_required()
 @role_required('monitoreo')
 @cache_estadisticas(timeout=30)  # Caché de 30 segundos
@@ -132,9 +134,9 @@ def get_estadisticas():
         ).count()
         
         # Contar incidentes y delitos
-        incidentes_total = Incidente.query.count()
-        incidentes_criticos = Incidente.query.filter_by(severidad='critica').count()
-        incidentes_pendientes = Incidente.query.filter_by(estado='reportado').count()
+        incidentes_total = IncidenteElectoral.query.count()
+        incidentes_criticos = IncidenteElectoral.query.filter_by(severidad='critica').count()
+        incidentes_pendientes = IncidenteElectoral.query.filter_by(estado='reportado').count()
         
         delitos_total = DelitoElectoral.query.count()
         delitos_graves = DelitoElectoral.query.filter(
@@ -195,7 +197,7 @@ def get_estadisticas():
 
 
 
-@monitoreo_bp.route('/api/alertas', methods=['GET'])
+@monitoreo_bp.route('/alertas', methods=['GET'])
 @jwt_required()
 @role_required('monitoreo')
 def get_alertas():
@@ -205,8 +207,8 @@ def get_alertas():
     try:
         from datetime import datetime, timedelta
         from backend.models.formulario_e14 import FormularioE14
-        from backend.models.incidente import Incidente
-        from backend.models.delito_electoral import DelitoElectoral
+        
+        
         
         alertas = []
         
@@ -245,9 +247,9 @@ def get_alertas():
             })
         
         # Incidentes críticos pendientes
-        incidentes_criticos = Incidente.query.filter(
-            Incidente.severidad == 'critica',
-            Incidente.estado.in_(['reportado', 'en_revision'])
+        incidentes_criticos = IncidenteElectoral.query.filter(
+            IncidenteElectoral.severidad == 'critica',
+            IncidenteElectoral.estado.in_(['reportado', 'en_revision'])
         ).count()
         
         if incidentes_criticos > 0:
@@ -324,7 +326,7 @@ def get_alertas():
         }), 500
 
 
-@monitoreo_bp.route('/api/actividad-reciente', methods=['GET'])
+@monitoreo_bp.route('/actividad-reciente', methods=['GET'])
 @jwt_required()
 @role_required('monitoreo')
 def get_actividad_reciente():
@@ -334,8 +336,8 @@ def get_actividad_reciente():
     try:
         from datetime import datetime, timedelta
         from backend.models.formulario_e14 import FormularioE14
-        from backend.models.incidente import Incidente
-        from backend.models.delito_electoral import DelitoElectoral
+        
+        
         
         limite = int(request.args.get('limite', 20))
         horas = int(request.args.get('horas', 24))
@@ -362,9 +364,9 @@ def get_actividad_reciente():
             })
         
         # Incidentes recientes
-        incidentes = Incidente.query.filter(
-            Incidente.fecha_reporte >= tiempo_limite
-        ).order_by(Incidente.fecha_reporte.desc()).limit(limite).all()
+        incidentes = IncidenteElectoral.query.filter(
+            IncidenteElectoral.fecha_reporte >= tiempo_limite
+        ).order_by(IncidenteElectoral.fecha_reporte.desc()).limit(limite).all()
         
         for inc in incidentes:
             usuario = User.query.get(inc.reportado_por_id)
@@ -414,7 +416,7 @@ def get_actividad_reciente():
         }), 500
 
 
-@monitoreo_bp.route('/api/estadisticas-departamento/<departamento_codigo>', methods=['GET'])
+@monitoreo_bp.route('/estadisticas-departamento/<departamento_codigo>', methods=['GET'])
 @jwt_required()
 @role_required('monitoreo')
 def get_estadisticas_departamento(departamento_codigo):
@@ -471,7 +473,7 @@ def get_estadisticas_departamento(departamento_codigo):
         }), 500
 
 
-@monitoreo_bp.route('/api/exportar-reporte', methods=['GET'])
+@monitoreo_bp.route('/exportar-reporte', methods=['GET'])
 @jwt_required()
 @role_required('monitoreo')
 def exportar_reporte():
@@ -481,8 +483,8 @@ def exportar_reporte():
     try:
         from datetime import datetime
         from backend.models.formulario_e14 import FormularioE14
-        from backend.models.incidente import Incidente
-        from backend.models.delito_electoral import DelitoElectoral
+        
+        
         
         # Recopilar todas las estadísticas
         reporte = {
@@ -516,11 +518,11 @@ def exportar_reporte():
                 'rechazados': FormularioE14.query.filter_by(estado='rechazado').count()
             },
             'incidentes': {
-                'total': Incidente.query.count(),
-                'criticos': Incidente.query.filter_by(severidad='critica').count(),
-                'altos': Incidente.query.filter_by(severidad='alta').count(),
-                'medios': Incidente.query.filter_by(severidad='media').count(),
-                'bajos': Incidente.query.filter_by(severidad='baja').count()
+                'total': IncidenteElectoral.query.count(),
+                'criticos': IncidenteElectoral.query.filter_by(severidad='critica').count(),
+                'altos': IncidenteElectoral.query.filter_by(severidad='alta').count(),
+                'medios': IncidenteElectoral.query.filter_by(severidad='media').count(),
+                'bajos': IncidenteElectoral.query.filter_by(severidad='baja').count()
             },
             'delitos': {
                 'total': DelitoElectoral.query.count(),
@@ -546,7 +548,7 @@ def exportar_reporte():
 # NUEVOS ENDPOINTS - FUNCIONALIDADES AVANZADAS
 # ============================================================================
 
-@monitoreo_bp.route('/api/metricas-rendimiento', methods=['GET'])
+@monitoreo_bp.route('/metricas-rendimiento', methods=['GET'])
 @jwt_required()
 @role_required('monitoreo')
 def get_metricas_rendimiento():
@@ -677,7 +679,7 @@ def get_metricas_rendimiento():
         }), 500
 
 
-@monitoreo_bp.route('/api/mapa-calor', methods=['GET'])
+@monitoreo_bp.route('/mapa-calor', methods=['GET'])
 @jwt_required()
 @role_required('monitoreo')
 def get_mapa_calor():
@@ -753,7 +755,7 @@ def get_mapa_calor():
         }), 500
 
 
-@monitoreo_bp.route('/api/tendencias', methods=['GET'])
+@monitoreo_bp.route('/tendencias', methods=['GET'])
 @jwt_required()
 @role_required('monitoreo')
 def get_tendencias():
@@ -830,7 +832,7 @@ def get_tendencias():
         }), 500
 
 
-@monitoreo_bp.route('/api/comparativa-departamentos', methods=['GET'])
+@monitoreo_bp.route('/comparativa-departamentos', methods=['GET'])
 @jwt_required()
 @role_required('monitoreo')
 def get_comparativa_departamentos():
@@ -942,7 +944,7 @@ def get_comparativa_departamentos():
         }), 500
 
 
-@monitoreo_bp.route('/api/predicciones', methods=['GET'])
+@monitoreo_bp.route('/predicciones', methods=['GET'])
 @jwt_required()
 @role_required('monitoreo')
 def get_predicciones():
