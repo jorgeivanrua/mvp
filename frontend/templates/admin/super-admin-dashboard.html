@@ -1186,20 +1186,7 @@ th.sortable:hover .sort-icon {
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-<!-- Correcciones de dashboards (PRIMERO) -->
-<script src="{{ url_for('static', filename='js/dashboard-fixes.js') }}"></script>
-
-<!-- Cargar optimizaciones -->
-<script src="{{ url_for('static', filename='js/optimizations/cache-manager.js') }}"></script>
-<script src="{{ url_for('static', filename='js/optimizations/pagination.js') }}"></script>
-<script src="{{ url_for('static', filename='js/optimizations/lazy-loading.js') }}"></script>
-<script src="{{ url_for('static', filename='js/optimizations/advanced-search.js') }}"></script>
-<script src="{{ url_for('static', filename='js/optimizations/table-sorting.js') }}"></script>
-
-<!-- Dashboard optimizado -->
-<script src="{{ url_for('static', filename='js/super-admin-dashboard-enhanced.js') }}"></script>
-
-<!-- Scripts originales -->
+<!-- Script principal del dashboard -->
 <script src="{{ url_for('static', filename='js/super-admin-dashboard.js') }}"></script>
 <script src="{{ url_for('static', filename='js/personalizacion-sistema.js') }}"></script>
 <script>
