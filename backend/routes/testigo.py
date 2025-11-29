@@ -1,5 +1,6 @@
 """
 Rutas para testigos electorales
+OPTIMIZADO para múltiples testigos simultáneos
 """
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -7,6 +8,8 @@ from backend.models.user import User
 from backend.models.location import Location
 from backend.models.configuracion_electoral import TipoEleccion, Partido
 from backend.database import db
+from backend.utils.cache import cache_result, invalidate_cache
+from datetime import datetime
 
 testigo_bp = Blueprint('testigo', __name__)
 

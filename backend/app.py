@@ -1,9 +1,11 @@
 """
 Aplicación principal Flask
+OPTIMIZADO para múltiples usuarios simultáneos
 """
 from flask import Flask
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
+from flask_compress import Compress
 from whitenoise import WhiteNoise
 
 from backend.config import config
@@ -12,6 +14,7 @@ from backend.utils.jwt_callbacks import configure_jwt_callbacks
 
 # Inicializar extensiones
 jwt = JWTManager()
+compress = Compress()
 
 
 def create_app(config_name='default'):
@@ -36,6 +39,7 @@ def create_app(config_name='default'):
     jwt.init_app(app)
     configure_jwt_callbacks(jwt)
     CORS(app)
+    compress.init_app(app)  # Compresión GZIP para respuestas
     
     # Registrar blueprints
     register_blueprints(app)

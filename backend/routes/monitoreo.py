@@ -1,13 +1,17 @@
 """
 Rutas para el rol de Monitoreo
 Dashboard de monitoreo en tiempo real con geolocalización
+OPTIMIZADO para múltiples usuarios simultáneos
 """
-from flask import Blueprint, render_template, jsonify
+from flask import Blueprint, render_template, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.user import User
 from backend.models.location import Location
 from backend.database import db
 from backend.utils.decorators import role_required
+from backend.utils.cache import cache_monitoreo, cache_estadisticas, cache_ubicaciones, invalidate_cache
+from datetime import datetime, timedelta
+from sqlalchemy import func, and_, or_
 
 monitoreo_bp = Blueprint('monitoreo', __name__, url_prefix='/monitoreo')
 
@@ -15,17 +19,29 @@ monitoreo_bp = Blueprint('monitoreo', __name__, url_prefix='/monitoreo')
 @monitoreo_bp.route('/api/usuarios-activos', methods=['GET'])
 @jwt_required()
 @role_required('monitoreo')
+@cache_monitoreo(timeout=20)  # Caché de 20 segundos
 def get_usuarios_activos():
     """
     Obtener todos los usuarios activos con su última geolocalización
+    OPTIMIZADO: Con caché y consulta eficiente
     """
     try:
-        # Obtener todos los usuarios activos con geolocalización
-        usuarios = User.query.filter(
+        # Paginación opcional
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 1000, type=int)  # Límite alto por defecto
+        
+        # Consulta optimizada con índices
+        query = User.query.filter(
             User.activo == True,
             User.ultima_latitud.isnot(None),
             User.ultima_longitud.isnot(None)
-        ).all()
+        ).order_by(User.ultima_geolocalizacion_at.desc())
+        
+        # Aplicar paginación si se solicita
+        if per_page < 1000:
+            usuarios = query.paginate(page=page, per_page=per_page, error_out=False).items
+        else:
+            usuarios = query.all()
         
         usuarios_data = []
         for usuario in usuarios:
@@ -63,41 +79,48 @@ def get_usuarios_activos():
 @monitoreo_bp.route('/api/estadisticas', methods=['GET'])
 @jwt_required()
 @role_required('monitoreo')
+@cache_estadisticas(timeout=30)  # Caché de 30 segundos
 def get_estadisticas():
     """
     Obtener estadísticas generales del sistema
+    OPTIMIZADO: Con caché y consultas agregadas eficientes
     """
     try:
-        from datetime import datetime, timedelta
         from backend.models.formulario_e14 import FormularioE14
-        from backend.models.incidente import Incidente
-        from backend.models.delito_electoral import DelitoElectoral
         
-        # Contar usuarios por rol
-        testigos_total = User.query.filter_by(rol='testigo_electoral', activo=True).count()
-        testigos_con_geo = User.query.filter(
+        # Consulta optimizada con agregación en una sola query
+        testigos_stats = db.session.query(
+            func.count(User.id).label('total'),
+            func.sum(func.coalesce(User.ultima_latitud.isnot(None), 0)).label('con_geo'),
+            func.sum(func.coalesce(User.presencia_verificada, 0)).label('con_presencia')
+        ).filter(
             User.rol == 'testigo_electoral',
-            User.activo == True,
-            User.ultima_latitud.isnot(None)
-        ).count()
-        testigos_presencia = User.query.filter(
-            User.rol == 'testigo_electoral',
-            User.activo == True,
-            User.presencia_verificada == True
-        ).count()
+            User.activo == True
+        ).first()
         
-        coordinadores_total = User.query.filter(
+        coordinadores_stats = db.session.query(
+            func.count(User.id).label('total'),
+            func.sum(func.coalesce(User.ultima_latitud.isnot(None), 0)).label('con_geo')
+        ).filter(
             User.rol.in_(['coordinador_departamental', 'coordinador_municipal', 'coordinador_puesto']),
             User.activo == True
-        ).count()
-        coordinadores_con_geo = User.query.filter(
-            User.rol.in_(['coordinador_departamental', 'coordinador_municipal', 'coordinador_puesto']),
-            User.activo == True,
-            User.ultima_latitud.isnot(None)
-        ).count()
+        ).first()
         
-        # Contar formularios
-        formularios_total = FormularioE14.query.count()
+        # Contar formularios con agregación
+        formularios_stats = db.session.query(
+            func.count(FormularioE14.id).label('total'),
+            func.sum(func.case((FormularioE14.estado == 'validado', 1), else_=0)).label('validados'),
+            func.sum(func.case((FormularioE14.estado == 'pendiente', 1), else_=0)).label('pendientes')
+        ).first()
+        
+        testigos_total = testigos_stats.total or 0
+        testigos_con_geo = testigos_stats.con_geo or 0
+        testigos_presencia = testigos_stats.con_presencia or 0
+        
+        coordinadores_total = coordinadores_stats.total or 0
+        coordinadores_con_geo = coordinadores_stats.con_geo or 0
+        
+        formularios_total = formularios_stats.total or 0
         formularios_validados = FormularioE14.query.filter_by(estado='validado').count()
         formularios_pendientes = FormularioE14.query.filter_by(estado='pendiente').count()
         formularios_rechazados = FormularioE14.query.filter_by(estado='rechazado').count()

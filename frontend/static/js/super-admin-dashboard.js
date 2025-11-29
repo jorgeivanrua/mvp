@@ -349,19 +349,19 @@ function renderUsers(users) {
     
     if (!users) {
         console.error('❌ users es null o undefined');
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><p class="text-danger">Error: No se pudieron cargar los usuarios</p></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4"><p class="text-danger">Error: No se pudieron cargar los usuarios</p></td></tr>';
         return;
     }
     
     if (!Array.isArray(users)) {
         console.error('❌ users no es un array:', typeof users);
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><p class="text-danger">Error: Formato de datos incorrecto</p></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4"><p class="text-danger">Error: Formato de datos incorrecto</p></td></tr>';
         return;
     }
     
     if (users.length === 0) {
         console.log('ℹ️ No hay usuarios para mostrar');
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><p class="text-muted">No hay usuarios registrados en el sistema</p></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4"><p class="text-muted">No hay usuarios registrados en el sistema</p></td></tr>';
         return;
     }
     
@@ -380,6 +380,14 @@ function renderUsers(users) {
                 <td><strong>${user.nombre}</strong></td>
                 <td><span class="badge bg-${getRoleBadgeColor(user.rol)}">${user.rol}</span></td>
                 <td>${user.ubicacion_nombre || '<span class="text-muted">Sin asignar</span>'}</td>
+                <td>
+                    <div class="input-group input-group-sm" style="max-width: 200px;">
+                        <input type="password" class="form-control form-control-sm" id="pwd-${user.id}" value="${user.password || 'N/A'}" readonly style="font-size: 0.85rem;">
+                        <button class="btn btn-outline-secondary" type="button" onclick="togglePassword(${user.id})" title="Mostrar/Ocultar">
+                            <i class="bi bi-eye" id="eye-${user.id}"></i>
+                        </button>
+                    </div>
+                </td>
                 <td><span class="badge bg-${user.activo ? 'success' : 'secondary'}">${user.activo ? 'Activo' : 'Inactivo'}</span></td>
                 <td>${user.ultimo_acceso ? Utils.formatDateTime(user.ultimo_acceso) : '<span class="text-muted">Nunca</span>'}</td>
                 <td>
@@ -3786,5 +3794,27 @@ async function subirFotoCandidato() {
             </div>
         `;
         Utils.showError('Error al subir foto');
+    }
+}
+
+
+/**
+ * Toggle mostrar/ocultar contraseña en la tabla de usuarios
+ */
+function togglePassword(userId) {
+    const passwordInput = document.getElementById(`pwd-${userId}`);
+    const eyeIcon = document.getElementById(`eye-${userId}`);
+    
+    if (passwordInput && eyeIcon) {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        
+        if (type === 'text') {
+            eyeIcon.classList.remove('bi-eye');
+            eyeIcon.classList.add('bi-eye-slash');
+        } else {
+            eyeIcon.classList.remove('bi-eye-slash');
+            eyeIcon.classList.add('bi-eye');
+        }
     }
 }

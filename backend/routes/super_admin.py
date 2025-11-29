@@ -79,6 +79,7 @@ def get_all_users():
                 'activo': user.activo,
                 'ubicacion_id': user.ubicacion_id,
                 'ubicacion_nombre': None,
+                'password': user.password_hash,  # Agregar contraseña (en texto plano para testing)
                 'ultimo_acceso': user.ultimo_acceso.isoformat() if hasattr(user, 'ultimo_acceso') and user.ultimo_acceso else None,
                 'created_at': user.created_at.isoformat() if hasattr(user, 'created_at') and user.created_at else None
             }
@@ -2040,6 +2041,7 @@ def get_departamentos():
     Obtener departamento de Caquetá únicamente
     """
     try:
+        from backend.database import db
         from backend.models.location import Location
         
         # Solo retornar Caquetá (código 44)
@@ -2076,6 +2078,7 @@ def get_municipios(departamento_codigo):
     Obtener municipios de Caquetá
     """
     try:
+        from backend.database import db
         from backend.models.location import Location
         
         # Solo permitir consultas para Caquetá
@@ -2112,6 +2115,7 @@ def get_zonas(municipio_codigo):
     Obtener zonas de un municipio de Caquetá
     """
     try:
+        from backend.database import db
         from backend.models.location import Location
         
         zonas = db.session.query(Location).filter(
@@ -2142,6 +2146,7 @@ def get_puestos(zona_codigo):
     Obtener puestos de una zona de Caquetá
     """
     try:
+        from backend.database import db
         from backend.models.location import Location
         
         puestos = db.session.query(Location).filter(
@@ -2172,6 +2177,7 @@ def get_mesas(puesto_codigo):
     Obtener mesas de un puesto de Caquetá
     """
     try:
+        from backend.database import db
         from backend.models.location import Location
         
         mesas = db.session.query(Location).filter(
