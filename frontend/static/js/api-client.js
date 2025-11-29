@@ -142,15 +142,15 @@ class APIClient {
     
     // Métodos de configuración electoral
     static async getTiposEleccion() {
-        return this.get('/api/testigo/tipos-eleccion');
+        return this.get('/testigo/tipos-eleccion');
     }
     
     static async getPartidos() {
-        return this.get('/api/testigo/partidos');
+        return this.get('/testigo/partidos');
     }
     
     static async getCandidatos(params = {}) {
-        return this.get('/api/testigo/candidatos', params);
+        return this.get('/testigo/candidatos', params);
     }
     
     static async getCoaliciones() {
