@@ -140,7 +140,7 @@ class APIClient {
         return this.get(`/locations/mesas/${puestoId}`);
     }
     
-    // Métodos de configuración electoral
+    // Métodos de configuración electoral (para testigos)
     static async getTiposEleccion() {
         return this.get('/testigo/tipos-eleccion');
     }
@@ -155,6 +155,27 @@ class APIClient {
     
     static async getCoaliciones() {
         return this.get('/configuracion/coaliciones');
+    }
+    
+    // Métodos de configuración electoral (para super admin)
+    static async getSuperAdminTiposEleccion() {
+        return this.get('/super-admin/tipos-eleccion');
+    }
+    
+    static async getSuperAdminPartidos() {
+        return this.get('/super-admin/partidos');
+    }
+    
+    static async getSuperAdminCandidatos(params = {}) {
+        return this.get('/super-admin/candidatos', params);
+    }
+    
+    static async getSuperAdminStats() {
+        return this.get('/super-admin/stats');
+    }
+    
+    static async getSuperAdminUsers(params = {}) {
+        return this.get('/super-admin/users', params);
     }
     
     static async createTipoEleccion(data) {

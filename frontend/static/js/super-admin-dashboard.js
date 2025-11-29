@@ -979,14 +979,20 @@ async function toggleUserStatus(userId, newStatus) {
  */
 async function loadPartidos() {
     try {
-        const response = await APIClient.getPartidos();
+        console.log('[Super Admin] Cargando partidos...');
+        const response = await APIClient.getSuperAdminPartidos();
+        console.log('[Super Admin] Respuesta partidos:', response);
         
         if (response.success) {
             allPartidos = response.data;
+            console.log('[Super Admin] Partidos cargados:', allPartidos.length);
             renderPartidos();
+        } else {
+            console.error('[Super Admin] Error en respuesta:', response);
         }
     } catch (error) {
-        console.error('Error cargando partidos:', error);
+        console.error('[Super Admin] Error cargando partidos:', error);
+        Utils.showError('Error cargando partidos: ' + error.message);
     }
 }
 
@@ -1084,14 +1090,20 @@ async function cargarLogosPartidos() {
  */
 async function loadTiposEleccion() {
     try {
-        const response = await APIClient.getTiposEleccion();
+        console.log('[Super Admin] Cargando tipos de elección...');
+        const response = await APIClient.getSuperAdminTiposEleccion();
+        console.log('[Super Admin] Respuesta tipos de elección:', response);
         
         if (response.success) {
             allTiposEleccion = response.data;
+            console.log('[Super Admin] Tipos de elección cargados:', allTiposEleccion.length);
             renderTiposEleccion();
+        } else {
+            console.error('[Super Admin] Error en respuesta:', response);
         }
     } catch (error) {
-        console.error('Error cargando tipos de elección:', error);
+        console.error('[Super Admin] Error cargando tipos de elección:', error);
+        Utils.showError('Error cargando tipos de elección: ' + error.message);
     }
 }
 
@@ -1200,14 +1212,20 @@ function verDetallesTipo(tipoId) {
  */
 async function loadCandidatos() {
     try {
-        const response = await APIClient.getCandidatos();
+        console.log('[Super Admin] Cargando candidatos...');
+        const response = await APIClient.getSuperAdminCandidatos();
+        console.log('[Super Admin] Respuesta candidatos:', response);
         
         if (response.success) {
             allCandidatos = response.data;
+            console.log('[Super Admin] Candidatos cargados:', allCandidatos.length);
             renderCandidatos();
+        } else {
+            console.error('[Super Admin] Error en respuesta:', response);
         }
     } catch (error) {
-        console.error('Error cargando candidatos:', error);
+        console.error('[Super Admin] Error cargando candidatos:', error);
+        Utils.showError('Error cargando candidatos: ' + error.message);
     }
 }
 
