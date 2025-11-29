@@ -178,6 +178,15 @@ class APIClient {
         return this.get('/super-admin/users', params);
     }
     
+    // Métodos de ubicaciones (para super admin)
+    static async getSuperAdminMesa(mesaId) {
+        return this.get(`/super-admin/locations/mesa/${mesaId}`);
+    }
+    
+    static async updateSuperAdminMesa(mesaId, data) {
+        return this.put(`/super-admin/locations/mesa/${mesaId}`, data);
+    }
+    
     static async createTipoEleccion(data) {
         return this.post('/configuracion/tipos-eleccion', data);
     }

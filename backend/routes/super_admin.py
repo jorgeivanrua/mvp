@@ -2275,3 +2275,103 @@ def get_candidatos():
             'success': False,
             'error': str(e)
         }), 500
+
+
+# ============================================================================
+# ENDPOINT PARA ACTUALIZAR DATOS EDITABLES DE UBICACIONES
+# ============================================================================
+
+@super_admin_bp.route('/locations/mesa/<int:mesa_id>', methods=['PUT'])
+@jwt_required()
+@role_required(['super_admin'])
+def update_mesa_votantes(mesa_id):
+    """
+    Actualizar solo los campos editables de una mesa:
+    - total_votantes_registrados
+    - mujeres
+    - hombres
+    
+    Los datos de DIVIPOLA (códigos, nombres) son fijos y no se pueden editar
+    """
+    try:
+        from backend.database import db
+        from backend.models.location import Location
+        
+        mesa = Location.query.get(mesa_id)
+        
+        if not mesa:
+            return jsonify({
+                'success': False,
+                'error': 'Mesa no encontrada'
+            }), 404
+        
+        if mesa.tipo != 'mesa':
+            return jsonify({
+                'success': False,
+                'error': 'Solo se pueden editar mesas'
+            }), 400
+        
+        data = request.get_json()
+        
+        # Solo permitir actualizar campos específicos
+        campos_editables = ['total_votantes_registrados', 'mujeres', 'hombres']
+        
+        for campo in campos_editables:
+            if campo in data:
+                valor = data[campo]
+                if valor is not None and valor >= 0:
+                    setattr(mesa, campo, valor)
+        
+        # Validar que la suma de hombres y mujeres no exceda el total
+        if mesa.hombres + mesa.mujeres > mesa.total_votantes_registrados:
+            return jsonify({
+                'success': False,
+                'error': 'La suma de hombres y mujeres no puede exceder el total de votantes'
+            }), 400
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Mesa actualizada correctamente',
+            'data': mesa.to_dict()
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error actualizando mesa: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/locations/mesa/<int:mesa_id>', methods=['GET'])
+@jwt_required()
+@role_required(['super_admin'])
+def get_mesa_detalle(mesa_id):
+    """
+    Obtener detalles de una mesa específica
+    """
+    try:
+        from backend.models.location import Location
+        
+        mesa = Location.query.get(mesa_id)
+        
+        if not mesa:
+            return jsonify({
+                'success': False,
+                'error': 'Mesa no encontrada'
+            }), 404
+        
+        return jsonify({
+            'success': True,
+            'data': mesa.to_dict()
+        }), 200
+        
+    except Exception as e:
+        print(f"Error obteniendo mesa: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
