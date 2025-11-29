@@ -2,7 +2,7 @@ CONTRASEÑAS ACTUALES (SIN BCRYPT - TEXTO PLANO)
 
 Super Admin:
 Usuario: Super Admin
-Contraseña: SuperAdmin123!
+Contraseña: bd268
 
 Admin Departamental:
 Usuario: Admin Departamental Caquetá
