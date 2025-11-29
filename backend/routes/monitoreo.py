@@ -12,14 +12,6 @@ from backend.utils.decorators import role_required
 monitoreo_bp = Blueprint('monitoreo', __name__, url_prefix='/monitoreo')
 
 
-@monitoreo_bp.route('/dashboard')
-@jwt_required()
-@role_required('monitoreo')
-def dashboard():
-    """Dashboard principal de monitoreo"""
-    return render_template('monitoreo/dashboard.html')
-
-
 @monitoreo_bp.route('/api/usuarios-activos', methods=['GET'])
 @jwt_required()
 @role_required('monitoreo')
