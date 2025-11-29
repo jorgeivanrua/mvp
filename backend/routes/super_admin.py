@@ -2192,3 +2192,80 @@ def get_mesas(puesto_codigo):
             'success': False,
             'error': str(e)
         }), 500
+
+
+# ============================================================================
+# ENDPOINTS PARA OBTENER DATOS (GET)
+# ============================================================================
+
+@super_admin_bp.route('/partidos', methods=['GET'])
+@jwt_required()
+@role_required(['super_admin'])
+def get_partidos():
+    """
+    Obtener todos los partidos políticos
+    """
+    try:
+        from backend.models.configuracion_electoral import Partido
+        
+        partidos = Partido.query.order_by(Partido.orden, Partido.nombre).all()
+        
+        return jsonify({
+            'success': True,
+            'data': [{
+                'id': p.id,
+                'codigo': p.codigo,
+                'nombre': p.nombre,
+                'nombre_corto': p.nombre_corto,
+                'color': p.color,
+                'logo_url': p.logo_url,
+                'activo': p.activo,
+                'orden': p.orden
+            } for p in partidos]
+        }), 200
+        
+    except Exception as e:
+        print(f"Error en get_partidos: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/candidatos', methods=['GET'])
+@jwt_required()
+@role_required(['super_admin'])
+def get_candidatos():
+    """
+    Obtener todos los candidatos
+    """
+    try:
+        from backend.models.configuracion_electoral import Candidato, Partido, TipoEleccion
+        
+        candidatos = Candidato.query.order_by(Candidato.nombre_completo).all()
+        
+        return jsonify({
+            'success': True,
+            'data': [{
+                'id': c.id,
+                'codigo': c.codigo,
+                'nombre_completo': c.nombre_completo,
+                'numero_lista': c.numero_lista,
+                'partido_id': c.partido_id,
+                'partido_nombre': c.partido.nombre if c.partido else None,
+                'tipo_eleccion_id': c.tipo_eleccion_id,
+                'tipo_eleccion_nombre': c.tipo_eleccion.nombre if c.tipo_eleccion else None,
+                'foto_url': c.foto_url,
+                'es_independiente': c.es_independiente,
+                'es_cabeza_lista': c.es_cabeza_lista,
+                'activo': c.activo,
+                'orden': c.orden
+            } for c in candidatos]
+        }), 200
+        
+    except Exception as e:
+        print(f"Error en get_candidatos: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
