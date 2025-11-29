@@ -51,6 +51,32 @@ Documentación completa del sistema de inicialización automática de datos.
 
 ---
 
+## 🔐 Configuración del Super Admin
+
+### 📄 Documento: `CONFIGURACION_SUPER_ADMIN.md`
+
+Guía completa de configuración y gestión desde el panel de Super Admin.
+
+**Acceso rápido**: [docs/CONFIGURACION_SUPER_ADMIN.md](./CONFIGURACION_SUPER_ADMIN.md)
+
+**Contenido**:
+- Gestión de partidos políticos
+- Gestión de candidatos
+- Gestión de tipos de elección
+- Gestión de usuarios
+- Gestión de ubicaciones
+- Casos de uso comunes
+- Mejores prácticas
+
+**Áreas de configuración**:
+1. 🎨 Partidos Políticos (activar/desactivar)
+2. 👤 Candidatos (gestión completa)
+3. 🗳️ Tipos de Elección (configuración)
+4. 👥 Usuarios (roles y permisos)
+5. 📍 Ubicaciones (departamentos y municipios)
+
+---
+
 ## 🚀 Optimizaciones del Dashboard
 
 ### 📂 Carpeta: `docs/optimizaciones/`
