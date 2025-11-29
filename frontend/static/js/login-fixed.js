@@ -164,8 +164,10 @@ function clearLocationSelectors() {
 
 async function handleDepartamentoChange(departamentoId) {
     console.log('[LOGIN] Departamento seleccionado:', departamentoId);
+    console.log('[LOGIN] Tipo de departamentoId:', typeof departamentoId);
     
-    if (!departamentoId) {
+    if (!departamentoId || departamentoId === '') {
+        console.log('[LOGIN] Departamento vacío, deshabilitando selects');
         Utils.enableSelect('municipio', false);
         Utils.enableSelect('zona', false);
         Utils.enableSelect('puesto', false);
@@ -173,21 +175,31 @@ async function handleDepartamentoChange(departamentoId) {
     }
     
     try {
+        console.log('[LOGIN] Iniciando carga de municipios...');
         Utils.setLoading('municipio', true);
+        
+        console.log('[LOGIN] Llamando a APIClient.getMunicipios con:', departamentoId);
         const response = await APIClient.getMunicipios(departamentoId);
-        console.log('[LOGIN] Municipios recibidos:', response);
+        console.log('[LOGIN] Respuesta completa:', JSON.stringify(response, null, 2));
         
         if (response && response.success && response.data) {
+            console.log('[LOGIN] Poblando select con', response.data.length, 'municipios');
             Utils.populateSelect('municipio', response.data, 'municipio_codigo', 'municipio_nombre', 'Seleccione municipio');
             Utils.enableSelect('municipio', true);
             Utils.enableSelect('zona', false);
             Utils.enableSelect('puesto', false);
+            console.log('[LOGIN] Select de municipios poblado exitosamente');
+        } else {
+            console.error('[LOGIN] Respuesta inválida o sin datos:', response);
+            Utils.showError('No se pudieron cargar los municipios');
         }
     } catch (error) {
         console.error('[LOGIN] Error cargando municipios:', error);
+        console.error('[LOGIN] Stack trace:', error.stack);
         Utils.showError('Error cargando municipios: ' + error.message);
     } finally {
         Utils.setLoading('municipio', false);
+        console.log('[LOGIN] Carga de municipios finalizada');
     }
 }
 
