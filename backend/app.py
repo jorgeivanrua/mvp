@@ -56,6 +56,14 @@ def create_app(config_name='default'):
             max_age=31536000 if not app.debug else 0
         )
     
+    # Inicializar usuarios básicos automáticamente
+    with app.app_context():
+        try:
+            from backend.utils.init_usuarios_basicos import init_usuarios_basicos
+            init_usuarios_basicos()
+        except Exception as e:
+            app.logger.warning(f'No se pudieron inicializar usuarios básicos: {str(e)}')
+    
     return app
 
 
