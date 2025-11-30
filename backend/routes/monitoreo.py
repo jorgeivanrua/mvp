@@ -1025,3 +1025,72 @@ def get_predicciones():
             'success': False,
             'error': str(e)
         }), 500
+
+
+@monitoreo_bp.route('/metricas-rendimiento', methods=['GET'])
+@jwt_required()
+@role_required('monitoreo')
+def get_metricas_rendimiento():
+    """
+    Obtener métricas de rendimiento del sistema
+    """
+    try:
+        from datetime import datetime, timedelta
+        from backend.models.formulario_e14 import FormularioE14
+        
+        ahora = datetime.utcnow()
+        hace_1h = ahora - timedelta(hours=1)
+        hace_24h = ahora - timedelta(hours=24)
+        
+        # Formularios por hora (últimas 24 horas)
+        formularios_por_hora = []
+        for i in range(24):
+            hora_inicio = ahora - timedelta(hours=i+1)
+            hora_fin = ahora - timedelta(hours=i)
+            
+            count = FormularioE14.query.filter(
+                FormularioE14.created_at >= hora_inicio,
+                FormularioE14.created_at < hora_fin
+            ).count()
+            
+            formularios_por_hora.append({
+                'hora': hora_inicio.strftime('%H:00'),
+                'cantidad': count
+            })
+        
+        # Tiempo promedio de validación
+        formularios_validados = FormularioE14.query.filter(
+            FormularioE14.estado == 'validado',
+            FormularioE14.updated_at.isnot(None),
+            FormularioE14.created_at >= hace_24h
+        ).all()
+        
+        tiempos_validacion = []
+        for form in formularios_validados:
+            if form.updated_at and form.created_at:
+                tiempo = (form.updated_at - form.created_at).total_seconds() / 60  # minutos
+                tiempos_validacion.append(tiempo)
+        
+        tiempo_promedio_validacion = sum(tiempos_validacion) / len(tiempos_validacion) if tiempos_validacion else 0
+        
+        # Usuarios activos por hora
+        usuarios_activos_hora = User.query.filter(
+            User.activo == True,
+            User.ultima_geolocalizacion_at >= hace_1h
+        ).count()
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'formularios_por_hora': formularios_por_hora[::-1],  # Invertir para orden cronológico
+                'tiempo_promedio_validacion_minutos': round(tiempo_promedio_validacion, 2),
+                'usuarios_activos_ultima_hora': usuarios_activos_hora,
+                'tasa_validacion_hora': len(tiempos_validacion)
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

@@ -480,6 +480,10 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <!-- api-client.js ya está incluido en base.html -->
+<!-- Cargador de datos con manejo de errores -->
+<script src="{{ url_for('static', filename='js/dashboard-data-loader.js') }}"></script>
+<!-- Script de debugging -->
+<script src="{{ url_for('static', filename='js/monitoreo-dashboard-debug.js') }}"></script>
 <script>
 let mapa;
 let marcadores = [];

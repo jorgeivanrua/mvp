@@ -1186,9 +1186,13 @@ th.sortable:hover .sort-icon {
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
+<!-- Cargador de datos con manejo de errores -->
+<script src="{{ url_for('static', filename='js/dashboard-data-loader.js') }}"></script>
 <!-- Script principal del dashboard -->
 <script src="{{ url_for('static', filename='js/super-admin-dashboard.js') }}"></script>
 <script src="{{ url_for('static', filename='js/personalizacion-sistema.js') }}"></script>
+<!-- Script de debugging -->
+<script src="{{ url_for('static', filename='js/super-admin-dashboard-debug.js') }}"></script>
 <script>
 // Inicializar dashboard
 document.addEventListener('DOMContentLoaded', function() {
