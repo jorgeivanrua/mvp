@@ -137,11 +137,11 @@ Body (raw JSON):
 | Usuario | Contraseña | Rol |
 |---------|-----------|-----|
 | Super Admin | `admin123` | super_admin |
-| Monitoreo | `monitoreo123` | monitoreo |
-| Coordinador Departamental | `coord_dept123` | coordinador_departamental |
-| Coordinador Municipal | `coord_muni123` | coordinador_municipal |
-| Coordinador Puesto | `coord_puesto123` | coordinador_puesto |
-| Auditor Electoral | `auditor123` | auditor_electoral |
+| Monitoreo | `test123` | monitoreo |
+| Coordinador Departamental | `test123` | coordinador_departamental |
+| Coordinador Municipal | `test123` | coordinador_municipal |
+| Coordinador Puesto | `test123` | coordinador_puesto |
+| Auditor Electoral | `test123` | auditor_electoral |
 
 ---
 
@@ -150,7 +150,7 @@ Body (raw JSON):
 1. **Ir al login**: https://tu-app.onrender.com/auth/login
 2. **Probar con Monitoreo**:
    - Usuario: `Monitoreo`
-   - Contraseña: `monitoreo123`
+   - Contraseña: `test123`
 3. **Si funciona**: ✅ ¡Listo!
 
 ---

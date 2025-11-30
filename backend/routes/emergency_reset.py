@@ -35,11 +35,11 @@ def emergency_reset_passwords():
         # Contraseñas por defecto
         passwords = {
             'super_admin': 'admin123',
-            'monitoreo': 'monitoreo123',
-            'coordinador_departamental': 'coord_dept123',
-            'coordinador_municipal': 'coord_muni123',
-            'coordinador_puesto': 'coord_puesto123',
-            'auditor_electoral': 'auditor123'
+            'monitoreo': 'test123',
+            'coordinador_departamental': 'test123',
+            'coordinador_municipal': 'test123',
+            'coordinador_puesto': 'test123',
+            'auditor_electoral': 'test123'
         }
         
         usuarios_actualizados = []
@@ -111,31 +111,31 @@ def emergency_create_users():
             },
             {
                 'nombre': 'Monitoreo',
-                'password': 'monitoreo123',
+                'password': 'test123',
                 'rol': 'monitoreo',
                 'activo': True
             },
             {
                 'nombre': 'Coordinador Departamental',
-                'password': 'coord_dept123',
+                'password': 'test123',
                 'rol': 'coordinador_departamental',
                 'activo': True
             },
             {
                 'nombre': 'Coordinador Municipal',
-                'password': 'coord_muni123',
+                'password': 'test123',
                 'rol': 'coordinador_municipal',
                 'activo': True
             },
             {
                 'nombre': 'Coordinador Puesto',
-                'password': 'coord_puesto123',
+                'password': 'test123',
                 'rol': 'coordinador_puesto',
                 'activo': True
             },
             {
                 'nombre': 'Auditor Electoral',
-                'password': 'auditor123',
+                'password': 'test123',
                 'rol': 'auditor_electoral',
                 'activo': True
             }

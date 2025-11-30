@@ -21,11 +21,11 @@ def resetear_passwords():
     # Contraseñas por defecto
     passwords = {
         'super_admin': 'admin123',
-        'monitoreo': 'monitoreo123',
-        'coordinador_departamental': 'coord_dept123',
-        'coordinador_municipal': 'coord_muni123',
-        'coordinador_puesto': 'coord_puesto123',
-        'auditor_electoral': 'auditor123'
+        'monitoreo': 'test123',
+        'coordinador_departamental': 'test123',
+        'coordinador_municipal': 'test123',
+        'coordinador_puesto': 'test123',
+        'auditor_electoral': 'test123'
     }
     
     usuarios_actualizados = []

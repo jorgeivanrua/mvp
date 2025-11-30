@@ -22,42 +22,42 @@ def crear_usuarios_basicos():
     usuarios_basicos = [
         {
             'nombre': 'Super Admin',
-            'password': 'admin123',  # Cambiar en producción
+            'password': 'admin123',
             'rol': 'super_admin',
             'activo': True,
             'descripcion': 'Administrador principal del sistema'
         },
         {
             'nombre': 'Monitoreo',
-            'password': 'monitoreo123',  # Cambiar en producción
+            'password': 'test123',
             'rol': 'monitoreo',
             'activo': True,
             'descripcion': 'Usuario de monitoreo en tiempo real'
         },
         {
             'nombre': 'Coordinador Departamental',
-            'password': 'coord_dept123',  # Cambiar en producción
+            'password': 'test123',
             'rol': 'coordinador_departamental',
             'activo': True,
             'descripcion': 'Coordinador a nivel departamental'
         },
         {
             'nombre': 'Coordinador Municipal',
-            'password': 'coord_muni123',  # Cambiar en producción
+            'password': 'test123',
             'rol': 'coordinador_municipal',
             'activo': True,
             'descripcion': 'Coordinador a nivel municipal'
         },
         {
             'nombre': 'Coordinador Puesto',
-            'password': 'coord_puesto123',  # Cambiar en producción
+            'password': 'test123',
             'rol': 'coordinador_puesto',
             'activo': True,
             'descripcion': 'Coordinador de puesto de votación'
         },
         {
             'nombre': 'Auditor Electoral',
-            'password': 'auditor123',  # Cambiar en producción
+            'password': 'test123',
             'rol': 'auditor_electoral',
             'activo': True,
             'descripcion': 'Auditor del proceso electoral'
