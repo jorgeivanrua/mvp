@@ -190,6 +190,54 @@ def emergency_create_users():
             'error': str(e)
         }), 500
 
+@emergency_bp.route('/emergency-unlock-users', methods=['POST'])
+def emergency_unlock_users():
+    """
+    Endpoint de emergencia para desbloquear todos los usuarios
+    
+    Uso:
+    POST /api/emergency/emergency-unlock-users
+    Body: { "emergency_key": "tu_clave_secreta" }
+    """
+    try:
+        data = request.get_json()
+        
+        # Verificar clave de emergencia
+        if not data or data.get('emergency_key') != EMERGENCY_KEY:
+            return jsonify({
+                'success': False,
+                'error': 'Clave de emergencia inválida'
+            }), 403
+        
+        usuarios = User.query.all()
+        usuarios_desbloqueados = []
+        
+        for usuario in usuarios:
+            if usuario.bloqueado_hasta or usuario.intentos_fallidos > 0:
+                usuario.intentos_fallidos = 0
+                usuario.bloqueado_hasta = None
+                usuarios_desbloqueados.append({
+                    'id': usuario.id,
+                    'nombre': usuario.nombre,
+                    'rol': usuario.rol
+                })
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Usuarios desbloqueados exitosamente',
+            'usuarios_desbloqueados': usuarios_desbloqueados,
+            'total': len(usuarios_desbloqueados)
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @emergency_bp.route('/emergency-list-users', methods=['POST'])
 def emergency_list_users():
     """

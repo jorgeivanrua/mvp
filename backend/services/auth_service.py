@@ -71,10 +71,10 @@ class AuthService:
             user.intentos_fallidos += 1
             
             if user.intentos_fallidos >= 5:
-                user.bloqueado_hasta = datetime.now() + timedelta(minutes=30)
+                user.bloqueado_hasta = datetime.now() + timedelta(minutes=1)
                 db.session.commit()
                 raise AccountBlockedException(
-                    "Cuenta bloqueada por múltiples intentos fallidos. Intente en 30 minutos",
+                    "Cuenta bloqueada por múltiples intentos fallidos. Intente en 1 minuto",
                     user.bloqueado_hasta
                 )
             
