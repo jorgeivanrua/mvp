@@ -123,6 +123,10 @@ def register_blueprints(app):
     from backend.routes.init_db_route import init_db_bp
     app.register_blueprint(init_db_bp)
     
+    # Emergency routes (para resetear contraseñas sin shell access)
+    from backend.routes.emergency_reset import emergency_bp
+    app.register_blueprint(emergency_bp, url_prefix='/api/emergency')
+    
     # Frontend routes
     app.register_blueprint(frontend_bp)
 
