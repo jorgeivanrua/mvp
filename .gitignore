@@ -31,6 +31,13 @@ instance/
 .env
 .env.local
 
+# Credenciales (NO subir a GitHub)
+CREDENCIALES_*.md
+*_PASSWORDS.md
+*_CREDENTIALS.md
+LISTA_CONTRASEÑAS.txt
+*_CONTRASEÑAS.*
+
 # Database
 *.db
 *.sqlite
