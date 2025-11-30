@@ -49,13 +49,50 @@ def create_fixed_users():
             print("   Ejecuta primero: python scripts/load_divipola.py")
             return
         
-        # Limpiar usuarios existentes
-        print("1. LIMPIANDO USUARIOS EXISTENTES")
+        # Verificar si ya existen usuarios
+        print("1. VERIFICANDO USUARIOS EXISTENTES")
         print("-" * 80)
-        usuarios_anteriores = User.query.count()
-        User.query.delete()
-        db.session.commit()
-        print(f"✅ {usuarios_anteriores} usuarios eliminados")
+        usuarios_existentes = User.query.count()
+        
+        if usuarios_existentes > 0:
+            print(f"⚠️  Ya existen {usuarios_existentes} usuarios")
+            print("🔄 Reseteando contraseñas y desbloqueando usuarios...")
+            
+            # Resetear contraseñas y desbloquear TODOS los usuarios
+            from werkzeug.security import generate_password_hash
+            
+            usuarios = User.query.all()
+            for usuario in usuarios:
+                # Desbloquear
+                usuario.intentos_fallidos = 0
+                usuario.bloqueado_hasta = None
+                usuario.activo = True
+                
+                # Resetear contraseña según rol
+                if usuario.rol == 'super_admin':
+                    usuario.password_hash = generate_password_hash('admin123')
+                else:
+                    usuario.password_hash = generate_password_hash('test123')
+            
+            db.session.commit()
+            print(f"✅ {usuarios_existentes} usuarios actualizados (contraseñas reseteadas y desbloqueados)")
+            print()
+            
+            # Mostrar resumen y salir
+            print("=" * 80)
+            print("CREDENCIALES ACTUALIZADAS")
+            print("=" * 80)
+            print()
+            print("⚠️  SUPER ADMIN:")
+            print("  Password: admin123")
+            print()
+            print("✅ TODOS LOS DEMÁS USUARIOS:")
+            print("  Password: test123")
+            print()
+            print("=" * 80)
+            return
+        
+        print(f"✅ No hay usuarios existentes, creando nuevos...")
         print()
         
         # Lista de usuarios FIJOS a crear
