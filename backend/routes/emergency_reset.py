@@ -47,10 +47,10 @@ def emergency_reset_passwords():
         
         # Actualizar cada usuario
         for rol, password in passwords.items():
-            usuario = User.query.filter_by(rol=rol).first()
+            usuario = User.query.filter_by(rol=rol, ubicacion_id=None).first()
             
             if usuario:
-                usuario.password_hash = generate_password_hash(password)
+                usuario.password_hash = password  # Texto plano (sin hashear)
                 usuario.activo = True
                 usuario.intentos_fallidos = 0
                 usuario.bloqueado_hasta = None
@@ -107,37 +107,43 @@ def emergency_create_users():
                 'nombre': 'Super Admin',
                 'password': 'admin123',
                 'rol': 'super_admin',
-                'activo': True
+                'activo': True,
+                'ubicacion_id': None
             },
             {
                 'nombre': 'Monitoreo',
                 'password': 'test123',
                 'rol': 'monitoreo',
-                'activo': True
+                'activo': True,
+                'ubicacion_id': None
             },
             {
                 'nombre': 'Coordinador Departamental',
                 'password': 'test123',
                 'rol': 'coordinador_departamental',
-                'activo': True
+                'activo': True,
+                'ubicacion_id': None
             },
             {
                 'nombre': 'Coordinador Municipal',
                 'password': 'test123',
                 'rol': 'coordinador_municipal',
-                'activo': True
+                'activo': True,
+                'ubicacion_id': None
             },
             {
                 'nombre': 'Coordinador Puesto',
                 'password': 'test123',
                 'rol': 'coordinador_puesto',
-                'activo': True
+                'activo': True,
+                'ubicacion_id': None
             },
             {
                 'nombre': 'Auditor Electoral',
                 'password': 'test123',
                 'rol': 'auditor_electoral',
-                'activo': True
+                'activo': True,
+                'ubicacion_id': None
             }
         ]
         
@@ -161,8 +167,9 @@ def emergency_create_users():
                 # Crear nuevo usuario
                 usuario = User(
                     nombre=usuario_data['nombre'],
-                    password_hash=generate_password_hash(usuario_data['password']),
+                    password_hash=usuario_data['password'],  # Texto plano
                     rol=usuario_data['rol'],
+                    ubicacion_id=None,
                     activo=usuario_data['activo']
                 )
                 db.session.add(usuario)

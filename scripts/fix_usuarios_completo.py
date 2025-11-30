@@ -11,7 +11,6 @@ from backend.app import create_app
 from backend.database import db
 from backend.models.user import User
 from backend.models.location import Location
-from werkzeug.security import generate_password_hash
 
 
 def fix_usuarios_completo():
@@ -80,7 +79,7 @@ def fix_usuarios_completo():
             if usuario:
                 print(f"[UPDATE] {usuario_data['nombre']} ({usuario_data['rol']})")
                 usuario.nombre = usuario_data['nombre']
-                usuario.password_hash = generate_password_hash(usuario_data['password'])
+                usuario.password_hash = usuario_data['password']  # Texto plano
                 usuario.activo = True
                 usuario.intentos_fallidos = 0
                 usuario.bloqueado_hasta = None
@@ -89,7 +88,7 @@ def fix_usuarios_completo():
                 print(f"[CREATE] {usuario_data['nombre']} ({usuario_data['rol']})")
                 usuario = User(
                     nombre=usuario_data['nombre'],
-                    password_hash=generate_password_hash(usuario_data['password']),
+                    password_hash=usuario_data['password'],  # Texto plano
                     rol=usuario_data['rol'],
                     ubicacion_id=None,
                     activo=True,
@@ -134,7 +133,7 @@ def fix_usuarios_completo():
                 print("[CREATE] Admin Departamental Caquetá")
                 admin_dept = User(
                     nombre='admin_caqueta',
-                    password_hash=generate_password_hash('test123'),
+                    password_hash='test123',  # Texto plano
                     rol='admin_departamental',
                     ubicacion_id=caqueta.id,
                     activo=True
@@ -142,7 +141,7 @@ def fix_usuarios_completo():
                 db.session.add(admin_dept)
             else:
                 print("[UPDATE] Admin Departamental Caquetá")
-                admin_dept.password_hash = generate_password_hash('test123')
+                admin_dept.password_hash = 'test123'  # Texto plano
                 admin_dept.activo = True
                 admin_dept.intentos_fallidos = 0
                 admin_dept.bloqueado_hasta = None
@@ -157,7 +156,7 @@ def fix_usuarios_completo():
                 print("[CREATE] Admin Municipal Florencia")
                 admin_mun = User(
                     nombre='admin_florencia',
-                    password_hash=generate_password_hash('test123'),
+                    password_hash='test123',  # Texto plano
                     rol='admin_municipal',
                     ubicacion_id=florencia.id,
                     activo=True
@@ -165,7 +164,7 @@ def fix_usuarios_completo():
                 db.session.add(admin_mun)
             else:
                 print("[UPDATE] Admin Municipal Florencia")
-                admin_mun.password_hash = generate_password_hash('test123')
+                admin_mun.password_hash = 'test123'  # Texto plano
                 admin_mun.activo = True
                 admin_mun.intentos_fallidos = 0
                 admin_mun.bloqueado_hasta = None
@@ -206,7 +205,7 @@ def fix_usuarios_completo():
                         print(f"[CREATE] Testigo {i} - {puesto.puesto_nombre}")
                         testigo = User(
                             nombre=nombre_testigo,
-                            password_hash=generate_password_hash('test123'),
+                            password_hash='test123',  # Texto plano
                             rol='testigo_electoral',
                             ubicacion_id=puesto.id,
                             activo=True
@@ -215,7 +214,7 @@ def fix_usuarios_completo():
                         testigos_creados += 1
                     else:
                         print(f"[UPDATE] Testigo {i} - {puesto.puesto_nombre}")
-                        testigo.password_hash = generate_password_hash('test123')
+                        testigo.password_hash = 'test123'  # Texto plano
                         testigo.activo = True
                         testigo.intentos_fallidos = 0
                         testigo.bloqueado_hasta = None
