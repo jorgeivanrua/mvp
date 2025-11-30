@@ -22,6 +22,9 @@ class User(db.Model):
     intentos_fallidos = db.Column(db.Integer, default=0, nullable=False)
     bloqueado_hasta = db.Column(db.DateTime, nullable=True)
     
+    # Usuario básico fijo (no se puede eliminar, solo super admin puede modificar)
+    es_usuario_basico = db.Column(db.Boolean, default=False, nullable=False)
+    
     # Verificación de presencia (para testigos)
     presencia_verificada = db.Column(db.Boolean, default=False, nullable=False)
     presencia_verificada_at = db.Column(db.DateTime, nullable=True)

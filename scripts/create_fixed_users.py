@@ -71,24 +71,43 @@ def create_fixed_users():
                 # Resetear contraseña según rol
                 if usuario.rol == 'super_admin':
                     usuario.password_hash = generate_password_hash('admin123')
+                    print(f"✅ {usuario.nombre} (super_admin) → admin123")
                 else:
                     usuario.password_hash = generate_password_hash('test123')
+                    print(f"✅ {usuario.nombre} ({usuario.rol}) → test123")
             
             db.session.commit()
+            print()
             print(f"✅ {usuarios_existentes} usuarios actualizados (contraseñas reseteadas y desbloqueados)")
             print()
             
-            # Mostrar resumen y salir
+            # Mostrar resumen detallado
             print("=" * 80)
             print("CREDENCIALES ACTUALIZADAS")
             print("=" * 80)
             print()
             print("⚠️  SUPER ADMIN:")
+            print("  Rol: super_admin")
             print("  Password: admin123")
+            print("  Ubicación: Sin ubicación (acceso global)")
             print()
             print("✅ TODOS LOS DEMÁS USUARIOS:")
             print("  Password: test123")
             print()
+            
+            # Listar usuarios por rol
+            from sqlalchemy import func
+            roles_count = db.session.query(
+                User.rol, 
+                func.count(User.id)
+            ).group_by(User.rol).all()
+            
+            print("Usuarios por rol:")
+            for rol, count in roles_count:
+                print(f"  - {rol}: {count}")
+            print()
+            print("=" * 80)
+            print("✅ USUARIOS LISTOS PARA USAR")
             print("=" * 80)
             return
         
