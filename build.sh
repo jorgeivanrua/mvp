@@ -16,11 +16,8 @@ python backend/migrations/add_es_usuario_basico.py
 echo "📍 Cargando ubicaciones..."
 python scripts/load_divipola.py
 
-echo "👥 Creando usuarios básicos fijos del sistema..."
-python scripts/crear_usuarios_basicos_fijos.py
-
-echo "👥 Creando usuarios adicionales del sistema..."
-python scripts/create_fixed_users.py
+echo "👥 Creando/actualizando usuarios del sistema (básicos + testigos)..."
+python scripts/fix_usuarios_completo.py
 
 echo "⚙️ Configurando sistema electoral..."
 python scripts/init_configuracion_electoral.py
