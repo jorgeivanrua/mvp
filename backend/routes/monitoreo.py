@@ -118,12 +118,11 @@ def get_estadisticas():
             User.activo == True
         ).first()
         
-        # Contar formularios con agregación
-        formularios_stats = db.session.query(
-            func.count(FormularioE14.id).label('total'),
-            func.sum(func.case((FormularioE14.estado == 'validado', 1), else_=0)).label('validados'),
-            func.sum(func.case((FormularioE14.estado == 'pendiente', 1), else_=0)).label('pendientes')
-        ).first()
+        # Contar formularios (sin agregación compleja que causa problemas en SQLite)
+        formularios_total = FormularioE14.query.count()
+        formularios_validados = FormularioE14.query.filter_by(estado='validado').count()
+        formularios_pendientes = FormularioE14.query.filter_by(estado='pendiente').count()
+        formularios_rechazados = FormularioE14.query.filter_by(estado='rechazado').count()
         
         testigos_total = testigos_stats.total or 0
         testigos_con_geo = testigos_stats.con_geo or 0
@@ -131,11 +130,6 @@ def get_estadisticas():
         
         coordinadores_total = coordinadores_stats.total or 0
         coordinadores_con_geo = coordinadores_stats.con_geo or 0
-        
-        formularios_total = formularios_stats.total or 0
-        formularios_validados = FormularioE14.query.filter_by(estado='validado').count()
-        formularios_pendientes = FormularioE14.query.filter_by(estado='pendiente').count()
-        formularios_rechazados = FormularioE14.query.filter_by(estado='rechazado').count()
         
         # Formularios de la última hora
         una_hora_atras = datetime.utcnow() - timedelta(hours=1)
@@ -713,27 +707,29 @@ def get_mapa_calor():
         
         for dept_codigo, dept_nombre in departamentos:
             # Usuarios en el departamento
-            usuarios_dept = User.query.join(Location).filter(
+            usuarios_dept = User.query.join(Location, User.ubicacion_id == Location.id).filter(
                 Location.departamento_codigo == dept_codigo,
                 User.activo == True
             ).count()
             
             # Formularios del departamento
-            formularios_dept = FormularioE14.query.join(User).join(Location).filter(
+            formularios_dept = FormularioE14.query.join(User, FormularioE14.testigo_id == User.id).join(
+                Location, User.ubicacion_id == Location.id
+            ).filter(
                 Location.departamento_codigo == dept_codigo
             ).count()
             
             # Incidentes del departamento
             incidentes_dept = IncidenteElectoral.query.join(
                 User, IncidenteElectoral.reportado_por_id == User.id
-            ).join(Location).filter(
+            ).join(Location, User.ubicacion_id == Location.id).filter(
                 Location.departamento_codigo == dept_codigo
             ).count()
             
             # Delitos del departamento
             delitos_dept = DelitoElectoral.query.join(
                 User, DelitoElectoral.reportado_por_id == User.id
-            ).join(Location).filter(
+            ).join(Location, User.ubicacion_id == Location.id).filter(
                 Location.departamento_codigo == dept_codigo
             ).count()
             
@@ -865,13 +861,13 @@ def get_comparativa_departamentos():
         
         for dept_codigo, dept_nombre in departamentos:
             # Testigos del departamento
-            testigos_total = User.query.join(Location).filter(
+            testigos_total = User.query.join(Location, User.ubicacion_id == Location.id).filter(
                 Location.departamento_codigo == dept_codigo,
                 User.rol == 'testigo_electoral',
                 User.activo == True
             ).count()
             
-            testigos_con_presencia = User.query.join(Location).filter(
+            testigos_con_presencia = User.query.join(Location, User.ubicacion_id == Location.id).filter(
                 Location.departamento_codigo == dept_codigo,
                 User.rol == 'testigo_electoral',
                 User.activo == True,
@@ -879,11 +875,15 @@ def get_comparativa_departamentos():
             ).count()
             
             # Formularios del departamento
-            formularios_total = FormularioE14.query.join(User).join(Location).filter(
+            formularios_total = FormularioE14.query.join(User, FormularioE14.testigo_id == User.id).join(
+                Location, User.ubicacion_id == Location.id
+            ).filter(
                 Location.departamento_codigo == dept_codigo
             ).count()
             
-            formularios_validados = FormularioE14.query.join(User).join(Location).filter(
+            formularios_validados = FormularioE14.query.join(User, FormularioE14.testigo_id == User.id).join(
+                Location, User.ubicacion_id == Location.id
+            ).filter(
                 Location.departamento_codigo == dept_codigo,
                 FormularioE14.estado == 'validado'
             ).count()
@@ -891,13 +891,13 @@ def get_comparativa_departamentos():
             # Incidentes del departamento
             incidentes_total = IncidenteElectoral.query.join(
                 User, IncidenteElectoral.reportado_por_id == User.id
-            ).join(Location).filter(
+            ).join(Location, User.ubicacion_id == Location.id).filter(
                 Location.departamento_codigo == dept_codigo
             ).count()
             
             incidentes_criticos = IncidenteElectoral.query.join(
                 User, IncidenteElectoral.reportado_por_id == User.id
-            ).join(Location).filter(
+            ).join(Location, User.ubicacion_id == Location.id).filter(
                 Location.departamento_codigo == dept_codigo,
                 IncidenteElectoral.severidad == 'critica'
             ).count()

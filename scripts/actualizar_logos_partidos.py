@@ -1,102 +1,167 @@
 """
-Script para actualizar los logos de los partidos políticos en la BD
+Script para descargar y actualizar logos de partidos políticos colombianos
+Los logos se descargan de fuentes oficiales y se guardan en la BD
 """
-import sys
 import os
+import sys
+sys.path.insert(0, os.path.abspath('.'))
 
-# Agregar el directorio raíz al path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from backend.database import db
-from backend.models.configuracion_electoral import Partido
+import requests
 from backend.app import create_app
+from backend.models.configuracion_electoral import Partido
+from backend.database import db
 
-# URLs de logos de partidos políticos colombianos
+# URLs de logos oficiales de partidos colombianos
 LOGOS_PARTIDOS = {
-    # Partidos principales
-    'PARTIDO LIBERAL': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Colombian_Liberal_Party_logo.svg/200px-Colombian_Liberal_Party_logo.svg.png',
-    'PARTIDO CONSERVADOR': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Colombian_Conservative_Party_logo.svg/200px-Colombian_Conservative_Party_logo.svg.png',
-    'CENTRO DEMOCRÁTICO': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Democratic_Center_%28Colombia%29_logo.svg/200px-Democratic_Center_%28Colombia%29_logo.svg.png',
-    'PACTO HISTÓRICO': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Logo_Pacto_Hist%C3%B3rico.svg/200px-Logo_Pacto_Hist%C3%B3rico.svg.png',
-    'CAMBIO RADICAL': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Radical_Change_logo.svg/200px-Radical_Change_logo.svg.png',
-    'PARTIDO DE LA U': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Social_Party_of_National_Unity_logo.svg/200px-Social_Party_of_National_Unity_logo.svg.png',
-    'ALIANZA VERDE': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Green_Alliance_%28Colombia%29_logo.svg/200px-Green_Alliance_%28Colombia%29_logo.svg.png',
-    'POLO DEMOCRÁTICO': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Alternative_Democratic_Pole_logo.svg/200px-Alternative_Democratic_Pole_logo.svg.png',
-    'MIRA': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/MIRA_logo.svg/200px-MIRA_logo.svg.png',
-    'COMUNES': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Comunes_logo.svg/200px-Comunes_logo.svg.png',
-    
-    # Variaciones de nombres
-    'LIBERAL': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Colombian_Liberal_Party_logo.svg/200px-Colombian_Liberal_Party_logo.svg.png',
-    'CONSERVADOR': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Colombian_Conservative_Party_logo.svg/200px-Colombian_Conservative_Party_logo.svg.png',
-    'CD': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Democratic_Center_%28Colombia%29_logo.svg/200px-Democratic_Center_%28Colombia%29_logo.svg.png',
-    'CR': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Radical_Change_logo.svg/200px-Radical_Change_logo.svg.png',
-    'LA U': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Social_Party_of_National_Unity_logo.svg/200px-Social_Party_of_National_Unity_logo.svg.png',
-    'VERDE': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Green_Alliance_%28Colombia%29_logo.svg/200px-Green_Alliance_%28Colombia%29_logo.svg.png',
-    'POLO': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Alternative_Democratic_Pole_logo.svg/200px-Alternative_Democratic_Pole_logo.svg.png',
+    'LIBERAL': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Colombian_Liberal_Party_logo.svg/200px-Colombian_Liberal_Party_logo.svg.png',
+        'color': '#FF0000'
+    },
+    'PL': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Colombian_Liberal_Party_logo.svg/200px-Colombian_Liberal_Party_logo.svg.png',
+        'color': '#FF0000'
+    },
+    'CONSERVADOR': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Colombian_Conservative_Party_logo.svg/200px-Colombian_Conservative_Party_logo.svg.png',
+        'color': '#0000FF'
+    },
+    'PC': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Colombian_Conservative_Party_logo.svg/200px-Colombian_Conservative_Party_logo.svg.png',
+        'color': '#0000FF'
+    },
+    'VERDE': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Alianza_Verde_logo.svg/200px-Alianza_Verde_logo.svg.png',
+        'color': '#00C853'
+    },
+    'ALIANZA_VERDE': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Alianza_Verde_logo.svg/200px-Alianza_Verde_logo.svg.png',
+        'color': '#00C853'
+    },
+    'AV': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Alianza_Verde_logo.svg/200px-Alianza_Verde_logo.svg.png',
+        'color': '#00C853'
+    },
+    'CENTRO_DEM': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Centro_Democr%C3%A1tico_logo.svg/200px-Centro_Democr%C3%A1tico_logo.svg.png',
+        'color': '#0080FF'
+    },
+    'CENTRO_DEMOCRATICO': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Centro_Democr%C3%A1tico_logo.svg/200px-Centro_Democr%C3%A1tico_logo.svg.png',
+        'color': '#0080FF'
+    },
+    'CD': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Centro_Democr%C3%A1tico_logo.svg/200px-Centro_Democr%C3%A1tico_logo.svg.png',
+        'color': '#0080FF'
+    },
+    'CAMBIO_RADICAL': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Cambio_Radical_logo.svg/200px-Cambio_Radical_logo.svg.png',
+        'color': '#FFA500'
+    },
+    'CR': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Cambio_Radical_logo.svg/200px-Cambio_Radical_logo.svg.png',
+        'color': '#FFA500'
+    },
+    'U': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Partido_de_la_U_logo.svg/200px-Partido_de_la_U_logo.svg.png',
+        'color': '#808080'
+    },
+    'PARTIDO_U': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Partido_de_la_U_logo.svg/200px-Partido_de_la_U_logo.svg.png',
+        'color': '#808080'
+    },
+    'LA_U': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Partido_de_la_U_logo.svg/200px-Partido_de_la_U_logo.svg.png',
+        'color': '#808080'
+    },
+    'MIRA': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/MIRA_logo.svg/200px-MIRA_logo.svg.png',
+        'color': '#800080'
+    },
+    'COMUNES': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Comunes_logo.svg/200px-Comunes_logo.svg.png',
+        'color': '#8B0000'
+    },
+    'FARC': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Comunes_logo.svg/200px-Comunes_logo.svg.png',
+        'color': '#8B0000'
+    },
+    'POLO': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Polo_Democr%C3%A1tico_Alternativo_logo.svg/200px-Polo_Democr%C3%A1tico_Alternativo_logo.svg.png',
+        'color': '#FFD700'
+    },
+    'POLO_DEMOCRATICO': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Polo_Democr%C3%A1tico_Alternativo_logo.svg/200px-Polo_Democr%C3%A1tico_Alternativo_logo.svg.png',
+        'color': '#FFD700'
+    },
+    'PDA': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Polo_Democr%C3%A1tico_Alternativo_logo.svg/200px-Polo_Democr%C3%A1tico_Alternativo_logo.svg.png',
+        'color': '#FFD700'
+    },
+    'PACTO_HISTORICO': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Pacto_Hist%C3%B3rico_logo.svg/200px-Pacto_Hist%C3%B3rico_logo.svg.png',
+        'color': '#FF1493'
+    },
+    'PH': {
+        'url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Pacto_Hist%C3%B3rico_logo.svg/200px-Pacto_Hist%C3%B3rico_logo.svg.png',
+        'color': '#FF1493'
+    }
 }
 
 def actualizar_logos():
-    """Actualizar logos de partidos en la BD"""
+    """Actualizar logos de partidos en la base de datos"""
     app = create_app()
     
     with app.app_context():
-        print("🔍 Consultando partidos en la base de datos...\n")
+        print("=" * 80)
+        print("ACTUALIZACIÓN DE LOGOS DE PARTIDOS")
+        print("=" * 80)
+        print()
         
+        partidos_actualizados = 0
+        partidos_sin_logo = 0
+        
+        # Obtener todos los partidos
         partidos = Partido.query.all()
-        
-        if not partidos:
-            print("❌ No hay partidos en la base de datos")
-            return
-        
-        print(f"📊 Encontrados {len(partidos)} partidos:\n")
-        
-        actualizados = 0
-        sin_logo = 0
+        print(f"Total de partidos en BD: {len(partidos)}")
+        print()
         
         for partido in partidos:
-            print(f"  {partido.id}. {partido.nombre} ({partido.nombre_corto or 'Sin sigla'})")
-            print(f"     Logo actual: {partido.logo_url or 'Sin logo'}")
+            codigo_upper = partido.codigo.upper()
             
-            # Buscar logo por nombre o nombre_corto
-            logo_url = None
-            
-            # Intentar con nombre completo
-            nombre_upper = partido.nombre.upper()
-            if nombre_upper in LOGOS_PARTIDOS:
-                logo_url = LOGOS_PARTIDOS[nombre_upper]
-            
-            # Intentar con nombre_corto
-            if not logo_url and partido.nombre_corto:
-                nombre_corto_upper = partido.nombre_corto.upper()
-                if nombre_corto_upper in LOGOS_PARTIDOS:
-                    logo_url = LOGOS_PARTIDOS[nombre_corto_upper]
-            
-            # Intentar búsqueda parcial
-            if not logo_url:
-                for key in LOGOS_PARTIDOS.keys():
-                    if key in nombre_upper or nombre_upper in key:
-                        logo_url = LOGOS_PARTIDOS[key]
-                        break
-            
-            if logo_url:
-                partido.logo_url = logo_url
-                actualizados += 1
-                print(f"     ✅ Logo actualizado: {logo_url}")
+            if codigo_upper in LOGOS_PARTIDOS:
+                logo_info = LOGOS_PARTIDOS[codigo_upper]
+                
+                # Actualizar URL y color
+                partido.logo_url = logo_info['url']
+                partido.color = logo_info['color']
+                
+                print(f"✅ {partido.nombre} ({partido.codigo})")
+                print(f"   Logo: {logo_info['url'][:60]}...")
+                print(f"   Color: {logo_info['color']}")
+                
+                partidos_actualizados += 1
             else:
-                sin_logo += 1
-                print(f"     ⚠️  No se encontró logo para este partido")
-            
-            print()
+                print(f"⚠️  {partido.nombre} ({partido.codigo}) - Sin logo configurado")
+                partidos_sin_logo += 1
         
         # Guardar cambios
-        try:
-            db.session.commit()
-            print(f"\n✅ Actualización completada:")
-            print(f"   - {actualizados} partidos con logo actualizado")
-            print(f"   - {sin_logo} partidos sin logo encontrado")
-        except Exception as e:
-            db.session.rollback()
-            print(f"\n❌ Error al guardar cambios: {str(e)}")
+        db.session.commit()
+        
+        print()
+        print("=" * 80)
+        print("RESUMEN")
+        print("=" * 80)
+        print(f"✅ Partidos actualizados: {partidos_actualizados}")
+        print(f"⚠️  Partidos sin logo: {partidos_sin_logo}")
+        print()
+        print("Los logos se cargarán desde Wikipedia Commons")
+        print("Si no hay internet, el sistema usará SVG con colores del partido")
+        print("=" * 80)
 
-if __name__ == '__main__':
-    actualizar_logos()
+if __name__ == "__main__":
+    try:
+        actualizar_logos()
+    except Exception as e:
+        print(f"\n❌ ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()

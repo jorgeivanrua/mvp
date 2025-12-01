@@ -935,41 +935,77 @@ async function exportarReporte() {
 
 // Cargar datos
 async function cargarDatos() {
+    console.log('[Monitoreo] Cargando datos principales...');
+    
     try {
         // Cargar estadísticas
-        const statsResponse = await APIClient.get('/monitoreo/estadisticas');
-        if (statsResponse.success) {
-            const stats = statsResponse.data;
-            
-            document.getElementById('stat-testigos-geo').textContent = stats.testigos.con_geolocalizacion;
-            document.getElementById('stat-testigos-porcentaje').textContent = `${stats.testigos.porcentaje_geo}% del total`;
-            document.getElementById('stat-testigos-presencia').textContent = stats.testigos.con_presencia_verificada;
-            
-            document.getElementById('stat-coordinadores-geo').textContent = stats.coordinadores.con_geolocalizacion;
-            document.getElementById('stat-coordinadores-porcentaje').textContent = `${stats.coordinadores.porcentaje_geo}% del total`;
-            
-            document.getElementById('stat-formularios').textContent = stats.formularios.total;
-            document.getElementById('stat-formularios-validados').textContent = `${stats.formularios.validados} validados`;
+        console.log('[Monitoreo] Cargando estadísticas...');
+        try {
+            const statsResponse = await APIClient.get('/monitoreo/estadisticas');
+            if (statsResponse && statsResponse.success && statsResponse.data) {
+                const stats = statsResponse.data;
+                
+                document.getElementById('stat-testigos-geo').textContent = stats.testigos?.con_geolocalizacion || 0;
+                document.getElementById('stat-testigos-porcentaje').textContent = `${stats.testigos?.porcentaje_geo || 0}% del total`;
+                document.getElementById('stat-testigos-presencia').textContent = stats.testigos?.con_presencia_verificada || 0;
+                
+                document.getElementById('stat-coordinadores-geo').textContent = stats.coordinadores?.con_geolocalizacion || 0;
+                document.getElementById('stat-coordinadores-porcentaje').textContent = `${stats.coordinadores?.porcentaje_geo || 0}% del total`;
+                
+                document.getElementById('stat-formularios').textContent = stats.formularios?.total || 0;
+                document.getElementById('stat-formularios-validados').textContent = `${stats.formularios?.validados || 0} validados`;
+                
+                console.log('[Monitoreo] ✓ Estadísticas cargadas');
+            } else {
+                console.warn('[Monitoreo] Respuesta de estadísticas no válida');
+            }
+        } catch (error) {
+            console.error('[Monitoreo] Error cargando estadísticas:', error);
         }
         
         // Cargar usuarios activos
-        const usuariosResponse = await APIClient.get('/monitoreo/usuarios-activos');
-        if (usuariosResponse.success) {
-            todosLosUsuarios = usuariosResponse.data;
-            aplicarFiltros();
+        console.log('[Monitoreo] Cargando usuarios activos...');
+        try {
+            const usuariosResponse = await APIClient.get('/monitoreo/usuarios-activos');
+            if (usuariosResponse && usuariosResponse.success && usuariosResponse.data) {
+                todosLosUsuarios = usuariosResponse.data;
+                aplicarFiltros();
+                console.log('[Monitoreo] ✓ Usuarios activos cargados:', todosLosUsuarios.length);
+            } else {
+                console.warn('[Monitoreo] Respuesta de usuarios no válida');
+                todosLosUsuarios = [];
+            }
+        } catch (error) {
+            console.error('[Monitoreo] Error cargando usuarios activos:', error);
+            todosLosUsuarios = [];
         }
         
         // Cargar alertas
-        await cargarAlertas();
+        console.log('[Monitoreo] Cargando alertas...');
+        try {
+            await cargarAlertas();
+            console.log('[Monitoreo] ✓ Alertas cargadas');
+        } catch (error) {
+            console.error('[Monitoreo] Error cargando alertas:', error);
+        }
         
         // Cargar actividad reciente
-        await cargarActividadReciente();
+        console.log('[Monitoreo] Cargando actividad reciente...');
+        try {
+            await cargarActividadReciente();
+            console.log('[Monitoreo] ✓ Actividad reciente cargada');
+        } catch (error) {
+            console.error('[Monitoreo] Error cargando actividad reciente:', error);
+        }
         
         // Actualizar timestamp
         document.getElementById('ultima-actualizacion').textContent = new Date().toLocaleString();
         
+        console.log('[Monitoreo] ✓ Datos principales cargados');
+        
     } catch (error) {
-        console.error('Error cargando datos:', error);
+        console.error('[Monitoreo] Error general cargando datos:', error);
+        throw error; // Re-lanzar para que el caller lo maneje
     }
 }
 
@@ -1004,27 +1040,40 @@ let chartTendenciasHora = null;
 async function cargarMetricasRendimiento() {
     try {
         const response = await APIClient.get('/monitoreo/metricas-rendimiento');
-        if (response.success) {
+        if (response && response.success && response.metricas) {
             const metricas = response.metricas;
             
             // Actualizar tasa de usuarios
-            document.getElementById('tasa-usuarios').textContent = `${metricas.actividad_usuarios.tasa_cambio}%`;
-            document.getElementById('tasa-usuarios').className = `badge ${metricas.actividad_usuarios.tasa_cambio >= 0 ? 'bg-success' : 'bg-danger'}`;
+            const tasaElement = document.getElementById('tasa-usuarios');
+            if (tasaElement && metricas.actividad_usuarios) {
+                tasaElement.textContent = `${metricas.actividad_usuarios.tasa_cambio}%`;
+                tasaElement.className = `badge ${metricas.actividad_usuarios.tasa_cambio >= 0 ? 'bg-success' : 'bg-danger'}`;
+            }
             
             // Actualizar promedio de formularios
-            document.getElementById('promedio-formularios').textContent = metricas.formularios.promedio_por_hora;
+            const promedioElement = document.getElementById('promedio-formularios');
+            if (promedioElement && metricas.formularios) {
+                promedioElement.textContent = metricas.formularios.promedio_por_hora;
+            }
             
             // Actualizar tiempo de respuesta
-            document.getElementById('tiempo-respuesta').textContent = metricas.incidentes.tiempo_promedio_respuesta_minutos;
+            const tiempoElement = document.getElementById('tiempo-respuesta');
+            if (tiempoElement && metricas.incidentes) {
+                tiempoElement.textContent = metricas.incidentes.tiempo_promedio_respuesta_minutos;
+            }
             
-            // Actualizar gráfico de usuarios
-            actualizarChartUsuarios(metricas.actividad_usuarios);
+            // Actualizar gráficos
+            if (metricas.actividad_usuarios) {
+                actualizarChartUsuarios(metricas.actividad_usuarios);
+            }
             
-            // Actualizar gráfico de formularios
-            actualizarChartFormularios(metricas.formularios);
+            if (metricas.formularios) {
+                actualizarChartFormularios(metricas.formularios);
+            }
         }
     } catch (error) {
-        console.error('Error cargando métricas:', error);
+        console.error('[Monitoreo] Error cargando métricas de rendimiento:', error);
+        throw error;
     }
 }
 
@@ -1301,13 +1350,29 @@ async function cargarPredicciones() {
 
 // Cargar todas las nuevas métricas
 async function cargarMetricasAvanzadas() {
-    await Promise.all([
-        cargarMetricasRendimiento(),
-        cargarMapaCalor(),
-        cargarTendencias(),
-        cargarComparativa(),
-        cargarPredicciones()
-    ]);
+    console.log('[Monitoreo] Cargando métricas avanzadas...');
+    
+    // Cargar cada métrica individualmente para no bloquear si una falla
+    const metricas = [
+        { nombre: 'Métricas de Rendimiento', fn: cargarMetricasRendimiento },
+        { nombre: 'Mapa de Calor', fn: cargarMapaCalor },
+        { nombre: 'Tendencias', fn: cargarTendencias },
+        { nombre: 'Comparativa', fn: cargarComparativa },
+        { nombre: 'Predicciones', fn: cargarPredicciones }
+    ];
+    
+    for (const metrica of metricas) {
+        try {
+            console.log(`[Monitoreo] Cargando ${metrica.nombre}...`);
+            await metrica.fn();
+            console.log(`[Monitoreo] ✓ ${metrica.nombre} cargadas`);
+        } catch (error) {
+            console.warn(`[Monitoreo] ⚠️ Error cargando ${metrica.nombre}:`, error);
+            // Continuar con la siguiente métrica
+        }
+    }
+    
+    console.log('[Monitoreo] Métricas avanzadas completadas');
 }
 
 // ============================================================================
@@ -1315,29 +1380,57 @@ async function cargarMetricasAvanzadas() {
 // ============================================================================
 
 // Inicializar
-document.addEventListener('DOMContentLoaded', function() {
-    initMapa();
-    cargarUbicaciones();
-    cargarDatos();
-    cargarMetricasAvanzadas(); // Cargar nuevas métricas
-    setupAutoRefresh();
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('[Monitoreo] Inicializando dashboard...');
     
-    // Event listeners para filtros
-    document.getElementById('filtro-tipo-usuario').addEventListener('change', function() {
-        filtros.tipoUsuario = this.value;
-        aplicarFiltros();
-    });
-    
-    document.getElementById('filtro-departamento').addEventListener('change', onDepartamentoChange);
-    document.getElementById('filtro-municipio').addEventListener('change', onMunicipioChange);
-    document.getElementById('filtro-zona').addEventListener('change', function() {
-        filtros.zona = this.value;
-        aplicarFiltros();
-    });
-    document.getElementById('filtro-puesto').addEventListener('change', function() {
-        filtros.puesto = this.value;
-        aplicarFiltros();
-    });
+    try {
+        // 1. Inicializar mapa primero
+        console.log('[Monitoreo] Inicializando mapa...');
+        initMapa();
+        
+        // 2. Cargar ubicaciones para filtros
+        console.log('[Monitoreo] Cargando ubicaciones...');
+        await cargarUbicaciones();
+        
+        // 3. Cargar datos básicos
+        console.log('[Monitoreo] Cargando datos básicos...');
+        await cargarDatos();
+        
+        // 4. Configurar auto-refresh
+        console.log('[Monitoreo] Configurando auto-refresh...');
+        setupAutoRefresh();
+        
+        // 5. Cargar métricas avanzadas (en segundo plano, sin bloquear)
+        console.log('[Monitoreo] Cargando métricas avanzadas...');
+        setTimeout(() => {
+            cargarMetricasAvanzadas().catch(err => {
+                console.warn('[Monitoreo] Error cargando métricas avanzadas:', err);
+            });
+        }, 2000);
+        
+        // Event listeners para filtros
+        document.getElementById('filtro-tipo-usuario').addEventListener('change', function() {
+            filtros.tipoUsuario = this.value;
+            aplicarFiltros();
+        });
+        
+        document.getElementById('filtro-departamento').addEventListener('change', onDepartamentoChange);
+        document.getElementById('filtro-municipio').addEventListener('change', onMunicipioChange);
+        document.getElementById('filtro-zona').addEventListener('change', function() {
+            filtros.zona = this.value;
+            aplicarFiltros();
+        });
+        document.getElementById('filtro-puesto').addEventListener('change', function() {
+            filtros.puesto = this.value;
+            aplicarFiltros();
+        });
+        
+        console.log('[Monitoreo] ✓ Dashboard inicializado correctamente');
+        
+    } catch (error) {
+        console.error('[Monitoreo] ✗ Error inicializando dashboard:', error);
+        alert('Error al cargar el dashboard. Por favor, recarga la página.');
+    }
 });
 
 // Actualizar cargarDatos para incluir métricas avanzadas

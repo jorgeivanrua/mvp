@@ -1,45 +1,32 @@
 """
-Script para crear usuario de monitoreo
+Crear o actualizar usuario de monitoreo
 """
-import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from backend.app import create_app
-from backend.database import db
 from backend.models.user import User
+from backend.database import db
+from werkzeug.security import generate_password_hash
 
 app = create_app()
 
 with app.app_context():
-    print("🔍 Creando usuario de monitoreo...")
+    # Buscar usuario monitoreo
+    usuario = User.query.filter_by(rol='monitoreo', nombre='monitoreo').first()
     
-    # Verificar si ya existe
-    existing = User.query.filter_by(rol='monitoreo').first()
-    if existing:
-        print(f"⚠️  Ya existe un usuario de monitoreo: {existing.nombre}")
-        print(f"   ID: {existing.id}")
-        print(f"   Activo: {existing.activo}")
-        
+    if usuario:
+        print(f'Usuario encontrado: {usuario.nombre}')
         # Actualizar contraseña
-        existing.set_password('monitoreo123')
+        usuario.password_hash = generate_password_hash('monitoreo123')
+        usuario.activo = True
         db.session.commit()
-        print("✅ Contraseña actualizada a: monitoreo123")
+        print('✓ Contraseña actualizada a: monitoreo123')
     else:
         # Crear nuevo usuario
-        usuario = User(
+        nuevo_usuario = User(
             nombre='monitoreo',
+            password_hash=generate_password_hash('monitoreo123'),
             rol='monitoreo',
-            ubicacion_id=None,  # No necesita ubicación
             activo=True
         )
-        usuario.set_password('monitoreo123')
-        
-        db.session.add(usuario)
+        db.session.add(nuevo_usuario)
         db.session.commit()
-        
-        print("✅ Usuario de monitoreo creado exitosamente")
-        print(f"   Nombre: monitoreo")
-        print(f"   Rol: monitoreo")
-        print(f"   Contraseña: monitoreo123")
-        print(f"   ID: {usuario.id}")
+        print('✓ Usuario creado: monitoreo / monitoreo123')
