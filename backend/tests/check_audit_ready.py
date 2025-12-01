@@ -55,7 +55,8 @@ def check_test_data():
         from backend.app import create_app
         from backend.models.user import User
         from backend.models.location import Location
-        from backend.models.configuracion_electoral import Partido, Candidato
+        from backend.models.partido_politico import PartidoPolitico as Partido
+from backend.models.candidato import Candidato
         
         app = create_app()
         with app.app_context():

@@ -4,7 +4,8 @@ Servicio para cálculos consolidados de formularios E-14
 from backend.database import db
 from backend.models.formulario_e14 import FormularioE14, VotoPartido, VotoCandidato
 from backend.models.location import Location
-from backend.models.configuracion_electoral import Partido, Candidato
+from backend.models.partido_politico import PartidoPolitico as Partido
+from backend.models.candidato import Candidato
 from sqlalchemy import func, and_
 
 

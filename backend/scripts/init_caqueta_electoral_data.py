@@ -7,7 +7,9 @@ import sys
 sys.path.insert(0, os.path.abspath('.'))
 
 from backend.database import db
-from backend.models.configuracion_electoral import TipoEleccion, Partido, Candidato
+from backend.models.configuracion_electoral import TipoEleccion
+from backend.models.partido_politico import PartidoPolitico as Partido
+from backend.models.candidato import Candidato
 from backend.models.location import Location
 
 

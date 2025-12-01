@@ -623,7 +623,7 @@ def upload_partidos():
     """
     try:
         from backend.database import db
-        from backend.models.configuracion_electoral import Partido
+        from backend.models.partido_politico import PartidoPolitico as Partido
         import pandas as pd
         from io import BytesIO
         
@@ -735,7 +735,9 @@ def upload_candidatos():
     """
     try:
         from backend.database import db
-        from backend.models.configuracion_electoral import Candidato, Partido, TipoEleccion
+        from backend.models.configuracion_electoral import TipoEleccion
+        from backend.models.partido_politico import PartidoPolitico as Partido
+        from backend.models.candidato import Candidato
         import pandas as pd
         from io import BytesIO
         
@@ -992,7 +994,7 @@ def update_partido(partido_id):
     """
     try:
         from backend.database import db
-        from backend.models.configuracion_electoral import Partido
+        from backend.models.partido_politico import PartidoPolitico as Partido
         
         partido = Partido.query.get(partido_id)
         if not partido:
@@ -1039,7 +1041,7 @@ def toggle_partido(partido_id):
     """
     try:
         from backend.database import db
-        from backend.models.configuracion_electoral import Partido
+        from backend.models.partido_politico import PartidoPolitico as Partido
         
         partido = Partido.query.get(partido_id)
         if not partido:
@@ -1077,7 +1079,7 @@ def update_candidato(candidato_id):
     """
     try:
         from backend.database import db
-        from backend.models.configuracion_electoral import Candidato
+        from backend.models.candidato import Candidato
         
         candidato = Candidato.query.get(candidato_id)
         if not candidato:
@@ -1130,7 +1132,7 @@ def toggle_candidato(candidato_id):
     """
     try:
         from backend.database import db
-        from backend.models.configuracion_electoral import Candidato
+        from backend.models.candidato import Candidato
         
         candidato = Candidato.query.get(candidato_id)
         if not candidato:
@@ -1746,7 +1748,9 @@ def system_audit():
         
         # Check 4: Configuración Electoral
         try:
-            from backend.models.configuracion_electoral import TipoEleccion, Partido, Candidato
+            from backend.models.configuracion_electoral import TipoEleccion
+            from backend.models.partido_politico import PartidoPolitico as Partido
+            from backend.models.candidato import Candidato
             
             tipos_count = TipoEleccion.query.filter_by(activo=True).count()
             partidos_count = Partido.query.filter_by(activo=True).count()
@@ -2203,7 +2207,7 @@ def get_partidos():
     Obtener todos los partidos políticos
     """
     try:
-        from backend.models.configuracion_electoral import Partido
+        from backend.models.partido_politico import PartidoPolitico as Partido
         
         partidos = Partido.query.order_by(Partido.orden, Partido.nombre).all()
         
@@ -2237,7 +2241,9 @@ def get_candidatos():
     Obtener todos los candidatos
     """
     try:
-        from backend.models.configuracion_electoral import Candidato, Partido, TipoEleccion
+        from backend.models.configuracion_electoral import TipoEleccion
+        from backend.models.partido_politico import PartidoPolitico as Partido
+        from backend.models.candidato import Candidato
         
         candidatos = Candidato.query.order_by(Candidato.nombre_completo).all()
         
@@ -2382,7 +2388,9 @@ def init_test_data():
     """
     try:
         from backend.database import db
-        from backend.models.configuracion_electoral import TipoEleccion, Partido, Candidato
+        from backend.models.configuracion_electoral import TipoEleccion
+        from backend.models.partido_politico import PartidoPolitico as Partido
+        from backend.models.candidato import Candidato
         
         results = {
             'tipos_eleccion': {'created': 0, 'existing': 0},
@@ -2703,7 +2711,9 @@ def init_caqueta_electoral_data():
     """
     try:
         from backend.database import db
-        from backend.models.configuracion_electoral import TipoEleccion, Partido, Candidato
+        from backend.models.configuracion_electoral import TipoEleccion
+        from backend.models.partido_politico import PartidoPolitico as Partido
+        from backend.models.candidato import Candidato
         
         results = {
             'senado': {'created': 0, 'existing': 0},
@@ -3187,7 +3197,7 @@ def validate_csv_by_type(df, upload_type, config):
             errors.append(f"Faltan columnas requeridas: {', '.join(missing_cols)}")
         else:
             # Validar partidos existen
-            from backend.models.configuracion_electoral import Partido
+            from backend.models.partido_politico import PartidoPolitico as Partido
             partidos_unicos = df['partido_codigo'].unique()
             
             for partido_codigo in partidos_unicos:
@@ -3223,7 +3233,7 @@ def validate_csv_by_type(df, upload_type, config):
             errors.append(f"Faltan columnas requeridas: {', '.join(missing_cols)}")
         else:
             # Validar partidos existen
-            from backend.models.configuracion_electoral import Partido
+            from backend.models.partido_politico import PartidoPolitico as Partido
             for idx, row in df.iterrows():
                 partido = Partido.query.filter_by(codigo=row['partido_codigo']).first()
                 if not partido:
@@ -3264,7 +3274,9 @@ def process_csv_by_type(df, upload_type, config):
     Procesar CSV según el tipo de carga
     """
     from backend.database import db
-    from backend.models.configuracion_electoral import Partido, Candidato, TipoEleccion
+    from backend.models.configuracion_electoral import TipoEleccion
+    from backend.models.partido_politico import PartidoPolitico as Partido
+    from backend.models.candidato import Candidato
     from backend.models.location import Location
     
     created = []

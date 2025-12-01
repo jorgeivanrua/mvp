@@ -938,7 +938,7 @@ def generar_e24_puesto():
         from reportlab.lib.units import inch
         from backend.models.formulario_e14 import FormularioE14
         from backend.models.configuracion_electoral import TipoEleccion
-        from backend.models.configuracion_electoral import Partido
+        from backend.models.partido_politico import PartidoPolitico as Partido
         from backend.models.formulario_e14 import VotoPartido
         
         user_id = get_jwt_identity()
@@ -1222,7 +1222,7 @@ def generar_e24_municipal():
         from reportlab.lib.units import inch
         from backend.models.formulario_e14 import FormularioE14
         from backend.models.configuracion_electoral import TipoEleccion
-        from backend.models.configuracion_electoral import Partido
+        from backend.models.partido_politico import PartidoPolitico as Partido
         from backend.models.formulario_e14 import VotoPartido
         
         user_id = get_jwt_identity()

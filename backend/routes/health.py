@@ -5,7 +5,8 @@ from flask import Blueprint, jsonify
 from backend.database import db
 from backend.models.user import User
 from backend.models.location import Location
-from backend.models.configuracion_electoral import TipoEleccion, Partido
+from backend.models.configuracion_electoral import TipoEleccion
+from backend.models.partido_politico import PartidoPolitico as Partido
 from datetime import datetime
 import os
 

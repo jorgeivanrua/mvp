@@ -11,7 +11,9 @@ from backend.app import create_app
 from backend.models.user import User
 from backend.models.location import Location
 from backend.models.configuracion_electoral import (
-    TipoEleccion, Partido, Candidato, Campana
+    TipoEleccion
+from backend.models.partido_politico import PartidoPolitico as Partido
+from backend.models.candidato import Candidato, Campana
 )
 from backend.models.formulario_e14 import FormularioE14, VotoPartido
 from backend.models.coordinador_municipal import (

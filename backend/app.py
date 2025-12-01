@@ -110,7 +110,7 @@ def register_blueprints(app):
     from backend.routes.admin_data_import import admin_import_bp
     from backend.routes.verificacion_presencia import verificacion_bp
     from backend.routes.locations_geo import locations_geo_bp
-    from backend.routes.configuracion_sistema import config_sistema_bp, configuracion_sistema_bp
+    from backend.routes.configuracion_sistema import configuracion_sistema_bp
     from backend.routes.monitoreo import monitoreo_bp
     from backend.routes.cargar_logos import cargar_logos_bp
     from backend.routes.notificaciones import notificaciones_bp
@@ -122,7 +122,6 @@ def register_blueprints(app):
     app.register_blueprint(locations_bp, url_prefix='/api/locations')
     app.register_blueprint(locations_geo_bp)
     app.register_blueprint(configuracion_bp, url_prefix='/api/configuracion')
-    app.register_blueprint(config_sistema_bp)  # Sistema de personalización
     app.register_blueprint(configuracion_sistema_bp)  # Configuración del sistema
     app.register_blueprint(formularios_bp)
     app.register_blueprint(coordinador_municipal_bp)

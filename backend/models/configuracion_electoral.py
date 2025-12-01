@@ -37,35 +37,12 @@ class TipoEleccion(db.Model):
         }
 
 
-class Partido(db.Model):
-    """Partidos políticos"""
-    __tablename__ = 'partidos'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    codigo = db.Column(db.String(50), unique=True, nullable=False)
-    nombre = db.Column(db.String(200), nullable=False)
-    nombre_corto = db.Column(db.String(50))
-    logo_url = db.Column(db.String(500))
-    color = db.Column(db.String(7))  # Código hexadecimal #RRGGBB
-    activo = db.Column(db.Boolean, default=True)
-    orden = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relaciones
-    candidatos = db.relationship('Candidato', back_populates='partido', lazy='dynamic')
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'codigo': self.codigo,
-            'nombre': self.nombre,
-            'nombre_corto': self.nombre_corto,
-            'logo_url': self.logo_url,
-            'color': self.color,
-            'activo': self.activo,
-            'orden': self.orden
-        }
+# NOTA: Modelo Partido movido a backend/models/partido_politico.py
+# Importar desde allí si se necesita
+# class Partido(db.Model):
+#     """Partidos políticos"""
+#     __tablename__ = 'partidos'
+#     ...
 
 
 class Coalicion(db.Model):
@@ -99,53 +76,21 @@ class PartidoCoalicion(db.Model):
     __tablename__ = 'partidos_coaliciones'
     
     id = db.Column(db.Integer, primary_key=True)
-    partido_id = db.Column(db.Integer, db.ForeignKey('partidos.id'), nullable=False)
+    partido_id = db.Column(db.Integer, db.ForeignKey('partidos_politicos.id'), nullable=False)
     coalicion_id = db.Column(db.Integer, db.ForeignKey('coaliciones.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relaciones
-    partido = db.relationship('Partido', backref='coaliciones')
+    partido = db.relationship('PartidoPolitico', backref='coaliciones')
     coalicion = db.relationship('Coalicion', back_populates='partidos_coalicion')
 
 
-class Candidato(db.Model):
-    """Candidatos"""
-    __tablename__ = 'candidatos'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    codigo = db.Column(db.String(50), unique=True, nullable=False)
-    nombre_completo = db.Column(db.String(200), nullable=False)
-    numero_lista = db.Column(db.Integer)
-    partido_id = db.Column(db.Integer, db.ForeignKey('partidos.id'))
-    tipo_eleccion_id = db.Column(db.Integer, db.ForeignKey('tipos_eleccion.id'))
-    foto_url = db.Column(db.String(500))
-    es_independiente = db.Column(db.Boolean, default=False)
-    es_cabeza_lista = db.Column(db.Boolean, default=False)  # Para listas cerradas
-    activo = db.Column(db.Boolean, default=True)
-    orden = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relaciones
-    partido = db.relationship('Partido', back_populates='candidatos')
-    tipo_eleccion = db.relationship('TipoEleccion', backref='candidatos')
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'codigo': self.codigo,
-            'nombre_completo': self.nombre_completo,
-            'numero_lista': self.numero_lista,
-            'partido_id': self.partido_id,
-            'tipo_eleccion_id': self.tipo_eleccion_id,
-            'foto_url': self.foto_url,
-            'es_independiente': self.es_independiente,
-            'es_cabeza_lista': self.es_cabeza_lista,
-            'activo': self.activo,
-            'orden': self.orden,
-            'partido_nombre': self.partido.nombre if self.partido else None,
-            'tipo_eleccion_nombre': self.tipo_eleccion.nombre if self.tipo_eleccion else None
-        }
+# NOTA: Modelo Candidato movido a backend/models/candidato.py
+# Importar desde allí si se necesita
+# class Candidato(db.Model):
+#     """Candidatos"""
+#     __tablename__ = 'candidatos'
+#     ...
 
 
 

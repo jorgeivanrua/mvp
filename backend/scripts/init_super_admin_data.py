@@ -2,7 +2,9 @@
 Script para inicializar datos de prueba para el Super Admin
 """
 from backend.database import db
-from backend.models.configuracion_electoral import TipoEleccion, Partido, Candidato
+from backend.models.configuracion_electoral import TipoEleccion
+from backend.models.partido_politico import PartidoPolitico as Partido
+from backend.models.candidato import Candidato
 from backend.models.user import User
 from backend.models.location import Location
 

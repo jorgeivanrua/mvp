@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from backend.app import create_app
-from backend.models.configuracion_electoral import Partido
+from backend.models.partido_politico import PartidoPolitico as Partido
 from backend.database import db
 
 # URLs de logos funcionales usando placeholder.com

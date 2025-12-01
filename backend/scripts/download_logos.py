@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 
 import requests
 from backend.app import create_app
-from backend.models.configuracion_electoral import Partido
+from backend.models.partido_politico import PartidoPolitico as Partido
 from backend.database import db
 
 def download_logos():

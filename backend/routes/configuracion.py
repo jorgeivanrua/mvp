@@ -5,8 +5,10 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.database import db
 from backend.models.configuracion_electoral import (
-    TipoEleccion, Partido, Coalicion, PartidoCoalicion, Candidato
+    TipoEleccion, Coalicion, PartidoCoalicion
 )
+from backend.models.partido_politico import PartidoPolitico as Partido
+from backend.models.candidato import Candidato
 from backend.models.user import User
 
 configuracion_bp = Blueprint('configuracion', __name__)

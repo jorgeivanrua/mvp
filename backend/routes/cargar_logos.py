@@ -5,7 +5,7 @@ from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required
 from backend.utils.decorators import role_required
 from backend.database import db
-from backend.models.configuracion_electoral import Partido
+from backend.models.partido_politico import PartidoPolitico as Partido
 
 cargar_logos_bp = Blueprint('cargar_logos', __name__, url_prefix='/api/admin')
 

@@ -5,7 +5,7 @@ from backend.database import db
 from backend.models.configuracion_sistema import ConfiguracionSistema
 from backend.models.partido_politico import PartidoPolitico
 from backend.models.candidato import Candidato
-from backend.models.tipo_eleccion import TipoEleccion
+from backend.models.configuracion_electoral import TipoEleccion
 import json
 from datetime import datetime
 

@@ -342,7 +342,9 @@ def _auto_load_partidos_candidatos():
     """
     Cargar partidos y candidatos automáticamente si no existen
     """
-    from backend.models.configuracion_electoral import Partido, TipoEleccion, Candidato
+    from backend.models.partido_politico import PartidoPolitico as Partido
+    from backend.models.candidato import Candidato
+    from backend.models.configuracion_electoral import TipoEleccion
     
     try:
         # Verificar si ya hay partidos
@@ -827,7 +829,7 @@ def get_partidos():
     Accesible para todos los roles autenticados
     """
     try:
-        from backend.models.configuracion_electoral import Partido
+        from backend.models.partido_politico import PartidoPolitico as Partido
         
         partidos = Partido.query.filter_by(activo=True).order_by(Partido.nombre).all()
         

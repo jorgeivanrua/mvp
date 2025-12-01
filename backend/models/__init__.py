@@ -1,7 +1,9 @@
 # Models package
 from backend.models.user import User
 from backend.models.location import Location
-from backend.models.configuracion_electoral import TipoEleccion, Partido, Coalicion, PartidoCoalicion, Candidato
+from backend.models.configuracion_electoral import TipoEleccion, Coalicion, PartidoCoalicion
+from backend.models.partido_politico import PartidoPolitico as Partido
+from backend.models.candidato import Candidato
 from backend.models.formulario_e14 import FormularioE14, VotoPartido, VotoCandidato, HistorialFormulario
 from backend.models.coordinador_municipal import (
     FormularioE24Puesto, VotoPartidoE24Puesto,
