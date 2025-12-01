@@ -881,17 +881,27 @@ def get_todos_puestos():
         
         puestos_data = []
         for puesto in puestos:
+            # Contar mesas del puesto
+            total_mesas = Location.query.filter(
+                Location.tipo == 'mesa',
+                Location.departamento_codigo == puesto.departamento_codigo,
+                Location.municipio_codigo == puesto.municipio_codigo,
+                Location.zona_codigo == puesto.zona_codigo,
+                Location.puesto_codigo == puesto.puesto_codigo
+            ).count()
+            
             puestos_data.append({
                 'id': puesto.id,
                 'codigo': puesto.puesto_codigo,
-                'nombre': puesto.nombre,
+                'nombre': puesto.puesto_nombre or puesto.nombre_completo,
                 'latitud': puesto.latitud,
                 'longitud': puesto.longitud,
                 'departamento_codigo': puesto.departamento_codigo,
                 'departamento_nombre': puesto.departamento_nombre,
                 'municipio_codigo': puesto.municipio_codigo,
                 'municipio_nombre': puesto.municipio_nombre,
-                'zona_codigo': puesto.zona_codigo
+                'zona_codigo': puesto.zona_codigo,
+                'total_mesas': total_mesas
             })
         
         return jsonify({

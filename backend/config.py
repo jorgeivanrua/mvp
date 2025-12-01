@@ -38,6 +38,10 @@ class Config:
     # Pagination
     ITEMS_PER_PAGE = 20
     MAX_ITEMS_PER_PAGE = 100
+    
+    # SocketIO / Redis
+    SOCKETIO_MESSAGE_QUEUE = os.getenv('REDIS_URL', None)  # None para desarrollo sin Redis
+    SOCKETIO_ASYNC_MODE = 'threading'
 
 
 class DevelopmentConfig(Config):

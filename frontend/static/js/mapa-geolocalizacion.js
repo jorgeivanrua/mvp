@@ -139,13 +139,43 @@ class MapaGeolocalizacion {
             this.map.removeLayer(this.markers[markerId]);
         }
 
-        // Icono personalizado para puestos
+        // Determinar color según porcentaje de avance
+        const porcentaje = puesto.porcentaje_avance || 0;
+        let colorPuesto = '#dc3545'; // Rojo por defecto (0%)
+        let estadoTexto = 'Sin votos';
+        
+        if (porcentaje >= 100) {
+            colorPuesto = '#28a745'; // Verde - completado
+            estadoTexto = 'Completado';
+        } else if (porcentaje > 0) {
+            colorPuesto = '#ffc107'; // Amarillo - en progreso
+            estadoTexto = 'En progreso';
+        }
+
+        // Determinar si hay alertas
+        const tieneAlertas = puesto.tiene_alertas || false;
+        const tieneAlertasCriticas = puesto.tiene_alertas_criticas || false;
+        
+        // Icono de alerta si hay incidentes o delitos
+        let iconoAlerta = '';
+        if (tieneAlertasCriticas) {
+            iconoAlerta = '<span class="alerta-critica" title="¡Alerta Crítica!">⚠️</span>';
+        } else if (tieneAlertas) {
+            iconoAlerta = '<span class="alerta-normal" title="Alerta">⚠️</span>';
+        }
+
+        // Icono personalizado para puestos con número de mesa y alerta
         const iconoPuesto = L.divIcon({
             className: 'custom-marker-puesto',
-            html: '<div class="marker-pin marker-puesto"><i class="bi bi-building"></i></div>',
-            iconSize: [30, 42],
-            iconAnchor: [15, 42],
-            popupAnchor: [0, -42]
+            html: `
+                <div class="marker-pin-puesto" style="background-color: ${colorPuesto};">
+                    <span class="mesa-numero">${puesto.puesto_codigo || ''}</span>
+                </div>
+                ${iconoAlerta}
+            `,
+            iconSize: [30, 40],
+            iconAnchor: [15, 40],
+            popupAnchor: [0, -40]
         });
 
         // Crear marker
@@ -154,15 +184,59 @@ class MapaGeolocalizacion {
             title: puesto.nombre_completo
         });
 
-        // Popup con información
+        // Construir sección de alertas si existen
+        let seccionAlertas = '';
+        if (tieneAlertas) {
+            const incidentesActivos = puesto.incidentes_activos || 0;
+            const incidentesCriticos = puesto.incidentes_criticos || 0;
+            const delitosActivos = puesto.delitos_activos || 0;
+            const delitosGraves = puesto.delitos_graves || 0;
+            
+            seccionAlertas = '<hr style="margin: 8px 0;">';
+            seccionAlertas += '<div class="alertas-section">';
+            
+            if (incidentesActivos > 0) {
+                const badgeClass = incidentesCriticos > 0 ? 'bg-danger' : 'bg-warning';
+                seccionAlertas += `<p class="mb-1"><strong>⚠️ Incidentes:</strong> <span class="badge ${badgeClass}">${incidentesActivos}</span>`;
+                if (incidentesCriticos > 0) {
+                    seccionAlertas += ` <span class="badge bg-danger">¡${incidentesCriticos} críticos!</span>`;
+                }
+                seccionAlertas += '</p>';
+            }
+            
+            if (delitosActivos > 0) {
+                const badgeClass = delitosGraves > 0 ? 'bg-danger' : 'bg-warning';
+                seccionAlertas += `<p class="mb-1"><strong>🚨 Delitos:</strong> <span class="badge ${badgeClass}">${delitosActivos}</span>`;
+                if (delitosGraves > 0) {
+                    seccionAlertas += ` <span class="badge bg-danger">¡${delitosGraves} graves!</span>`;
+                }
+                seccionAlertas += '</p>';
+            }
+            
+            seccionAlertas += '</div>';
+        }
+        
+        // Popup con información mejorada
         const popupContent = `
             <div class="marker-popup">
                 <h6><i class="bi bi-building"></i> ${puesto.puesto_nombre || 'Puesto'}</h6>
-                <p class="mb-1"><strong>Código:</strong> ${puesto.puesto_codigo}</p>
-                <p class="mb-1"><strong>Municipio:</strong> ${puesto.municipio_nombre}</p>
-                <p class="mb-1"><strong>Departamento:</strong> ${puesto.departamento_nombre}</p>
-                ${puesto.direccion ? `<p class="mb-1"><strong>Dirección:</strong> ${puesto.direccion}</p>` : ''}
-                ${puesto.total_mesas ? `<p class="mb-0"><strong>Mesas:</strong> ${puesto.total_mesas}</p>` : ''}
+                <p class="mb-1"><strong>📍 Código:</strong> ${puesto.puesto_codigo}</p>
+                <p class="mb-1"><strong>🏛️ Municipio:</strong> ${puesto.municipio_nombre}</p>
+                <p class="mb-1"><strong>🗺️ Departamento:</strong> ${puesto.departamento_nombre}</p>
+                ${puesto.direccion ? `<p class="mb-1"><strong>📫 Dirección:</strong> ${puesto.direccion}</p>` : ''}
+                <hr style="margin: 8px 0;">
+                <p class="mb-1"><strong>🗳️ Total Mesas:</strong> ${puesto.total_mesas || 0}</p>
+                <p class="mb-1"><strong>📋 E-14 Recibidos:</strong> ${puesto.total_formularios || 0}</p>
+                <p class="mb-1"><strong>✅ E-14 Validados:</strong> ${puesto.formularios_validados || 0} / ${puesto.total_mesas || 0}</p>
+                <p class="mb-1">
+                    <strong>📊 Avance:</strong> 
+                    <span class="badge" style="background-color: ${colorPuesto};">${porcentaje.toFixed(1)}%</span>
+                    <span class="badge bg-secondary">${estadoTexto}</span>
+                </p>
+                <div class="progress mt-2" style="height: 8px;">
+                    <div class="progress-bar" style="width: ${porcentaje}%; background-color: ${colorPuesto};"></div>
+                </div>
+                ${seccionAlertas}
             </div>
         `;
 
@@ -385,6 +459,75 @@ const estilosMarkers = `
     color: white;
 }
 
+.marker-pin-puesto {
+    width: 30px;
+    height: 40px;
+    border-radius: 15px 15px 15px 0;
+    position: relative;
+    transform: rotate(-45deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid white;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.marker-pin-puesto:hover {
+    transform: rotate(-45deg) scale(1.1);
+}
+
+.marker-pin-puesto .mesa-numero {
+    transform: rotate(45deg);
+    font-size: 11px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.custom-marker-puesto .alerta-critica {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    font-size: 18px;
+    animation: pulse-alert 1.5s infinite;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    z-index: 1000;
+}
+
+.custom-marker-puesto .alerta-normal {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    font-size: 16px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    z-index: 1000;
+}
+
+@keyframes pulse-alert {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+}
+
+.marker-popup .alertas-section {
+    background-color: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 8px;
+    border-radius: 4px;
+    margin-top: 8px;
+}
+
+.marker-popup .alertas-section p {
+    margin-bottom: 4px !important;
+}
+
 .marker-puesto {
     background: #007bff;
     border: 3px solid #0056b3;
@@ -407,7 +550,7 @@ const estilosMarkers = `
 }
 
 .marker-popup {
-    min-width: 200px;
+    min-width: 250px;
 }
 
 .marker-popup h6 {
@@ -420,6 +563,16 @@ const estilosMarkers = `
 .marker-popup p {
     font-size: 13px;
     color: #666;
+}
+
+.marker-popup .progress {
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.marker-popup .badge {
+    font-size: 11px;
+    padding: 4px 8px;
 }
 </style>
 `;

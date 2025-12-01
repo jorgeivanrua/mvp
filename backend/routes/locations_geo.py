@@ -6,6 +6,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.user import User
 from backend.models.location import Location
 from backend.models.formulario_e14 import FormularioE14
+from backend.models.incidentes_delitos import IncidenteElectoral, DelitoElectoral
 from backend.database import db
 from backend.utils.decorators import role_required
 
@@ -75,6 +76,32 @@ def obtener_puestos_geolocalizados():
                 FormularioE14.estado == 'validado'
             ).count()
             
+            # Contar incidentes del puesto (activos = no resueltos)
+            incidentes_activos = IncidenteElectoral.query.filter(
+                IncidenteElectoral.puesto_id == puesto.id,
+                IncidenteElectoral.estado.in_(['reportado', 'en_revision', 'escalado'])
+            ).count()
+            
+            # Contar incidentes críticos
+            incidentes_criticos = IncidenteElectoral.query.filter(
+                IncidenteElectoral.puesto_id == puesto.id,
+                IncidenteElectoral.severidad == 'critica',
+                IncidenteElectoral.estado.in_(['reportado', 'en_revision', 'escalado'])
+            ).count()
+            
+            # Contar delitos del puesto (activos = no archivados)
+            delitos_activos = DelitoElectoral.query.filter(
+                DelitoElectoral.puesto_id == puesto.id,
+                DelitoElectoral.estado.in_(['reportado', 'en_investigacion', 'investigado', 'denunciado'])
+            ).count()
+            
+            # Contar delitos graves
+            delitos_graves = DelitoElectoral.query.filter(
+                DelitoElectoral.puesto_id == puesto.id,
+                DelitoElectoral.gravedad.in_(['grave', 'muy_grave']),
+                DelitoElectoral.estado.in_(['reportado', 'en_investigacion', 'investigado', 'denunciado'])
+            ).count()
+            
             puestos_data.append({
                 'id': puesto.id,
                 'puesto_codigo': puesto.puesto_codigo,
@@ -91,7 +118,13 @@ def obtener_puestos_geolocalizados():
                 'total_mesas': mesas,
                 'total_formularios': formularios_count,
                 'formularios_validados': formularios_validados,
-                'porcentaje_avance': round((formularios_validados / mesas * 100) if mesas > 0 else 0, 2)
+                'porcentaje_avance': round((formularios_validados / mesas * 100) if mesas > 0 else 0, 2),
+                'incidentes_activos': incidentes_activos,
+                'incidentes_criticos': incidentes_criticos,
+                'delitos_activos': delitos_activos,
+                'delitos_graves': delitos_graves,
+                'tiene_alertas': (incidentes_activos > 0 or delitos_activos > 0),
+                'tiene_alertas_criticas': (incidentes_criticos > 0 or delitos_graves > 0)
             })
         
         return jsonify({

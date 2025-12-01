@@ -7,6 +7,8 @@ let incidentes = [];
 let delitos = [];
 let tiposIncidentes = {};
 let tiposDelitos = {};
+let fotoCaptureIncidente = null;
+let fotoCaptureDelito = null;
 
 /**
  * Inicializar módulo de incidentes y delitos
@@ -241,6 +243,18 @@ function reportarIncidente() {
     // Limpiar formulario
     document.getElementById('formIncidente').reset();
     
+    // Inicializar componente de fotos si no existe
+    if (!fotoCaptureIncidente) {
+        fotoCaptureIncidente = new FotoCaptureComponent('foto-capture-incidente', {
+            maxFiles: 5,
+            onFilesChange: (files) => {
+                console.log('Fotos de incidente actualizadas:', files.length);
+            }
+        });
+    } else {
+        fotoCaptureIncidente.clear();
+    }
+    
     // Abrir modal
     const modal = new bootstrap.Modal(document.getElementById('incidenteModal'));
     modal.show();
@@ -264,15 +278,44 @@ async function guardarIncidente() {
         titulo: formData.get('titulo'),
         descripcion: formData.get('descripcion'),
         severidad: formData.get('severidad'),
-        mesa_id: selectedMesa ? selectedMesa.id : null
+        mesa_id: selectedMesa ? selectedMesa.id : null,
+        tipo: 'incidente'
     };
     
+    // Obtener fotos antes de intentar guardar
+    const fotos = fotoCaptureIncidente ? fotoCaptureIncidente.getFiles() : [];
+    
     try {
+        // Verificar si hay conexión
+        if (!navigator.onLine) {
+            // Guardar offline directamente
+            await guardarIncidenteOffline(data, fotos);
+            return;
+        }
+        
         Utils.showInfo('Reportando incidente...');
         
         const response = await APIClient.crearIncidente(data);
         
-        if (response.message) {
+        if (response.success && response.data) {
+            const incidenteId = response.data.id;
+            
+            // Subir fotos si hay
+            if (fotos.length > 0) {
+                Utils.showInfo('Subiendo evidencia fotográfica...');
+                
+                try {
+                    await window.uploadManager.uploadWithProgressModal(
+                        fotos,
+                        'incidente',
+                        incidenteId
+                    );
+                } catch (uploadError) {
+                    console.error('Error subiendo fotos:', uploadError);
+                    Utils.showWarning('Incidente creado pero hubo errores al subir algunas fotos');
+                }
+            }
+            
             Utils.showSuccess('✓ Incidente reportado exitosamente');
             
             // Cerrar modal
@@ -284,7 +327,60 @@ async function guardarIncidente() {
         }
     } catch (error) {
         console.error('Error guardando incidente:', error);
-        Utils.showError('Error al reportar incidente: ' + error.message);
+        
+        // Si falla, intentar guardar offline
+        if (window.syncManager && window.indexedDBService) {
+            try {
+                await guardarIncidenteOffline(data, fotos);
+            } catch (offlineError) {
+                console.error('Error guardando offline:', offlineError);
+                Utils.showError('Error al reportar incidente: ' + error.message);
+            }
+        } else {
+            Utils.showError('Error al reportar incidente: ' + error.message);
+        }
+    }
+}
+
+/**
+ * Guardar incidente offline
+ */
+async function guardarIncidenteOffline(data, fotos) {
+    try {
+        // Guardar reporte en IndexedDB
+        const tempId = await window.syncManager.guardarReporteOffline(data);
+        
+        // Guardar fotos offline si hay
+        if (fotos && fotos.length > 0) {
+            for (const foto of fotos) {
+                // Convertir foto a base64
+                const base64 = await convertirFotoABase64(foto);
+                
+                const evidencia = {
+                    file_data: base64,
+                    filename: foto.name,
+                    mime_type: foto.type,
+                    tipo_reporte: 'incidente',
+                    fecha_captura: new Date().toISOString()
+                };
+                
+                await window.syncManager.guardarEvidenciaOffline(evidencia, tempId);
+            }
+        }
+        
+        Utils.showWarning('⚠️ Sin conexión. Incidente guardado localmente y se sincronizará automáticamente.');
+        
+        // Cerrar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('incidenteModal'));
+        if (modal) modal.hide();
+        
+        // Limpiar formulario
+        document.getElementById('formIncidente').reset();
+        if (fotoCaptureIncidente) fotoCaptureIncidente.clear();
+        
+    } catch (error) {
+        console.error('Error guardando offline:', error);
+        throw error;
     }
 }
 
@@ -294,6 +390,18 @@ async function guardarIncidente() {
 function reportarDelito() {
     // Limpiar formulario
     document.getElementById('formDelito').reset();
+    
+    // Inicializar componente de fotos si no existe
+    if (!fotoCaptureDelito) {
+        fotoCaptureDelito = new FotoCaptureComponent('foto-capture-delito', {
+            maxFiles: 5,
+            onFilesChange: (files) => {
+                console.log('Fotos de delito actualizadas:', files.length);
+            }
+        });
+    } else {
+        fotoCaptureDelito.clear();
+    }
     
     // Abrir modal
     const modal = new bootstrap.Modal(document.getElementById('delitoModal'));
@@ -319,15 +427,44 @@ async function guardarDelito() {
         descripcion: formData.get('descripcion'),
         gravedad: formData.get('gravedad'),
         testigos_adicionales: formData.get('testigos_adicionales') || '',
-        mesa_id: selectedMesa ? selectedMesa.id : null
+        mesa_id: selectedMesa ? selectedMesa.id : null,
+        tipo: 'delito'
     };
     
+    // Obtener fotos antes de intentar guardar
+    const fotos = fotoCaptureDelito ? fotoCaptureDelito.getFiles() : [];
+    
     try {
+        // Verificar si hay conexión
+        if (!navigator.onLine) {
+            // Guardar offline directamente
+            await guardarDelitoOffline(data, fotos);
+            return;
+        }
+        
         Utils.showInfo('Reportando delito...');
         
         const response = await APIClient.crearDelito(data);
         
-        if (response.message) {
+        if (response.success && response.data) {
+            const delitoId = response.data.id;
+            
+            // Subir fotos si hay
+            if (fotos.length > 0) {
+                Utils.showInfo('Subiendo evidencia fotográfica...');
+                
+                try {
+                    await window.uploadManager.uploadWithProgressModal(
+                        fotos,
+                        'delito',
+                        delitoId
+                    );
+                } catch (uploadError) {
+                    console.error('Error subiendo fotos:', uploadError);
+                    Utils.showWarning('Delito creado pero hubo errores al subir algunas fotos');
+                }
+            }
+            
             Utils.showSuccess('✓ Delito reportado exitosamente');
             
             // Cerrar modal
@@ -339,8 +476,73 @@ async function guardarDelito() {
         }
     } catch (error) {
         console.error('Error guardando delito:', error);
-        Utils.showError('Error al reportar delito: ' + error.message);
+        
+        // Si falla, intentar guardar offline
+        if (window.syncManager && window.indexedDBService) {
+            try {
+                await guardarDelitoOffline(data, fotos);
+            } catch (offlineError) {
+                console.error('Error guardando offline:', offlineError);
+                Utils.showError('Error al reportar delito: ' + error.message);
+            }
+        } else {
+            Utils.showError('Error al reportar delito: ' + error.message);
+        }
     }
+}
+
+/**
+ * Guardar delito offline
+ */
+async function guardarDelitoOffline(data, fotos) {
+    try {
+        // Guardar reporte en IndexedDB
+        const tempId = await window.syncManager.guardarReporteOffline(data);
+        
+        // Guardar fotos offline si hay
+        if (fotos && fotos.length > 0) {
+            for (const foto of fotos) {
+                // Convertir foto a base64
+                const base64 = await convertirFotoABase64(foto);
+                
+                const evidencia = {
+                    file_data: base64,
+                    filename: foto.name,
+                    mime_type: foto.type,
+                    tipo_reporte: 'delito',
+                    fecha_captura: new Date().toISOString()
+                };
+                
+                await window.syncManager.guardarEvidenciaOffline(evidencia, tempId);
+            }
+        }
+        
+        Utils.showWarning('⚠️ Sin conexión. Delito guardado localmente y se sincronizará automáticamente.');
+        
+        // Cerrar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('delitoModal'));
+        if (modal) modal.hide();
+        
+        // Limpiar formulario
+        document.getElementById('formDelito').reset();
+        if (fotoCaptureDelito) fotoCaptureDelito.clear();
+        
+    } catch (error) {
+        console.error('Error guardando offline:', error);
+        throw error;
+    }
+}
+
+/**
+ * Convertir foto a base64
+ */
+function convertirFotoABase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
 }
 
 /**
@@ -404,10 +606,12 @@ window.reportarDelito = reportarDelito;
 window.guardarDelito = guardarDelito;
 window.cargarIncidentes = cargarIncidentes;
 window.cargarDelitos = cargarDelitos;
+window.guardarIncidenteOffline = guardarIncidenteOffline;
+window.guardarDelitoOffline = guardarDelitoOffline;
 
 
 // ============================================
-// INTEGRACIÓN CON SYNC MANAGER
+// INTEGRACIÓN CON SYNC MANAGER (LEGACY)
 // ============================================
 
 /**

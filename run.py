@@ -2,7 +2,7 @@
 Script para ejecutar la aplicación
 """
 import os
-from backend.app import create_app
+from backend.app import create_app, socketio
 
 # Obtener configuración del entorno
 config_name = os.getenv('FLASK_ENV', 'development')
@@ -59,9 +59,13 @@ if __name__ == '__main__':
     print(f">> Iniciando aplicacion en modo {config_name}")
     print(f">> Servidor corriendo en http://0.0.0.0:{port}")
     print(f">> Base de datos: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    print(f">> SocketIO habilitado para notificaciones en tiempo real")
     
-    app.run(
+    # Usar socketio.run en lugar de app.run para soporte de WebSocket
+    socketio.run(
+        app,
         host='0.0.0.0',
         port=port,
-        debug=app.config['DEBUG']
+        debug=app.config['DEBUG'],
+        allow_unsafe_werkzeug=True  # Solo para desarrollo
     )

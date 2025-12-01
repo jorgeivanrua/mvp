@@ -234,29 +234,50 @@ async function cargarPuestos() {
             const puestos = response.data;
             console.log('[Monitoreo] Puestos encontrados:', puestos.length);
             
-            // Agregar marcadores de puestos (en gris, más pequeños)
+            // Agregar marcadores de puestos con ícono de pin
             puestos.forEach(puesto => {
                 if (puesto.latitud && puesto.longitud) {
+                    // Usar ícono de pin con Bootstrap Icons
                     const icon = L.divIcon({
-                        className: 'custom-marker',
-                        html: `<div style="background-color: #6c757d; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>`,
-                        iconSize: [12, 12],
-                        iconAnchor: [6, 6]
+                        className: 'custom-marker-puesto',
+                        html: `
+                            <div style="position: relative; width: 30px; height: 40px;">
+                                <svg width="30" height="40" viewBox="0 0 30 40" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+                                    <path d="M15 0 C7 0 0 7 0 15 C0 20 15 40 15 40 S30 20 30 15 C30 7 23 0 15 0 Z" 
+                                          fill="#6c757d" stroke="white" stroke-width="2"/>
+                                    <circle cx="15" cy="15" r="6" fill="white"/>
+                                    <text x="15" y="19" text-anchor="middle" font-size="10" fill="#6c757d" font-weight="bold">${puesto.total_mesas || 0}</text>
+                                </svg>
+                            </div>
+                        `,
+                        iconSize: [30, 40],
+                        iconAnchor: [15, 40],
+                        popupAnchor: [0, -40]
                     });
                     
                     const marker = L.marker([puesto.latitud, puesto.longitud], { icon: icon })
                         .addTo(mapa)
                         .bindPopup(`
-                            <strong>${puesto.nombre}</strong><br>
-                            <small>${puesto.municipio_nombre}, ${puesto.departamento_nombre}</small><br>
-                            <small>Zona: ${puesto.zona_codigo}</small>
+                            <div style="min-width: 220px;">
+                                <h6 class="mb-2"><i class="bi bi-building"></i> ${puesto.nombre}</h6>
+                                <hr class="my-2">
+                                <div class="mb-1">
+                                    <small><i class="bi bi-geo-alt-fill text-primary"></i> ${puesto.municipio_nombre}, ${puesto.departamento_nombre}</small>
+                                </div>
+                                <div class="mb-1">
+                                    <small><i class="bi bi-grid-3x3-gap text-info"></i> Zona: ${puesto.zona_codigo}</small>
+                                </div>
+                                <div class="mb-1">
+                                    <small><i class="bi bi-table text-success"></i> <strong>${puesto.total_mesas || 0} mesas</strong></small>
+                                </div>
+                            </div>
                         `);
                     
                     marcadores.push(marker);
                 }
             });
             
-            console.log('[Monitoreo] Marcadores de puestos agregados');
+            console.log('[Monitoreo] Marcadores de puestos agregados:', puestos.length);
         }
     } catch (error) {
         console.error('[Monitoreo] Error cargando puestos:', error);

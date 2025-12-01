@@ -6,6 +6,7 @@ from flask import Flask
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from flask_compress import Compress
+from flask_socketio import SocketIO
 from whitenoise import WhiteNoise
 
 from backend.config import config
@@ -16,6 +17,7 @@ from backend.utils.logging_config import setup_logging
 # Inicializar extensiones
 jwt = JWTManager()
 compress = Compress()
+socketio = SocketIO()
 
 
 def create_app(config_name='default'):
@@ -42,14 +44,28 @@ def create_app(config_name='default'):
     init_db(app)
     jwt.init_app(app)
     configure_jwt_callbacks(jwt)
-    CORS(app)
+    CORS(app, resources={r"/*": {"origins": "*"}})
     compress.init_app(app)  # Compresión GZIP para respuestas
+    
+    # Configurar SocketIO
+    socketio.init_app(
+        app,
+        cors_allowed_origins="*",
+        async_mode='threading',
+        message_queue=app.config.get('SOCKETIO_MESSAGE_QUEUE'),
+        logger=app.debug,
+        engineio_logger=app.debug
+    )
     
     # Registrar blueprints
     register_blueprints(app)
     
     # Registrar manejadores de errores
     register_error_handlers(app)
+    
+    # Registrar event handlers de SocketIO
+    with app.app_context():
+        from backend.services import websocket_service  # Importar para registrar handlers
     
     # Configurar WhiteNoise para servir archivos estáticos en producción
     if not app.debug:
@@ -95,6 +111,9 @@ def register_blueprints(app):
     from backend.routes.configuracion_sistema import config_sistema_bp
     from backend.routes.monitoreo import monitoreo_bp
     from backend.routes.cargar_logos import cargar_logos_bp
+    from backend.routes.notificaciones import notificaciones_bp
+    from backend.routes.evidencia import evidencia_bp
+    from backend.routes.seguimiento import seguimiento_bp
     
     # API routes
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -118,6 +137,9 @@ def register_blueprints(app):
     app.register_blueprint(verificacion_bp)
     app.register_blueprint(monitoreo_bp)
     app.register_blueprint(cargar_logos_bp)
+    app.register_blueprint(notificaciones_bp)
+    app.register_blueprint(evidencia_bp)
+    app.register_blueprint(seguimiento_bp)
     
     # Public routes (sin autenticación)
     from backend.routes.public import public_bp

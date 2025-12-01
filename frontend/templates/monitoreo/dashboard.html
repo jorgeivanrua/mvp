@@ -727,6 +727,17 @@ function getMarkerColor(usuario) {
     return '#6c757d';
 }
 
+// Obtener color del pin de puesto según porcentaje de avance
+function getPuestoColor(porcentaje) {
+    if (porcentaje === 0) {
+        return '#dc3545'; // Rojo - sin votos
+    } else if (porcentaje >= 100) {
+        return '#28a745'; // Verde - completado
+    } else {
+        return '#ffc107'; // Amarillo - en progreso
+    }
+}
+
 // Crear icono personalizado
 function createCustomIcon(color) {
     return L.divIcon({

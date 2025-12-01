@@ -33,6 +33,16 @@ class IncidenteElectoral(db.Model):
     notas_resolucion = db.Column(db.Text, nullable=True)
     escalado_a = db.Column(db.String(50), nullable=True)  # coordinador_municipal, coordinador_departamental, auditor
     
+    # Metadatos de geolocalización del reporte
+    latitud_reporte = db.Column(db.Float, nullable=True)
+    longitud_reporte = db.Column(db.Float, nullable=True)
+    precision_gps = db.Column(db.Float, nullable=True)  # en metros
+    
+    # Sincronización offline
+    sincronizado = db.Column(db.Boolean, default=True)
+    fecha_sincronizacion = db.Column(db.DateTime, nullable=True)
+    dispositivo_id = db.Column(db.String(100), nullable=True)
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -141,6 +151,16 @@ class DelitoElectoral(db.Model):
     autoridad_competente = db.Column(db.String(200), nullable=True)
     fecha_denuncia = db.Column(db.DateTime, nullable=True)
     seguimiento = db.Column(db.Text, nullable=True)
+    
+    # Metadatos de geolocalización del reporte
+    latitud_reporte = db.Column(db.Float, nullable=True)
+    longitud_reporte = db.Column(db.Float, nullable=True)
+    precision_gps = db.Column(db.Float, nullable=True)  # en metros
+    
+    # Sincronización offline
+    sincronizado = db.Column(db.Boolean, default=True)
+    fecha_sincronizacion = db.Column(db.DateTime, nullable=True)
+    dispositivo_id = db.Column(db.String(100), nullable=True)
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -294,4 +314,67 @@ class NotificacionReporte(db.Model):
             'leida': self.leida,
             'fecha_lectura': self.fecha_lectura.isoformat() if self.fecha_lectura else None,
             'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+
+class EvidenciaFotografica(db.Model):
+    """Modelo para evidencia fotográfica de incidentes y delitos"""
+    __tablename__ = 'evidencias_fotograficas'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Relación con reporte (puede ser incidente o delito)
+    incidente_id = db.Column(db.Integer, db.ForeignKey('incidentes_electorales.id'), nullable=True)
+    delito_id = db.Column(db.Integer, db.ForeignKey('delitos_electorales.id'), nullable=True)
+    
+    # Información del archivo
+    filename = db.Column(db.String(255), nullable=False, unique=True)
+    filename_original = db.Column(db.String(255), nullable=False)
+    url = db.Column(db.String(500), nullable=False)
+    mime_type = db.Column(db.String(50), nullable=False)
+    size_bytes = db.Column(db.Integer, nullable=False)
+    
+    # Metadatos de la foto
+    width = db.Column(db.Integer, nullable=True)
+    height = db.Column(db.Integer, nullable=True)
+    latitud = db.Column(db.Float, nullable=True)
+    longitud = db.Column(db.Float, nullable=True)
+    fecha_captura = db.Column(db.DateTime, nullable=True)
+    dispositivo = db.Column(db.String(200), nullable=True)
+    
+    # Auditoría
+    subido_por_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    fecha_subida = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relaciones
+    subido_por = db.relationship('User', backref='evidencias_subidas')
+    incidente = db.relationship('IncidenteElectoral', backref='evidencias', foreign_keys=[incidente_id])
+    delito = db.relationship('DelitoElectoral', backref='evidencias', foreign_keys=[delito_id])
+    
+    def to_dict(self):
+        """Convertir a diccionario"""
+        return {
+            'id': self.id,
+            'incidente_id': self.incidente_id,
+            'delito_id': self.delito_id,
+            'filename': self.filename,
+            'filename_original': self.filename_original,
+            'url': self.url,
+            'mime_type': self.mime_type,
+            'size_bytes': self.size_bytes,
+            'width': self.width,
+            'height': self.height,
+            'latitud': self.latitud,
+            'longitud': self.longitud,
+            'fecha_captura': self.fecha_captura.isoformat() if self.fecha_captura else None,
+            'dispositivo': self.dispositivo,
+            'subido_por_id': self.subido_por_id,
+            'subido_por_nombre': self.subido_por.nombre if self.subido_por else None,
+            'fecha_subida': self.fecha_subida.isoformat() if self.fecha_subida else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
