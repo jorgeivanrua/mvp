@@ -284,3 +284,86 @@ def exportar_candidatos():
             'success': False,
             'error': str(e)
         }), 500
+
+
+
+@candidatos_bp.route('/<int:candidato_id>/foto', methods=['POST'])
+@jwt_required()
+@role_required(['super_admin'])
+def subir_foto_candidato(candidato_id):
+    """
+    Subir foto de un candidato
+    Form data:
+        foto: Archivo de imagen (png, jpg, jpeg, webp)
+    """
+    try:
+        from backend.services.candidato_service import CandidatoService
+        import os
+        from flask import current_app
+        
+        candidato = Candidato.query.get(candidato_id)
+        
+        if not candidato:
+            return jsonify({
+                'success': False,
+                'error': 'Candidato no encontrado'
+            }), 404
+        
+        # Verificar que se envió un archivo
+        if 'foto' not in request.files:
+            return jsonify({
+                'success': False,
+                'error': 'No se proporcionó archivo'
+            }), 400
+        
+        archivo = request.files['foto']
+        
+        if archivo.filename == '':
+            return jsonify({
+                'success': False,
+                'error': 'No se seleccionó archivo'
+            }), 400
+        
+        # Validar archivo
+        valid, error = CandidatoService.validar_foto(archivo)
+        if not valid:
+            return jsonify({
+                'success': False,
+                'error': error
+            }), 400
+        
+        # Guardar archivo
+        upload_folder = current_app.config.get('UPLOAD_FOLDER', 'frontend/static/uploads')
+        candidatos_folder = os.path.join(upload_folder, 'candidatos')
+        
+        # Crear directorio si no existe
+        os.makedirs(candidatos_folder, exist_ok=True)
+        
+        # Generar nombre único
+        extension = archivo.filename.rsplit('.', 1)[1].lower()
+        filename = f"candidato_{candidato_id}_{candidato.nombre_completo.replace(' ', '_')[:30]}.{extension}"
+        filepath = os.path.join(candidatos_folder, filename)
+        
+        # Guardar archivo
+        archivo.save(filepath)
+        
+        # Actualizar URL en base de datos
+        foto_url = f"/static/uploads/candidatos/{filename}"
+        candidato.foto_url = foto_url
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Foto subida exitosamente',
+            'data': {
+                'foto_url': foto_url,
+                'candidato': candidato.to_dict()
+            }
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

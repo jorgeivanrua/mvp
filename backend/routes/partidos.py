@@ -283,3 +283,87 @@ def exportar_partidos():
             'success': False,
             'error': str(e)
         }), 500
+
+
+
+@partidos_bp.route('/<int:partido_id>/logo', methods=['POST'])
+@jwt_required()
+@role_required(['super_admin'])
+def subir_logo_partido(partido_id):
+    """
+    Subir logo de un partido político
+    Form data:
+        logo: Archivo de imagen (png, jpg, jpeg, webp, svg)
+    """
+    try:
+        from backend.services.partido_service import PartidoService
+        from backend.services.upload_service import UploadService
+        import os
+        from flask import current_app
+        
+        partido = PartidoPolitico.query.get(partido_id)
+        
+        if not partido:
+            return jsonify({
+                'success': False,
+                'error': 'Partido no encontrado'
+            }), 404
+        
+        # Verificar que se envió un archivo
+        if 'logo' not in request.files:
+            return jsonify({
+                'success': False,
+                'error': 'No se proporcionó archivo'
+            }), 400
+        
+        archivo = request.files['logo']
+        
+        if archivo.filename == '':
+            return jsonify({
+                'success': False,
+                'error': 'No se seleccionó archivo'
+            }), 400
+        
+        # Validar archivo
+        valid, error = PartidoService.validar_logo(archivo)
+        if not valid:
+            return jsonify({
+                'success': False,
+                'error': error
+            }), 400
+        
+        # Guardar archivo
+        upload_folder = current_app.config.get('UPLOAD_FOLDER', 'frontend/static/uploads')
+        partidos_folder = os.path.join(upload_folder, 'partidos')
+        
+        # Crear directorio si no existe
+        os.makedirs(partidos_folder, exist_ok=True)
+        
+        # Generar nombre único
+        extension = archivo.filename.rsplit('.', 1)[1].lower()
+        filename = f"partido_{partido_id}_{partido.sigla.lower()}.{extension}"
+        filepath = os.path.join(partidos_folder, filename)
+        
+        # Guardar archivo
+        archivo.save(filepath)
+        
+        # Actualizar URL en base de datos
+        logo_url = f"/static/uploads/partidos/{filename}"
+        partido.logo_url = logo_url
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Logo subido exitosamente',
+            'data': {
+                'logo_url': logo_url,
+                'partido': partido.to_dict()
+            }
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

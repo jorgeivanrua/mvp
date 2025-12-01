@@ -419,3 +419,400 @@ class TestLogoValidationProperties:
             assert not valid, f"Tamaño {tamano_mb}MB no debería ser válido"
             assert error is not None
             assert 'grande' in error.lower() or 'tamaño' in error.lower()
+
+
+
+class TestPartidoListingProperties:
+    """Property tests para listado de partidos"""
+    
+    @given(num_partidos=st.integers(min_value=0, max_value=20))
+    @settings(max_examples=50)
+    def test_property_6_all_registered_parties_are_listed(self, app, num_partidos):
+        """
+        **Feature: mejoras-admin-mapas, Property 6: All registered parties are listed**
+        **Validates: Requirements 3.1**
+        
+        Para cualquier conjunto de partidos registrados, todos deben aparecer en el listado
+        """
+        from backend.services.partido_service import PartidoService
+        
+        with app.app_context():
+            # Crear partidos
+            partidos_creados = []
+            for i in range(num_partidos):
+                partido_data = {
+                    'nombre': f'Partido Test List {i}',
+                    'sigla': f'PTL{i}',
+                    'color': f'#{i:02X}{i:02X}{i:02X}'
+                }
+                partido_dict, error = PartidoService.crear_partido(partido_data)
+                assert error is None
+                partidos_creados.append(partido_dict['id'])
+            
+            # Listar partidos
+            resultado = PartidoService.listar_partidos()
+            
+            # Verificar que todos los partidos creados están en el listado
+            ids_listados = [p['id'] for p in resultado['partidos']]
+            
+            for partido_id in partidos_creados:
+                assert partido_id in ids_listados, f"Partido {partido_id} no aparece en el listado"
+            
+            # Limpiar
+            for partido_id in partidos_creados:
+                PartidoService.eliminar_partido(partido_id)
+    
+    @given(
+        num_activos=st.integers(min_value=0, max_value=10),
+        num_inactivos=st.integers(min_value=0, max_value=10)
+    )
+    @settings(max_examples=30)
+    def test_listing_with_active_filter(self, app, num_activos, num_inactivos):
+        """Verificar que el filtro por activo funciona correctamente"""
+        from backend.services.partido_service import PartidoService
+        
+        with app.app_context():
+            partidos_creados = []
+            
+            # Crear partidos activos
+            for i in range(num_activos):
+                partido_data = {
+                    'nombre': f'Partido Activo {i}',
+                    'sigla': f'PA{i}',
+                    'color': '#00FF00',
+                    'activo': True
+                }
+                partido_dict, error = PartidoService.crear_partido(partido_data)
+                assert error is None
+                partidos_creados.append(partido_dict['id'])
+            
+            # Crear partidos inactivos
+            for i in range(num_inactivos):
+                partido_data = {
+                    'nombre': f'Partido Inactivo {i}',
+                    'sigla': f'PI{i}',
+                    'color': '#FF0000',
+                    'activo': False
+                }
+                partido_dict, error = PartidoService.crear_partido(partido_data)
+                assert error is None
+                partidos_creados.append(partido_dict['id'])
+            
+            # Listar solo activos
+            resultado_activos = PartidoService.listar_partidos(filtros={'activo': True})
+            ids_activos = [p['id'] for p in resultado_activos['partidos']]
+            
+            # Verificar que solo aparecen los activos que creamos
+            for partido_id in partidos_creados[:num_activos]:
+                assert partido_id in ids_activos
+            
+            # Listar solo inactivos
+            resultado_inactivos = PartidoService.listar_partidos(filtros={'activo': False})
+            ids_inactivos = [p['id'] for p in resultado_inactivos['partidos']]
+            
+            # Verificar que solo aparecen los inactivos que creamos
+            for partido_id in partidos_creados[num_activos:]:
+                assert partido_id in ids_inactivos
+            
+            # Limpiar
+            for partido_id in partidos_creados:
+                PartidoService.eliminar_partido(partido_id)
+
+
+
+class TestCandidatoDeletionProperties:
+    """Property tests para eliminación de candidatos"""
+    
+    @given(st.integers(min_value=1, max_value=100))
+    @settings(max_examples=50)
+    def test_property_12_candidate_deletion_without_votes_succeeds(self, app, candidato_num):
+        """
+        **Feature: mejoras-admin-mapas, Property 12: Candidate deletion requires no registered votes**
+        **Validates: Requirements 4.4**
+        
+        Para cualquier candidato sin votos registrados, la eliminación debe tener éxito
+        """
+        from backend.services.candidato_service import CandidatoService
+        from backend.services.partido_service import PartidoService
+        
+        with app.app_context():
+            # Crear partido
+            partido_data = {
+                'nombre': f'Partido Test Cand {candidato_num}',
+                'sigla': f'PTC{candidato_num}',
+                'color': '#0000FF'
+            }
+            partido_dict, error = PartidoService.crear_partido(partido_data)
+            assert error is None
+            
+            # Crear tipo de elección si no existe
+            tipo_eleccion = TipoEleccion.query.first()
+            if not tipo_eleccion:
+                tipo_eleccion = TipoEleccion(
+                    nombre='Presidencial',
+                    nivel='nacional',
+                    descripcion='Elección presidencial'
+                )
+                db.session.add(tipo_eleccion)
+                db.session.commit()
+            
+            # Crear candidato sin votos
+            candidato_data = {
+                'nombre_completo': f'Candidato Test {candidato_num}',
+                'partido_id': partido_dict['id'],
+                'tipo_eleccion_id': tipo_eleccion.id,
+                'cargo': 'Presidente'
+            }
+            candidato_dict, error = CandidatoService.crear_candidato(candidato_data)
+            assert error is None
+            candidato_id = candidato_dict['id']
+            
+            # Intentar eliminar candidato sin votos
+            success, error = CandidatoService.eliminar_candidato(candidato_id)
+            
+            # La eliminación debe tener éxito
+            assert success
+            assert error is None
+            
+            # Verificar que el candidato fue eliminado
+            candidato = Candidato.query.get(candidato_id)
+            assert candidato is None
+            
+            # Limpiar partido
+            PartidoService.eliminar_partido(partido_dict['id'])
+
+
+class TestCandidatoPartyValidationProperties:
+    """Property tests para validación de partido en candidatos"""
+    
+    @given(st.integers(min_value=1, max_value=100))
+    @settings(max_examples=50)
+    def test_property_13_candidate_party_association_validation_valid(self, app, num):
+        """
+        **Feature: mejoras-admin-mapas, Property 13: Candidate party association validation**
+        **Validates: Requirements 4.5**
+        
+        Para cualquier candidato con un partido_id válido, la creación debe tener éxito
+        """
+        from backend.services.candidato_service import CandidatoService
+        from backend.services.partido_service import PartidoService
+        
+        with app.app_context():
+            # Crear partido válido
+            partido_data = {
+                'nombre': f'Partido Valid {num}',
+                'sigla': f'PV{num}',
+                'color': '#00FF00'
+            }
+            partido_dict, error = PartidoService.crear_partido(partido_data)
+            assert error is None
+            
+            # Crear tipo de elección
+            tipo_eleccion = TipoEleccion.query.first()
+            if not tipo_eleccion:
+                tipo_eleccion = TipoEleccion(
+                    nombre='Presidencial',
+                    nivel='nacional',
+                    descripcion='Elección presidencial'
+                )
+                db.session.add(tipo_eleccion)
+                db.session.commit()
+            
+            # Crear candidato con partido válido
+            candidato_data = {
+                'nombre_completo': f'Candidato Valid {num}',
+                'partido_id': partido_dict['id'],  # ID válido
+                'tipo_eleccion_id': tipo_eleccion.id,
+                'cargo': 'Senador'
+            }
+            candidato_dict, error = CandidatoService.crear_candidato(candidato_data)
+            
+            # La creación debe tener éxito
+            assert error is None
+            assert candidato_dict is not None
+            assert candidato_dict['partido_id'] == partido_dict['id']
+            
+            # Limpiar
+            CandidatoService.eliminar_candidato(candidato_dict['id'])
+            PartidoService.eliminar_partido(partido_dict['id'])
+    
+    @given(st.integers(min_value=10000, max_value=99999))
+    @settings(max_examples=50)
+    def test_property_13_candidate_party_association_validation_invalid(self, app, invalid_id):
+        """
+        **Feature: mejoras-admin-mapas, Property 13: Candidate party association validation**
+        **Validates: Requirements 4.5**
+        
+        Para cualquier candidato con un partido_id inválido, la creación debe fallar
+        """
+        from backend.services.candidato_service import CandidatoService
+        
+        with app.app_context():
+            # Crear tipo de elección
+            tipo_eleccion = TipoEleccion.query.first()
+            if not tipo_eleccion:
+                tipo_eleccion = TipoEleccion(
+                    nombre='Presidencial',
+                    nivel='nacional',
+                    descripcion='Elección presidencial'
+                )
+                db.session.add(tipo_eleccion)
+                db.session.commit()
+            
+            # Intentar crear candidato con partido inválido
+            candidato_data = {
+                'nombre_completo': f'Candidato Invalid {invalid_id}',
+                'partido_id': invalid_id,  # ID que no existe
+                'tipo_eleccion_id': tipo_eleccion.id,
+                'cargo': 'Diputado'
+            }
+            candidato_dict, error = CandidatoService.crear_candidato(candidato_data)
+            
+            # La creación debe fallar
+            assert candidato_dict is None
+            assert error is not None
+            assert 'partido' in error.lower() or 'existe' in error.lower()
+
+
+
+class TestCandidatoListingProperties:
+    """Property tests para listado de candidatos"""
+    
+    @given(num_candidatos=st.integers(min_value=0, max_value=15))
+    @settings(max_examples=30)
+    def test_property_10_all_registered_candidates_are_listed(self, app, num_candidatos):
+        """
+        **Feature: mejoras-admin-mapas, Property 10: All registered candidates are listed**
+        **Validates: Requirements 4.1**
+        
+        Para cualquier conjunto de candidatos registrados, todos deben aparecer en el listado
+        """
+        from backend.services.candidato_service import CandidatoService
+        from backend.services.partido_service import PartidoService
+        
+        with app.app_context():
+            # Crear partido
+            partido_data = {
+                'nombre': f'Partido Test List Cand',
+                'sigla': 'PTLC',
+                'color': '#FF00FF'
+            }
+            partido_dict, error = PartidoService.crear_partido(partido_data)
+            assert error is None
+            
+            # Crear tipo de elección
+            tipo_eleccion = TipoEleccion.query.first()
+            if not tipo_eleccion:
+                tipo_eleccion = TipoEleccion(
+                    nombre='Presidencial',
+                    nivel='nacional',
+                    descripcion='Elección presidencial'
+                )
+                db.session.add(tipo_eleccion)
+                db.session.commit()
+            
+            # Crear candidatos
+            candidatos_creados = []
+            for i in range(num_candidatos):
+                candidato_data = {
+                    'nombre_completo': f'Candidato Test List {i}',
+                    'partido_id': partido_dict['id'],
+                    'tipo_eleccion_id': tipo_eleccion.id,
+                    'cargo': 'Senador'
+                }
+                candidato_dict, error = CandidatoService.crear_candidato(candidato_data)
+                assert error is None
+                candidatos_creados.append(candidato_dict['id'])
+            
+            # Listar candidatos
+            resultado = CandidatoService.listar_candidatos()
+            
+            # Verificar que todos los candidatos creados están en el listado
+            ids_listados = [c['id'] for c in resultado['candidatos']]
+            
+            for candidato_id in candidatos_creados:
+                assert candidato_id in ids_listados, f"Candidato {candidato_id} no aparece en el listado"
+            
+            # Limpiar
+            for candidato_id in candidatos_creados:
+                CandidatoService.eliminar_candidato(candidato_id)
+            PartidoService.eliminar_partido(partido_dict['id'])
+    
+    @given(num_candidatos=st.integers(min_value=1, max_value=10))
+    @settings(max_examples=20)
+    def test_listing_with_party_filter(self, app, num_candidatos):
+        """Verificar que el filtro por partido funciona correctamente"""
+        from backend.services.candidato_service import CandidatoService
+        from backend.services.partido_service import PartidoService
+        
+        with app.app_context():
+            # Crear dos partidos
+            partido1_data = {
+                'nombre': 'Partido Filtro 1',
+                'sigla': 'PF1',
+                'color': '#FF0000'
+            }
+            partido1_dict, error = PartidoService.crear_partido(partido1_data)
+            assert error is None
+            
+            partido2_data = {
+                'nombre': 'Partido Filtro 2',
+                'sigla': 'PF2',
+                'color': '#00FF00'
+            }
+            partido2_dict, error = PartidoService.crear_partido(partido2_data)
+            assert error is None
+            
+            # Crear tipo de elección
+            tipo_eleccion = TipoEleccion.query.first()
+            if not tipo_eleccion:
+                tipo_eleccion = TipoEleccion(
+                    nombre='Presidencial',
+                    nivel='nacional',
+                    descripcion='Elección presidencial'
+                )
+                db.session.add(tipo_eleccion)
+                db.session.commit()
+            
+            # Crear candidatos para partido 1
+            candidatos_p1 = []
+            for i in range(num_candidatos):
+                candidato_data = {
+                    'nombre_completo': f'Candidato P1 {i}',
+                    'partido_id': partido1_dict['id'],
+                    'tipo_eleccion_id': tipo_eleccion.id,
+                    'cargo': 'Senador'
+                }
+                candidato_dict, error = CandidatoService.crear_candidato(candidato_data)
+                assert error is None
+                candidatos_p1.append(candidato_dict['id'])
+            
+            # Crear candidatos para partido 2
+            candidatos_p2 = []
+            for i in range(num_candidatos):
+                candidato_data = {
+                    'nombre_completo': f'Candidato P2 {i}',
+                    'partido_id': partido2_dict['id'],
+                    'tipo_eleccion_id': tipo_eleccion.id,
+                    'cargo': 'Diputado'
+                }
+                candidato_dict, error = CandidatoService.crear_candidato(candidato_data)
+                assert error is None
+                candidatos_p2.append(candidato_dict['id'])
+            
+            # Listar solo candidatos del partido 1
+            resultado_p1 = CandidatoService.listar_candidatos(filtros={'partido_id': partido1_dict['id']})
+            ids_p1 = [c['id'] for c in resultado_p1['candidatos']]
+            
+            # Verificar que solo aparecen los del partido 1
+            for candidato_id in candidatos_p1:
+                assert candidato_id in ids_p1
+            
+            for candidato_id in candidatos_p2:
+                assert candidato_id not in ids_p1
+            
+            # Limpiar
+            for candidato_id in candidatos_p1 + candidatos_p2:
+                CandidatoService.eliminar_candidato(candidato_id)
+            PartidoService.eliminar_partido(partido1_dict['id'])
+            PartidoService.eliminar_partido(partido2_dict['id'])

@@ -62,11 +62,13 @@
   - Validar tamaño de archivo (max 5MB)
   - Generar nombre único para archivo
   - Guardar archivo en directorio seguro
+
   - _Requirements: 3.5_
 
 - [ ] 2.3 Escribir property test para eliminación de partidos
   - **Property 8: Party deletion requires no associated candidates**
   - **Validates: Requirements 3.4**
+
 
 - [ ] 2.4 Escribir property test para validación de logo
   - **Property 9: Party logo upload validation**
@@ -74,27 +76,36 @@
 
 ## Fase 3: Backend - Rutas de Partidos Políticos
 
+
 - [ ] 3. Crear endpoints REST para partidos
 - [ ] 3.1 Implementar GET /api/partidos
   - Listar todos los partidos con paginación
   - Agregar filtros por activo
   - Incluir contador de candidatos
   - Validar permisos de Super Admin
+
   - _Requirements: 3.1_
 
 - [ ] 3.2 Implementar POST /api/partidos
   - Recibir datos del partido
   - Validar campos obligatorios
   - Crear partido en base de datos
+
+
   - Retornar partido creado
   - _Requirements: 3.2_
 
 - [ ] 3.3 Implementar PUT /api/partidos/<id>
   - Recibir datos actualizados
   - Validar que partido existe
+
+
+
   - Actualizar partido en base de datos
   - Retornar partido actualizado
   - _Requirements: 3.3_
+
+
 
 - [ ] 3.4 Implementar DELETE /api/partidos/<id>
   - Validar que partido existe
@@ -103,17 +114,22 @@
   - Retornar confirmación
   - _Requirements: 3.4_
 
+
 - [ ] 3.5 Implementar POST /api/partidos/<id>/logo
   - Recibir archivo multipart/form-data
   - Validar formato y tamaño
   - Guardar archivo
+
   - Actualizar logo_url del partido
   - Retornar URL del logo
   - _Requirements: 3.5_
 
 - [ ] 3.6 Escribir property test para listado de partidos
   - **Property 6: All registered parties are listed**
+
+
   - **Validates: Requirements 3.1**
+
 
 ## Fase 4: Backend - Servicios de Candidatos
 
@@ -121,12 +137,14 @@
 - [ ] 4.1 Crear CandidatoService con operaciones CRUD
   - Implementar listar_candidatos() con filtros
   - Implementar obtener_candidato(id)
+
   - Implementar crear_candidato(data) con validaciones
   - Implementar actualizar_candidato(id, data)
   - Implementar eliminar_candidato(id) con verificación de votos
   - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 4.2 Implementar validación de asociación con partido
+- [x] 4.2 Implementar validación de asociación con partido
+
   - Verificar que partido_id existe en base de datos
   - Verificar que partido está activo
   - Retornar error descriptivo si no existe
@@ -134,6 +152,7 @@
 
 - [ ] 4.3 Implementar validación de foto de candidato
   - Validar formato de archivo (jpg, jpeg, png, webp)
+
   - Validar tamaño de archivo (max 5MB)
   - Generar nombre único para archivo
   - Guardar archivo en directorio seguro
@@ -141,11 +160,14 @@
 
 - [ ] 4.4 Escribir property test para eliminación de candidatos
   - **Property 12: Candidate deletion requires no registered votes**
+
   - **Validates: Requirements 4.4**
 
 - [ ] 4.5 Escribir property test para validación de partido
   - **Property 13: Candidate party association validation**
   - **Validates: Requirements 4.5**
+
+
 
 ## Fase 5: Backend - Rutas de Candidatos
 
@@ -153,6 +175,8 @@
 - [ ] 5.1 Implementar GET /api/candidatos
   - Listar todos los candidatos con paginación
   - Agregar filtros por partido, tipo_eleccion, activo
+
+
   - Incluir datos de partido y tipo_eleccion
   - Validar permisos de Super Admin
   - _Requirements: 4.1_
