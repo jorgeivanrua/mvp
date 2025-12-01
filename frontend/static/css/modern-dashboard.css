@@ -1,0 +1,810 @@
+/**
+ * ELECTORAL DASHBOARD STYLES
+ * Sistema de diseño profesional e institucional para sistema electoral
+ * Inspirado en la sobriedad de la Registraduría Nacional
+ */
+
+/* ============================================================================
+   VARIABLES CSS - Sistema de Diseño Institucional
+   ============================================================================ */
+:root {
+    /* Colores Institucionales - Paleta Sobria */
+    --primary-color: #1e3a8a;        /* Azul institucional oscuro */
+    --primary-dark: #1e40af;
+    --primary-light: #3b82f6;
+    --secondary-color: #475569;       /* Gris azulado profesional */
+    --accent-color: #0ea5e9;          /* Azul claro para acentos */
+    
+    /* Colores de Estado - Tonos Profesionales */
+    --success-color: #059669;         /* Verde sobrio */
+    --warning-color: #d97706;         /* Naranja profesional */
+    --danger-color: #dc2626;          /* Rojo institucional */
+    --info-color: #0284c7;            /* Azul información */
+    
+    /* Colores de Fondo - Neutros */
+    --bg-primary: #f1f5f9;            /* Gris muy claro */
+    --bg-secondary: #ffffff;
+    --bg-dark: #1e293b;
+    --bg-card: #ffffff;
+    --bg-header: #1e3a8a;             /* Azul institucional */
+    
+    /* Colores de Texto */
+    --text-primary: #0f172a;          /* Negro azulado */
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --text-white: #ffffff;
+    
+    /* Sombras Sutiles */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 2px 4px 0 rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 8px 16px -2px rgba(0, 0, 0, 0.12);
+    --shadow-2xl: 0 12px 24px -4px rgba(0, 0, 0, 0.15);
+    
+    /* Bordes - Más conservadores */
+    --border-radius-sm: 0.25rem;
+    --border-radius-md: 0.375rem;
+    --border-radius-lg: 0.5rem;
+    --border-radius-xl: 0.625rem;
+    --border-color: #e2e8f0;
+    
+    /* Espaciado */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+    
+    /* Transiciones Suaves */
+    --transition-fast: 150ms ease;
+    --transition-base: 250ms ease;
+    --transition-slow: 350ms ease;
+    
+    /* Z-Index */
+    --z-dropdown: 1000;
+    --z-sticky: 1020;
+    --z-fixed: 1030;
+    --z-modal-backdrop: 1040;
+    --z-modal: 1050;
+    --z-popover: 1060;
+    --z-tooltip: 1070;
+}
+
+/* ============================================================================
+   ANIMACIONES SUTILES
+   ============================================================================ */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================================================
+   ESTILOS BASE
+   ============================================================================ */
+
+body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.5;
+    font-size: 0.9375rem;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================================
+   CARDS PROFESIONALES
+   ============================================================================ */
+
+.card,
+.chart-card,
+.stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow var(--transition-base);
+    overflow: hidden;
+}
+
+.card:hover,
+.chart-card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.card-header {
+    background: var(--bg-header);
+    color: var(--text-white);
+    border: none;
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+}
+
+.card-body {
+    padding: var(--spacing-lg);
+}
+
+.card-footer {
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border-color);
+    padding: var(--spacing-md) var(--spacing-lg);
+}
+
+/* ============================================================================
+   STAT CARDS INSTITUCIONALES
+   ============================================================================ */
+
+.stat-card {
+    position: relative;
+    padding: var(--spacing-lg);
+    color: var(--text-white);
+    overflow: hidden;
+    border-left: 4px solid rgba(255,255,255,0.3);
+}
+
+.stat-card h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+
+.stat-card p {
+    margin: var(--spacing-xs) 0 0 0;
+    opacity: 0.95;
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.stat-card small {
+    opacity: 0.85;
+    font-size: 0.8125rem;
+}
+
+/* Colores institucionales para stat cards */
+.stat-card-primary {
+    background: var(--primary-color);
+}
+
+.stat-card-success {
+    background: var(--success-color);
+}
+
+.stat-card-warning {
+    background: var(--warning-color);
+}
+
+.stat-card-danger {
+    background: var(--danger-color);
+}
+
+.stat-card-info {
+    background: var(--info-color);
+}
+
+.stat-card-purple {
+    background: #6366f1;
+}
+
+.stat-card-pink {
+    background: #db2777;
+}
+
+.stat-card-cyan {
+    background: #0891b2;
+}
+
+/* ============================================================================
+   BOTONES PROFESIONALES
+   ============================================================================ */
+
+.btn {
+    border-radius: var(--border-radius-md);
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    transition: all var(--transition-base);
+    border: 1px solid transparent;
+    font-size: 0.875rem;
+}
+
+.btn:hover {
+    box-shadow: var(--shadow-sm);
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.btn-success {
+    background: var(--success-color);
+    border-color: var(--success-color);
+}
+
+.btn-success:hover {
+    background: #047857;
+    border-color: #047857;
+}
+
+.btn-warning {
+    background: var(--warning-color);
+    border-color: var(--warning-color);
+}
+
+.btn-warning:hover {
+    background: #b45309;
+    border-color: #b45309;
+}
+
+.btn-danger {
+    background: var(--danger-color);
+    border-color: var(--danger-color);
+}
+
+.btn-danger:hover {
+    background: #b91c1c;
+    border-color: #b91c1c;
+}
+
+.btn-info {
+    background: var(--info-color);
+    border-color: var(--info-color);
+}
+
+.btn-info:hover {
+    background: #0369a1;
+    border-color: #0369a1;
+}
+
+/* ============================================================================
+   FORMULARIOS Y INPUTS
+   ============================================================================ */
+
+.form-control,
+.form-select {
+    border: 2px solid #e2e8f0;
+    border-radius: var(--border-radius-md);
+    padding: 0.625rem 1rem;
+    transition: all var(--transition-base);
+    background: var(--bg-secondary);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    transform: translateY(-1px);
+}
+
+.form-label {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+/* ============================================================================
+   TABLAS PROFESIONALES
+   ============================================================================ */
+
+.table {
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.875rem;
+}
+
+.table thead th {
+    background: var(--bg-header);
+    color: var(--text-white);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border: none;
+}
+
+.table thead th:first-child {
+    border-radius: var(--border-radius-sm) 0 0 0;
+}
+
+.table thead th:last-child {
+    border-radius: 0 var(--border-radius-sm) 0 0;
+}
+
+.table tbody tr {
+    transition: background-color var(--transition-fast);
+}
+
+.table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.table tbody td {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+/* ============================================================================
+   BADGES Y ETIQUETAS
+   ============================================================================ */
+
+.badge {
+    padding: 0.25rem 0.625rem;
+    border-radius: var(--border-radius-sm);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+/* ============================================================================
+   ALERTAS PROFESIONALES
+   ============================================================================ */
+
+.alert {
+    border: 1px solid;
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-left-width: 4px;
+    font-size: 0.875rem;
+}
+
+.alert-success {
+    background: #f0fdf4;
+    border-color: var(--success-color);
+    color: #065f46;
+}
+
+.alert-warning {
+    background: #fffbeb;
+    border-color: var(--warning-color);
+    color: #92400e;
+}
+
+.alert-danger {
+    background: #fef2f2;
+    border-color: var(--danger-color);
+    color: #991b1b;
+}
+
+.alert-info {
+    background: #f0f9ff;
+    border-color: var(--info-color);
+    color: #075985;
+}
+
+/* ============================================================================
+   NAVEGACIÓN Y TABS
+   ============================================================================ */
+
+.nav-tabs {
+    border-bottom: 2px solid var(--border-color);
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: var(--spacing-md) var(--spacing-lg);
+    color: var(--text-secondary);
+    font-weight: 500;
+    transition: all var(--transition-base);
+    font-size: 0.875rem;
+}
+
+.nav-tabs .nav-link:hover {
+    border-bottom-color: var(--primary-light);
+    color: var(--primary-color);
+}
+
+.nav-tabs .nav-link.active {
+    border-bottom-color: var(--primary-color);
+    color: var(--primary-color);
+    background: transparent;
+}
+
+/* ============================================================================
+   MODALES
+   ============================================================================ */
+
+.modal-content {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-xl);
+}
+
+.modal-header {
+    background: var(--bg-header);
+    color: var(--text-white);
+    border-bottom: 1px solid var(--border-color);
+    padding: var(--spacing-lg);
+}
+
+.modal-body {
+    padding: var(--spacing-lg);
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border-color);
+    padding: var(--spacing-lg);
+    background: var(--bg-primary);
+}
+
+/* ============================================================================
+   PROGRESS BARS
+   ============================================================================ */
+
+.progress {
+    height: 0.625rem;
+    border-radius: var(--border-radius-sm);
+    background: #e2e8f0;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: var(--primary-color);
+    transition: width var(--transition-slow);
+}
+
+/* ============================================================================
+   SPINNERS Y LOADERS
+   ============================================================================ */
+
+.spinner-border {
+    animation: spin 1s linear infinite;
+}
+
+.loading-skeleton {
+    background: linear-gradient(
+        90deg,
+        #f0f0f0 25%,
+        #e0e0e0 50%,
+        #f0f0f0 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--border-radius-md);
+}
+
+/* ============================================================================
+   TOOLTIPS Y POPOVERS
+   ============================================================================ */
+
+.tooltip {
+    animation: fadeIn var(--transition-fast) ease-out;
+}
+
+.tooltip-inner {
+    background: var(--bg-dark);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    box-shadow: var(--shadow-lg);
+}
+
+/* ============================================================================
+   ICONOS ANIMADOS
+   ============================================================================ */
+
+.bi {
+    transition: all var(--transition-base);
+}
+
+.btn:hover .bi,
+.nav-link:hover .bi {
+    transform: scale(1.1);
+}
+
+.icon-spin {
+    animation: spin 2s linear infinite;
+}
+
+.icon-pulse {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.icon-bounce {
+    animation: bounce 1s ease-in-out infinite;
+}
+
+/* ============================================================================
+   SCROLLBAR DISCRETO
+   ============================================================================ */
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: var(--border-radius-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* ============================================================================
+   EFECTOS DE HOVER SUTILES
+   ============================================================================ */
+
+.hover-lift {
+    transition: box-shadow var(--transition-base);
+}
+
+.hover-lift:hover {
+    box-shadow: var(--shadow-md);
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 768px) {
+    .stat-card h3 {
+        font-size: 2rem;
+    }
+    
+    .card-body {
+        padding: var(--spacing-lg);
+    }
+    
+    .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* ============================================================================
+   UTILIDADES
+   ============================================================================ */
+
+.fade-in {
+    animation: fadeIn 0.3s ease;
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.3s ease;
+}
+
+.slide-in-right {
+    animation: slideInRight 0.3s ease;
+}
+
+/* ============================================================================
+   FORZAR MODO CLARO - Sistema Institucional
+   ============================================================================ */
+
+/* Deshabilitar modo oscuro automático del navegador */
+html {
+    color-scheme: light !important;
+}
+
+body {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+
+.container-fluid {
+    background: transparent !important;
+}
+
+/* Asegurar que los cards sean visibles */
+.card,
+.chart-card,
+.stat-card,
+.quick-action-card,
+.alert-item {
+    background: #ffffff !important;
+    color: #0f172a !important;
+}
+
+/* Headers de cards */
+.super-admin-header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%) !important;
+    color: #ffffff !important;
+}
+
+.card-header {
+    background: #1e3a8a !important;
+    color: #ffffff !important;
+}
+
+/* Asegurar visibilidad de texto */
+h1, h2, h3, h4, h5, h6 {
+    color: #0f172a !important;
+}
+
+p, span, div:not(.stat-card):not(.card-header):not(.super-admin-header), label, td, th {
+    color: #0f172a !important;
+}
+
+/* Texto en stat cards debe ser blanco */
+.stat-card h3,
+.stat-card p,
+.stat-card small {
+    color: #ffffff !important;
+}
+
+/* Inputs y selects visibles */
+.form-control,
+.form-select,
+.form-control:focus,
+.form-select:focus {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+/* Tablas visibles */
+.table {
+    background: #ffffff !important;
+    color: #0f172a !important;
+}
+
+.table thead th {
+    background: #1e3a8a !important;
+    color: #ffffff !important;
+}
+
+.table tbody tr {
+    background: #ffffff !important;
+    color: #0f172a !important;
+}
+
+.table tbody tr:hover {
+    background: #f8fafc !important;
+}
+
+.table tbody td {
+    color: #0f172a !important;
+}
+
+/* Botones */
+.btn {
+    color: #ffffff !important;
+}
+
+.btn-outline-light {
+    color: #ffffff !important;
+    border-color: #ffffff !important;
+}
+
+.btn-light {
+    color: #0f172a !important;
+    background: #ffffff !important;
+}
+
+/* Tabs */
+.nav-tabs {
+    background: transparent !important;
+}
+
+.nav-tabs .nav-link {
+    color: #475569 !important;
+}
+
+.nav-tabs .nav-link.active {
+    color: #1e3a8a !important;
+    background: #ffffff !important;
+}
+
+/* Modales */
+.modal-content {
+    background: #ffffff !important;
+    color: #0f172a !important;
+}
+
+.modal-header {
+    background: #1e3a8a !important;
+    color: #ffffff !important;
+}
+
+.modal-body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+}
+
+/* Alertas */
+.alert {
+    color: inherit !important;
+}
+
+/* List groups */
+.list-group-item {
+    background: #ffffff !important;
+    color: #0f172a !important;
+}
+
+.list-group-item.active {
+    background: #e7f1ff !important;
+    color: #1e3a8a !important;
+}
+
+/* Upload area */
+.upload-area {
+    background: #ffffff !important;
+    color: #0f172a !important;
+}
+
+/* Badges */
+.badge {
+    color: #ffffff !important;
+}
+
+/* Text utilities override */
+.text-muted {
+    color: #64748b !important;
+}
+
+.text-primary {
+    color: #1e3a8a !important;
+}
+
+.text-success {
+    color: #059669 !important;
+}
+
+.text-danger {
+    color: #dc2626 !important;
+}
+
+.text-warning {
+    color: #d97706 !important;
+}
+
+.text-info {
+    color: #0284c7 !important;
+}
