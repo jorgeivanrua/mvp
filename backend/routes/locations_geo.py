@@ -18,7 +18,13 @@ locations_geo_bp = Blueprint('locations_geo', __name__, url_prefix='/api/locatio
 def obtener_puestos_geolocalizados():
     """
     Obtener puestos de votación con coordenadas geográficas
-    Filtra según el rol y ubicación del usuario
+    Incluye indicadores visuales, filtros y búsqueda
+    
+    Query params:
+        filtro_incidentes: 'true' para mostrar solo puestos con incidentes
+        filtro_delitos: 'true' para mostrar solo puestos con delitos
+        filtro_pendientes: 'true' para mostrar solo puestos con formularios pendientes
+        busqueda: código de puesto, municipio o mesa para buscar
     """
     try:
         user_id = get_jwt_identity()
@@ -30,6 +36,12 @@ def obtener_puestos_geolocalizados():
                 'error': 'Usuario no encontrado'
             }), 404
         
+        # Obtener parámetros de filtro y búsqueda
+        filtro_incidentes = request.args.get('filtro_incidentes', '').lower() == 'true'
+        filtro_delitos = request.args.get('filtro_delitos', '').lower() == 'true'
+        filtro_pendientes = request.args.get('filtro_pendientes', '').lower() == 'true'
+        busqueda = request.args.get('busqueda', '').strip()
+        
         # Construir query base - SIEMPRE mostrar todos los puestos para referencia
         query = Location.query.filter(
             Location.tipo == 'puesto',
@@ -37,6 +49,17 @@ def obtener_puestos_geolocalizados():
             Location.latitud.isnot(None),
             Location.longitud.isnot(None)
         )
+        
+        # Aplicar búsqueda si se proporciona
+        if busqueda:
+            query = query.filter(
+                db.or_(
+                    Location.puesto_codigo.ilike(f'%{busqueda}%'),
+                    Location.puesto_nombre.ilike(f'%{busqueda}%'),
+                    Location.municipio_nombre.ilike(f'%{busqueda}%'),
+                    Location.mesa_codigo.ilike(f'%{busqueda}%')
+                )
+            )
         
         # NO filtrar por rol - los mapas siempre muestran todos los puestos como referencia
         # Esto permite a coordinadores, monitoreo y super admin ver el contexto completo
@@ -102,30 +125,82 @@ def obtener_puestos_geolocalizados():
                 DelitoElectoral.estado.in_(['reportado', 'en_investigacion', 'investigado', 'denunciado'])
             ).count()
             
-            puestos_data.append({
-                'id': puesto.id,
-                'puesto_codigo': puesto.puesto_codigo,
-                'puesto_nombre': puesto.puesto_nombre,
-                'municipio_codigo': puesto.municipio_codigo,
-                'municipio_nombre': puesto.municipio_nombre,
-                'departamento_codigo': puesto.departamento_codigo,
-                'departamento_nombre': puesto.departamento_nombre,
-                'zona_codigo': puesto.zona_codigo,
-                'direccion': puesto.direccion,
-                'latitud': float(puesto.latitud),
-                'longitud': float(puesto.longitud),
-                'nombre_completo': puesto.nombre_completo,
-                'total_mesas': mesas,
-                'total_formularios': formularios_count,
-                'formularios_validados': formularios_validados,
-                'porcentaje_avance': round((formularios_validados / mesas * 100) if mesas > 0 else 0, 2),
-                'incidentes_activos': incidentes_activos,
-                'incidentes_criticos': incidentes_criticos,
-                'delitos_activos': delitos_activos,
-                'delitos_graves': delitos_graves,
-                'tiene_alertas': (incidentes_activos > 0 or delitos_activos > 0),
-                'tiene_alertas_criticas': (incidentes_criticos > 0 or delitos_graves > 0)
-            })
+            # Calcular formularios pendientes
+            formularios_pendientes = mesas - formularios_count
+            
+            # Determinar indicador visual
+            indicador = {
+                'color': 'green',  # Por defecto verde (todo bien)
+                'icono': 'check-circle',
+                'animacion': None,
+                'prioridad': 0
+            }
+            
+            # Prioridad 3: Incidentes críticos (rojo pulsante)
+            if incidentes_criticos > 0:
+                indicador = {
+                    'color': 'red',
+                    'icono': 'exclamation-triangle',
+                    'animacion': 'pulse',
+                    'prioridad': 3
+                }
+            # Prioridad 2: Delitos graves (naranja)
+            elif delitos_graves > 0:
+                indicador = {
+                    'color': 'orange',
+                    'icono': 'alert-triangle',
+                    'animacion': None,
+                    'prioridad': 2
+                }
+            # Prioridad 1: Formularios pendientes (amarillo)
+            elif formularios_pendientes > 0:
+                indicador = {
+                    'color': 'yellow',
+                    'icono': 'clock',
+                    'animacion': None,
+                    'prioridad': 1
+                }
+            
+            # Aplicar filtros
+            incluir = True
+            if filtro_incidentes and incidentes_activos == 0:
+                incluir = False
+            if filtro_delitos and delitos_activos == 0:
+                incluir = False
+            if filtro_pendientes and formularios_pendientes == 0:
+                incluir = False
+            
+            if incluir:
+                puestos_data.append({
+                    'id': puesto.id,
+                    'puesto_codigo': puesto.puesto_codigo,
+                    'puesto_nombre': puesto.puesto_nombre,
+                    'municipio_codigo': puesto.municipio_codigo,
+                    'municipio_nombre': puesto.municipio_nombre,
+                    'departamento_codigo': puesto.departamento_codigo,
+                    'departamento_nombre': puesto.departamento_nombre,
+                    'zona_codigo': puesto.zona_codigo,
+                    'direccion': puesto.direccion,
+                    'latitud': float(puesto.latitud),
+                    'longitud': float(puesto.longitud),
+                    'nombre_completo': puesto.nombre_completo,
+                    'total_mesas': mesas,
+                    'total_formularios': formularios_count,
+                    'formularios_validados': formularios_validados,
+                    'formularios_pendientes': formularios_pendientes,
+                    'porcentaje_avance': round((formularios_validados / mesas * 100) if mesas > 0 else 0, 2),
+                    'incidentes': {
+                        'total': incidentes_activos,
+                        'criticos': incidentes_criticos
+                    },
+                    'delitos': {
+                        'total': delitos_activos,
+                        'graves': delitos_graves
+                    },
+                    'tiene_alertas': (incidentes_activos > 0 or delitos_activos > 0),
+                    'tiene_alertas_criticas': (incidentes_criticos > 0 or delitos_graves > 0),
+                    'indicador_visual': indicador
+                })
         
         return jsonify({
             'success': True,

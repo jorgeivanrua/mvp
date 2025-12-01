@@ -248,6 +248,7 @@
   - _Requirements: 10.1, 10.2, 10.3, 10.4_
 
 
+
 - [ ] 6.3 Implementar importación de configuración
   - Validar formato JSON
   - Validar estructura de datos
@@ -255,51 +256,61 @@
   - Retornar resumen de cambios
   - _Requirements: 10.5_
 
+
+
 - [ ] 6.4 Escribir property test para cambios de configuración
   - **Property 30: Configuration changes apply immediately**
   - **Validates: Requirements 8.5**
 
 - [ ] 6.5 Escribir property test para exportación
   - **Property 36: Party export includes all parties**
+
   - **Property 37: Candidate export includes all candidates**
   - **Property 39: Complete configuration export includes all settings**
   - **Validates: Requirements 10.1, 10.2, 10.4**
 
 - [ ] 6.6 Escribir property test para importación
   - **Property 40: Configuration import validates format**
+
   - **Validates: Requirements 10.5**
 
 ## Fase 7: Backend - Rutas de Configuración
 
 - [ ] 7. Crear endpoints REST para configuración
-- [ ] 7.1 Implementar GET /api/configuracion
+- [x] 7.1 Implementar GET /api/configuracion
+
   - Listar todas las configuraciones
   - Validar permisos de Super Admin
   - Retornar configuraciones agrupadas por categoría
   - _Requirements: 8.1_
 
-- [ ] 7.2 Implementar PUT /api/configuracion/<clave>
+- [x] 7.2 Implementar PUT /api/configuracion/<clave>
+
   - Recibir nuevo valor
   - Validar tipo de dato
   - Actualizar configuración
   - Invalidar cache
   - Retornar confirmación
+
   - _Requirements: 8.2, 8.3, 8.4, 8.5_
 
 - [ ] 7.3 Implementar POST /api/configuracion/exportar
   - Recibir tipo de exportación (partidos, candidatos, tipos, completa)
+
   - Generar archivo JSON
   - Retornar archivo para descarga
   - _Requirements: 10.1, 10.2, 10.3, 10.4_
 
 - [ ] 7.4 Implementar POST /api/configuracion/importar
   - Recibir archivo JSON
+
   - Validar formato y estructura
   - Aplicar cambios
   - Retornar resumen de cambios aplicados
   - _Requirements: 10.5_
 
-- [ ] 7.5 Escribir property test para propagación de cambios
+- [x] 7.5 Escribir property test para propagación de cambios
+
   - **Property 27: System name changes propagate to all pages**
   - **Property 28: System logo changes propagate to navbar**
   - **Property 29: Timezone configuration applies to all dates**
@@ -307,24 +318,32 @@
 
 ## Fase 8: Backend - Mejoras en Mapas
 
-- [ ] 8. Mejorar endpoint de puestos geolocalizados
+
+
+
+- [x] 8. Mejorar endpoint de puestos geolocalizados
+
 - [ ] 8.1 Actualizar endpoint GET /api/puestos-geolocalizados
   - Remover filtros por rol (mostrar todos los puestos)
   - Incluir contadores de incidentes por severidad
   - Incluir contadores de delitos por gravedad
   - Incluir contadores de formularios pendientes
+
+
   - Agregar campo de indicador visual
   - _Requirements: 1.1, 1.2, 1.4, 6.1, 6.2, 6.3, 6.4_
 
 - [ ] 8.2 Implementar lógica de indicadores visuales
   - Indicador rojo pulsante si hay incidentes críticos
   - Indicador naranja si hay delitos reportados
+
   - Indicador amarillo si hay formularios pendientes
   - Indicador verde si está completamente reportado
   - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
 - [ ] 8.3 Implementar filtros de mapa
   - Filtro por incidentes (solo puestos con incidentes)
+
   - Filtro por delitos (solo puestos con delitos)
   - Filtro por pendientes (solo puestos con formularios pendientes)
   - Lógica AND para múltiples filtros
@@ -332,6 +351,9 @@
 
 - [ ] 8.4 Implementar búsqueda de puestos
   - Búsqueda por código de puesto
+
+
+
   - Búsqueda por nombre de municipio
   - Búsqueda por código de mesa
   - Retornar coordenadas para centrar mapa
@@ -339,17 +361,22 @@
 
 - [ ] 8.5 Manejar puestos sin coordenadas GPS
   - Registrar en logs puestos sin GPS
+
   - No incluir en respuesta de mapa
+
+
   - No retornar error al usuario
   - _Requirements: 1.5_
 
-- [ ] 8.6 Escribir property test para visualización de puestos
+- [x] 8.6 Escribir property test para visualización de puestos
+
   - **Property 1: All geolocalized voting locations are displayed**
   - **Property 2: Valid coordinates generate markers**
   - **Validates: Requirements 1.1, 1.2**
 
 - [ ] 8.7 Escribir property test para indicadores visuales
   - **Property 18: Critical incidents show red pulsing indicator**
+
   - **Property 19: Reported crimes show orange indicator**
   - **Property 20: Pending forms show yellow indicator**
   - **Property 21: Fully reported locations show green indicator**
