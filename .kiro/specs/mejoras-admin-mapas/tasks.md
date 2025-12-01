@@ -182,31 +182,38 @@
   - Validar permisos de Super Admin
   - _Requirements: 4.1_
 
+
+
 - [ ] 5.2 Implementar POST /api/candidatos
   - Recibir datos del candidato
   - Validar campos obligatorios
   - Validar que partido existe
   - Crear candidato en base de datos
+
   - Retornar candidato creado con relaciones
   - _Requirements: 4.2, 4.5_
 
 - [ ] 5.3 Implementar PUT /api/candidatos/<id>
   - Recibir datos actualizados
   - Validar que candidato existe
+
   - Validar que partido existe si se actualiza
   - Actualizar candidato en base de datos
   - Retornar candidato actualizado
   - _Requirements: 4.3, 4.5_
 
-- [ ] 5.4 Implementar DELETE /api/candidatos/<id>
+- [x] 5.4 Implementar DELETE /api/candidatos/<id>
+
   - Validar que candidato existe
   - Verificar que no tiene votos registrados
   - Eliminar candidato de base de datos
+
   - Retornar confirmación
   - _Requirements: 4.4_
 
 - [ ] 5.5 Implementar POST /api/candidatos/<id>/foto
   - Recibir archivo multipart/form-data
+
   - Validar formato y tamaño
   - Guardar archivo
   - Actualizar foto_url del candidato
