@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Monitoreo - Sistema Electoral{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #mapa-monitoreo {
+        height: 500px;
+        width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .stat-card h3 {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin: 0;
+    }
+    
+    .stat-card p {
+        margin: 5px 0 0 0;
+        opacity: 0.9;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-4">
+                        <i class="bi bi-radar"></i> Monitoreo en Tiempo Real
+                    </h1>
+                    <p class="lead text-muted">Seguimiento de testigos y coordinadores</p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-danger" onclick="logout()">
+                        <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <h3 id="stat-testigos-geo">-</h3>
+                <p>Testigos con Geolocalización</p>
+                <small id="stat-testigos-info">Cargando...</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <h3 id="stat-testigos-presencia">-</h3>
+                <p>Testigos con Presencia Verificada</p>
+                <small id="stat-testigos-presencia-info">Cargando...</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <h3 id="stat-coordinadores-geo">-</h3>
+                <p>Coordinadores con Geolocalización</p>
+                <small id="stat-coordinadores-info">Cargando...</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <h3 id="stat-formularios">-</h3>
+                <p>Formularios Recibidos</p>
+                <small id="stat-formularios-info">Cargando...</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mapa -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-geo-alt-fill"></i> Mapa de Geolocalización
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div id="mapa-monitoreo"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alertas -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Alertas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="alertas-container">
+                        <p class="text-muted">Cargando alertas...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+console.log('[Monitoreo] Iniciando dashboard simplificado...');
+
+let mapa;
+let marcadores = [];
+
+// Inicializar mapa
+function initMapa() {
+    try {
+        console.log('[Monitoreo] Inicializando mapa...');
+        // Centro de Colombia
+        mapa = L.map('mapa-monitoreo').setView([4.5709, -74.2973], 6);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(mapa);
+        
+        console.log('[Monitoreo] Mapa inicializado correctamente');
+    } catch (error) {
+        console.error('[Monitoreo] Error inicializando mapa:', error);
+    }
+}
+
+// Cargar estadísticas
+async function cargarEstadisticas() {
+    try {
+        console.log('[Monitoreo] Cargando estadísticas...');
+        console.log('[Monitoreo] Token:', localStorage.getItem('access_token') ? 'Presente' : 'Ausente');
+        
+        const response = await APIClient.get('/monitoreo/estadisticas');
+        console.log('[Monitoreo] Respuesta estadísticas:', response);
+        
+        if (response && response.success && response.data) {
+            const stats = response.data;
+            
+            // Testigos con geolocalización
+            const testigosGeo = stats.testigos?.con_geolocalizacion || 0;
+            const testigosTotal = stats.testigos?.total || 0;
+            const testigosPorcentaje = stats.testigos?.porcentaje_geo || 0;
+            document.getElementById('stat-testigos-geo').textContent = testigosGeo;
+            document.getElementById('stat-testigos-info').textContent = `${testigosGeo} de ${testigosTotal} testigos (${testigosPorcentaje}%)`;
+            
+            // Testigos con presencia verificada
+            const testigosPresencia = stats.testigos?.con_presencia_verificada || 0;
+            const testigosPresenciaPorcentaje = stats.testigos?.porcentaje_presencia || 0;
+            document.getElementById('stat-testigos-presencia').textContent = testigosPresencia;
+            document.getElementById('stat-testigos-presencia-info').textContent = `${testigosPresencia} de ${testigosTotal} testigos (${testigosPresenciaPorcentaje}%)`;
+            
+            // Coordinadores con geolocalización
+            const coordGeo = stats.coordinadores?.con_geolocalizacion || 0;
+            const coordTotal = stats.coordinadores?.total || 0;
+            const coordPorcentaje = stats.coordinadores?.porcentaje_geo || 0;
+            document.getElementById('stat-coordinadores-geo').textContent = coordGeo;
+            document.getElementById('stat-coordinadores-info').textContent = `${coordGeo} de ${coordTotal} coordinadores (${coordPorcentaje}%)`;
+            
+            // Formularios
+            const formTotal = stats.formularios?.total || 0;
+            const formEsperados = stats.formularios?.esperados || 0;
+            const formValidados = stats.formularios?.validados || 0;
+            const formPendientes = stats.formularios?.pendientes || 0;
+            const formPorcentajeRecibidos = stats.formularios?.porcentaje_recibidos || 0;
+            const formPorcentajeValidados = stats.formularios?.porcentaje_validados || 0;
+            const totalMesas = stats.formularios?.total_mesas || 0;
+            const tiposEleccion = stats.formularios?.tipos_eleccion || 0;
+            
+            document.getElementById('stat-formularios').textContent = formTotal;
+            document.getElementById('stat-formularios-info').textContent = `${formTotal} de ${formEsperados} esperados (${formPorcentajeRecibidos}%) | ${totalMesas} mesas × ${tiposEleccion} tipos`;
+            
+            console.log('[Monitoreo] Estadísticas actualizadas');
+        } else {
+            console.warn('[Monitoreo] Respuesta de estadísticas no válida:', response);
+            document.getElementById('stat-testigos-geo').textContent = '0';
+            document.getElementById('stat-testigos-info').textContent = '0 de 0 testigos (0%)';
+            document.getElementById('stat-testigos-presencia').textContent = '0';
+            document.getElementById('stat-testigos-presencia-info').textContent = '0 de 0 testigos (0%)';
+            document.getElementById('stat-coordinadores-geo').textContent = '0';
+            document.getElementById('stat-coordinadores-info').textContent = '0 de 0 coordinadores (0%)';
+            document.getElementById('stat-formularios').textContent = '0';
+            document.getElementById('stat-formularios-info').textContent = '0 validados, 0 pendientes';
+        }
+    } catch (error) {
+        console.error('[Monitoreo] Error cargando estadísticas:', error);
+        console.error('[Monitoreo] Error completo:', JSON.stringify(error, null, 2));
+        
+        // Mostrar valores de error
+        document.getElementById('stat-testigos-geo').textContent = 'Error';
+        document.getElementById('stat-testigos-info').textContent = 'No disponible';
+        document.getElementById('stat-testigos-presencia').textContent = 'Error';
+        document.getElementById('stat-testigos-presencia-info').textContent = 'No disponible';
+        document.getElementById('stat-coordinadores-geo').textContent = 'Error';
+        document.getElementById('stat-coordinadores-info').textContent = 'No disponible';
+        document.getElementById('stat-formularios').textContent = 'Error';
+        document.getElementById('stat-formularios-info').textContent = 'No disponible';
+    }
+}
+
+// Cargar puestos electorales como referencia
+async function cargarPuestos() {
+    try {
+        console.log('[Monitoreo] Cargando puestos electorales...');
+        
+        const response = await APIClient.get('/locations/puestos-todos');
+        console.log('[Monitoreo] Respuesta puestos:', response);
+        
+        if (response && response.success && response.data) {
+            const puestos = response.data;
+            console.log('[Monitoreo] Puestos encontrados:', puestos.length);
+            
+            // Agregar marcadores de puestos (en gris, más pequeños)
+            puestos.forEach(puesto => {
+                if (puesto.latitud && puesto.longitud) {
+                    const icon = L.divIcon({
+                        className: 'custom-marker',
+                        html: `<div style="background-color: #6c757d; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>`,
+                        iconSize: [12, 12],
+                        iconAnchor: [6, 6]
+                    });
+                    
+                    const marker = L.marker([puesto.latitud, puesto.longitud], { icon: icon })
+                        .addTo(mapa)
+                        .bindPopup(`
+                            <strong>${puesto.nombre}</strong><br>
+                            <small>${puesto.municipio_nombre}, ${puesto.departamento_nombre}</small><br>
+                            <small>Zona: ${puesto.zona_codigo}</small>
+                        `);
+                    
+                    marcadores.push(marker);
+                }
+            });
+            
+            console.log('[Monitoreo] Marcadores de puestos agregados');
+        }
+    } catch (error) {
+        console.error('[Monitoreo] Error cargando puestos:', error);
+    }
+}
+
+// Cargar usuarios activos
+async function cargarUsuarios() {
+    try {
+        console.log('[Monitoreo] Cargando usuarios activos...');
+        
+        const response = await APIClient.get('/monitoreo/usuarios-activos');
+        console.log('[Monitoreo] Respuesta usuarios:', response);
+        
+        if (response && response.success && response.data) {
+            const usuarios = response.data;
+            console.log('[Monitoreo] Usuarios activos:', usuarios.length);
+            
+            // Agregar marcadores de usuarios (más grandes y coloridos)
+            usuarios.forEach(usuario => {
+                if (usuario.latitud && usuario.longitud) {
+                    // Color según rol
+                    let color = '#007bff'; // azul por defecto
+                    if (usuario.rol === 'testigo_electoral') {
+                        color = usuario.presencia_verificada ? '#28a745' : '#ffc107';
+                    } else if (usuario.rol.includes('coordinador')) {
+                        color = '#6f42c1';
+                    }
+                    
+                    const icon = L.divIcon({
+                        className: 'custom-marker',
+                        html: `<div style="background-color: ${color}; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.4);"></div>`,
+                        iconSize: [20, 20],
+                        iconAnchor: [10, 10]
+                    });
+                    
+                    const marker = L.marker([usuario.latitud, usuario.longitud], { icon: icon })
+                        .addTo(mapa)
+                        .bindPopup(`
+                            <strong>${usuario.nombre}</strong><br>
+                            <small>Rol: ${usuario.rol}</small><br>
+                            ${usuario.ubicacion ? `<small>${usuario.ubicacion.nombre_completo}</small>` : ''}
+                        `);
+                    
+                    marcadores.push(marker);
+                }
+            });
+            
+            console.log('[Monitoreo] Marcadores de usuarios agregados:', usuarios.length);
+        }
+    } catch (error) {
+        console.error('[Monitoreo] Error cargando usuarios:', error);
+    }
+}
+
+// Cargar alertas
+async function cargarAlertas() {
+    try {
+        console.log('[Monitoreo] Cargando alertas...');
+        
+        const response = await APIClient.get('/monitoreo/alertas');
+        console.log('[Monitoreo] Respuesta alertas:', response);
+        
+        if (response && response.success && response.data) {
+            const alertas = response.data;
+            const container = document.getElementById('alertas-container');
+            
+            if (alertas.length === 0) {
+                container.innerHTML = '<p class="text-success mb-0"><i class="bi bi-check-circle"></i> No hay alertas en este momento.</p>';
+                return;
+            }
+            
+            let html = '<div class="list-group">';
+            alertas.forEach(alerta => {
+                html += `
+                    <div class="list-group-item list-group-item-${alerta.tipo}">
+                        <strong>${alerta.titulo}</strong><br>
+                        <small>${alerta.descripcion}</small>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            container.innerHTML = html;
+            console.log('[Monitoreo] Alertas actualizadas');
+        }
+    } catch (error) {
+        console.error('[Monitoreo] Error cargando alertas:', error);
+    }
+}
+
+// Función de logout
+async function logout() {
+    try {
+        await APIClient.logout();
+    } catch (error) {
+        console.error('Error al cerrar sesión:', error);
+    } finally {
+        localStorage.clear();
+        window.location.href = '/auth/login';
+    }
+}
+
+// Inicializar al cargar la página
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('[Monitoreo] DOM cargado, iniciando...');
+    
+    try {
+        // 1. Inicializar mapa
+        initMapa();
+        
+        // 2. Cargar puestos como referencia
+        await cargarPuestos();
+        
+        // 3. Cargar datos
+        await cargarEstadisticas();
+        await cargarUsuarios();
+        await cargarAlertas();
+        
+        console.log('[Monitoreo] Dashboard inicializado correctamente');
+        
+        // 4. Auto-refresh cada 30 segundos (solo datos dinámicos, no puestos)
+        setInterval(async () => {
+            console.log('[Monitoreo] Auto-refresh...');
+            await cargarEstadisticas();
+            
+            // Limpiar solo marcadores de usuarios (no puestos)
+            // Los puestos se cargan una sola vez al inicio
+            await cargarUsuarios();
+            await cargarAlertas();
+        }, 30000);
+        
+    } catch (error) {
+        console.error('[Monitoreo] Error inicializando dashboard:', error);
+        alert('Error al inicializar el dashboard. Por favor, recarga la página.');
+    }
+});
+</script>
+{% endblock %}

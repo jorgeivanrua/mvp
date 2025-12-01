@@ -863,3 +863,44 @@ def get_tipos_eleccion():
             'success': False,
             'error': str(e)
         }), 500
+
+
+@locations_bp.route('/puestos-todos', methods=['GET'])
+@jwt_required()
+def get_todos_puestos():
+    """
+    Obtener todos los puestos electorales con sus coordenadas
+    Para mostrar en el mapa de monitoreo
+    """
+    try:
+        puestos = Location.query.filter(
+            Location.tipo == 'puesto',
+            Location.latitud.isnot(None),
+            Location.longitud.isnot(None)
+        ).all()
+        
+        puestos_data = []
+        for puesto in puestos:
+            puestos_data.append({
+                'id': puesto.id,
+                'codigo': puesto.puesto_codigo,
+                'nombre': puesto.nombre,
+                'latitud': puesto.latitud,
+                'longitud': puesto.longitud,
+                'departamento_codigo': puesto.departamento_codigo,
+                'departamento_nombre': puesto.departamento_nombre,
+                'municipio_codigo': puesto.municipio_codigo,
+                'municipio_nombre': puesto.municipio_nombre,
+                'zona_codigo': puesto.zona_codigo
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': puestos_data,
+            'total': len(puestos_data)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

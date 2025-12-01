@@ -15,17 +15,11 @@ from backend.utils.cache import cache_monitoreo, cache_estadisticas, cache_ubica
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_, or_
 
-monitoreo_bp = Blueprint('monitoreo', __name__, url_prefix='/monitoreo')
+monitoreo_bp = Blueprint('monitoreo', __name__, url_prefix='/api/monitoreo')
 
 
-@monitoreo_bp.route('/dashboard', methods=['GET'])
-@jwt_required()
-@role_required('monitoreo')
-def dashboard():
-    """
-    Renderizar dashboard de monitoreo
-    """
-    return render_template('monitoreo/dashboard.html')
+# Dashboard se sirve desde frontend_bp para evitar conflictos con JWT
+# Ver backend/routes/frontend.py
 
 
 @monitoreo_bp.route('/usuarios-activos', methods=['GET'])
@@ -119,10 +113,17 @@ def get_estadisticas():
         ).first()
         
         # Contar formularios (sin agregación compleja que causa problemas en SQLite)
+        # Contar formularios
         formularios_total = FormularioE14.query.count()
         formularios_validados = FormularioE14.query.filter_by(estado='validado').count()
         formularios_pendientes = FormularioE14.query.filter_by(estado='pendiente').count()
         formularios_rechazados = FormularioE14.query.filter_by(estado='rechazado').count()
+        
+        # Calcular formularios esperados: mesas × tipos de elección activos
+        from backend.models.configuracion_electoral import TipoEleccion
+        total_mesas = Location.query.filter_by(tipo='mesa').count()
+        tipos_eleccion_activos = TipoEleccion.query.filter_by(activo=True).count()
+        formularios_esperados = total_mesas * tipos_eleccion_activos
         
         testigos_total = testigos_stats.total or 0
         testigos_con_geo = testigos_stats.con_geo or 0
@@ -171,11 +172,15 @@ def get_estadisticas():
                 },
                 'formularios': {
                     'total': formularios_total,
+                    'esperados': formularios_esperados,
                     'validados': formularios_validados,
                     'pendientes': formularios_pendientes,
                     'rechazados': formularios_rechazados,
                     'ultima_hora': formularios_ultima_hora,
-                    'porcentaje_validados': round((formularios_validados / formularios_total * 100), 2) if formularios_total > 0 else 0
+                    'porcentaje_validados': round((formularios_validados / formularios_total * 100), 2) if formularios_total > 0 else 0,
+                    'porcentaje_recibidos': round((formularios_total / formularios_esperados * 100), 2) if formularios_esperados > 0 else 0,
+                    'total_mesas': total_mesas,
+                    'tipos_eleccion': tipos_eleccion_activos
                 },
                 'incidentes': {
                     'total': incidentes_total,
