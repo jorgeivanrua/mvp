@@ -149,6 +149,35 @@ img.lazy-loading {
     transition: filter 0.3s;
 }
 
+/* Estilos para Carga Masiva */
+.upload-area {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.upload-area:hover {
+    background-color: #f8f9fa;
+    border-color: #0d6efd !important;
+}
+
+.upload-area.border-primary {
+    background-color: #e7f1ff;
+}
+
+.list-group-item.active {
+    background-color: #e7f1ff !important;
+    border-color: #0d6efd !important;
+}
+
+.upload-step {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 img.lazy-loaded {
     filter: blur(0);
 }
@@ -348,6 +377,12 @@ th.sortable:hover .sort-icon {
                     <!-- Testing y Auditoría -->
                     <div class="quick-action-card">
                         <h5 class="mb-3"><i class="bi bi-bug"></i> Testing & Diagnóstico</h5>
+                        <button class="btn btn-outline-success quick-action-btn" onclick="initElectoralData()">
+                            <i class="bi bi-flag-fill"></i> Inicializar Datos Electorales
+                        </button>
+                        <button class="btn btn-outline-info quick-action-btn" onclick="initCaquetaData()">
+                            <i class="bi bi-geo-alt-fill"></i> Cargar Datos del Caquetá
+                        </button>
                         <button class="btn btn-outline-primary quick-action-btn" onclick="loadTestData()">
                             <i class="bi bi-database-add"></i> Cargar Datos de Prueba
                         </button>
@@ -452,87 +487,213 @@ th.sortable:hover .sort-icon {
         <!-- Tab: Configuración -->
         <div class="tab-pane fade" id="config" role="tabpanel">
             
-            <!-- Sección de Carga Masiva -->
+            <!-- Sección de Carga Masiva CSV -->
             <div class="chart-card mb-4">
                 <h5 class="mb-3"><i class="bi bi-cloud-upload"></i> Carga Masiva de Datos</h5>
-                <p class="text-muted">Cargue datos masivamente desde archivos Excel (.xlsx, .xls)</p>
+                <p class="text-muted">Cargue datos masivamente desde archivos CSV según el tipo de elección</p>
                 
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="card border-primary mb-3">
-                            <div class="card-body text-center">
-                                <i class="bi bi-people-fill text-primary" style="font-size: 2rem;"></i>
-                                <h6 class="mt-2">Usuarios</h6>
-                                <p class="small text-muted">Testigos y Coordinadores</p>
-                                <input type="file" id="uploadUsersFile" accept=".xlsx,.xls" style="display:none" onchange="uploadUsers(this)">
-                                <button class="btn btn-sm btn-primary" onclick="document.getElementById('uploadUsersFile').click()">
-                                    <i class="bi bi-upload"></i> Cargar
-                                </button>
-                                <button class="btn btn-sm btn-outline-info" onclick="downloadTemplateUsers()">
-                                    <i class="bi bi-download"></i> Plantilla
-                                </button>
-                            </div>
-                        </div>
+                <!-- Accesos Rápidos -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="text-muted mb-2">Accesos Rápidos:</h6>
                     </div>
-                    
                     <div class="col-md-3">
-                        <div class="card border-success mb-3">
-                            <div class="card-body text-center">
-                                <i class="bi bi-geo-alt-fill text-success" style="font-size: 2rem;"></i>
-                                <h6 class="mt-2">DIVIPOLA</h6>
-                                <p class="small text-muted">Ubicaciones Geográficas</p>
-                                <input type="file" id="uploadLocationsFile" accept=".xlsx,.xls" style="display:none" onchange="uploadLocations(this)">
-                                <button class="btn btn-sm btn-success" onclick="document.getElementById('uploadLocationsFile').click()">
-                                    <i class="bi bi-upload"></i> Cargar
-                                </button>
-                                <button class="btn btn-sm btn-outline-info" onclick="downloadTemplateLocations()">
-                                    <i class="bi bi-download"></i> Plantilla
-                                </button>
-                            </div>
-                        </div>
+                        <button class="btn btn-outline-primary btn-sm w-100" onclick="quickSelectUploadType('partidos')">
+                            <i class="bi bi-flag-fill"></i> Partidos
+                        </button>
                     </div>
-                    
                     <div class="col-md-3">
-                        <div class="card border-warning mb-3">
-                            <div class="card-body text-center">
-                                <i class="bi bi-flag-fill text-warning" style="font-size: 2rem;"></i>
-                                <h6 class="mt-2">Partidos</h6>
-                                <p class="small text-muted">Partidos Políticos</p>
-                                <input type="file" id="uploadPartidosFile" accept=".xlsx,.xls" style="display:none" onchange="uploadPartidos(this)">
-                                <button class="btn btn-sm btn-warning" onclick="document.getElementById('uploadPartidosFile').click()">
-                                    <i class="bi bi-upload"></i> Cargar
-                                </button>
-                                <button class="btn btn-sm btn-outline-info" onclick="downloadTemplatePartidos()">
-                                    <i class="bi bi-download"></i> Plantilla
-                                </button>
-                            </div>
-                        </div>
+                        <button class="btn btn-outline-danger btn-sm w-100" onclick="quickSelectUploadType('candidatos_lista_cerrada')">
+                            <i class="bi bi-person-badge-fill"></i> Candidatos
+                        </button>
                     </div>
-                    
                     <div class="col-md-3">
-                        <div class="card border-danger mb-3">
-                            <div class="card-body text-center">
-                                <i class="bi bi-person-badge-fill text-danger" style="font-size: 2rem;"></i>
-                                <h6 class="mt-2">Candidatos</h6>
-                                <p class="small text-muted">Candidatos Electorales</p>
-                                <input type="file" id="uploadCandidatosFile" accept=".xlsx,.xls" style="display:none" onchange="uploadCandidatos(this)">
-                                <button class="btn btn-sm btn-danger" onclick="document.getElementById('uploadCandidatosFile').click()">
-                                    <i class="bi bi-upload"></i> Cargar
-                                </button>
-                                <button class="btn btn-sm btn-outline-info" onclick="downloadTemplateCandidatos()">
-                                    <i class="bi bi-download"></i> Plantilla
-                                </button>
-                            </div>
-                        </div>
+                        <button class="btn btn-outline-success btn-sm w-100" onclick="quickSelectUploadType('ubicaciones')">
+                            <i class="bi bi-geo-alt-fill"></i> DIVIPOLA
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-warning btn-sm w-100" onclick="quickSelectUploadType('coaliciones')">
+                            <i class="bi bi-people"></i> Coaliciones
+                        </button>
                     </div>
                 </div>
                 
-                <!-- Resultado de carga -->
-                <div id="uploadResult" class="mt-3" style="display:none;">
-                    <div class="alert" role="alert">
-                        <h6 class="alert-heading"><i class="bi bi-info-circle"></i> Resultado de Carga</h6>
-                        <div id="uploadResultContent"></div>
+                <hr class="my-4">
+                
+                <!-- Wizard de Carga Masiva -->
+                <div id="bulkUploadWizard">
+                    
+                    <!-- Paso 1: Seleccionar Tipo -->
+                    <div id="step1" class="upload-step">
+                        <h6 class="mb-3">Paso 1: Seleccione el tipo de datos a cargar</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="list-group">
+                                    <label class="list-group-item list-group-item-action">
+                                        <input class="form-check-input me-2" type="radio" name="uploadType" value="partidos">
+                                        <strong>Partidos Políticos</strong>
+                                        <small class="d-block text-muted">Cargar partidos, colores y logos</small>
+                                    </label>
+                                    <label class="list-group-item list-group-item-action">
+                                        <input class="form-check-input me-2" type="radio" name="uploadType" value="candidatos_uninominal">
+                                        <strong>Candidatos - Elección Uninominal</strong>
+                                        <small class="d-block text-muted">Presidencia, Gobernación, Alcaldía</small>
+                                    </label>
+                                    <label class="list-group-item list-group-item-action">
+                                        <input class="form-check-input me-2" type="radio" name="uploadType" value="candidatos_lista_cerrada">
+                                        <strong>Candidatos - Lista Cerrada</strong>
+                                        <small class="d-block text-muted">Senado, Cámara, Asamblea, Concejo</small>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="list-group">
+                                    <label class="list-group-item list-group-item-action">
+                                        <input class="form-check-input me-2" type="radio" name="uploadType" value="candidatos_lista_abierta">
+                                        <strong>Candidatos - Lista Abierta</strong>
+                                        <small class="d-block text-muted">Con voto preferente</small>
+                                    </label>
+                                    <label class="list-group-item list-group-item-action">
+                                        <input class="form-check-input me-2" type="radio" name="uploadType" value="coaliciones">
+                                        <strong>Coaliciones de Partidos</strong>
+                                        <small class="d-block text-muted">Agrupaciones de partidos</small>
+                                    </label>
+                                    <label class="list-group-item list-group-item-action">
+                                        <input class="form-check-input me-2" type="radio" name="uploadType" value="ubicaciones">
+                                        <strong>Ubicaciones Geográficas</strong>
+                                        <small class="d-block text-muted">Departamentos, municipios, puestos</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-primary" onclick="nextUploadStep()" disabled id="btnNextStep1">
+                                Continuar <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
                     </div>
+                    
+                    <!-- Paso 2: Configuración -->
+                    <div id="step2" class="upload-step d-none">
+                        <h6 class="mb-3">Paso 2: Configurar parámetros de carga</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Tipo de Elección</label>
+                                <select class="form-select" id="uploadTipoEleccion">
+                                    <option value="">Seleccionar...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Departamento</label>
+                                <select class="form-select" id="uploadDepartamento">
+                                    <option value="">Seleccionar...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Municipio</label>
+                                <select class="form-select" id="uploadMunicipio">
+                                    <option value="">Seleccionar...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h6>Opciones de carga:</h6>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="validateBeforeUpload" checked>
+                                    <label class="form-check-label" for="validateBeforeUpload">
+                                        Validar datos antes de cargar
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="createPartiesIfNotExist">
+                                    <label class="form-check-label" for="createPartiesIfNotExist">
+                                        Crear partidos si no existen
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="overwriteExisting">
+                                    <label class="form-check-label" for="overwriteExisting">
+                                        Sobrescribir datos existentes
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-secondary" onclick="prevUploadStep()">
+                                <i class="bi bi-arrow-left"></i> Atrás
+                            </button>
+                            <button class="btn btn-primary" onclick="nextUploadStep()" id="btnNextStep2">
+                                Continuar <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Paso 3: Cargar Archivo -->
+                    <div id="step3" class="upload-step d-none">
+                        <h6 class="mb-3">Paso 3: Cargar archivo CSV</h6>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="upload-area border-2 border-dashed rounded p-4 text-center" id="csvDropZone">
+                                    <i class="bi bi-file-earmark-spreadsheet fs-1 text-muted mb-3"></i>
+                                    <h6>Arrastre el archivo CSV aquí</h6>
+                                    <p class="text-muted small">o haga clic para seleccionar</p>
+                                    <input type="file" class="form-control" accept=".csv" id="csvFileInput" style="display:none">
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            📄 Formato: CSV (UTF-8) | 📏 Tamaño máximo: 10 MB
+                                        </small>
+                                    </div>
+                                </div>
+                                <div id="fileInfo" class="mt-3 d-none">
+                                    <div class="alert alert-info">
+                                        <strong>Archivo seleccionado:</strong> <span id="fileName"></span><br>
+                                        <strong>Tamaño:</strong> <span id="fileSize"></span><br>
+                                        <strong>Registros:</strong> <span id="fileRecords"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <h6>Plantilla CSV</h6>
+                                <p class="text-muted small">Descargue la plantilla correspondiente:</p>
+                                <button class="btn btn-outline-primary btn-sm w-100" onclick="downloadTemplate()">
+                                    <i class="bi bi-download"></i> Descargar Plantilla
+                                </button>
+                                <div class="mt-3">
+                                    <h6 class="small">Configuración actual:</h6>
+                                    <ul class="list-unstyled small text-muted" id="currentConfig">
+                                        <!-- Se llena dinámicamente -->
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-secondary" onclick="prevUploadStep()">
+                                <i class="bi bi-arrow-left"></i> Atrás
+                            </button>
+                            <button class="btn btn-primary" onclick="validateUpload()" disabled id="btnValidate">
+                                <i class="bi bi-check-circle"></i> Validar Archivo
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Paso 4: Validación -->
+                    <div id="step4" class="upload-step d-none">
+                        <h6 class="mb-3">Paso 4: Validación de datos</h6>
+                        <div id="validationResults">
+                            <!-- Se llena dinámicamente -->
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-secondary" onclick="prevUploadStep()">
+                                <i class="bi bi-arrow-left"></i> Corregir Archivo
+                            </button>
+                            <button class="btn btn-success" onclick="confirmUpload()" disabled id="btnConfirm">
+                                <i class="bi bi-upload"></i> Confirmar Carga
+                            </button>
+                        </div>
+                    </div>
+                    
                 </div>
             </div>
             
@@ -571,10 +732,45 @@ th.sortable:hover .sort-icon {
             </div>
             
             <div class="chart-card mt-3">
-                <h5 class="mb-3">Candidatos</h5>
-                <button class="btn btn-sm btn-primary mb-3" onclick="showCreateCandidateModal()">
-                    <i class="bi bi-plus-circle"></i> Nuevo Candidato
-                </button>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Candidatos</h5>
+                    <button class="btn btn-sm btn-primary" onclick="showCreateCandidateModal()">
+                        <i class="bi bi-plus-circle"></i> Nuevo Candidato
+                    </button>
+                </div>
+                
+                <!-- Filtros de Candidatos -->
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label small">Filtrar por Partido</label>
+                        <select class="form-select form-select-sm" id="filterCandidatoPartido" onchange="filterCandidatos()">
+                            <option value="">Todos los partidos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Filtrar por Tipo de Elección</label>
+                        <select class="form-select form-select-sm" id="filterCandidatoTipo" onchange="filterCandidatos()">
+                            <option value="">Todos los tipos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Ordenar por</label>
+                        <select class="form-select form-select-sm" id="sortCandidatos" onchange="filterCandidatos()">
+                            <option value="nombre_asc">Nombre (A-Z)</option>
+                            <option value="nombre_desc">Nombre (Z-A)</option>
+                            <option value="partido_asc">Partido (A-Z)</option>
+                            <option value="partido_desc">Partido (Z-A)</option>
+                            <option value="numero_asc">Número Lista (menor a mayor)</option>
+                            <option value="numero_desc">Número Lista (mayor a menor)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Buscar</label>
+                        <input type="text" class="form-control form-control-sm" id="searchCandidato" 
+                               placeholder="Buscar candidato..." onkeyup="filterCandidatos()">
+                    </div>
+                </div>
+                
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
@@ -1186,13 +1382,24 @@ th.sortable:hover .sort-icon {
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
+<!-- Leaflet para mapas -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Script de geolocalización -->
+<script src="{{ url_for('static', filename='js/mapa-geolocalizacion.js') }}?v=20251201"></script>
+
 <!-- Cargador de datos con manejo de errores -->
-<script src="{{ url_for('static', filename='js/dashboard-data-loader.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard-data-loader.js') }}?v=20251201"></script>
 <!-- Script principal del dashboard -->
-<script src="{{ url_for('static', filename='js/super-admin-dashboard.js') }}"></script>
-<script src="{{ url_for('static', filename='js/personalizacion-sistema.js') }}"></script>
+<script src="{{ url_for('static', filename='js/super-admin-dashboard.js') }}?v=20251201"></script>
+<script src="{{ url_for('static', filename='js/personalizacion-sistema.js') }}?v=20251201"></script>
+<!-- Script de carga masiva CSV -->
+<script src="{{ url_for('static', filename='js/bulk-upload.js') }}?v=20251201"></script>
 <!-- Script de debugging -->
-<script src="{{ url_for('static', filename='js/super-admin-dashboard-debug.js') }}"></script>
+<script src="{{ url_for('static', filename='js/super-admin-dashboard-debug.js') }}?v=20251201"></script>
+<!-- Fix de inicialización -->
+<script src="{{ url_for('static', filename='js/super-admin-init-fix.js') }}?v=20251201"></script>
 <script>
 // Inicializar dashboard
 document.addEventListener('DOMContentLoaded', function() {
