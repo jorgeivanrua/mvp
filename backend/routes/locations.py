@@ -10,7 +10,7 @@ from backend.models.location import Location
 
 locations_bp = Blueprint('locations', __name__)
 
-# Constante para el código de Caquetá
+# Constante para el código de Caquetá (DIVIPOLA)
 CAQUETA_CODE = '44'
 
 def validate_caqueta_code(code):
@@ -520,35 +520,44 @@ def get_departamentos():
 @locations_bp.route('/municipios/<departamento_codigo>', methods=['GET'])
 def get_municipios(departamento_codigo):
     """
-    Obtener municipios de Caquetá
+    Obtener municipios de un departamento
     Endpoint público (necesario para login)
     
     Args:
-        departamento_codigo: Código del departamento (debe ser 44)
+        departamento_codigo: Código del departamento
         
     Returns:
         JSON con lista de municipios
     """
     try:
-        # Validar que sea Caquetá
-        if departamento_codigo != CAQUETA_CODE:
-            return jsonify({
-                'success': False,
-                'error': f'Solo se permiten consultas para Caquetá (código {CAQUETA_CODE})',
-                'data': []
-            }), 400
+        print(f"[MUNICIPIOS] Solicitando municipios para departamento: {departamento_codigo}")
         
-        # Obtener municipios activos
+        # Obtener municipios activos del departamento
         municipios = Location.query.filter_by(
             tipo='municipio',
-            departamento_codigo=CAQUETA_CODE,
+            departamento_codigo=departamento_codigo,
             activo=True
         ).order_by(Location.municipio_nombre).all()
         
+        print(f"[MUNICIPIOS] Encontrados {len(municipios)} municipios")
+        
         if not municipios:
+            # Verificar si el departamento existe
+            departamento = Location.query.filter_by(
+                tipo='departamento',
+                departamento_codigo=departamento_codigo
+            ).first()
+            
+            if not departamento:
+                return jsonify({
+                    'success': False,
+                    'error': f'Departamento con código {departamento_codigo} no encontrado',
+                    'data': []
+                }), 404
+            
             return jsonify({
                 'success': False,
-                'error': 'No se encontraron municipios',
+                'error': f'No se encontraron municipios para {departamento.departamento_nombre}',
                 'data': []
             }), 404
         
@@ -561,86 +570,123 @@ def get_municipios(departamento_codigo):
         }), 200
         
     except Exception as e:
-        print(f"Error en get_municipios: {str(e)}")
+        import traceback
+        print(f"[ERROR] Error en get_municipios: {str(e)}")
+        print(f"[ERROR] Traceback: {traceback.format_exc()}")
         return jsonify({
             'success': False,
-            'error': 'Error al obtener municipios'
+            'error': f'Error al obtener municipios: {str(e)}'
         }), 500
 
 
 @locations_bp.route('/zonas/<municipio_codigo>', methods=['GET'])
 def get_zonas(municipio_codigo):
     """
-    Obtener zonas de un municipio de Caquetá
+    Obtener zonas de un municipio
     Endpoint público (necesario para login)
     
     Args:
-        municipio_codigo: Código del municipio (debe empezar con 44)
+        municipio_codigo: Código del municipio (ej: '01' para Florencia)
         
     Returns:
         JSON con lista de zonas
     """
     try:
-        # Validar que pertenece a Caquetá
-        if not validate_caqueta_code(municipio_codigo):
-            return jsonify({
-                'success': False,
-                'error': 'Código de municipio inválido',
-                'data': []
-            }), 400
+        print(f"[ZONAS] Solicitando zonas para municipio: {municipio_codigo}")
         
-        # Obtener zonas activas
+        # Obtener zonas activas del municipio
+        # Nota: municipio_codigo es solo el código del municipio (ej: '01'), 
+        # no incluye el departamento
         zonas = Location.query.filter_by(
             tipo='zona',
-            departamento_codigo=CAQUETA_CODE,
             municipio_codigo=municipio_codigo,
             activo=True
         ).order_by(Location.zona_codigo).all()
+        
+        print(f"[ZONAS] Encontradas {len(zonas)} zonas")
+        
+        if not zonas:
+            # Verificar si el municipio existe
+            municipio = Location.query.filter_by(
+                tipo='municipio',
+                municipio_codigo=municipio_codigo
+            ).first()
+            
+            if not municipio:
+                return jsonify({
+                    'success': False,
+                    'error': f'Municipio con código {municipio_codigo} no encontrado',
+                    'data': []
+                }), 404
+            
+            return jsonify({
+                'success': False,
+                'error': f'No se encontraron zonas para {municipio.municipio_nombre}',
+                'data': []
+            }), 404
         
         return jsonify({
             'success': True,
             'data': [{
                 'zona_codigo': zona.zona_codigo,
-                'zona_nombre': f"Zona {zona.zona_codigo[-2:]}"
+                'zona_nombre': f"Zona {zona.zona_codigo}"
             } for zona in zonas]
         }), 200
         
     except Exception as e:
-        print(f"Error en get_zonas: {str(e)}")
+        import traceback
+        print(f"[ERROR] Error en get_zonas: {str(e)}")
+        print(f"[ERROR] Traceback: {traceback.format_exc()}")
         return jsonify({
             'success': False,
-            'error': 'Error al obtener zonas'
+            'error': f'Error al obtener zonas: {str(e)}'
         }), 500
 
 
 @locations_bp.route('/puestos/<zona_codigo>', methods=['GET'])
 def get_puestos(zona_codigo):
     """
-    Obtener puestos de una zona de Caquetá
+    Obtener puestos de una zona
     Endpoint público (necesario para login)
     
     Args:
-        zona_codigo: Código de la zona (debe empezar con 44)
+        zona_codigo: Código de la zona (ej: '01')
         
     Returns:
         JSON con lista de puestos
     """
     try:
-        # Validar que pertenece a Caquetá
-        if not validate_caqueta_code(zona_codigo):
-            return jsonify({
-                'success': False,
-                'error': 'Código de zona inválido',
-                'data': []
-            }), 400
+        print(f"[PUESTOS] Solicitando puestos para zona: {zona_codigo}")
         
-        # Obtener puestos activos
+        # Obtener puestos activos de la zona
+        # Nota: zona_codigo es solo el código de la zona (ej: '01')
         puestos = Location.query.filter_by(
             tipo='puesto',
-            departamento_codigo=CAQUETA_CODE,
             zona_codigo=zona_codigo,
             activo=True
         ).order_by(Location.puesto_nombre).all()
+        
+        print(f"[PUESTOS] Encontrados {len(puestos)} puestos")
+        
+        if not puestos:
+            # Verificar si la zona existe
+            zona = Location.query.filter_by(
+                tipo='zona',
+                zona_codigo=zona_codigo
+            ).first()
+            
+            if not zona:
+                return jsonify({
+                    'success': False,
+                    'error': f'Zona con código {zona_codigo} no encontrada',
+                    'data': []
+                }), 404
+            
+            return jsonify({
+                'success': False,
+                'error': f'No se encontraron puestos para la zona {zona_codigo}',
+                'data': []
+            }), 404
         
         return jsonify({
             'success': True,
@@ -651,10 +697,12 @@ def get_puestos(zona_codigo):
         }), 200
         
     except Exception as e:
-        print(f"Error en get_puestos: {str(e)}")
+        import traceback
+        print(f"[ERROR] Error en get_puestos: {str(e)}")
+        print(f"[ERROR] Traceback: {traceback.format_exc()}")
         return jsonify({
             'success': False,
-            'error': 'Error al obtener puestos'
+            'error': f'Error al obtener puestos: {str(e)}'
         }), 500
 
 

@@ -79,7 +79,7 @@ def get_all_users():
                 'activo': user.activo,
                 'ubicacion_id': user.ubicacion_id,
                 'ubicacion_nombre': None,
-                'password': user.password_hash,  # Agregar contraseña (en texto plano para testing)
+                'password': '••••••••',  # Las contraseñas están hasheadas, no se pueden mostrar
                 'ultimo_acceso': user.ultimo_acceso.isoformat() if hasattr(user, 'ultimo_acceso') and user.ultimo_acceso else None,
                 'created_at': user.created_at.isoformat() if hasattr(user, 'created_at') and user.created_at else None
             }
@@ -2075,22 +2075,15 @@ def get_departamentos():
 @role_required(['super_admin'])
 def get_municipios(departamento_codigo):
     """
-    Obtener municipios de Caquetá
+    Obtener municipios de un departamento
     """
     try:
         from backend.database import db
         from backend.models.location import Location
         
-        # Solo permitir consultas para Caquetá
-        if departamento_codigo != '44':
-            return jsonify({
-                'success': True,
-                'data': []
-            })
-        
         municipios = db.session.query(Location).filter(
             Location.tipo == 'municipio',
-            Location.departamento_codigo == '44'
+            Location.departamento_codigo == departamento_codigo
         ).order_by(Location.municipio_nombre).all()
         
         return jsonify({
@@ -2112,7 +2105,7 @@ def get_municipios(departamento_codigo):
 @role_required(['super_admin'])
 def get_zonas(municipio_codigo):
     """
-    Obtener zonas de un municipio de Caquetá
+    Obtener zonas de un municipio
     """
     try:
         from backend.database import db
@@ -2120,7 +2113,6 @@ def get_zonas(municipio_codigo):
         
         zonas = db.session.query(Location).filter(
             Location.tipo == 'zona',
-            Location.departamento_codigo == '44',
             Location.municipio_codigo == municipio_codigo
         ).order_by(Location.zona_codigo).all()
         
@@ -2128,7 +2120,7 @@ def get_zonas(municipio_codigo):
             'success': True,
             'data': [{
                 'zona_codigo': zona.zona_codigo,
-                'zona_nombre': f"Zona {zona.zona_codigo[-2:]}"
+                'zona_nombre': f"Zona {zona.zona_codigo}"
             } for zona in zonas]
         })
     except Exception as e:
@@ -2143,7 +2135,7 @@ def get_zonas(municipio_codigo):
 @role_required(['super_admin'])
 def get_puestos(zona_codigo):
     """
-    Obtener puestos de una zona de Caquetá
+    Obtener puestos de una zona
     """
     try:
         from backend.database import db
@@ -2151,7 +2143,6 @@ def get_puestos(zona_codigo):
         
         puestos = db.session.query(Location).filter(
             Location.tipo == 'puesto',
-            Location.departamento_codigo == '44',
             Location.zona_codigo == zona_codigo
         ).order_by(Location.puesto_nombre).all()
         
@@ -2375,3 +2366,1018 @@ def get_mesa_detalle(mesa_id):
             'success': False,
             'error': str(e)
         }), 500
+
+
+# ============================================================================
+# ENDPOINT PARA INICIALIZAR DATOS DE PRUEBA
+# ============================================================================
+
+@super_admin_bp.route('/init-test-data', methods=['POST'])
+@jwt_required()
+@role_required(['super_admin'])
+def init_test_data():
+    """
+    Inicializar datos de prueba para el sistema
+    Crea tipos de elección, partidos y candidatos de ejemplo
+    """
+    try:
+        from backend.database import db
+        from backend.models.configuracion_electoral import TipoEleccion, Partido, Candidato
+        
+        results = {
+            'tipos_eleccion': {'created': 0, 'existing': 0},
+            'partidos': {'created': 0, 'existing': 0},
+            'candidatos': {'created': 0, 'existing': 0}
+        }
+        
+        # ========== TIPOS DE ELECCIÓN ==========
+        tipos = [
+            {
+                'codigo': 'PRES',
+                'nombre': 'Presidencia',
+                'descripcion': 'Elección de Presidente y Vicepresidente',
+                'es_uninominal': True,
+                'permite_lista_cerrada': False,
+                'permite_lista_abierta': False,
+                'permite_coaliciones': True,
+                'activo': True
+            },
+            {
+                'codigo': 'SENADO',
+                'nombre': 'Senado',
+                'descripcion': 'Elección de Senadores',
+                'es_uninominal': False,
+                'permite_lista_cerrada': True,
+                'permite_lista_abierta': True,
+                'permite_coaliciones': True,
+                'activo': True
+            },
+            {
+                'codigo': 'CAMARA',
+                'nombre': 'Cámara de Representantes',
+                'descripcion': 'Elección de Representantes a la Cámara',
+                'es_uninominal': False,
+                'permite_lista_cerrada': True,
+                'permite_lista_abierta': True,
+                'permite_coaliciones': True,
+                'activo': True
+            },
+            {
+                'codigo': 'GOB',
+                'nombre': 'Gobernación',
+                'descripcion': 'Elección de Gobernador',
+                'es_uninominal': True,
+                'permite_lista_cerrada': False,
+                'permite_lista_abierta': False,
+                'permite_coaliciones': True,
+                'activo': True
+            },
+            {
+                'codigo': 'ASAMBLEA',
+                'nombre': 'Asamblea Departamental',
+                'descripcion': 'Elección de Diputados a la Asamblea',
+                'es_uninominal': False,
+                'permite_lista_cerrada': True,
+                'permite_lista_abierta': True,
+                'permite_coaliciones': True,
+                'activo': True
+            },
+            {
+                'codigo': 'ALCALDIA',
+                'nombre': 'Alcaldía',
+                'descripcion': 'Elección de Alcalde',
+                'es_uninominal': True,
+                'permite_lista_cerrada': False,
+                'permite_lista_abierta': False,
+                'permite_coaliciones': True,
+                'activo': True
+            },
+            {
+                'codigo': 'CONCEJO',
+                'nombre': 'Concejo Municipal',
+                'descripcion': 'Elección de Concejales',
+                'es_uninominal': False,
+                'permite_lista_cerrada': True,
+                'permite_lista_abierta': True,
+                'permite_coaliciones': True,
+                'activo': True
+            }
+        ]
+        
+        for tipo_data in tipos:
+            existing = TipoEleccion.query.filter_by(codigo=tipo_data['codigo']).first()
+            if not existing:
+                tipo = TipoEleccion(**tipo_data)
+                db.session.add(tipo)
+                results['tipos_eleccion']['created'] += 1
+            else:
+                results['tipos_eleccion']['existing'] += 1
+        
+        db.session.commit()
+        
+        # ========== PARTIDOS POLÍTICOS ==========
+        partidos = [
+            {
+                'codigo': 'LIBERAL',
+                'nombre': 'Partido Liberal Colombiano',
+                'nombre_corto': 'Liberal',
+                'color': '#FF0000',
+                'activo': True,
+                'orden': 1
+            },
+            {
+                'codigo': 'CONSERVADOR',
+                'nombre': 'Partido Conservador Colombiano',
+                'nombre_corto': 'Conservador',
+                'color': '#0000FF',
+                'activo': True,
+                'orden': 2
+            },
+            {
+                'codigo': 'VERDE',
+                'nombre': 'Alianza Verde',
+                'nombre_corto': 'Verde',
+                'color': '#00FF00',
+                'activo': True,
+                'orden': 3
+            },
+            {
+                'codigo': 'CENTRO_DEM',
+                'nombre': 'Centro Democrático',
+                'nombre_corto': 'Centro Democrático',
+                'color': '#0080FF',
+                'activo': True,
+                'orden': 4
+            },
+            {
+                'codigo': 'CAMBIO_RADICAL',
+                'nombre': 'Cambio Radical',
+                'nombre_corto': 'Cambio Radical',
+                'color': '#FFA500',
+                'activo': True,
+                'orden': 5
+            },
+            {
+                'codigo': 'POLO',
+                'nombre': 'Polo Democrático Alternativo',
+                'nombre_corto': 'Polo',
+                'color': '#FFFF00',
+                'activo': True,
+                'orden': 6
+            },
+            {
+                'codigo': 'PACTO_HISTORICO',
+                'nombre': 'Pacto Histórico',
+                'nombre_corto': 'Pacto Histórico',
+                'color': '#FF1493',
+                'activo': True,
+                'orden': 7
+            },
+            {
+                'codigo': 'U',
+                'nombre': 'Partido de la U',
+                'nombre_corto': 'La U',
+                'color': '#808080',
+                'activo': True,
+                'orden': 8
+            },
+            {
+                'codigo': 'MIRA',
+                'nombre': 'Movimiento Independiente de Renovación Absoluta',
+                'nombre_corto': 'MIRA',
+                'color': '#800080',
+                'activo': True,
+                'orden': 9
+            },
+            {
+                'codigo': 'COMUNES',
+                'nombre': 'Comunes',
+                'nombre_corto': 'Comunes',
+                'color': '#8B0000',
+                'activo': True,
+                'orden': 10
+            }
+        ]
+        
+        for partido_data in partidos:
+            existing = Partido.query.filter_by(codigo=partido_data['codigo']).first()
+            if not existing:
+                partido = Partido(**partido_data)
+                db.session.add(partido)
+                results['partidos']['created'] += 1
+            else:
+                results['partidos']['existing'] += 1
+        
+        db.session.commit()
+        
+        # ========== CANDIDATOS DE PRUEBA ==========
+        tipo_pres = TipoEleccion.query.filter_by(codigo='PRES').first()
+        tipo_senado = TipoEleccion.query.filter_by(codigo='SENADO').first()
+        tipo_camara = TipoEleccion.query.filter_by(codigo='CAMARA').first()
+        
+        partido_liberal = Partido.query.filter_by(codigo='LIBERAL').first()
+        partido_conservador = Partido.query.filter_by(codigo='CONSERVADOR').first()
+        partido_verde = Partido.query.filter_by(codigo='VERDE').first()
+        partido_centro_dem = Partido.query.filter_by(codigo='CENTRO_DEM').first()
+        
+        if all([tipo_pres, tipo_senado, tipo_camara, partido_liberal, partido_conservador, partido_verde, partido_centro_dem]):
+            candidatos = [
+                # Presidencia
+                {
+                    'codigo': 'PRES_LIB_001',
+                    'nombre_completo': 'Juan Pérez García',
+                    'partido_id': partido_liberal.id,
+                    'tipo_eleccion_id': tipo_pres.id,
+                    'es_independiente': False,
+                    'es_cabeza_lista': True,
+                    'activo': True,
+                    'orden': 1
+                },
+                {
+                    'codigo': 'PRES_CONS_001',
+                    'nombre_completo': 'María González López',
+                    'partido_id': partido_conservador.id,
+                    'tipo_eleccion_id': tipo_pres.id,
+                    'es_independiente': False,
+                    'es_cabeza_lista': True,
+                    'activo': True,
+                    'orden': 2
+                },
+                # Senado
+                {
+                    'codigo': 'SEN_VERDE_001',
+                    'nombre_completo': 'Carlos Rodríguez Martínez',
+                    'partido_id': partido_verde.id,
+                    'tipo_eleccion_id': tipo_senado.id,
+                    'numero_lista': 1,
+                    'es_independiente': False,
+                    'es_cabeza_lista': True,
+                    'activo': True,
+                    'orden': 1
+                },
+                {
+                    'codigo': 'SEN_VERDE_002',
+                    'nombre_completo': 'Ana Martínez Sánchez',
+                    'partido_id': partido_verde.id,
+                    'tipo_eleccion_id': tipo_senado.id,
+                    'numero_lista': 2,
+                    'es_independiente': False,
+                    'es_cabeza_lista': False,
+                    'activo': True,
+                    'orden': 2
+                },
+                # Cámara
+                {
+                    'codigo': 'CAM_CD_001',
+                    'nombre_completo': 'Pedro Ramírez Torres',
+                    'partido_id': partido_centro_dem.id,
+                    'tipo_eleccion_id': tipo_camara.id,
+                    'numero_lista': 1,
+                    'es_independiente': False,
+                    'es_cabeza_lista': True,
+                    'activo': True,
+                    'orden': 1
+                },
+                {
+                    'codigo': 'CAM_CD_002',
+                    'nombre_completo': 'Laura Fernández Díaz',
+                    'partido_id': partido_centro_dem.id,
+                    'tipo_eleccion_id': tipo_camara.id,
+                    'numero_lista': 2,
+                    'es_independiente': False,
+                    'es_cabeza_lista': False,
+                    'activo': True,
+                    'orden': 2
+                }
+            ]
+            
+            for candidato_data in candidatos:
+                existing = Candidato.query.filter_by(codigo=candidato_data['codigo']).first()
+                if not existing:
+                    candidato = Candidato(**candidato_data)
+                    db.session.add(candidato)
+                    results['candidatos']['created'] += 1
+                else:
+                    results['candidatos']['existing'] += 1
+            
+            db.session.commit()
+        
+        # Preparar mensaje de respuesta
+        message_parts = []
+        if results['tipos_eleccion']['created'] > 0:
+            message_parts.append(f"{results['tipos_eleccion']['created']} tipos de elección creados")
+        if results['partidos']['created'] > 0:
+            message_parts.append(f"{results['partidos']['created']} partidos creados")
+        if results['candidatos']['created'] > 0:
+            message_parts.append(f"{results['candidatos']['created']} candidatos creados")
+        
+        if not message_parts:
+            message = "Todos los datos ya existían en el sistema"
+        else:
+            message = "Datos inicializados: " + ", ".join(message_parts)
+        
+        return jsonify({
+            'success': True,
+            'message': message,
+            'data': results
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        import traceback
+        print(f"Error inicializando datos: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/init-caqueta-data', methods=['POST'])
+@jwt_required()
+@role_required(['super_admin'])
+def init_caqueta_electoral_data():
+    """
+    Inicializar datos electorales realistas del Caquetá
+    Basado en elecciones al Congreso 2022 y Asamblea 2023
+    """
+    try:
+        from backend.database import db
+        from backend.models.configuracion_electoral import TipoEleccion, Partido, Candidato
+        
+        results = {
+            'senado': {'created': 0, 'existing': 0},
+            'camara': {'created': 0, 'existing': 0},
+            'asamblea': {'created': 0, 'existing': 0}
+        }
+        
+        # ========== SENADO 2022 ==========
+        tipo_senado = TipoEleccion.query.filter_by(codigo='SENADO').first()
+        
+        if tipo_senado:
+            candidatos_senado = [
+                # PACTO HISTÓRICO
+                {'partido': 'PACTO_HISTORICO', 'nombre': 'Gustavo Bolívar Moreno', 'numero': 1, 'cabeza': True},
+                {'partido': 'PACTO_HISTORICO', 'nombre': 'María José Pizarro Rodríguez', 'numero': 2, 'cabeza': False},
+                {'partido': 'PACTO_HISTORICO', 'nombre': 'Iván Cepeda Castro', 'numero': 3, 'cabeza': False},
+                {'partido': 'PACTO_HISTORICO', 'nombre': 'Clara López Obregón', 'numero': 4, 'cabeza': False},
+                {'partido': 'PACTO_HISTORICO', 'nombre': 'Alexander López Maya', 'numero': 5, 'cabeza': False},
+                
+                # PARTIDO LIBERAL
+                {'partido': 'LIBERAL', 'nombre': 'Juan Fernando Cristo Bustos', 'numero': 1, 'cabeza': True},
+                {'partido': 'LIBERAL', 'nombre': 'Alejandro Carlos Chacón Camargo', 'numero': 2, 'cabeza': False},
+                {'partido': 'LIBERAL', 'nombre': 'Fabián Díaz Plata', 'numero': 3, 'cabeza': False},
+                {'partido': 'LIBERAL', 'nombre': 'Horacio José Serpa Moncada', 'numero': 4, 'cabeza': False},
+                
+                # PARTIDO CONSERVADOR
+                {'partido': 'CONSERVADOR', 'nombre': 'Efraín José Cepeda Sarabia', 'numero': 1, 'cabeza': True},
+                {'partido': 'CONSERVADOR', 'nombre': 'Nora María García Burgos', 'numero': 2, 'cabeza': False},
+                {'partido': 'CONSERVADOR', 'nombre': 'Omar de Jesús Restrepo Escobar', 'numero': 3, 'cabeza': False},
+                {'partido': 'CONSERVADOR', 'nombre': 'Paola Andrea Holguín Moreno', 'numero': 4, 'cabeza': False},
+                
+                # CENTRO DEMOCRÁTICO
+                {'partido': 'CENTRO_DEM', 'nombre': 'María Fernanda Cabal Molina', 'numero': 1, 'cabeza': True},
+                {'partido': 'CENTRO_DEM', 'nombre': 'Paloma Susana Valencia Laserna', 'numero': 2, 'cabeza': False},
+                {'partido': 'CENTRO_DEM', 'nombre': 'Miguel Uribe Turbay', 'numero': 3, 'cabeza': False},
+                {'partido': 'CENTRO_DEM', 'nombre': 'Honorio Miguel Henríquez Pinedo', 'numero': 4, 'cabeza': False},
+                
+                # CAMBIO RADICAL
+                {'partido': 'CAMBIO_RADICAL', 'nombre': 'Carlos Fernando Galán Pachón', 'numero': 1, 'cabeza': True},
+                {'partido': 'CAMBIO_RADICAL', 'nombre': 'Angélica Lozano Correa', 'numero': 2, 'cabeza': False},
+                {'partido': 'CAMBIO_RADICAL', 'nombre': 'Germán Varón Cotrino', 'numero': 3, 'cabeza': False},
+                
+                # ALIANZA VERDE
+                {'partido': 'VERDE', 'nombre': 'Ariel Ávila Martínez', 'numero': 1, 'cabeza': True},
+                {'partido': 'VERDE', 'nombre': 'Angélica Lozano Correa', 'numero': 2, 'cabeza': False},
+                {'partido': 'VERDE', 'nombre': 'Antonio Sanguino Páez', 'numero': 3, 'cabeza': False},
+                
+                # PARTIDO DE LA U
+                {'partido': 'U', 'nombre': 'Roy Leonardo Barreras Montealegre', 'numero': 1, 'cabeza': True},
+                {'partido': 'U', 'nombre': 'Armando Benedetti Villaneda', 'numero': 2, 'cabeza': False},
+                {'partido': 'U', 'nombre': 'Dilian Francisca Toro Torres', 'numero': 3, 'cabeza': False},
+                
+                # MIRA
+                {'partido': 'MIRA', 'nombre': 'Carlos Alberto Baena López', 'numero': 1, 'cabeza': True},
+                {'partido': 'MIRA', 'nombre': 'John Milton Rodríguez Rojas', 'numero': 2, 'cabeza': False},
+                
+                # COMUNES
+                {'partido': 'COMUNES', 'nombre': 'Pablo Catatumbo Torres Victoria', 'numero': 1, 'cabeza': True},
+                {'partido': 'COMUNES', 'nombre': 'Griselda Lobo Hernández', 'numero': 2, 'cabeza': False},
+            ]
+            
+            for cand_data in candidatos_senado:
+                partido = Partido.query.filter_by(codigo=cand_data['partido']).first()
+                if not partido:
+                    continue
+                
+                codigo = f"SEN_{cand_data['partido']}_{cand_data['numero']:03d}"
+                existing = Candidato.query.filter_by(codigo=codigo).first()
+                
+                if not existing:
+                    candidato = Candidato(
+                        codigo=codigo,
+                        nombre_completo=cand_data['nombre'],
+                        partido_id=partido.id,
+                        tipo_eleccion_id=tipo_senado.id,
+                        numero_lista=cand_data['numero'],
+                        es_independiente=False,
+                        es_cabeza_lista=cand_data['cabeza'],
+                        activo=True,
+                        orden=cand_data['numero']
+                    )
+                    db.session.add(candidato)
+                    results['senado']['created'] += 1
+                else:
+                    results['senado']['existing'] += 1
+        
+        db.session.commit()
+        
+        # ========== CÁMARA CAQUETÁ 2022 ==========
+        tipo_camara = TipoEleccion.query.filter_by(codigo='CAMARA').first()
+        
+        if tipo_camara:
+            candidatos_camara = [
+                # PACTO HISTÓRICO
+                {'partido': 'PACTO_HISTORICO', 'nombre': 'Jaime Raúl Salamanca Torres', 'numero': 1, 'cabeza': True},
+                {'partido': 'PACTO_HISTORICO', 'nombre': 'María Fernanda Carrascal Triana', 'numero': 2, 'cabeza': False},
+                
+                # PARTIDO LIBERAL
+                {'partido': 'LIBERAL', 'nombre': 'Hernán Penagos Giraldo', 'numero': 1, 'cabeza': True},
+                {'partido': 'LIBERAL', 'nombre': 'Deyanira Ávila Pertuz', 'numero': 2, 'cabeza': False},
+                {'partido': 'LIBERAL', 'nombre': 'Jorge Eliécer Guevara Bolaños', 'numero': 3, 'cabeza': False},
+                
+                # PARTIDO CONSERVADOR
+                {'partido': 'CONSERVADOR', 'nombre': 'Atilano Alonso Giraldo Arango', 'numero': 1, 'cabeza': True},
+                {'partido': 'CONSERVADOR', 'nombre': 'Luz Marina Bernal Parra', 'numero': 2, 'cabeza': False},
+                
+                # CENTRO DEMOCRÁTICO
+                {'partido': 'CENTRO_DEM', 'nombre': 'Alfredo Guillermo Molina Triana', 'numero': 1, 'cabeza': True},
+                {'partido': 'CENTRO_DEM', 'nombre': 'Sandra Milena Ramírez Loaiza', 'numero': 2, 'cabeza': False},
+                {'partido': 'CENTRO_DEM', 'nombre': 'Hernán Gustavo Estupiñán Calvache', 'numero': 3, 'cabeza': False},
+                
+                # CAMBIO RADICAL
+                {'partido': 'CAMBIO_RADICAL', 'nombre': 'Rodrigo Rojas Lara', 'numero': 1, 'cabeza': True},
+                {'partido': 'CAMBIO_RADICAL', 'nombre': 'Yolanda González Hernández', 'numero': 2, 'cabeza': False},
+                
+                # ALIANZA VERDE
+                {'partido': 'VERDE', 'nombre': 'Guillermo Rivera Flórez', 'numero': 1, 'cabeza': True},
+                {'partido': 'VERDE', 'nombre': 'Ángela María Robledo Gómez', 'numero': 2, 'cabeza': False},
+                
+                # PARTIDO DE LA U
+                {'partido': 'U', 'nombre': 'Óscar de Jesús Hurtado Pérez', 'numero': 1, 'cabeza': True},
+                {'partido': 'U', 'nombre': 'Teresita García Romero', 'numero': 2, 'cabeza': False},
+                
+                # MIRA
+                {'partido': 'MIRA', 'nombre': 'Wilmer Leal Pérez', 'numero': 1, 'cabeza': True},
+                {'partido': 'MIRA', 'nombre': 'Gloria Stella Díaz Ortiz', 'numero': 2, 'cabeza': False},
+                
+                # COMUNES
+                {'partido': 'COMUNES', 'nombre': 'Jairo Ernesto Cala Cala', 'numero': 1, 'cabeza': True},
+                {'partido': 'COMUNES', 'nombre': 'Aida Quilcué Vivas', 'numero': 2, 'cabeza': False},
+                
+                # POLO DEMOCRÁTICO
+                {'partido': 'POLO', 'nombre': 'Wilson Arias Castillo', 'numero': 1, 'cabeza': True},
+                {'partido': 'POLO', 'nombre': 'Clara Eugenia López Obregón', 'numero': 2, 'cabeza': False},
+            ]
+            
+            for cand_data in candidatos_camara:
+                partido = Partido.query.filter_by(codigo=cand_data['partido']).first()
+                if not partido:
+                    continue
+                
+                codigo = f"CAM_CAQ_{cand_data['partido']}_{cand_data['numero']:03d}"
+                existing = Candidato.query.filter_by(codigo=codigo).first()
+                
+                if not existing:
+                    candidato = Candidato(
+                        codigo=codigo,
+                        nombre_completo=cand_data['nombre'],
+                        partido_id=partido.id,
+                        tipo_eleccion_id=tipo_camara.id,
+                        numero_lista=cand_data['numero'],
+                        es_independiente=False,
+                        es_cabeza_lista=cand_data['cabeza'],
+                        activo=True,
+                        orden=cand_data['numero']
+                    )
+                    db.session.add(candidato)
+                    results['camara']['created'] += 1
+                else:
+                    results['camara']['existing'] += 1
+        
+        db.session.commit()
+        
+        # ========== ASAMBLEA CAQUETÁ 2023 ==========
+        tipo_asamblea = TipoEleccion.query.filter_by(codigo='ASAMBLEA').first()
+        
+        if tipo_asamblea:
+            candidatos_asamblea = [
+                # PARTIDO LIBERAL
+                {'partido': 'LIBERAL', 'nombre': 'Luis Eduardo Arango Jiménez', 'numero': 1, 'cabeza': True},
+                {'partido': 'LIBERAL', 'nombre': 'María Cristina Lesmes Duque', 'numero': 2, 'cabeza': False},
+                {'partido': 'LIBERAL', 'nombre': 'José Aldemar Rojas Rodríguez', 'numero': 3, 'cabeza': False},
+                {'partido': 'LIBERAL', 'nombre': 'Sandra Milena Ortiz Cuéllar', 'numero': 4, 'cabeza': False},
+                
+                # PARTIDO CONSERVADOR
+                {'partido': 'CONSERVADOR', 'nombre': 'Arnulfo Sánchez Motta', 'numero': 1, 'cabeza': True},
+                {'partido': 'CONSERVADOR', 'nombre': 'Blanca Cecilia Gómez Ángel', 'numero': 2, 'cabeza': False},
+                {'partido': 'CONSERVADOR', 'nombre': 'Héctor Fabio Useche Berdugo', 'numero': 3, 'cabeza': False},
+                
+                # PACTO HISTÓRICO
+                {'partido': 'PACTO_HISTORICO', 'nombre': 'Fabio Amín Saleme Cruz', 'numero': 1, 'cabeza': True},
+                {'partido': 'PACTO_HISTORICO', 'nombre': 'Yolanda Perea Mosquera', 'numero': 2, 'cabeza': False},
+                {'partido': 'PACTO_HISTORICO', 'nombre': 'Carlos Andrés Amaya Rodríguez', 'numero': 3, 'cabeza': False},
+                
+                # CENTRO DEMOCRÁTICO
+                {'partido': 'CENTRO_DEM', 'nombre': 'Álvaro Hernán Prada Artunduaga', 'numero': 1, 'cabeza': True},
+                {'partido': 'CENTRO_DEM', 'nombre': 'Martha Lucía Ramírez Blanco', 'numero': 2, 'cabeza': False},
+                {'partido': 'CENTRO_DEM', 'nombre': 'Diego Fernando Molano Aponte', 'numero': 3, 'cabeza': False},
+                
+                # CAMBIO RADICAL
+                {'partido': 'CAMBIO_RADICAL', 'nombre': 'Germán Alcides Blanco Álvarez', 'numero': 1, 'cabeza': True},
+                {'partido': 'CAMBIO_RADICAL', 'nombre': 'Claudia Patricia Jiménez Sánchez', 'numero': 2, 'cabeza': False},
+                
+                # ALIANZA VERDE
+                {'partido': 'VERDE', 'nombre': 'Jorge Iván Ospina Gómez', 'numero': 1, 'cabeza': True},
+                {'partido': 'VERDE', 'nombre': 'Catalina Ortiz Lalinde', 'numero': 2, 'cabeza': False},
+                
+                # PARTIDO DE LA U
+                {'partido': 'U', 'nombre': 'Juan Carlos Losada Vargas', 'numero': 1, 'cabeza': True},
+                {'partido': 'U', 'nombre': 'Adriana Matiz Vargas', 'numero': 2, 'cabeza': False},
+                
+                # MIRA
+                {'partido': 'MIRA', 'nombre': 'Carlos Eduardo Guevara Villabón', 'numero': 1, 'cabeza': True},
+                {'partido': 'MIRA', 'nombre': 'Doris Amanda Rodríguez Moreno', 'numero': 2, 'cabeza': False},
+            ]
+            
+            for cand_data in candidatos_asamblea:
+                partido = Partido.query.filter_by(codigo=cand_data['partido']).first()
+                if not partido:
+                    continue
+                
+                codigo = f"ASA_CAQ_{cand_data['partido']}_{cand_data['numero']:03d}"
+                existing = Candidato.query.filter_by(codigo=codigo).first()
+                
+                if not existing:
+                    candidato = Candidato(
+                        codigo=codigo,
+                        nombre_completo=cand_data['nombre'],
+                        partido_id=partido.id,
+                        tipo_eleccion_id=tipo_asamblea.id,
+                        numero_lista=cand_data['numero'],
+                        es_independiente=False,
+                        es_cabeza_lista=cand_data['cabeza'],
+                        activo=True,
+                        orden=cand_data['numero']
+                    )
+                    db.session.add(candidato)
+                    results['asamblea']['created'] += 1
+                else:
+                    results['asamblea']['existing'] += 1
+        
+        db.session.commit()
+        
+        # Preparar mensaje de respuesta
+        total_created = results['senado']['created'] + results['camara']['created'] + results['asamblea']['created']
+        total_existing = results['senado']['existing'] + results['camara']['existing'] + results['asamblea']['existing']
+        
+        message_parts = []
+        if results['senado']['created'] > 0:
+            message_parts.append(f"{results['senado']['created']} candidatos al Senado")
+        if results['camara']['created'] > 0:
+            message_parts.append(f"{results['camara']['created']} candidatos a la Cámara")
+        if results['asamblea']['created'] > 0:
+            message_parts.append(f"{results['asamblea']['created']} candidatos a la Asamblea")
+        
+        if not message_parts:
+            message = "Todos los candidatos del Caquetá ya existían en el sistema"
+        else:
+            message = f"Datos del Caquetá inicializados: {', '.join(message_parts)}"
+        
+        return jsonify({
+            'success': True,
+            'message': message,
+            'data': {
+                'total_created': total_created,
+                'total_existing': total_existing,
+                'details': results
+            }
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        import traceback
+        print(f"Error inicializando datos del Caquetá: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+
+# ============================================
+# CARGA MASIVA CSV - SISTEMA ELECTORAL
+# ============================================
+
+@super_admin_bp.route('/bulk-upload/validate-csv', methods=['POST'])
+@jwt_required()
+@role_required(['super_admin'])
+def validate_csv_upload():
+    """
+    Validar archivo CSV antes de cargar
+    
+    Parámetros:
+    - file: Archivo CSV
+    - type: Tipo de carga (partidos, candidatos_uninominal, candidatos_lista_cerrada, etc.)
+    - config: Configuración JSON con parámetros adicionales
+    """
+    try:
+        import pandas as pd
+        from io import StringIO
+        
+        if 'file' not in request.files:
+            return jsonify({
+                'success': False,
+                'error': 'No se proporcionó ningún archivo'
+            }), 400
+        
+        file = request.files['file']
+        upload_type = request.form.get('type')
+        config = request.form.get('config', '{}')
+        
+        if not upload_type:
+            return jsonify({
+                'success': False,
+                'error': 'Tipo de carga no especificado'
+            }), 400
+        
+        # Leer CSV
+        try:
+            content = file.read().decode('utf-8')
+            df = pd.read_csv(StringIO(content))
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': f'Error leyendo CSV: {str(e)}'
+            }), 400
+        
+        # Validar según tipo
+        validation_result = validate_csv_by_type(df, upload_type, config)
+        
+        return jsonify({
+            'success': True,
+            'data': validation_result
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/bulk-upload/upload-csv', methods=['POST'])
+@jwt_required()
+@role_required(['super_admin'])
+def upload_csv_data():
+    """
+    Cargar datos masivamente desde CSV
+    
+    Parámetros:
+    - file: Archivo CSV
+    - type: Tipo de carga
+    - config: Configuración JSON
+    """
+    try:
+        from backend.database import db
+        import pandas as pd
+        from io import StringIO
+        import json
+        
+        if 'file' not in request.files:
+            return jsonify({
+                'success': False,
+                'error': 'No se proporcionó ningún archivo'
+            }), 400
+        
+        file = request.files['file']
+        upload_type = request.form.get('type')
+        config_str = request.form.get('config', '{}')
+        config = json.loads(config_str)
+        
+        # Leer CSV
+        content = file.read().decode('utf-8')
+        df = pd.read_csv(StringIO(content))
+        
+        # Procesar según tipo
+        result = process_csv_by_type(df, upload_type, config)
+        
+        if result['success']:
+            db.session.commit()
+        else:
+            db.session.rollback()
+        
+        return jsonify(result), 200 if result['success'] else 400
+        
+    except Exception as e:
+        from backend.database import db
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/bulk-upload/config', methods=['GET'])
+@jwt_required()
+@role_required(['super_admin'])
+def get_upload_config():
+    """
+    Obtener configuración para carga masiva
+    """
+    try:
+        from backend.models.configuracion_electoral import TipoEleccion
+        from backend.models.location import Location
+        
+        # Obtener tipos de elección
+        tipos_eleccion = TipoEleccion.query.filter_by(activo=True).all()
+        
+        # Obtener departamentos
+        departamentos = Location.query.filter_by(tipo='departamento').all()
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'tipos_eleccion': [{'id': t.id, 'nombre': t.nombre, 'codigo': t.codigo} for t in tipos_eleccion],
+                'departamentos': [{'codigo': d.departamento_codigo, 'nombre': d.nombre} for d in departamentos]
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@super_admin_bp.route('/bulk-upload/municipios/<dept_codigo>', methods=['GET'])
+@jwt_required()
+@role_required(['super_admin'])
+def get_municipios_for_upload(dept_codigo):
+    """
+    Obtener municipios de un departamento para carga masiva
+    """
+    try:
+        from backend.models.location import Location
+        
+        municipios = Location.query.filter_by(
+            tipo='municipio',
+            departamento_codigo=dept_codigo
+        ).all()
+        
+        return jsonify({
+            'success': True,
+            'data': [{'codigo': m.municipio_codigo, 'nombre': m.nombre} for m in municipios]
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+def validate_csv_by_type(df, upload_type, config):
+    """
+    Validar CSV según el tipo de carga
+    """
+    warnings = []
+    errors = []
+    records = len(df)
+    
+    # Validaciones por tipo
+    if upload_type == 'partidos':
+        required_cols = ['codigo', 'nombre', 'nombre_corto', 'color']
+        missing_cols = [col for col in required_cols if col not in df.columns]
+        
+        if missing_cols:
+            errors.append(f"Faltan columnas requeridas: {', '.join(missing_cols)}")
+        else:
+            # Validar códigos únicos
+            duplicates = df[df.duplicated('codigo', keep=False)]
+            if not duplicates.empty:
+                errors.append(f"Códigos duplicados en filas: {duplicates.index.tolist()}")
+            
+            # Validar colores hexadecimales
+            import re
+            for idx, row in df.iterrows():
+                if not re.match(r'^#[0-9A-Fa-f]{6}$', str(row['color'])):
+                    errors.append(f"Línea {idx + 2}: Color inválido '{row['color']}'")
+    
+    elif upload_type in ['candidatos_uninominal', 'candidatos_lista_cerrada', 'candidatos_lista_abierta']:
+        required_cols = ['partido_codigo', 'candidato_nombre', 'candidato_cedula']
+        
+        if upload_type in ['candidatos_lista_cerrada', 'candidatos_lista_abierta']:
+            required_cols.extend(['numero_lista', 'es_cabeza_lista'])
+        
+        missing_cols = [col for col in required_cols if col not in df.columns]
+        
+        if missing_cols:
+            errors.append(f"Faltan columnas requeridas: {', '.join(missing_cols)}")
+        else:
+            # Validar partidos existen
+            from backend.models.configuracion_electoral import Partido
+            partidos_unicos = df['partido_codigo'].unique()
+            
+            for partido_codigo in partidos_unicos:
+                partido = Partido.query.filter_by(codigo=partido_codigo).first()
+                if not partido:
+                    warnings.append(f"Partido '{partido_codigo}' no existe (se puede crear)")
+            
+            # Validar cédulas únicas
+            duplicates = df[df.duplicated('candidato_cedula', keep=False)]
+            if not duplicates.empty:
+                errors.append(f"Cédulas duplicadas en filas: {duplicates.index.tolist()}")
+            
+            # Validar números de lista únicos por partido (si aplica)
+            if upload_type in ['candidatos_lista_cerrada', 'candidatos_lista_abierta']:
+                for partido_codigo in partidos_unicos:
+                    partido_df = df[df['partido_codigo'] == partido_codigo]
+                    duplicates = partido_df[partido_df.duplicated('numero_lista', keep=False)]
+                    if not duplicates.empty:
+                        warnings.append(f"Partido '{partido_codigo}': números de lista duplicados")
+                    
+                    # Validar solo un cabeza de lista por partido
+                    cabezas = partido_df[partido_df['es_cabeza_lista'] == True]
+                    if len(cabezas) > 1:
+                        errors.append(f"Partido '{partido_codigo}': múltiples cabezas de lista")
+                    elif len(cabezas) == 0:
+                        warnings.append(f"Partido '{partido_codigo}': sin cabeza de lista")
+    
+    elif upload_type == 'coaliciones':
+        required_cols = ['coalicion_nombre', 'partido_codigo', 'partido_nombre']
+        missing_cols = [col for col in required_cols if col not in df.columns]
+        
+        if missing_cols:
+            errors.append(f"Faltan columnas requeridas: {', '.join(missing_cols)}")
+        else:
+            # Validar partidos existen
+            from backend.models.configuracion_electoral import Partido
+            for idx, row in df.iterrows():
+                partido = Partido.query.filter_by(codigo=row['partido_codigo']).first()
+                if not partido:
+                    errors.append(f"Línea {idx + 2}: Partido '{row['partido_codigo']}' no existe")
+    
+    elif upload_type == 'ubicaciones':
+        required_cols = ['departamento_codigo', 'departamento_nombre', 'municipio_codigo', 'municipio_nombre']
+        missing_cols = [col for col in required_cols if col not in df.columns]
+        
+        if missing_cols:
+            errors.append(f"Faltan columnas requeridas: {', '.join(missing_cols)}")
+        else:
+            # Validar coordenadas si existen
+            if 'latitud' in df.columns and 'longitud' in df.columns:
+                for idx, row in df.iterrows():
+                    try:
+                        if pd.notna(row['latitud']):
+                            lat = float(row['latitud'])
+                            if lat < -90 or lat > 90:
+                                errors.append(f"Línea {idx + 2}: Latitud inválida")
+                        if pd.notna(row['longitud']):
+                            lon = float(row['longitud'])
+                            if lon < -180 or lon > 180:
+                                errors.append(f"Línea {idx + 2}: Longitud inválida")
+                    except:
+                        errors.append(f"Línea {idx + 2}: Coordenadas inválidas")
+    
+    return {
+        'records': records,
+        'warnings': warnings,
+        'errors': errors,
+        'valid': len(errors) == 0
+    }
+
+
+def process_csv_by_type(df, upload_type, config):
+    """
+    Procesar CSV según el tipo de carga
+    """
+    from backend.database import db
+    from backend.models.configuracion_electoral import Partido, Candidato, TipoEleccion
+    from backend.models.location import Location
+    
+    created = []
+    updated = []
+    errors = []
+    
+    try:
+        if upload_type == 'partidos':
+            for idx, row in df.iterrows():
+                try:
+                    # Verificar si existe
+                    partido = Partido.query.filter_by(codigo=row['codigo']).first()
+                    
+                    if partido and config.get('overwrite'):
+                        # Actualizar
+                        partido.nombre = row['nombre']
+                        partido.nombre_corto = row['nombre_corto']
+                        partido.color = row['color']
+                        if 'logo_url' in row and pd.notna(row['logo_url']):
+                            partido.logo_url = row['logo_url']
+                        updated.append(row['nombre'])
+                    elif not partido:
+                        # Crear
+                        partido = Partido(
+                            codigo=row['codigo'],
+                            nombre=row['nombre'],
+                            nombre_corto=row['nombre_corto'],
+                            color=row['color'],
+                            logo_url=row.get('logo_url') if 'logo_url' in row and pd.notna(row.get('logo_url')) else None,
+                            activo=row.get('activo', True) if 'activo' in row else True
+                        )
+                        db.session.add(partido)
+                        created.append(row['nombre'])
+                except Exception as e:
+                    errors.append(f"Línea {idx + 2}: {str(e)}")
+        
+        elif upload_type in ['candidatos_uninominal', 'candidatos_lista_cerrada', 'candidatos_lista_abierta']:
+            # Obtener tipo de elección
+            tipo_eleccion_id = config.get('tipoEleccion')
+            if not tipo_eleccion_id:
+                return {'success': False, 'error': 'Tipo de elección no especificado'}
+            
+            tipo_eleccion = TipoEleccion.query.get(tipo_eleccion_id)
+            if not tipo_eleccion:
+                return {'success': False, 'error': 'Tipo de elección no encontrado'}
+            
+            for idx, row in df.iterrows():
+                try:
+                    # Buscar o crear partido
+                    partido = Partido.query.filter_by(codigo=row['partido_codigo']).first()
+                    
+                    if not partido:
+                        if config.get('createParties'):
+                            # Crear partido automáticamente
+                            partido = Partido(
+                                codigo=row['partido_codigo'],
+                                nombre=row.get('partido_nombre', row['partido_codigo']),
+                                nombre_corto=row['partido_codigo'],
+                                color='#CCCCCC',
+                                activo=True
+                            )
+                            db.session.add(partido)
+                            db.session.flush()
+                        else:
+                            errors.append(f"Línea {idx + 2}: Partido '{row['partido_codigo']}' no existe")
+                            continue
+                    
+                    # Generar código único
+                    codigo = f"{tipo_eleccion.codigo}_{partido.codigo}_{row['candidato_cedula']}"
+                    
+                    # Verificar si existe
+                    candidato = Candidato.query.filter_by(codigo=codigo).first()
+                    
+                    if candidato and config.get('overwrite'):
+                        # Actualizar
+                        candidato.nombre_completo = row['candidato_nombre']
+                        if upload_type in ['candidatos_lista_cerrada', 'candidatos_lista_abierta']:
+                            candidato.numero_lista = int(row['numero_lista'])
+                            candidato.es_cabeza_lista = bool(row['es_cabeza_lista'])
+                        updated.append(row['candidato_nombre'])
+                    elif not candidato:
+                        # Crear
+                        candidato = Candidato(
+                            codigo=codigo,
+                            nombre_completo=row['candidato_nombre'],
+                            partido_id=partido.id,
+                            tipo_eleccion_id=tipo_eleccion.id,
+                            numero_lista=int(row['numero_lista']) if upload_type in ['candidatos_lista_cerrada', 'candidatos_lista_abierta'] else None,
+                            es_independiente=bool(row.get('es_independiente', False)),
+                            es_cabeza_lista=bool(row.get('es_cabeza_lista', False)) if upload_type in ['candidatos_lista_cerrada', 'candidatos_lista_abierta'] else False,
+                            foto_url=row.get('foto_url') if 'foto_url' in row and pd.notna(row.get('foto_url')) else None,
+                            activo=True
+                        )
+                        db.session.add(candidato)
+                        created.append(row['candidato_nombre'])
+                except Exception as e:
+                    errors.append(f"Línea {idx + 2}: {str(e)}")
+        
+        return {
+            'success': True,
+            'message': f'{len(created)} registros creados, {len(updated)} actualizados',
+            'data': {
+                'created': created,
+                'updated': updated,
+                'errors': errors,
+                'total_created': len(created),
+                'total_updated': len(updated),
+                'total_errors': len(errors)
+            }
+        }
+        
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e)
+        }

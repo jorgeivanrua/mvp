@@ -11,6 +11,9 @@ from backend.utils.exceptions import (
     ValidationException
 )
 from backend.utils.jwt_utils import generate_tokens
+from backend.utils.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class AuthService:
@@ -29,22 +32,20 @@ class AuthService:
         Returns:
             tuple: (user, access_token, refresh_token)
         """
-        import logging
-        logger = logging.getLogger(__name__)
         logger.info(f"Autenticando: rol={rol}, ubicacion_data={ubicacion_data}")
-        
-        # Buscar ubicación según jerarquía
-        location = AuthService._find_location_by_hierarchy(rol, ubicacion_data)
-        logger.info(f"Ubicación encontrada: {location.id if location else None}")
         
         # Super admin y monitoreo no necesitan ubicación
         if rol in ['super_admin', 'monitoreo']:
             user = User.query.filter_by(
                 rol=rol,
-                ubicacion_id=None,
                 activo=True
             ).first()
+            logger.info(f"Usuario sin ubicación encontrado: {user.id if user else None}")
         else:
+            # Buscar ubicación según jerarquía
+            location = AuthService._find_location_by_hierarchy(rol, ubicacion_data)
+            logger.info(f"Ubicación encontrada: {location.id if location else None}")
+            
             if not location:
                 raise AuthenticationException("Ubicación no encontrada")
             

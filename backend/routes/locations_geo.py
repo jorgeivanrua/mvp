@@ -29,7 +29,7 @@ def obtener_puestos_geolocalizados():
                 'error': 'Usuario no encontrado'
             }), 404
         
-        # Construir query base
+        # Construir query base - SIEMPRE mostrar todos los puestos para referencia
         query = Location.query.filter(
             Location.tipo == 'puesto',
             Location.activo == True,
@@ -37,43 +37,9 @@ def obtener_puestos_geolocalizados():
             Location.longitud.isnot(None)
         )
         
-        # Filtrar según rol y ubicación
-        if user.rol == 'coordinador_puesto' and user.ubicacion_id:
-            # Solo su puesto
-            ubicacion = Location.query.get(user.ubicacion_id)
-            if ubicacion:
-                query = query.filter_by(
-                    puesto_codigo=ubicacion.puesto_codigo,
-                    departamento_codigo=ubicacion.departamento_codigo,
-                    municipio_codigo=ubicacion.municipio_codigo
-                )
-        
-        elif user.rol == 'coordinador_municipal' and user.ubicacion_id:
-            # Puestos del municipio
-            ubicacion = Location.query.get(user.ubicacion_id)
-            if ubicacion:
-                query = query.filter_by(
-                    municipio_codigo=ubicacion.municipio_codigo,
-                    departamento_codigo=ubicacion.departamento_codigo
-                )
-        
-        elif user.rol == 'coordinador_departamental' and user.ubicacion_id:
-            # Puestos del departamento
-            ubicacion = Location.query.get(user.ubicacion_id)
-            if ubicacion:
-                query = query.filter_by(
-                    departamento_codigo=ubicacion.departamento_codigo
-                )
-        
-        elif user.rol == 'testigo_electoral' and user.ubicacion_id:
-            # Puesto de su mesa
-            mesa = Location.query.get(user.ubicacion_id)
-            if mesa and mesa.tipo == 'mesa':
-                query = query.filter_by(
-                    puesto_codigo=mesa.puesto_codigo,
-                    departamento_codigo=mesa.departamento_codigo,
-                    municipio_codigo=mesa.municipio_codigo
-                )
+        # NO filtrar por rol - los mapas siempre muestran todos los puestos como referencia
+        # Esto permite a coordinadores, monitoreo y super admin ver el contexto completo
+        # Nota: Los testigos no tienen acceso a mapas, solo registran formularios
         
         # Ejecutar query
         puestos = query.all()
@@ -173,7 +139,6 @@ def obtener_mesas_geolocalizadas():
             if ubicacion:
                 query = query.filter_by(
                     puesto_codigo=ubicacion.puesto_codigo,
-                    departamento_codigo=ubicacion.departamento_codigo,
                     municipio_codigo=ubicacion.municipio_codigo,
                     zona_codigo=ubicacion.zona_codigo
                 )
@@ -182,8 +147,7 @@ def obtener_mesas_geolocalizadas():
             ubicacion = Location.query.get(user.ubicacion_id)
             if ubicacion:
                 query = query.filter_by(
-                    municipio_codigo=ubicacion.municipio_codigo,
-                    departamento_codigo=ubicacion.departamento_codigo
+                    municipio_codigo=ubicacion.municipio_codigo
                 )
         
         # Ejecutar query
