@@ -18,12 +18,12 @@ REM Activar entorno virtual
 call .venv\Scripts\activate.bat
 
 REM Verificar que la BD existe
-if not exist "instance\testigos.db" (
+if not exist "instance\electoral.db" (
     echo.
     echo ADVERTENCIA: Base de datos no encontrada
     echo Ejecutando inicializacion automatica...
     echo.
-    python setup.py
+    python scripts\init_system.py
     echo.
 )
 

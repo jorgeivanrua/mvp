@@ -4,10 +4,9 @@ Este módulo se ejecuta al iniciar la aplicación
 """
 from backend.models.user import User
 from backend.database import db
-from werkzeug.security import generate_password_hash
-import logging
+from backend.utils.logging_config import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 def init_usuarios_basicos():
     """
@@ -25,31 +24,31 @@ def init_usuarios_basicos():
             },
             {
                 'nombre': 'Monitoreo',
-                'password': 'monitoreo123',
+                'password': 'test123',
                 'rol': 'monitoreo',
                 'activo': True
             },
             {
                 'nombre': 'Coordinador Departamental',
-                'password': 'coord_dept123',
+                'password': 'test123',
                 'rol': 'coordinador_departamental',
                 'activo': True
             },
             {
                 'nombre': 'Coordinador Municipal',
-                'password': 'coord_muni123',
+                'password': 'test123',
                 'rol': 'coordinador_municipal',
                 'activo': True
             },
             {
                 'nombre': 'Coordinador Puesto',
-                'password': 'coord_puesto123',
+                'password': 'test123',
                 'rol': 'coordinador_puesto',
                 'activo': True
             },
             {
                 'nombre': 'Auditor Electoral',
-                'password': 'auditor123',
+                'password': 'test123',
                 'rol': 'auditor_electoral',
                 'activo': True
             }
@@ -69,10 +68,11 @@ def init_usuarios_basicos():
                 logger.info(f"Creando usuario básico: {usuario_data['nombre']} ({usuario_data['rol']})")
                 usuario = User(
                     nombre=usuario_data['nombre'],
-                    password_hash=generate_password_hash(usuario_data['password']),
                     rol=usuario_data['rol'],
-                    activo=usuario_data['activo']
+                    activo=usuario_data['activo'],
+                    es_usuario_basico=True
                 )
+                usuario.set_password(usuario_data['password'])
                 db.session.add(usuario)
                 usuarios_creados += 1
             else:

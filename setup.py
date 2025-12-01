@@ -59,6 +59,15 @@ def main():
     
     print("✅ Directorio correcto detectado")
     
+    # Crear archivo .env si no existe
+    if not os.path.exists('.env'):
+        if os.path.exists('.env.example'):
+            import shutil
+            shutil.copy('.env.example', '.env')
+            print("✅ Archivo .env creado desde .env.example")
+        else:
+            print("⚠️  Archivo .env.example no encontrado")
+    
     # PASO 1: Verificar archivos necesarios
     print_step(1, "VERIFICACIÓN DE ARCHIVOS")
     
@@ -132,7 +141,7 @@ def main():
     
     # PASO 5: Crear usuarios del sistema
     print_step(5, "CREACIÓN DE USUARIOS DEL SISTEMA")
-    if not run_script('scripts/create_fixed_users.py', 'Crear usuarios fijos'):
+    if not run_script('scripts/init_system.py', 'Inicializar usuarios del sistema'):
         print("\n⚠️  Error creando usuarios, pero continuando...")
     
     # PASO 6: Inicializar configuración electoral (si existe)

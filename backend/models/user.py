@@ -63,13 +63,13 @@ class User(db.Model):
     
     def set_password(self, password):
         """
-        Establecer contraseña en texto plano (TEMPORAL - SOLO PARA PRUEBAS)
+        Establecer contraseña con hash seguro
         
         Args:
             password: Contraseña en texto plano
         """
-        # TEMPORAL: Guardar contraseña sin hashear para pruebas en Render gratuito
-        self.password_hash = password
+        from werkzeug.security import generate_password_hash
+        self.password_hash = generate_password_hash(password)
     
     def check_password(self, password):
         """
@@ -81,8 +81,8 @@ class User(db.Model):
         Returns:
             bool: True si la contraseña es correcta
         """
-        # TEMPORAL: Comparación directa sin bcrypt
-        return self.password_hash == password
+        from werkzeug.security import check_password_hash
+        return check_password_hash(self.password_hash, password)
     
     def is_blocked(self):
         """

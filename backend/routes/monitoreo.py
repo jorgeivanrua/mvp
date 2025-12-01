@@ -18,6 +18,16 @@ from sqlalchemy import func, and_, or_
 monitoreo_bp = Blueprint('monitoreo', __name__, url_prefix='/monitoreo')
 
 
+@monitoreo_bp.route('/dashboard', methods=['GET'])
+@jwt_required()
+@role_required('monitoreo')
+def dashboard():
+    """
+    Renderizar dashboard de monitoreo
+    """
+    return render_template('monitoreo/dashboard.html')
+
+
 @monitoreo_bp.route('/usuarios-activos', methods=['GET'])
 @jwt_required()
 @role_required('monitoreo')
@@ -696,7 +706,7 @@ def get_mapa_calor():
             Location.departamento_codigo,
             Location.departamento_nombre
         ).filter(
-            Location.tipo_ubicacion == 'departamento'
+            Location.tipo == 'departamento'
         ).distinct().all()
         
         mapa_data = []
@@ -848,7 +858,7 @@ def get_comparativa_departamentos():
             Location.departamento_codigo,
             Location.departamento_nombre
         ).filter(
-            Location.tipo_ubicacion == 'departamento'
+            Location.tipo == 'departamento'
         ).distinct().all()
         
         comparativa = []

@@ -11,6 +11,7 @@ from whitenoise import WhiteNoise
 from backend.config import config
 from backend.database import init_db
 from backend.utils.jwt_callbacks import configure_jwt_callbacks
+from backend.utils.logging_config import setup_logging
 
 # Inicializar extensiones
 jwt = JWTManager()
@@ -33,6 +34,9 @@ def create_app(config_name='default'):
     
     # Cargar configuración
     app.config.from_object(config[config_name])
+    
+    # Configurar logging
+    setup_logging(app)
     
     # Inicializar extensiones
     init_db(app)
@@ -126,6 +130,10 @@ def register_blueprints(app):
     # Emergency routes (para resetear contraseñas sin shell access)
     from backend.routes.emergency_reset import emergency_bp
     app.register_blueprint(emergency_bp, url_prefix='/api/emergency')
+    
+    # Health check routes
+    from backend.routes.health import health_bp
+    app.register_blueprint(health_bp)
     
     # Frontend routes
     app.register_blueprint(frontend_bp)

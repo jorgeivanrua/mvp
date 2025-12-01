@@ -270,12 +270,7 @@
                     <h5 class="mb-0"><i class="bi bi-geo-alt"></i> Mapa del Departamento</h5>
                 </div>
                 <div class="card-body">
-                    <div id="mapaContainer" style="height: 500px;">
-                        <div class="text-center py-5 text-muted">
-                            <i class="bi bi-map" style="font-size: 3rem;"></i>
-                            <p class="mt-2">Mapa de municipios del departamento</p>
-                        </div>
-                    </div>
+                    <div id="mapa-departamental" style="height: 500px; border-radius: 8px;"></div>
                 </div>
             </div>
         </div>
@@ -326,6 +321,14 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+<!-- Leaflet para mapas -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Script de geolocalización -->
+<script src="{{ url_for('static', filename='js/mapa-geolocalizacion.js') }}?v=20251201"></script>
+
 <script>
 // Funciones auxiliares
 function logout() {
@@ -354,6 +357,27 @@ function generarReporte() {
 function exportarDatos() {
     console.log('Exportando datos...');
 }
+
+// Inicializar mapa de geolocalización cuando se abre el tab de mapa
+document.addEventListener('DOMContentLoaded', function() {
+    const mapaTab = document.getElementById('mapa-tab');
+    if (mapaTab) {
+        mapaTab.addEventListener('shown.bs.tab', function() {
+            if (!window.mapaDepartamental) {
+                console.log('Inicializando mapa departamental...');
+                window.mapaDepartamental = new MapaGeolocalizacion('mapa-departamental', {
+                    center: [1.6144, -75.6062], // Caquetá, Colombia
+                    zoom: 9,
+                    autoUpdate: true,
+                    updateInterval: 30000, // 30 segundos
+                    showPuestos: true,
+                    showUsuarios: true
+                });
+                window.mapaDepartamental.init();
+            }
+        });
+    }
+});
 </script>
 <script src="{{ url_for('static', filename='js/coordinador-departamental.js') }}"></script>
 <!-- Mejoras UI/UX Mobile-First -->

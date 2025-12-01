@@ -223,56 +223,6 @@ async function loadMonitoreoDepartamental() {
         // Endpoint pendiente de implementación
         console.log('Monitoreo departamental pendiente de implementación');
         return;
-            
-            // Gráfico de progreso nacional
-            const progressCtx = document.getElementById('progressChart');
-            if (progressCtx) {
-                window.charts.progress = new Chart(progressCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: '% Avance',
-                            data: porcentajes,
-                            backgroundColor: 'rgba(42, 82, 152, 0.8)',
-                            borderColor: 'rgba(42, 82, 152, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 100,
-                                ticks: {
-                                    callback: function(value) {
-                                        return value + '%';
-                                    }
-                                }
-                            }
-                        },
-                        plugins: {
-                            tooltip: {
-                                callbacks: {
-                                    afterLabel: function(context) {
-                                        const index = context.dataIndex;
-                                        return `Validados: ${validados[index]}\nPendientes: ${pendientes[index]}`;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-            
-            // Actualizar tabla de monitoreo si existe
-            updateMonitoreoTable(data);
-            
-        } else {
-            console.warn('No hay datos de monitoreo disponibles');
-        }
     } catch (error) {
         console.error('Error cargando monitoreo departamental:', error);
     }
@@ -381,12 +331,8 @@ function renderUsers(users) {
                 <td><span class="badge bg-${getRoleBadgeColor(user.rol)}">${user.rol}</span></td>
                 <td>${user.ubicacion_nombre || '<span class="text-muted">Sin asignar</span>'}</td>
                 <td>
-                    <div class="input-group input-group-sm" style="max-width: 200px;">
-                        <input type="password" class="form-control form-control-sm" id="pwd-${user.id}" value="${user.password || 'N/A'}" readonly style="font-size: 0.85rem;">
-                        <button class="btn btn-outline-secondary" type="button" onclick="togglePassword(${user.id})" title="Mostrar/Ocultar">
-                            <i class="bi bi-eye" id="eye-${user.id}"></i>
-                        </button>
-                    </div>
+                    <span class="text-muted" style="font-family: monospace;">••••••••</span>
+                    <small class="text-muted d-block" style="font-size: 0.75rem;">Hasheada</small>
                 </td>
                 <td><span class="badge bg-${user.activo ? 'success' : 'secondary'}">${user.activo ? 'Activo' : 'Inactivo'}</span></td>
                 <td>${user.ultimo_acceso ? Utils.formatDateTime(user.ultimo_acceso) : '<span class="text-muted">Nunca</span>'}</td>
@@ -1002,36 +948,63 @@ async function loadPartidos() {
 function renderPartidos() {
     const container = document.getElementById('partiesList');
     
+    if (!container) {
+        console.warn('Elemento partiesList no encontrado');
+        return;
+    }
+    
     if (allPartidos.length === 0) {
         container.innerHTML = '<p class="text-muted">No hay partidos registrados</p>';
         return;
     }
     
-    container.innerHTML = allPartidos.map(partido => `
-        <div class="d-flex align-items-center justify-content-between mb-2 p-2 border rounded ${!partido.activo ? 'opacity-50' : ''}">
-            <div class="d-flex align-items-center flex-grow-1">
-                ${partido.logo_url ? 
-                    `<img src="${partido.logo_url}" alt="${partido.nombre}" style="width: 40px; height: 40px; object-fit: contain; margin-right: 10px; border: 1px solid #ddd; border-radius: 4px; padding: 2px; background: white;">` :
-                    `<div style="width: 40px; height: 40px; background-color: ${partido.color}; border-radius: 4px; margin-right: 10px;"></div>`
-                }
-                <div>
-                    <strong>${partido.nombre}</strong>
-                    <br><small class="text-muted">${partido.nombre_corto || 'Sin sigla'}</small>
-                    ${!partido.activo ? '<br><span class="badge bg-secondary">Deshabilitado</span>' : '<br><span class="badge bg-success">Habilitado</span>'}
+    container.innerHTML = allPartidos.map(partido => {
+        // Determinar las iniciales del partido
+        const iniciales = partido.nombre_corto ? 
+            partido.nombre_corto.substring(0, 3).toUpperCase() : 
+            partido.nombre.split(' ').map(p => p[0]).join('').substring(0, 3).toUpperCase();
+        
+        // Color por defecto si no tiene
+        const color = partido.color || '#6c757d';
+        
+        // Generar el logo/avatar
+        const logoHtml = partido.logo_url ? 
+            `<img src="${partido.logo_url}" 
+                  alt="${partido.nombre}" 
+                  class="partido-logo" 
+                  style="width: 50px; height: 50px; object-fit: contain; margin-right: 12px; border: 2px solid ${color}; border-radius: 8px; padding: 4px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" 
+                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+             <div class="partido-avatar" style="display: none; width: 50px; height: 50px; background: linear-gradient(135deg, ${color} 0%, ${color}dd 100%); border-radius: 8px; margin-right: 12px; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 2px solid ${color};">
+                <span style="color: white; font-weight: bold; font-size: 14px; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">${iniciales}</span>
+             </div>` :
+            `<div class="partido-avatar" style="width: 50px; height: 50px; background: linear-gradient(135deg, ${color} 0%, ${color}dd 100%); border-radius: 8px; margin-right: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 2px solid ${color};">
+                <span style="color: white; font-weight: bold; font-size: 14px; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">${iniciales}</span>
+             </div>`;
+        
+        return `
+            <div class="d-flex align-items-center justify-content-between mb-2 p-2 border rounded ${!partido.activo ? 'opacity-50' : ''}" style="transition: all 0.2s;">
+                <div class="d-flex align-items-center flex-grow-1">
+                    ${logoHtml}
+                    <div>
+                        <strong>${partido.nombre}</strong>
+                        <br><small class="text-muted">${partido.nombre_corto || 'Sin sigla'}</small>
+                        ${partido.logo_url ? '<br><small class="text-success"><i class="bi bi-check-circle-fill"></i> Con logo</small>' : '<br><small class="text-muted"><i class="bi bi-image"></i> Sin logo</small>'}
+                        ${!partido.activo ? '<br><span class="badge bg-secondary">Deshabilitado</span>' : '<br><span class="badge bg-success">Habilitado</span>'}
+                    </div>
+                </div>
+                <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-${partido.activo ? 'warning' : 'success'}" 
+                            onclick="togglePartido(${partido.id}, ${!partido.activo})"
+                            title="${partido.activo ? 'Deshabilitar' : 'Habilitar'}">
+                        <i class="bi bi-${partido.activo ? 'toggle-on' : 'toggle-off'}"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="editPartido(${partido.id})" title="Editar partido">
+                        <i class="bi bi-pencil"></i>
+                    </button>
                 </div>
             </div>
-            <div class="d-flex gap-1">
-                <button class="btn btn-sm btn-${partido.activo ? 'warning' : 'success'}" 
-                        onclick="togglePartido(${partido.id}, ${!partido.activo})"
-                        title="${partido.activo ? 'Deshabilitar' : 'Habilitar'}">
-                    <i class="bi bi-${partido.activo ? 'toggle-on' : 'toggle-off'}"></i>
-                </button>
-                <button class="btn btn-sm btn-outline-primary" onclick="editPartido(${partido.id})">
-                    <i class="bi bi-pencil"></i>
-                </button>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 /**
@@ -1219,6 +1192,7 @@ async function loadCandidatos() {
         if (response.success) {
             allCandidatos = response.data;
             console.log('[Super Admin] Candidatos cargados:', allCandidatos.length);
+            populateCandidatoFilters();
             renderCandidatos();
         } else {
             console.error('[Super Admin] Error en respuesta:', response);
@@ -1232,15 +1206,16 @@ async function loadCandidatos() {
 /**
  * Renderizar candidatos
  */
-function renderCandidatos() {
+function renderCandidatos(candidatos = null) {
     const tbody = document.getElementById('candidatesTableBody');
+    const candidatosToRender = candidatos || allCandidatos;
     
-    if (allCandidatos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><p class="text-muted">No hay candidatos registrados</p></td></tr>';
+    if (candidatosToRender.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4"><p class="text-muted">No hay candidatos que coincidan con los filtros</p></td></tr>';
         return;
     }
     
-    tbody.innerHTML = allCandidatos.map(candidato => `
+    tbody.innerHTML = candidatosToRender.map(candidato => `
         <tr class="${!candidato.activo ? 'opacity-50' : ''}">
             <td>${candidato.nombre_completo || candidato.nombre}</td>
             <td>${candidato.partido_nombre || 'Independiente'}</td>
@@ -1259,6 +1234,79 @@ function renderCandidatos() {
             </td>
         </tr>
     `).join('');
+}
+
+/**
+ * Filtrar candidatos
+ */
+function filterCandidatos() {
+    const partidoFilter = document.getElementById('filterCandidatoPartido')?.value || '';
+    const tipoFilter = document.getElementById('filterCandidatoTipo')?.value || '';
+    const sortBy = document.getElementById('sortCandidatos')?.value || 'nombre_asc';
+    const searchText = document.getElementById('searchCandidato')?.value.toLowerCase() || '';
+    
+    let filtered = [...allCandidatos];
+    
+    // Filtrar por partido
+    if (partidoFilter) {
+        filtered = filtered.filter(c => c.partido_nombre === partidoFilter);
+    }
+    
+    // Filtrar por tipo de elección
+    if (tipoFilter) {
+        filtered = filtered.filter(c => c.tipo_eleccion_nombre === tipoFilter);
+    }
+    
+    // Buscar por texto
+    if (searchText) {
+        filtered = filtered.filter(c => 
+            (c.nombre_completo || c.nombre || '').toLowerCase().includes(searchText) ||
+            (c.partido_nombre || '').toLowerCase().includes(searchText)
+        );
+    }
+    
+    // Ordenar
+    filtered.sort((a, b) => {
+        switch(sortBy) {
+            case 'nombre_asc':
+                return (a.nombre_completo || a.nombre || '').localeCompare(b.nombre_completo || b.nombre || '');
+            case 'nombre_desc':
+                return (b.nombre_completo || b.nombre || '').localeCompare(a.nombre_completo || a.nombre || '');
+            case 'partido_asc':
+                return (a.partido_nombre || '').localeCompare(b.partido_nombre || '');
+            case 'partido_desc':
+                return (b.partido_nombre || '').localeCompare(a.partido_nombre || '');
+            case 'numero_asc':
+                return (a.numero_lista || 999) - (b.numero_lista || 999);
+            case 'numero_desc':
+                return (b.numero_lista || 0) - (a.numero_lista || 0);
+            default:
+                return 0;
+        }
+    });
+    
+    renderCandidatos(filtered);
+}
+
+/**
+ * Poblar filtros de candidatos
+ */
+function populateCandidatoFilters() {
+    // Obtener partidos únicos
+    const partidos = [...new Set(allCandidatos.map(c => c.partido_nombre).filter(Boolean))].sort();
+    const partidoSelect = document.getElementById('filterCandidatoPartido');
+    if (partidoSelect) {
+        partidoSelect.innerHTML = '<option value="">Todos los partidos</option>' +
+            partidos.map(p => `<option value="${p}">${p}</option>`).join('');
+    }
+    
+    // Obtener tipos de elección únicos
+    const tipos = [...new Set(allCandidatos.map(c => c.tipo_eleccion_nombre).filter(Boolean))].sort();
+    const tipoSelect = document.getElementById('filterCandidatoTipo');
+    if (tipoSelect) {
+        tipoSelect.innerHTML = '<option value="">Todos los tipos</option>' +
+            tipos.map(t => `<option value="${t}">${t}</option>`).join('');
+    }
 }
 
 // ============================================
@@ -2584,6 +2632,135 @@ async function loadTestData() {
     } catch (error) {
         console.error('Error:', error);
         Utils.showError('Error al cargar datos de prueba');
+    }
+}
+
+/**
+ * Inicializar datos electorales (partidos, candidatos, tipos de elección)
+ */
+async function initElectoralData() {
+    if (!confirm('¿Desea inicializar los datos electorales?\n\nEsto creará:\n- 7 Tipos de Elección (Presidencia, Senado, Cámara, etc.)\n- 10 Partidos Políticos\n- 6 Candidatos de ejemplo\n\nLos datos existentes no se duplicarán.')) {
+        return;
+    }
+    
+    try {
+        Utils.showInfo('Inicializando datos electorales...');
+        
+        const response = await APIClient.post('/super-admin/init-test-data', {});
+        
+        if (response.success) {
+            const data = response.data;
+            
+            // Crear mensaje detallado
+            let detailsHtml = '<ul class="list-unstyled mb-0">';
+            
+            if (data.tipos_eleccion.created > 0) {
+                detailsHtml += `<li>✅ ${data.tipos_eleccion.created} tipos de elección creados</li>`;
+            }
+            if (data.tipos_eleccion.existing > 0) {
+                detailsHtml += `<li>ℹ️ ${data.tipos_eleccion.existing} tipos de elección ya existían</li>`;
+            }
+            
+            if (data.partidos.created > 0) {
+                detailsHtml += `<li>✅ ${data.partidos.created} partidos creados</li>`;
+            }
+            if (data.partidos.existing > 0) {
+                detailsHtml += `<li>ℹ️ ${data.partidos.existing} partidos ya existían</li>`;
+            }
+            
+            if (data.candidatos.created > 0) {
+                detailsHtml += `<li>✅ ${data.candidatos.created} candidatos creados</li>`;
+            }
+            if (data.candidatos.existing > 0) {
+                detailsHtml += `<li>ℹ️ ${data.candidatos.existing} candidatos ya existían</li>`;
+            }
+            
+            detailsHtml += '</ul>';
+            
+            // Mostrar modal con resultados
+            const modalHtml = `
+                <div class="modal fade" id="initDataModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title">✅ Datos Electorales Inicializados</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="mb-3">${response.message}</p>
+                                ${detailsHtml}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                <button type="button" class="btn btn-primary" onclick="location.reload()">
+                                    <i class="bi bi-arrow-clockwise"></i> Recargar Página
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remover modal anterior si existe
+            const existingModal = document.getElementById('initDataModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            const modal = new bootstrap.Modal(document.getElementById('initDataModal'));
+            modal.show();
+            
+            document.getElementById('initDataModal').addEventListener('hidden.bs.modal', function() {
+                this.remove();
+            });
+            
+            Utils.showSuccess('Datos electorales inicializados correctamente');
+            
+            // Recargar datos en el dashboard
+            setTimeout(() => {
+                if (typeof loadPartidosFixed === 'function') loadPartidosFixed();
+                if (typeof loadCandidatosFixed === 'function') loadCandidatosFixed();
+                if (typeof loadTiposEleccionFixed === 'function') loadTiposEleccionFixed();
+            }, 1000);
+            
+        } else {
+            Utils.showError(response.error || 'Error al inicializar datos');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al inicializar datos electorales');
+    }
+}
+
+/**
+ * Inicializar datos electorales del Caquetá
+ */
+async function initCaquetaData() {
+    if (!confirm('¿Desea cargar los datos electorales del Caquetá?\n\nEsto creará candidatos basados en las elecciones reales:\n- Senado 2022 (~30 candidatos)\n- Cámara Caquetá 2022 (~22 candidatos)\n- Asamblea Departamental 2023 (~20 candidatos)\n\nTotal: ~72 candidatos reales')) {
+        return;
+    }
+    
+    try {
+        Utils.showInfo('Cargando datos electorales del Caquetá...');
+        
+        const response = await APIClient.post('/super-admin/init-caqueta-data', {});
+        
+        if (response.success) {
+            Utils.showSuccess(response.message);
+            
+            // Recargar datos en el dashboard
+            setTimeout(() => {
+                if (typeof loadCandidatosFixed === 'function') loadCandidatosFixed();
+                location.reload();
+            }, 2000);
+            
+        } else {
+            Utils.showError(response.error || 'Error al cargar datos del Caquetá');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Utils.showError('Error al cargar datos electorales del Caquetá');
     }
 }
 

@@ -1,6 +1,7 @@
 """
 Endpoint de emergencia para resetear contraseñas
 SOLO PARA USO EN DESARROLLO O EMERGENCIAS
+⚠️ ESTOS ENDPOINTS ESTÁN DESHABILITADOS EN PRODUCCIÓN
 """
 from flask import Blueprint, jsonify, request
 from backend.database import db
@@ -10,8 +11,37 @@ import os
 
 emergency_bp = Blueprint('emergency', __name__)
 
-# Clave secreta para proteger el endpoint
-EMERGENCY_KEY = os.getenv('EMERGENCY_RESET_KEY', 'reset_passwords_2024_emergency')
+# Clave secreta para proteger el endpoint (DEBE configurarse en variables de entorno)
+EMERGENCY_KEY = os.getenv('EMERGENCY_RESET_KEY')
+
+def _verificar_acceso_emergencia(data):
+    """
+    Verificar acceso a endpoints de emergencia
+    
+    Returns:
+        tuple: (success, error_response)
+    """
+    # Verificar que no sea producción
+    if os.getenv('FLASK_ENV') == 'production' and not os.getenv('ALLOW_EMERGENCY_ENDPOINTS'):
+        return False, jsonify({
+            'success': False,
+            'error': 'Endpoints de emergencia deshabilitados en producción'
+        }), 403
+    
+    # Verificar clave de emergencia
+    if not EMERGENCY_KEY:
+        return False, jsonify({
+            'success': False,
+            'error': 'Clave de emergencia no configurada en el servidor'
+        }), 500
+    
+    if not data or data.get('emergency_key') != EMERGENCY_KEY:
+        return False, jsonify({
+            'success': False,
+            'error': 'Clave de emergencia inválida'
+        }), 403
+    
+    return True, None, None
 
 @emergency_bp.route('/emergency-reset-passwords', methods=['POST'])
 def emergency_reset_passwords():
@@ -25,12 +55,10 @@ def emergency_reset_passwords():
     try:
         data = request.get_json()
         
-        # Verificar clave de emergencia
-        if not data or data.get('emergency_key') != EMERGENCY_KEY:
-            return jsonify({
-                'success': False,
-                'error': 'Clave de emergencia inválida'
-            }), 403
+        # Verificar acceso
+        success, error_response, status_code = _verificar_acceso_emergencia(data)
+        if not success:
+            return error_response, status_code
         
         # Contraseñas por defecto
         passwords = {
@@ -50,7 +78,7 @@ def emergency_reset_passwords():
             usuario = User.query.filter_by(rol=rol, ubicacion_id=None).first()
             
             if usuario:
-                usuario.password_hash = password  # Texto plano (sin hashear)
+                usuario.set_password(password)  # Usar método con hash
                 usuario.activo = True
                 usuario.intentos_fallidos = 0
                 usuario.bloqueado_hasta = None
@@ -94,12 +122,10 @@ def emergency_create_users():
     try:
         data = request.get_json()
         
-        # Verificar clave de emergencia
-        if not data or data.get('emergency_key') != EMERGENCY_KEY:
-            return jsonify({
-                'success': False,
-                'error': 'Clave de emergencia inválida'
-            }), 403
+        # Verificar acceso
+        success, error_response, status_code = _verificar_acceso_emergencia(data)
+        if not success:
+            return error_response, status_code
         
         # Definir usuarios básicos
         usuarios_basicos = [
@@ -167,11 +193,11 @@ def emergency_create_users():
                 # Crear nuevo usuario
                 usuario = User(
                     nombre=usuario_data['nombre'],
-                    password_hash=usuario_data['password'],  # Texto plano
                     rol=usuario_data['rol'],
                     ubicacion_id=None,
                     activo=usuario_data['activo']
                 )
+                usuario.set_password(usuario_data['password'])  # Usar método con hash
                 db.session.add(usuario)
                 usuarios_creados.append({
                     'nombre': usuario_data['nombre'],
@@ -209,12 +235,10 @@ def emergency_unlock_users():
     try:
         data = request.get_json()
         
-        # Verificar clave de emergencia
-        if not data or data.get('emergency_key') != EMERGENCY_KEY:
-            return jsonify({
-                'success': False,
-                'error': 'Clave de emergencia inválida'
-            }), 403
+        # Verificar acceso
+        success, error_response, status_code = _verificar_acceso_emergencia(data)
+        if not success:
+            return error_response, status_code
         
         usuarios = User.query.all()
         usuarios_desbloqueados = []
@@ -257,12 +281,10 @@ def emergency_list_users():
     try:
         data = request.get_json()
         
-        # Verificar clave de emergencia
-        if not data or data.get('emergency_key') != EMERGENCY_KEY:
-            return jsonify({
-                'success': False,
-                'error': 'Clave de emergencia inválida'
-            }), 403
+        # Verificar acceso
+        success, error_response, status_code = _verificar_acceso_emergencia(data)
+        if not success:
+            return error_response, status_code
         
         usuarios = User.query.all()
         

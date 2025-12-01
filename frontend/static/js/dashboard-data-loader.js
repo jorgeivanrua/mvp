@@ -42,59 +42,58 @@ async function loadDataWithRetry(apiCall, maxRetries = 3, delay = 1000) {
 
 // Sobrescribir loadMainStats para Super Admin
 window.loadMainStats = async function() {
-        try {
-            console.log('[Data Loader] Cargando estadísticas principales...');
+    try {
+        console.log('[Data Loader] Cargando estadísticas principales...');
+        
+        const response = await loadDataWithRetry(
+            () => APIClient.get('/super-admin/stats'),
+            3,
+            1000
+        );
             
-            const response = await loadDataWithRetry(
-                () => APIClient.get('/super-admin/stats'),
-                3,
-                1000
-            );
+        if (response && response.success && response.data) {
+            const stats = response.data;
+            console.log('[Data Loader] Estadísticas recibidas:', stats);
             
-            if (response && response.success && response.data) {
-                const stats = response.data;
-                console.log('[Data Loader] Estadísticas recibidas:', stats);
-                
-                // Actualizar UI de forma segura
-                const updateElement = (id, value) => {
-                    const element = document.getElementById(id);
-                    if (element) {
-                        element.textContent = value;
-                    } else {
-                        console.warn(`[Data Loader] Elemento ${id} no encontrado`);
-                    }
-                };
-                
-                updateElement('totalUsuarios', stats.totalUsuarios || 0);
-                updateElement('usuariosChange', stats.usuariosChange >= 0 ? `+${stats.usuariosChange}` : stats.usuariosChange);
-                updateElement('totalPuestos', stats.totalPuestos || 0);
-                updateElement('totalMesas', stats.totalMesas || 0);
-                updateElement('totalFormularios', stats.totalFormularios || 0);
-                updateElement('formulariosPendientes', stats.formulariosPendientes || 0);
-                updateElement('totalValidados', stats.totalValidados || 0);
-                updateElement('porcentajeValidados', (stats.porcentajeValidados || 0).toFixed(1));
-                
-                console.log('[Data Loader] ✓ UI actualizada correctamente');
-            } else {
-                console.error('[Data Loader] Respuesta no válida:', response);
-            }
-        } catch (error) {
-            console.error('[Data Loader] Error cargando estadísticas:', error);
+            // Actualizar UI de forma segura
+            const updateElement = (id, value) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = value;
+                } else {
+                    console.warn(`[Data Loader] Elemento ${id} no encontrado`);
+                }
+            };
             
-            // Mostrar error al usuario
-            if (typeof Utils !== 'undefined' && typeof Utils.showError === 'function') {
-                Utils.showError('Error al cargar estadísticas del sistema');
-            }
+            updateElement('totalUsuarios', stats.totalUsuarios || 0);
+            updateElement('usuariosChange', stats.usuariosChange >= 0 ? `+${stats.usuariosChange}` : stats.usuariosChange);
+            updateElement('totalPuestos', stats.totalPuestos || 0);
+            updateElement('totalMesas', stats.totalMesas || 0);
+            updateElement('totalFormularios', stats.totalFormularios || 0);
+            updateElement('formulariosPendientes', stats.formulariosPendientes || 0);
+            updateElement('totalValidados', stats.totalValidados || 0);
+            updateElement('porcentajeValidados', (stats.porcentajeValidados || 0).toFixed(1));
             
-            // Si es error de autenticación, redirigir
-            if (error.message && (error.message.includes('401') || error.message.includes('403') || error.message.includes('Sesión'))) {
-                console.log('[Data Loader] Redirigiendo al login...');
-                setTimeout(() => {
-                    window.location.href = '/auth/login';
-                }, 2000);
-            }
+            console.log('[Data Loader] ✓ UI actualizada correctamente');
+        } else {
+            console.error('[Data Loader] Respuesta no válida:', response);
         }
-    };
+    } catch (error) {
+        console.error('[Data Loader] Error cargando estadísticas:', error);
+        
+        // Mostrar error al usuario
+        if (typeof Utils !== 'undefined' && typeof Utils.showError === 'function') {
+            Utils.showError('Error al cargar estadísticas del sistema');
+        }
+        
+        // Si es error de autenticación, redirigir
+        if (error.message && (error.message.includes('401') || error.message.includes('403') || error.message.includes('Sesión'))) {
+            console.log('[Data Loader] Redirigiendo al login...');
+            setTimeout(() => {
+                window.location.href = '/auth/login';
+            }, 2000);
+        }
+    }
 };
 
 // Forzar ejecución inmediata si ya existe initSuperAdminDashboard

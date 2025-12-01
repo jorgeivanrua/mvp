@@ -665,7 +665,9 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- Correcciones de dashboards (PRIMERO) -->
+<!-- API Client (PRIMERO) -->
+<script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
+<!-- Correcciones de dashboards -->
 <script src="{{ url_for('static', filename='js/dashboard-fixes.js') }}"></script>
 
 <script src="{{ url_for('static', filename='js/incidentes-delitos.js') }}"></script>

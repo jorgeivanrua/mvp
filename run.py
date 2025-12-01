@@ -45,27 +45,9 @@ if config_name == 'production':
             else:
                 print(f"✅ BD OK ({departamentos_count} departamentos)")
             
-            # Aplicar migración de geolocalización
-            try:
-                print(">> Aplicando migración de geolocalización...")
-                commands = [
-                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS ultima_latitud FLOAT;",
-                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS ultima_longitud FLOAT;",
-                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS ultima_geolocalizacion_at TIMESTAMP;",
-                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS precision_geolocalizacion FLOAT;"
-                ]
-                
-                for command in commands:
-                    try:
-                        db.session.execute(db.text(command))
-                    except Exception as e:
-                        if 'already exists' not in str(e).lower() and 'duplicate' not in str(e).lower():
-                            pass  # Ignorar errores de columnas existentes
-                
-                db.session.commit()
-                print("✅ Migración de geolocalización aplicada")
-            except Exception as e:
-                print(f"⚠️  Error en migración: {e}")
+            # Las migraciones ahora se manejan con Flask-Migrate (Alembic)
+            # Para aplicar migraciones: flask db upgrade
+            # Para crear nueva migración: flask db migrate -m "descripción"
         except Exception as e:
             print(f"⚠️  Error verificando BD: {e}")
 

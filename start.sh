@@ -18,12 +18,12 @@ fi
 source .venv/bin/activate
 
 # Verificar que la BD existe
-if [ ! -f "instance/testigos.db" ]; then
+if [ ! -f "instance/electoral.db" ]; then
     echo ""
     echo "ADVERTENCIA: Base de datos no encontrada"
     echo "Ejecutando inicialización automática..."
     echo ""
-    python setup.py
+    python scripts/init_system.py
     echo ""
 fi
 

@@ -51,15 +51,30 @@ chmod +x setup.sh
 Este script automáticamente:
 - ✅ Crea el entorno virtual
 - ✅ Instala todas las dependencias
+- ✅ Crea archivo .env desde .env.example
 - ✅ Inicializa la base de datos
 - ✅ **Carga automáticamente todos los datos:**
   - 📍 DIVIPOLA (22 departamentos, 1122 municipios, 13405 puestos)
   - 🎨 Partidos políticos (9 partidos con colores)
   - 👤 Candidatos (7 candidatos de ejemplo)
   - 🗳️ Tipos de elección (6 tipos)
-  - 👥 Usuarios del sistema (6 usuarios)
-- ✅ Aplica todas las migraciones
+  - 👥 Usuarios del sistema (6 usuarios con contraseñas hasheadas)
 - ✅ Configura el sistema electoral
+
+### Verificar Sistema
+
+Antes de iniciar, verifica que todo esté correcto:
+
+```bash
+python scripts/check_system.py
+```
+
+Este script verifica:
+- ✅ Versión de Python
+- ✅ Dependencias instaladas
+- ✅ Base de datos existe y tiene datos
+- ✅ Contraseñas hasheadas correctamente
+- ✅ Puerto 5000 disponible
 
 ### Opción 2: Instalación Manual 🔧
 
@@ -142,23 +157,23 @@ La aplicación estará disponible en: `http://localhost:5000`
 El sistema ahora carga automáticamente todos los datos necesarios en cada instalación o deploy:
 
 ```bash
-# Inicialización automática (se ejecuta automáticamente en setup)
-python scripts/inicializar_datos_automatico.py
+# Inicialización completa del sistema (RECOMENDADO)
+python scripts/init_system.py
 
-# Verificar datos cargados
-python scripts/verificar_y_cargar_datos_completo.py
+# Con reseteo de contraseñas
+python scripts/init_system.py --reset-passwords
 ```
 
 ### Usuarios Creados Automáticamente
 
 | Usuario | Contraseña | Rol | Descripción |
 |---------|-----------|-----|-------------|
-| **monitoreo** | **Monitoreo2025!** | Monitoreo | Dashboard de monitoreo en tiempo real |
-| auditor | test123 | Auditor Electoral | Auditoría del sistema |
-| coord_dept | test123 | Coordinador Departamental | Coordinación departamental |
-| coord_mun | test123 | Coordinador Municipal | Coordinación municipal |
-| coord_puesto | test123 | Coordinador de Puesto | Coordinación de puesto |
-| testigo1 | test123 | Testigo Electoral | Testigo electoral |
+| **Super Admin** | **admin123** | super_admin | Administrador principal |
+| Monitoreo | test123 | monitoreo | Dashboard de monitoreo en tiempo real |
+| Coordinador Departamental | test123 | coordinador_departamental | Coordinación departamental |
+| Coordinador Municipal | test123 | coordinador_municipal | Coordinación municipal |
+| Coordinador Puesto | test123 | coordinador_puesto | Coordinación de puesto |
+| Auditor Electoral | test123 | auditor_electoral | Auditoría del sistema |
 
 ### Datos Cargados Automáticamente
 
@@ -167,7 +182,14 @@ python scripts/verificar_y_cargar_datos_completo.py
 - ✅ **Candidatos**: 7 candidatos de ejemplo (Gustavo Bolívar, María José Pizarro, Iván Cepeda, Juan Fernando Cristo, Efraín Cepeda, Angélica Lozano, María Fernanda Cabal)
 - ✅ **Tipos de Elección**: 6 tipos (Senado, Cámara, Gobernación, Asamblea, Alcaldía, Concejo)
 
-⚠️ **IMPORTANTE**: Cambia todas las contraseñas después del primer acceso en producción
+### 🔒 Seguridad
+
+⚠️ **CRÍTICO**: 
+- Las contraseñas ahora se almacenan con **hashing seguro** (Werkzeug)
+- **DEBES cambiar todas las contraseñas** después del primer acceso en producción
+- Ver `docs/SEGURIDAD.md` para más información
+
+⚠️ **IMPORTANTE**: Si actualizas desde una versión anterior, lee `CAMBIOS_SEGURIDAD_2024.md`
 
 ## 📁 Estructura del Proyecto
 
