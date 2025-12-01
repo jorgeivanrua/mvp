@@ -244,37 +244,9 @@ class DelitoElectoral(db.Model):
         }
 
 
-class SeguimientoReporte(db.Model):
-    """Modelo para seguimiento de reportes"""
-    __tablename__ = 'seguimiento_reportes'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    tipo_reporte = db.Column(db.String(20), nullable=False)  # 'incidente' o 'delito'
-    reporte_id = db.Column(db.Integer, nullable=False)
-    usuario_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    accion = db.Column(db.String(50), nullable=False)
-    comentario = db.Column(db.Text, nullable=True)
-    estado_anterior = db.Column(db.String(30), nullable=True)
-    estado_nuevo = db.Column(db.String(30), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relaciones
-    usuario = db.relationship('User', backref='seguimientos_realizados')
-    
-    def to_dict(self):
-        """Convertir a diccionario"""
-        return {
-            'id': self.id,
-            'tipo_reporte': self.tipo_reporte,
-            'reporte_id': self.reporte_id,
-            'usuario_id': self.usuario_id,
-            'usuario_nombre': self.usuario.nombre if self.usuario else None,
-            'accion': self.accion,
-            'comentario': self.comentario,
-            'estado_anterior': self.estado_anterior,
-            'estado_nuevo': self.estado_nuevo,
-            'created_at': self.created_at.isoformat() if self.created_at else None
-        }
+# NOTA: SeguimientoReporte ahora está definido en backend/models/seguimiento.py
+# Importar desde allí si se necesita
+# from backend.models.seguimiento import SeguimientoReporte
 
 
 class NotificacionReporte(db.Model):

@@ -6,7 +6,7 @@ from flask import Flask
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from flask_compress import Compress
-from flask_socketio import SocketIO
+# from flask_socketio import SocketIO  # Comentado temporalmente - instalar con: pip install flask-socketio
 from whitenoise import WhiteNoise
 
 from backend.config import config
@@ -17,7 +17,8 @@ from backend.utils.logging_config import setup_logging
 # Inicializar extensiones
 jwt = JWTManager()
 compress = Compress()
-socketio = SocketIO()
+# socketio = SocketIO()  # Comentado temporalmente
+socketio = None  # Placeholder
 
 
 def create_app(config_name='default'):
@@ -47,15 +48,16 @@ def create_app(config_name='default'):
     CORS(app, resources={r"/*": {"origins": "*"}})
     compress.init_app(app)  # Compresión GZIP para respuestas
     
-    # Configurar SocketIO
-    socketio.init_app(
-        app,
-        cors_allowed_origins="*",
-        async_mode='threading',
-        message_queue=app.config.get('SOCKETIO_MESSAGE_QUEUE'),
-        logger=app.debug,
-        engineio_logger=app.debug
-    )
+    # Configurar SocketIO (comentado temporalmente)
+    if socketio:
+        socketio.init_app(
+            app,
+            cors_allowed_origins="*",
+            async_mode='threading',
+            message_queue=app.config.get('SOCKETIO_MESSAGE_QUEUE'),
+            logger=app.debug,
+            engineio_logger=app.debug
+        )
     
     # Registrar blueprints
     register_blueprints(app)

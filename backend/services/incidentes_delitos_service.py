@@ -1,7 +1,8 @@
 """Servicio para manejo de incidentes y delitos electorales"""
 
 from backend.database import db
-from backend.models.incidentes_delitos import IncidenteElectoral, DelitoElectoral, SeguimientoReporte, NotificacionReporte
+from backend.models.incidentes_delitos import IncidenteElectoral, DelitoElectoral, NotificacionReporte
+from backend.models.seguimiento import SeguimientoReporte
 from backend.models.user import User
 from backend.models.location import Location
 from datetime import datetime

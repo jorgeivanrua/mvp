@@ -9,7 +9,7 @@ from backend.services.municipal_service import MunicipalService
 from backend.services.discrepancia_service import DiscrepanciaService
 from backend.services.e24_service import E24Service
 from backend.services.consolidado_service import ConsolidadoService
-from backend.models.coordinador_municipal import Notificacion, AuditLog
+from backend.models.coordinador_municipal import NotificacionCoordinador, AuditLog
 from backend.database import db
 from backend.utils.exceptions import BaseAPIException, ValidationException, NotFoundException
 from backend.utils.decorators import role_required

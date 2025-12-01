@@ -37,8 +37,8 @@ class SeguimientoReporte(db.Model):
     
     # Relaciones
     usuario = db.relationship('User', backref='acciones_seguimiento')
-    incidente = db.relationship('IncidenteElectoral', backref='seguimiento', foreign_keys=[incidente_id])
-    delito = db.relationship('DelitoElectoral', backref='seguimiento', foreign_keys=[delito_id])
+    incidente = db.relationship('IncidenteElectoral', backref='seguimiento_detallado', foreign_keys=[incidente_id])
+    delito = db.relationship('DelitoElectoral', backref='seguimiento_detallado', foreign_keys=[delito_id])
     
     def to_dict(self):
         """Convertir a diccionario"""

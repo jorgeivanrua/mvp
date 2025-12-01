@@ -217,9 +217,9 @@ class VotoPartidoE24Municipal(db.Model):
         return data
 
 
-class Notificacion(db.Model):
+class NotificacionCoordinador(db.Model):
     """Notificaciones enviadas a coordinadores"""
-    __tablename__ = 'notificaciones'
+    __tablename__ = 'notificaciones_coordinadores'
     
     id = db.Column(db.Integer, primary_key=True)
     remitente_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)

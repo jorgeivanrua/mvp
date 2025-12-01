@@ -177,6 +177,7 @@
   - Agregar filtros por partido, tipo_eleccion, activo
 
 
+
   - Incluir datos de partido y tipo_eleccion
   - Validar permisos de Super Admin
   - _Requirements: 4.1_

@@ -4,7 +4,10 @@ Servicio para gestión de notificaciones
 from backend.database import db
 from backend.models.notificacion import Notificacion, ConfiguracionNotificaciones
 from backend.models.user import User
-from backend.services.websocket_service import WebSocketService
+try:
+    from backend.services.websocket_service import WebSocketService
+except:
+    from backend.services.websocket_service_stub import WebSocketService
 from datetime import datetime
 import logging
 

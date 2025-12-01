@@ -59,13 +59,21 @@ if __name__ == '__main__':
     print(f">> Iniciando aplicacion en modo {config_name}")
     print(f">> Servidor corriendo en http://0.0.0.0:{port}")
     print(f">> Base de datos: {app.config['SQLALCHEMY_DATABASE_URI']}")
-    print(f">> SocketIO habilitado para notificaciones en tiempo real")
     
-    # Usar socketio.run en lugar de app.run para soporte de WebSocket
-    socketio.run(
-        app,
-        host='0.0.0.0',
-        port=port,
-        debug=app.config['DEBUG'],
-        allow_unsafe_werkzeug=True  # Solo para desarrollo
-    )
+    # Usar socketio.run si está disponible, sino app.run
+    if socketio:
+        print(f">> SocketIO habilitado para notificaciones en tiempo real")
+        socketio.run(
+            app,
+            host='0.0.0.0',
+            port=port,
+            debug=app.config['DEBUG'],
+            allow_unsafe_werkzeug=True  # Solo para desarrollo
+        )
+    else:
+        print(f">> SocketIO deshabilitado - instalar flask-socketio para habilitar")
+        app.run(
+            host='0.0.0.0',
+            port=port,
+            debug=app.config['DEBUG']
+        )
