@@ -214,15 +214,19 @@
 - [ ] 5.5 Implementar POST /api/candidatos/<id>/foto
   - Recibir archivo multipart/form-data
 
+
   - Validar formato y tamaño
   - Guardar archivo
   - Actualizar foto_url del candidato
   - Retornar URL de la foto
   - _Requirements: 4.2_
 
+
+
 - [ ] 5.6 Escribir property test para listado de candidatos
   - **Property 10: All registered candidates are listed**
   - **Validates: Requirements 4.1**
+
 
 ## Fase 6: Backend - Servicios de Configuración
 
@@ -230,16 +234,19 @@
 - [ ] 6.1 Crear ConfiguracionService
   - Implementar obtener_configuracion(clave)
   - Implementar actualizar_configuracion(clave, valor)
+
   - Implementar obtener_todas_configuraciones()
   - Implementar cache con Redis (TTL 5 minutos)
   - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
-- [ ] 6.2 Implementar exportación de configuración
+- [x] 6.2 Implementar exportación de configuración
+
   - Exportar partidos a JSON
   - Exportar candidatos a JSON
   - Exportar tipos de elección a JSON
   - Exportar configuración completa a JSON
   - _Requirements: 10.1, 10.2, 10.3, 10.4_
+
 
 - [ ] 6.3 Implementar importación de configuración
   - Validar formato JSON
