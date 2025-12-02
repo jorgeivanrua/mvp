@@ -113,13 +113,13 @@ class VotoPartido(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     formulario_id = db.Column(db.Integer, db.ForeignKey('formularios_e14.id'), nullable=False)
-    partido_id = db.Column(db.Integer, db.ForeignKey('partidos.id'), nullable=False)
+    partido_id = db.Column(db.Integer, db.ForeignKey('partidos_politicos.id'), nullable=False)
     votos = db.Column(db.Integer, nullable=False, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relaciones
     formulario = db.relationship('FormularioE14', back_populates='votos_partidos')
-    partido = db.relationship('Partido', backref='votos')
+    partido = db.relationship('PartidoPolitico', backref='votos')
     
     def to_dict(self):
         """Convertir a diccionario"""

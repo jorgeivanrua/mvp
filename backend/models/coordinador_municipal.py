@@ -83,13 +83,13 @@ class VotoPartidoE24Puesto(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     e24_puesto_id = db.Column(db.Integer, db.ForeignKey('formularios_e24_puesto.id'), nullable=False)
-    partido_id = db.Column(db.Integer, db.ForeignKey('partidos.id'), nullable=False)
+    partido_id = db.Column(db.Integer, db.ForeignKey('partidos_politicos.id'), nullable=False)
     votos = db.Column(db.Integer, nullable=False)
     porcentaje = db.Column(db.Float, nullable=False)
     
     # Relaciones
     e24_puesto = db.relationship('FormularioE24Puesto', back_populates='votos_partidos')
-    partido = db.relationship('Partido')
+    partido = db.relationship('PartidoPolitico')
     
     def to_dict(self):
         """Convertir a diccionario"""
@@ -191,13 +191,13 @@ class VotoPartidoE24Municipal(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     e24_municipal_id = db.Column(db.Integer, db.ForeignKey('formularios_e24_municipal.id'), nullable=False)
-    partido_id = db.Column(db.Integer, db.ForeignKey('partidos.id'), nullable=False)
+    partido_id = db.Column(db.Integer, db.ForeignKey('partidos_politicos.id'), nullable=False)
     votos = db.Column(db.Integer, nullable=False)
     porcentaje = db.Column(db.Float, nullable=False)
     
     # Relaciones
     e24_municipal = db.relationship('FormularioE24Municipal', back_populates='votos_partidos')
-    partido = db.relationship('Partido')
+    partido = db.relationship('PartidoPolitico')
     
     def to_dict(self):
         """Convertir a diccionario"""

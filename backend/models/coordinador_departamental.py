@@ -89,13 +89,13 @@ class VotoPartidoReporteDepartamental(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     reporte_departamental_id = db.Column(db.Integer, db.ForeignKey('reportes_departamentales.id'), nullable=False)
-    partido_id = db.Column(db.Integer, db.ForeignKey('partidos.id'), nullable=False)
+    partido_id = db.Column(db.Integer, db.ForeignKey('partidos_politicos.id'), nullable=False)
     votos = db.Column(db.Integer, nullable=False)
     porcentaje = db.Column(db.Float, nullable=False)
     
     # Relaciones
     reporte_departamental = db.relationship('ReporteDepartamental', back_populates='votos_partidos')
-    partido = db.relationship('Partido')
+    partido = db.relationship('PartidoPolitico')
     
     def to_dict(self):
         """Convertir a diccionario"""
