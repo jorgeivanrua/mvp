@@ -26,6 +26,7 @@ class Candidato(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     
     # Relaciones
+    # partido - definido en PartidoPolitico con backref
     tipo_eleccion = db.relationship('TipoEleccion', backref='candidatos')
     
     def __repr__(self):
