@@ -299,28 +299,28 @@ async function loadUsers() {
 function renderUsers(users) {
     // Exponer globalmente para debugging
     window.renderUsers = renderUsers;
-    const tbody = document.getElementById('usersTableBody');
+    const tbody = document.getElementById('usuarios-lista');
     
     if (!tbody) {
-        console.error('❌ Elemento usersTableBody no encontrado en el DOM');
+        console.error('❌ Elemento usuarios-lista no encontrado en el DOM');
         return;
     }
     
     if (!users) {
         console.error('❌ users es null o undefined');
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4"><p class="text-danger">Error: No se pudieron cargar los usuarios</p></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><p class="text-danger">Error: No se pudieron cargar los usuarios</p></td></tr>';
         return;
     }
     
     if (!Array.isArray(users)) {
         console.error('❌ users no es un array:', typeof users);
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4"><p class="text-danger">Error: Formato de datos incorrecto</p></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><p class="text-danger">Error: Formato de datos incorrecto</p></td></tr>';
         return;
     }
     
     if (users.length === 0) {
         console.log('ℹ️ No hay usuarios para mostrar');
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4"><p class="text-muted">No hay usuarios registrados en el sistema</p></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><p class="text-muted">No hay usuarios registrados en el sistema</p></td></tr>';
         return;
     }
     
@@ -368,7 +368,7 @@ function renderUsers(users) {
     }).join('');
     
     // Actualizar contador
-    const countElement = document.getElementById('users-count');
+    const countElement = document.getElementById('usuarios-count');
     if (countElement) {
         countElement.textContent = users.length;
     }
