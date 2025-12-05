@@ -21,6 +21,8 @@ class Candidato(db.Model):
     orden = db.Column(db.Integer, default=0)  # Orden de visualización
     foto_url = db.Column(db.String(500))
     biografia = db.Column(db.Text)
+    es_independiente = db.Column(db.Boolean, default=False)  # Si es candidato independiente
+    es_cabeza_lista = db.Column(db.Boolean, default=False)  # Si es cabeza de lista
     activo = db.Column(db.Boolean, default=True, nullable=False)
     
     # Timestamps
@@ -47,6 +49,8 @@ class Candidato(db.Model):
             'orden': self.orden,
             'foto_url': self.foto_url,
             'biografia': self.biografia,
+            'es_independiente': self.es_independiente,
+            'es_cabeza_lista': self.es_cabeza_lista,
             'activo': self.activo,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
