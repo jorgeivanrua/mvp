@@ -119,7 +119,7 @@ class VotoPartido(db.Model):
     
     # Relaciones
     formulario = db.relationship('FormularioE14', back_populates='votos_partidos')
-    partido = db.relationship('PartidoPolitico', backref='votos')
+    partido = db.relationship('PartidoPolitico', backref='votos_e14')
     
     def to_dict(self):
         """Convertir a diccionario"""
@@ -151,7 +151,7 @@ class VotoCandidato(db.Model):
     
     # Relaciones
     formulario = db.relationship('FormularioE14', back_populates='votos_candidatos')
-    candidato = db.relationship('Candidato', backref='votos')
+    candidato = db.relationship('Candidato', backref='votos_e14')
     
     def to_dict(self):
         """Convertir a diccionario"""

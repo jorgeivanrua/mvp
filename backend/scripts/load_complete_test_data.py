@@ -10,11 +10,10 @@ from backend.database import db
 from backend.app import create_app
 from backend.models.user import User
 from backend.models.location import Location
-from backend.models.configuracion_electoral import (
-    TipoEleccion
+from backend.models.configuracion_electoral import TipoEleccion
 from backend.models.partido_politico import PartidoPolitico as Partido
-from backend.models.candidato import Candidato, Campana
-)
+from backend.models.candidato import Candidato
+from backend.models.configuracion_electoral import Campana
 from backend.models.formulario_e14 import FormularioE14, VotoPartido
 from backend.models.coordinador_municipal import (
     FormularioE24Puesto, VotoPartidoE24Puesto,

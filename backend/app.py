@@ -116,6 +116,8 @@ def register_blueprints(app):
     from backend.routes.notificaciones import notificaciones_bp
     from backend.routes.evidencia import evidencia_bp
     from backend.routes.seguimiento import seguimiento_bp
+    from backend.routes.partidos import partidos_bp
+    from backend.routes.candidatos import candidatos_bp
     
     # API routes
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -142,6 +144,8 @@ def register_blueprints(app):
     app.register_blueprint(notificaciones_bp)
     app.register_blueprint(evidencia_bp)
     app.register_blueprint(seguimiento_bp)
+    app.register_blueprint(partidos_bp)  # Gestión de partidos políticos
+    app.register_blueprint(candidatos_bp)  # Gestión de candidatos
     
     # Public routes (sin autenticación)
     from backend.routes.public import public_bp

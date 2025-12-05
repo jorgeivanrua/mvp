@@ -72,7 +72,7 @@ class CandidatosManager {
      */
     async cargarTiposEleccion() {
         try {
-            const response = await fetch('/api/tipos-eleccion', {
+            const response = await fetch('/api/configuracion/tipos-eleccion', {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('access_token')}`
                 }
