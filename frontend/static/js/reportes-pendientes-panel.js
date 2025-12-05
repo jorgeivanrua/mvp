@@ -354,8 +354,8 @@ if (document.readyState === 'loading') {
 }
 
 // Agregar estilos CSS
-const style = document.createElement('style');
-style.textContent = `
+const reportesPendientesStyle = document.createElement('style');
+reportesPendientesStyle.textContent = `
     .reportes-pendientes-panel {
         position: fixed;
         bottom: 20px;
@@ -544,4 +544,4 @@ style.textContent = `
         }
     }
 `;
-document.head.appendChild(style);
+document.head.appendChild(reportesPendientesStyle);

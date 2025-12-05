@@ -447,8 +447,8 @@ class OfflineIndicators {
 window.offlineIndicators = new OfflineIndicators();
 
 // Agregar estilos CSS
-const style = document.createElement('style');
-style.textContent = `
+const offlineIndicatorsStyle = document.createElement('style');
+offlineIndicatorsStyle.textContent = `
     .offline-modal {
         display: none;
         position: fixed;
@@ -694,4 +694,4 @@ style.textContent = `
         }
     }
 `;
-document.head.appendChild(style);
+document.head.appendChild(offlineIndicatorsStyle);
