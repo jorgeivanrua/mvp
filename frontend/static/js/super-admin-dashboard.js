@@ -326,75 +326,40 @@ function renderUsers(users) {
     
     console.log(`📊 Renderizando ${users.length} usuarios`);
     
-    tbody.innerHTML = users.map((user, index) => {
+    tbody.innerHTML = users.map(user => {
         // Validar que user tenga las propiedades necesarias
         if (!user.id || !user.nombre || !user.rol) {
             console.warn('⚠️ Usuario con datos incompletos:', user);
             return '';
         }
         
-        // Formatear rol para mostrar
-        const rolDisplay = user.rol.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        
         return `
-            <tr class="fade-in" style="animation-delay: ${index * 0.02}s;">
+            <tr>
+                <td>${user.id}</td>
+                <td><strong>${user.nombre}</strong></td>
+                <td><span class="badge bg-${getRoleBadgeColor(user.rol)}">${user.rol}</span></td>
+                <td>${user.ubicacion_nombre || '<span class="text-muted">Sin asignar</span>'}</td>
                 <td class="text-center">
-                    <span class="badge bg-light text-dark border">${user.id}</span>
-                </td>
-                <td>
-                    <div class="d-flex align-items-center">
-                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2" 
-                             style="width: 32px; height: 32px; font-size: 0.9rem; font-weight: 600;">
-                            ${user.nombre.charAt(0).toUpperCase()}
-                        </div>
-                        <strong>${user.nombre}</strong>
-                    </div>
-                </td>
-                <td>
-                    <span class="badge bg-${getRoleBadgeColor(user.rol)} px-3 py-2" style="font-size: 0.8rem;">
-                        <i class="bi bi-shield-check me-1"></i>${rolDisplay}
-                    </span>
-                </td>
-                <td>
-                    <i class="bi bi-geo-alt text-muted me-1"></i>
-                    ${user.ubicacion_nombre || '<span class="text-muted fst-italic">Sin asignar</span>'}
+                    <span class="text-muted" style="font-family: monospace;">••••••••</span>
                 </td>
                 <td class="text-center">
-                    <div class="d-flex flex-column align-items-center">
-                        <span class="text-muted" style="font-family: monospace; font-size: 1.1rem; letter-spacing: 2px;">••••••</span>
-                        <small class="text-muted" style="font-size: 0.7rem;">
-                            <i class="bi bi-lock-fill"></i> Hasheada
-                        </small>
-                    </div>
-                </td>
-                <td class="text-center">
-                    <span class="badge ${user.activo ? 'bg-success' : 'bg-secondary'} px-3 py-2" style="font-size: 0.8rem;">
-                        <i class="bi bi-${user.activo ? 'check-circle-fill' : 'x-circle-fill'} me-1"></i>
+                    <span class="badge bg-${user.activo ? 'success' : 'secondary'}">
                         ${user.activo ? 'Activo' : 'Inactivo'}
                     </span>
                 </td>
-                <td>
-                    <small class="text-muted">
-                        ${user.ultimo_acceso ? 
-                            `<i class="bi bi-clock me-1"></i>${Utils.formatDateTime(user.ultimo_acceso)}` : 
-                            '<i class="bi bi-dash-circle me-1"></i><span class="fst-italic">Nunca</span>'}
-                    </small>
-                </td>
+                <td><small>${user.ultimo_acceso ? Utils.formatDateTime(user.ultimo_acceso) : '<span class="text-muted">Nunca</span>'}</small></td>
                 <td class="text-center">
-                    <div class="btn-group btn-group-sm" role="group">
-                        <button class="btn btn-outline-primary" onclick="editUser(${user.id})" 
-                                title="Editar usuario" data-bs-toggle="tooltip">
-                            <i class="bi bi-pencil-square"></i>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" onclick="editUser(${user.id})" title="Editar">
+                            <i class="bi bi-pencil"></i>
                         </button>
-                        <button class="btn btn-outline-warning" onclick="resetUserPassword(${user.id})" 
-                                title="Resetear contraseña" data-bs-toggle="tooltip">
-                            <i class="bi bi-key-fill"></i>
+                        <button class="btn btn-outline-warning" onclick="resetUserPassword(${user.id})" title="Resetear contraseña">
+                            <i class="bi bi-key"></i>
                         </button>
                         <button class="btn btn-outline-${user.activo ? 'danger' : 'success'}" 
                                 onclick="toggleUserStatus(${user.id}, ${!user.activo})" 
-                                title="${user.activo ? 'Desactivar usuario' : 'Activar usuario'}" 
-                                data-bs-toggle="tooltip">
-                            <i class="bi bi-${user.activo ? 'x-circle-fill' : 'check-circle-fill'}"></i>
+                                title="${user.activo ? 'Desactivar' : 'Activar'}">
+                            <i class="bi bi-${user.activo ? 'x-circle' : 'check-circle'}"></i>
                         </button>
                     </div>
                 </td>
@@ -406,16 +371,6 @@ function renderUsers(users) {
     const countElement = document.getElementById('users-count');
     if (countElement) {
         countElement.textContent = users.length;
-    }
-    
-    // Inicializar tooltips de Bootstrap (con manejo de errores)
-    try {
-        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-        if (tooltipTriggerList.length > 0 && typeof bootstrap !== 'undefined') {
-            [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
-        }
-    } catch (error) {
-        console.warn('No se pudieron inicializar tooltips:', error);
     }
     
     console.log('✅ Usuarios renderizados correctamente');
