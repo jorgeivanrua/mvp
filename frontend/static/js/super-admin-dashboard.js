@@ -408,9 +408,15 @@ function renderUsers(users) {
         countElement.textContent = users.length;
     }
     
-    // Inicializar tooltips de Bootstrap
-    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-    [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+    // Inicializar tooltips de Bootstrap (con manejo de errores)
+    try {
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        if (tooltipTriggerList.length > 0 && typeof bootstrap !== 'undefined') {
+            [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+        }
+    } catch (error) {
+        console.warn('No se pudieron inicializar tooltips:', error);
+    }
     
     console.log('✅ Usuarios renderizados correctamente');
 }
