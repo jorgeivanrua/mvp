@@ -8,6 +8,13 @@ class MapaGeolocalizacion {
         this.containerId = containerId;
         this.map = null;
         this.markers = {};
+        this.puestosData = []; // Almacenar datos de puestos para filtrado
+        this.filtrosActivos = {
+            incidentes: false,
+            delitos: false,
+            pendientes: false,
+            completados: false
+        };
         this.options = {
             center: options.center || [4.5709, -74.2973], // Bogotá por defecto
             zoom: options.zoom || 6,
@@ -90,11 +97,11 @@ class MapaGeolocalizacion {
             const data = await response.json();
 
             if (data.success && data.data) {
-                data.data.forEach(puesto => {
-                    if (puesto.latitud && puesto.longitud) {
-                        this.agregarMarkerPuesto(puesto);
-                    }
-                });
+                // Almacenar datos para filtrado
+                this.puestosData = data.data.filter(puesto => puesto.latitud && puesto.longitud);
+                
+                // Aplicar filtros y mostrar markers
+                this.aplicarFiltros();
             }
 
         } catch (error) {
@@ -421,6 +428,190 @@ class MapaGeolocalizacion {
     }
 
     /**
+     * Aplicar filtros a los puestos
+     */
+    aplicarFiltros() {
+        // Limpiar markers de puestos existentes
+        Object.keys(this.markers).forEach(markerId => {
+            if (markerId.startsWith('puesto_')) {
+                this.map.removeLayer(this.markers[markerId]);
+                delete this.markers[markerId];
+            }
+        });
+
+        // Filtrar puestos según criterios activos
+        let puestosFiltrados = this.puestosData;
+
+        // Si no hay filtros activos, mostrar todos
+        const hayFiltrosActivos = Object.values(this.filtrosActivos).some(f => f);
+        
+        if (hayFiltrosActivos) {
+            puestosFiltrados = this.puestosData.filter(puesto => {
+                let cumpleFiltros = true;
+
+                // Filtro de incidentes (lógica AND)
+                if (this.filtrosActivos.incidentes) {
+                    cumpleFiltros = cumpleFiltros && (puesto.incidentes_activos > 0);
+                }
+
+                // Filtro de delitos (lógica AND)
+                if (this.filtrosActivos.delitos) {
+                    cumpleFiltros = cumpleFiltros && (puesto.delitos_activos > 0);
+                }
+
+                // Filtro de pendientes (lógica AND)
+                if (this.filtrosActivos.pendientes) {
+                    const pendientes = (puesto.total_mesas || 0) - (puesto.formularios_validados || 0);
+                    cumpleFiltros = cumpleFiltros && (pendientes > 0);
+                }
+
+                // Filtro de completados (lógica AND)
+                if (this.filtrosActivos.completados) {
+                    cumpleFiltros = cumpleFiltros && (puesto.porcentaje_avance >= 100);
+                }
+
+                return cumpleFiltros;
+            });
+        }
+
+        // Agregar markers de puestos filtrados
+        puestosFiltrados.forEach(puesto => {
+            this.agregarMarkerPuesto(puesto);
+        });
+
+        // Actualizar contador si existe
+        this.actualizarContadorPuestos(puestosFiltrados.length, this.puestosData.length);
+
+        console.log(`Filtros aplicados: ${puestosFiltrados.length} de ${this.puestosData.length} puestos mostrados`);
+    }
+
+    /**
+     * Activar/desactivar filtro
+     */
+    toggleFiltro(tipoFiltro) {
+        if (this.filtrosActivos.hasOwnProperty(tipoFiltro)) {
+            this.filtrosActivos[tipoFiltro] = !this.filtrosActivos[tipoFiltro];
+            this.aplicarFiltros();
+            return this.filtrosActivos[tipoFiltro];
+        }
+        return false;
+    }
+
+    /**
+     * Establecer estado de un filtro
+     */
+    setFiltro(tipoFiltro, activo) {
+        if (this.filtrosActivos.hasOwnProperty(tipoFiltro)) {
+            this.filtrosActivos[tipoFiltro] = activo;
+            this.aplicarFiltros();
+        }
+    }
+
+    /**
+     * Limpiar todos los filtros
+     */
+    limpiarFiltros() {
+        this.filtrosActivos = {
+            incidentes: false,
+            delitos: false,
+            pendientes: false,
+            completados: false
+        };
+        this.aplicarFiltros();
+    }
+
+    /**
+     * Obtener estado de filtros
+     */
+    getFiltrosActivos() {
+        return { ...this.filtrosActivos };
+    }
+
+    /**
+     * Actualizar contador de puestos visibles
+     */
+    actualizarContadorPuestos(visibles, total) {
+        const contadorElement = document.getElementById('contador-puestos-visibles');
+        if (contadorElement) {
+            contadorElement.textContent = `Mostrando ${visibles} de ${total} puestos`;
+        }
+    }
+
+    /**
+     * Buscar puesto por código, municipio o mesa
+     */
+    async buscarPuesto(termino) {
+        if (!termino || termino.trim() === '') {
+            return { success: false, message: 'Ingrese un término de búsqueda' };
+        }
+
+        const terminoLower = termino.toLowerCase().trim();
+        
+        // Buscar en los datos cargados
+        const resultados = this.puestosData.filter(puesto => {
+            const codigoPuesto = (puesto.puesto_codigo || '').toLowerCase();
+            const municipio = (puesto.municipio_nombre || '').toLowerCase();
+            const nombrePuesto = (puesto.puesto_nombre || '').toLowerCase();
+            
+            return codigoPuesto.includes(terminoLower) ||
+                   municipio.includes(terminoLower) ||
+                   nombrePuesto.includes(terminoLower);
+        });
+
+        if (resultados.length === 0) {
+            return { 
+                success: false, 
+                message: 'No se encontraron puestos con ese criterio de búsqueda' 
+            };
+        }
+
+        // Si hay un solo resultado, centrar en él
+        if (resultados.length === 1) {
+            const puesto = resultados[0];
+            this.centrarEn(puesto.latitud, puesto.longitud, 16);
+            this.resaltarMarker(`puesto_${puesto.id}`);
+            
+            return {
+                success: true,
+                message: `Puesto encontrado: ${puesto.puesto_nombre}`,
+                resultados: resultados
+            };
+        }
+
+        // Si hay múltiples resultados, ajustar vista para mostrarlos todos
+        const bounds = L.latLngBounds(resultados.map(p => [p.latitud, p.longitud]));
+        this.map.fitBounds(bounds.pad(0.1));
+
+        return {
+            success: true,
+            message: `Se encontraron ${resultados.length} puestos`,
+            resultados: resultados
+        };
+    }
+
+    /**
+     * Resaltar un marker temporalmente
+     */
+    resaltarMarker(markerId, duracion = 3000) {
+        const marker = this.markers[markerId];
+        if (marker) {
+            // Abrir popup
+            marker.openPopup();
+            
+            // Agregar clase de resaltado si es posible
+            const markerElement = marker.getElement();
+            if (markerElement) {
+                markerElement.classList.add('marker-resaltado');
+                
+                // Remover clase después de la duración
+                setTimeout(() => {
+                    markerElement.classList.remove('marker-resaltado');
+                }, duracion);
+            }
+        }
+    }
+
+    /**
      * Destruir mapa
      */
     destroy() {
@@ -430,6 +621,7 @@ class MapaGeolocalizacion {
             this.map = null;
         }
         this.markers = {};
+        this.puestosData = [];
         console.log('Mapa destruido');
     }
 }
@@ -573,6 +765,19 @@ const estilosMarkers = `
 .marker-popup .badge {
     font-size: 11px;
     padding: 4px 8px;
+}
+
+.marker-resaltado {
+    animation: resaltar-marker 1s ease-in-out 3;
+}
+
+@keyframes resaltar-marker {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.3);
+    }
 }
 </style>
 `;

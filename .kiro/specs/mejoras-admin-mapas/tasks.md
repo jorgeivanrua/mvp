@@ -30,6 +30,8 @@
   - Crear tabla candidatos con índices y foreign keys
 
 
+
+
   - Crear tabla configuracion_sistema con índices
   - Agregar datos iniciales de configuración
   - _Requirements: 3.1, 4.1, 8.1_
@@ -49,8 +51,10 @@
   - Implementar listar_partidos() con filtros
   - Implementar obtener_partido(id)
   - Implementar crear_partido(data) con validaciones
+
   - Implementar actualizar_partido(id, data)
   - Implementar eliminar_partido(id) con verificación de candidatos
+
 
 
   - _Requirements: 3.1, 3.2, 3.3, 3.4_
@@ -95,6 +99,7 @@
   - Retornar partido creado
   - _Requirements: 3.2_
 
+
 - [ ] 3.3 Implementar PUT /api/partidos/<id>
   - Recibir datos actualizados
   - Validar que partido existe
@@ -121,8 +126,10 @@
   - Guardar archivo
 
   - Actualizar logo_url del partido
+
   - Retornar URL del logo
   - _Requirements: 3.5_
+
 
 - [ ] 3.6 Escribir property test para listado de partidos
   - **Property 6: All registered parties are listed**
@@ -166,6 +173,7 @@
 - [ ] 4.5 Escribir property test para validación de partido
   - **Property 13: Candidate party association validation**
   - **Validates: Requirements 4.5**
+
 
 
 
@@ -407,12 +415,16 @@
   - Agregar búsqueda y filtros
   - _Requirements: 3.1, 3.2, 3.3, 3.4_
 
+
+
 - [ ] 9.2 Crear modal de partido
   - Formulario con campos: nombre, sigla, color, logo
   - Validación de campos obligatorios
   - Preview de color seleccionado
   - Upload de logo con preview
   - Botones guardar y cancelar
+
+
   - _Requirements: 3.2, 3.5_
 
 - [ ] 9.3 Implementar upload de logo

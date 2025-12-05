@@ -487,6 +487,58 @@ th.sortable:hover .sort-icon {
         <!-- Tab: Configuración -->
         <div class="tab-pane fade" id="config" role="tabpanel">
             
+            <!-- Sub-tabs de Configuración -->
+            <ul class="nav nav-pills mb-4" id="configSubTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="partidos-subtab" data-bs-toggle="pill" data-bs-target="#partidos-content" type="button">
+                        <i class="bi bi-flag-fill"></i> Partidos Políticos
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="candidatos-subtab" data-bs-toggle="pill" data-bs-target="#candidatos-content" type="button">
+                        <i class="bi bi-person-badge-fill"></i> Candidatos
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tipos-subtab" data-bs-toggle="pill" data-bs-target="#tipos-content" type="button">
+                        <i class="bi bi-list-check"></i> Tipos de Elección
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="carga-subtab" data-bs-toggle="pill" data-bs-target="#carga-content" type="button">
+                        <i class="bi bi-cloud-upload"></i> Carga Masiva
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="configSubTabsContent">
+                
+                <!-- Sub-tab: Partidos Políticos -->
+                <div class="tab-pane fade show active" id="partidos-content" role="tabpanel">
+                    {% include 'admin/partidos-tab.html' %}
+                </div>
+
+                <!-- Sub-tab: Candidatos -->
+                <div class="tab-pane fade" id="candidatos-content" role="tabpanel">
+                    {% include 'admin/candidatos-tab.html' %}
+                </div>
+
+                <!-- Sub-tab: Tipos de Elección -->
+                <div class="tab-pane fade" id="tipos-content" role="tabpanel">
+                    <div class="chart-card">
+                        <h5 class="mb-3"><i class="bi bi-list-check"></i> Gestión de Tipos de Elección</h5>
+                        <button class="btn btn-primary mb-3" onclick="createTipoEleccion()">
+                            <i class="bi bi-plus-circle"></i> Nuevo Tipo
+                        </button>
+                        <div id="electionTypesList">
+                            <p class="text-muted">Cargando tipos de elección...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sub-tab: Carga Masiva -->
+                <div class="tab-pane fade" id="carga-content" role="tabpanel">
+            
             <!-- Sección de Carga Masiva CSV -->
             <div class="chart-card mb-4">
                 <h5 class="mb-3"><i class="bi bi-cloud-upload"></i> Carga Masiva de Datos</h5>
@@ -694,106 +746,13 @@ th.sortable:hover .sort-icon {
                         </div>
                     </div>
                     
-                </div>
-            </div>
+                </div><!-- Fin del wizard -->
+            </div><!-- Fin del chart-card de carga masiva -->
             
-            <!-- Configuración Manual -->
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="chart-card">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="mb-0">Partidos Políticos</h5>
-                            <div class="btn-group btn-group-sm">
-                                <button class="btn btn-primary" onclick="showCreatePartyModal()">
-                                    <i class="bi bi-plus-circle"></i> Nuevo
-                                </button>
-                                <button class="btn btn-success" onclick="cargarLogosPartidos()" title="Cargar logos de Wikipedia">
-                                    <i class="bi bi-image"></i> Cargar Logos
-                                </button>
-                            </div>
-                        </div>
-                        <div id="partiesList">
-                            <p class="text-muted">Cargando partidos...</p>
-                        </div>
-                    </div>
-                </div>
+                </div><!-- Fin del sub-tab de carga masiva -->
                 
-                <div class="col-md-6">
-                    <div class="chart-card">
-                        <h5 class="mb-3">Tipos de Elección</h5>
-                        <button class="btn btn-sm btn-primary mb-3" onclick="createTipoEleccion()">
-                            <i class="bi bi-plus-circle"></i> Nuevo Tipo
-                        </button>
-                        <div id="electionTypesList">
-                            <p class="text-muted">Cargando tipos de elección...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="chart-card mt-3">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0">Candidatos</h5>
-                    <button class="btn btn-sm btn-primary" onclick="showCreateCandidateModal()">
-                        <i class="bi bi-plus-circle"></i> Nuevo Candidato
-                    </button>
-                </div>
-                
-                <!-- Filtros de Candidatos -->
-                <div class="row mb-3">
-                    <div class="col-md-3">
-                        <label class="form-label small">Filtrar por Partido</label>
-                        <select class="form-select form-select-sm" id="filterCandidatoPartido" onchange="filterCandidatos()">
-                            <option value="">Todos los partidos</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label small">Filtrar por Tipo de Elección</label>
-                        <select class="form-select form-select-sm" id="filterCandidatoTipo" onchange="filterCandidatos()">
-                            <option value="">Todos los tipos</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label small">Ordenar por</label>
-                        <select class="form-select form-select-sm" id="sortCandidatos" onchange="filterCandidatos()">
-                            <option value="nombre_asc">Nombre (A-Z)</option>
-                            <option value="nombre_desc">Nombre (Z-A)</option>
-                            <option value="partido_asc">Partido (A-Z)</option>
-                            <option value="partido_desc">Partido (Z-A)</option>
-                            <option value="numero_asc">Número Lista (menor a mayor)</option>
-                            <option value="numero_desc">Número Lista (mayor a menor)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label small">Buscar</label>
-                        <input type="text" class="form-control form-control-sm" id="searchCandidato" 
-                               placeholder="Buscar candidato..." onkeyup="filterCandidatos()">
-                    </div>
-                </div>
-                
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Partido</th>
-                                <th>Tipo Elección</th>
-                                <th>Número Lista</th>
-                                <th>Estado</th>
-                                <th>Habilitar/Editar</th>
-                            </tr>
-                        </thead>
-                        <tbody id="candidatesTableBody">
-                            <tr>
-                                <td colspan="7" class="text-center py-4">
-                                    <p class="text-muted">Cargando candidatos...</p>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+            </div><!-- Fin de configSubTabsContent -->
+        </div><!-- Fin del tab de Configuración -->
 
         <!-- Tab: Monitoreo -->
         <div class="tab-pane fade" id="monitoring" role="tabpanel">
@@ -829,7 +788,71 @@ th.sortable:hover .sort-icon {
             <!-- Mapa de Geolocalización -->
             <div class="chart-card">
                 <h5 class="mb-3"><i class="bi bi-geo-alt"></i> Mapa de Geolocalización en Tiempo Real</h5>
-                <p class="text-muted small">Ubicación de usuarios activos en el sistema</p>
+                <p class="text-muted small">Ubicación de usuarios y puestos de votación en el sistema</p>
+                
+                <!-- Controles de Búsqueda y Filtros -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" id="busqueda-puesto" 
+                                   placeholder="Buscar por código, municipio o nombre de puesto...">
+                            <button class="btn btn-primary" type="button" id="btn-buscar-puesto">
+                                Buscar
+                            </button>
+                        </div>
+                        <small class="text-muted" id="resultado-busqueda"></small>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="btn-group" role="group" aria-label="Filtros de mapa">
+                            <input type="checkbox" class="btn-check" id="filtro-incidentes" autocomplete="off">
+                            <label class="btn btn-outline-danger btn-sm" for="filtro-incidentes">
+                                <i class="bi bi-exclamation-triangle"></i> Incidentes
+                            </label>
+                            
+                            <input type="checkbox" class="btn-check" id="filtro-delitos" autocomplete="off">
+                            <label class="btn btn-outline-warning btn-sm" for="filtro-delitos">
+                                <i class="bi bi-shield-exclamation"></i> Delitos
+                            </label>
+                            
+                            <input type="checkbox" class="btn-check" id="filtro-pendientes" autocomplete="off">
+                            <label class="btn btn-outline-info btn-sm" for="filtro-pendientes">
+                                <i class="bi bi-hourglass-split"></i> Pendientes
+                            </label>
+                            
+                            <input type="checkbox" class="btn-check" id="filtro-completados" autocomplete="off">
+                            <label class="btn btn-outline-success btn-sm" for="filtro-completados">
+                                <i class="bi bi-check-circle"></i> Completados
+                            </label>
+                            
+                            <button class="btn btn-outline-secondary btn-sm" id="btn-limpiar-filtros">
+                                <i class="bi bi-x-circle"></i> Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Contador de puestos -->
+                <div class="mb-2">
+                    <small class="text-muted" id="contador-puestos-visibles">Cargando puestos...</small>
+                </div>
+                
+                <!-- Leyenda de colores -->
+                <div class="mb-3">
+                    <small class="text-muted me-3">
+                        <span class="badge" style="background-color: #dc3545;">●</span> Sin votos
+                    </small>
+                    <small class="text-muted me-3">
+                        <span class="badge" style="background-color: #ffc107;">●</span> En progreso
+                    </small>
+                    <small class="text-muted me-3">
+                        <span class="badge" style="background-color: #28a745;">●</span> Completado
+                    </small>
+                    <small class="text-muted">
+                        <span style="font-size: 18px;">⚠️</span> Alertas
+                    </small>
+                </div>
+                
                 <div id="mapa-geolocalizacion" style="height: 500px; border-radius: 8px;"></div>
             </div>
             
@@ -1395,6 +1418,9 @@ th.sortable:hover .sort-icon {
 <script src="{{ url_for('static', filename='js/personalizacion-sistema.js') }}?v=20251201"></script>
 <!-- Script de carga masiva CSV -->
 <script src="{{ url_for('static', filename='js/bulk-upload.js') }}?v=20251201"></script>
+<!-- Scripts de gestión de partidos y candidatos -->
+<script src="{{ url_for('static', filename='js/partidos-manager.js') }}?v=20251202"></script>
+<script src="{{ url_for('static', filename='js/candidatos-manager.js') }}?v=20251202"></script>
 <!-- Script de debugging -->
 <script src="{{ url_for('static', filename='js/super-admin-dashboard-debug.js') }}?v=20251201"></script>
 <!-- Fix de inicialización -->
@@ -1435,8 +1461,105 @@ document.addEventListener('DOMContentLoaded', function() {
                     showUsuarios: true
                 });
                 window.mapaGeolocalizacion.init();
+                
+                // Configurar controles de filtros
+                setupMapFilters();
+                
+                // Configurar búsqueda
+                setupMapSearch();
             }
         });
+    }
+    
+    // Función para configurar filtros del mapa
+    function setupMapFilters() {
+        const filtroIncidentes = document.getElementById('filtro-incidentes');
+        const filtroDelitos = document.getElementById('filtro-delitos');
+        const filtroPendientes = document.getElementById('filtro-pendientes');
+        const filtroCompletados = document.getElementById('filtro-completados');
+        const btnLimpiarFiltros = document.getElementById('btn-limpiar-filtros');
+        
+        if (filtroIncidentes) {
+            filtroIncidentes.addEventListener('change', function() {
+                if (window.mapaGeolocalizacion) {
+                    window.mapaGeolocalizacion.setFiltro('incidentes', this.checked);
+                }
+            });
+        }
+        
+        if (filtroDelitos) {
+            filtroDelitos.addEventListener('change', function() {
+                if (window.mapaGeolocalizacion) {
+                    window.mapaGeolocalizacion.setFiltro('delitos', this.checked);
+                }
+            });
+        }
+        
+        if (filtroPendientes) {
+            filtroPendientes.addEventListener('change', function() {
+                if (window.mapaGeolocalizacion) {
+                    window.mapaGeolocalizacion.setFiltro('pendientes', this.checked);
+                }
+            });
+        }
+        
+        if (filtroCompletados) {
+            filtroCompletados.addEventListener('change', function() {
+                if (window.mapaGeolocalizacion) {
+                    window.mapaGeolocalizacion.setFiltro('completados', this.checked);
+                }
+            });
+        }
+        
+        if (btnLimpiarFiltros) {
+            btnLimpiarFiltros.addEventListener('click', function() {
+                if (window.mapaGeolocalizacion) {
+                    window.mapaGeolocalizacion.limpiarFiltros();
+                    // Desmarcar checkboxes
+                    if (filtroIncidentes) filtroIncidentes.checked = false;
+                    if (filtroDelitos) filtroDelitos.checked = false;
+                    if (filtroPendientes) filtroPendientes.checked = false;
+                    if (filtroCompletados) filtroCompletados.checked = false;
+                }
+            });
+        }
+    }
+    
+    // Función para configurar búsqueda del mapa
+    function setupMapSearch() {
+        const inputBusqueda = document.getElementById('busqueda-puesto');
+        const btnBuscar = document.getElementById('btn-buscar-puesto');
+        const resultadoBusqueda = document.getElementById('resultado-busqueda');
+        
+        if (btnBuscar && inputBusqueda) {
+            btnBuscar.addEventListener('click', async function() {
+                const termino = inputBusqueda.value.trim();
+                
+                if (!termino) {
+                    if (resultadoBusqueda) {
+                        resultadoBusqueda.textContent = 'Ingrese un término de búsqueda';
+                        resultadoBusqueda.className = 'text-warning';
+                    }
+                    return;
+                }
+                
+                if (window.mapaGeolocalizacion) {
+                    const resultado = await window.mapaGeolocalizacion.buscarPuesto(termino);
+                    
+                    if (resultadoBusqueda) {
+                        resultadoBusqueda.textContent = resultado.message;
+                        resultadoBusqueda.className = resultado.success ? 'text-success' : 'text-danger';
+                    }
+                }
+            });
+            
+            // Permitir búsqueda con Enter
+            inputBusqueda.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    btnBuscar.click();
+                }
+            });
+        }
     }
     
     // Sincronizar color picker con input hex para color sólido
