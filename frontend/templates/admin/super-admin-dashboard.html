@@ -214,12 +214,84 @@ th.sortable:hover .sort-icon {
 
 /* Animaciones suaves */
 .fade-in {
-    animation: fadeIn 0.3s ease-in;
+    animation: fadeIn 0.5s ease-in forwards;
+    opacity: 0;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from { 
+        opacity: 0; 
+        transform: translateY(10px);
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0);
+    }
+}
+
+/* Estilos mejorados para tabla de usuarios */
+#usersTable thead th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+    padding: 1rem 0.75rem;
+}
+
+#usersTable tbody tr {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+#usersTable tbody tr:hover {
+    background-color: #f8f9ff !important;
+    transform: translateX(3px);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+#usersTable tbody td {
+    padding: 1rem 0.75rem;
+    vertical-align: middle;
+}
+
+/* Badges mejorados */
+.badge {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+/* Botones de acción mejorados */
+.btn-group-sm .btn {
+    transition: all 0.2s ease;
+}
+
+.btn-group-sm .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* Input de búsqueda mejorado */
+#searchUser:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Selectores mejorados */
+.form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Badge de contador mejorado */
+.bg-gradient {
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
+}
+
+.bg-gradient:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
 }
 </style>
 {% endblock %}
@@ -416,17 +488,29 @@ th.sortable:hover .sort-icon {
 
         <!-- Tab: Usuarios -->
         <div class="tab-pane fade" id="users" role="tabpanel">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="mb-0">Gestión de Usuarios</h5>
-                <button class="btn btn-primary" onclick="showCreateUserModal()">
-                    <i class="bi bi-person-plus"></i> Nuevo Usuario
-                </button>
-            </div>
-            
-            <!-- Filtros -->
-            <div class="row mb-3">
+            <div class="chart-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h5 class="mb-1"><i class="bi bi-people-fill text-primary"></i> Gestión de Usuarios</h5>
+                        <p class="text-muted small mb-0">Administre los usuarios del sistema electoral</p>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="showCreateUserModal()">
+                            <i class="bi bi-person-plus"></i> Nuevo Usuario
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="exportUsers()">
+                            <i class="bi bi-download"></i> Exportar
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Filtros y Búsqueda -->
+                <div class="row mb-4 g-3">
                     <div class="col-md-3">
-                        <select class="form-select" id="filterRole" onchange="filterUsers()">
+                        <label class="form-label small fw-semibold text-muted mb-1">
+                            <i class="bi bi-funnel"></i> Filtrar por Rol
+                        </label>
+                        <select class="form-select form-select-sm" id="filterRole" onchange="filterUsers()">
                             <option value="">Todos los roles</option>
                             <option value="testigo_electoral">Testigo Electoral</option>
                             <option value="coordinador_puesto">Coordinador Puesto</option>
@@ -436,15 +520,35 @@ th.sortable:hover .sort-icon {
                             <option value="super_admin">Super Admin</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
-                        <select class="form-select" id="filterStatus" onchange="filterUsers()">
-                            <option value="">Todos los estados</option>
+                    <div class="col-md-2">
+                        <label class="form-label small fw-semibold text-muted mb-1">
+                            <i class="bi bi-toggle-on"></i> Estado
+                        </label>
+                        <select class="form-select form-select-sm" id="filterStatus" onchange="filterUsers()">
+                            <option value="">Todos</option>
                             <option value="activo">Activos</option>
                             <option value="inactivo">Inactivos</option>
                         </select>
                     </div>
-                    <div class="col-md-6">
-                        <input type="text" class="form-control" id="searchUser" placeholder="Buscar por nombre..." onkeyup="filterUsers()">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-muted mb-1">
+                            <i class="bi bi-search"></i> Buscar Usuario
+                        </label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-white">
+                                <i class="bi bi-search text-muted"></i>
+                            </span>
+                            <input type="text" class="form-control" id="searchUser" 
+                                   placeholder="Buscar por nombre o ubicación..." onkeyup="filterUsers()">
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-end">
+                        <label class="form-label small fw-semibold text-muted mb-1 d-block">
+                            <i class="bi bi-bar-chart"></i> Total
+                        </label>
+                        <span class="badge bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-size: 1rem; padding: 0.5rem 1rem;">
+                            <i class="bi bi-people-fill"></i> <span id="users-count">0</span> usuarios
+                        </span>
                     </div>
                 </div>
                 
@@ -452,34 +556,52 @@ th.sortable:hover .sort-icon {
                 <div id="usersSearchContainer" class="mb-3"></div>
                 
                 <!-- Tabla de Usuarios -->
-                <div class="table-responsive">
-                    <table class="table table-hover" id="usersTable">
-                        <thead class="table-light">
+                <div class="table-responsive" style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                    <table class="table table-hover align-middle mb-0" id="usersTable">
+                        <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
                             <tr>
-                                <th class="sortable">ID</th>
-                                <th class="sortable">Nombre</th>
-                                <th class="sortable">Rol</th>
-                                <th class="sortable">Ubicación</th>
-                                <th class="sortable">Contraseña</th>
-                                <th class="sortable">Estado</th>
-                                <th class="sortable">Último Acceso</th>
-                                <th>Acciones</th>
+                                <th class="sortable" style="width: 60px;">
+                                    <i class="bi bi-hash"></i> ID
+                                </th>
+                                <th class="sortable">
+                                    <i class="bi bi-person"></i> Nombre
+                                </th>
+                                <th class="sortable" style="width: 180px;">
+                                    <i class="bi bi-shield-check"></i> Rol
+                                </th>
+                                <th class="sortable">
+                                    <i class="bi bi-geo-alt"></i> Ubicación
+                                </th>
+                                <th class="sortable" style="width: 120px;">
+                                    <i class="bi bi-key"></i> Contraseña
+                                </th>
+                                <th class="sortable" style="width: 100px;">
+                                    <i class="bi bi-toggle-on"></i> Estado
+                                </th>
+                                <th class="sortable" style="width: 150px;">
+                                    <i class="bi bi-clock-history"></i> Último Acceso
+                                </th>
+                                <th style="width: 140px;" class="text-center">
+                                    <i class="bi bi-gear"></i> Acciones
+                                </th>
                             </tr>
                         </thead>
-                        <tbody id="usersTableBody">
+                        <tbody id="usersTableBody" style="background-color: white;">
                             <tr>
-                                <td colspan="8" class="text-center py-4">
+                                <td colspan="8" class="text-center py-5">
                                     <div class="spinner-border text-primary" role="status">
                                         <span class="visually-hidden">Cargando...</span>
                                     </div>
+                                    <p class="text-muted mt-2 mb-0">Cargando usuarios...</p>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
                 
-            <!-- Contenedor de paginación -->
-            <div id="usersPagination" class="mt-3"></div>
+                <!-- Contenedor de paginación -->
+                <div id="usersPagination" class="mt-3"></div>
+            </div>
         </div>
 
         <!-- Tab: Configuración -->
