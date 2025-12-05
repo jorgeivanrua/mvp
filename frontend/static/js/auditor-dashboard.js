@@ -184,7 +184,7 @@ auditorDashboard.loadFormularios = async function() {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="9" class="text-center py-4">
-                        <p class="text-danger mb-2">❌ Error al cargar formularios</p>
+                        <p class="text-danger mb-2">Error al cargar formularios</p>
                         <button class="btn btn-sm btn-outline-primary" onclick="auditorDashboard.loadFormularios()">
                             <i class="bi bi-arrow-clockwise"></i> Reintentar
                         </button>
@@ -395,7 +395,7 @@ auditorDashboard.loadAnomalias = async function() {
         if (container) {
             container.innerHTML = `
                 <div class="text-center py-3">
-                    <p class="text-danger mb-2">❌ Error al cargar anomalías</p>
+                    <p class="text-danger mb-2">Error al cargar anomalias</p>
                     <button class="btn btn-sm btn-outline-primary" onclick="auditorDashboard.loadAnomalias()">
                         <i class="bi bi-arrow-clockwise"></i> Reintentar
                     </button>
@@ -519,7 +519,7 @@ auditorDashboard.loadIncidentes = async function() {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="7" class="text-center py-4">
-                        <p class="text-danger mb-2">❌ Error al cargar incidentes</p>
+                        <p class="text-danger mb-2">Error al cargar incidentes</p>
                         <button class="btn btn-sm btn-outline-primary" onclick="auditorDashboard.loadIncidentes()">
                             <i class="bi bi-arrow-clockwise"></i> Reintentar
                         </button>
