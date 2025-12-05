@@ -89,9 +89,9 @@ async function loadPartidosFixed() {
             const partidos = response.data;
             console.log(`[Fix] ${partidos.length} partidos recibidos`);
             
-            const container = document.getElementById('partiesList');
+            const container = document.getElementById('partidos-lista');
             if (!container) {
-                console.error('[Fix] No se encontró partiesList');
+                console.error('[Fix] No se encontró partidos-lista');
                 return;
             }
             
@@ -131,9 +131,9 @@ async function loadCandidatosFixed() {
             const candidatos = response.data;
             console.log(`[Fix] ${candidatos.length} candidatos recibidos`);
             
-            const tbody = document.getElementById('candidatesTableBody');
+            const tbody = document.getElementById('candidatos-lista');
             if (!tbody) {
-                console.error('[Fix] No se encontró candidatesTableBody');
+                console.error('[Fix] No se encontró candidatos-lista');
                 return;
             }
             

@@ -946,10 +946,10 @@ async function loadPartidos() {
  * Renderizar partidos
  */
 function renderPartidos() {
-    const container = document.getElementById('partiesList');
+    const container = document.getElementById('partidos-lista');
     
     if (!container) {
-        console.warn('Elemento partiesList no encontrado');
+        console.warn('Elemento partidos-lista no encontrado');
         return;
     }
     
@@ -1207,7 +1207,7 @@ async function loadCandidatos() {
  * Renderizar candidatos
  */
 function renderCandidatos(candidatos = null) {
-    const tbody = document.getElementById('candidatesTableBody');
+    const tbody = document.getElementById('candidatos-lista');
     const candidatosToRender = candidatos || allCandidatos;
     
     if (candidatosToRender.length === 0) {
