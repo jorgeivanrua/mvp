@@ -11,6 +11,12 @@ let allTiposEleccion = [];
 // Usar window.charts para evitar conflictos
 window.charts = window.charts || {};
 
+// Exponer variables globalmente para debugging y acceso desde otros scripts
+window.allUsers = allUsers;
+window.allPartidos = allPartidos;
+window.allCandidatos = allCandidatos;
+window.allTiposEleccion = allTiposEleccion;
+
 /**
  * Inicializar dashboard
  */
@@ -274,6 +280,7 @@ async function loadUsers() {
         
         if (response.success) {
             allUsers = response.data;
+            window.allUsers = allUsers; // Actualizar referencia global
             console.log(`✅ ${allUsers.length} usuarios cargados`);
             renderUsers(allUsers);
         } else {
@@ -290,6 +297,8 @@ async function loadUsers() {
  * Renderizar tabla de usuarios
  */
 function renderUsers(users) {
+    // Exponer globalmente para debugging
+    window.renderUsers = renderUsers;
     const tbody = document.getElementById('usersTableBody');
     
     if (!tbody) {
@@ -931,6 +940,7 @@ async function loadPartidos() {
         
         if (response.success) {
             allPartidos = response.data;
+            window.allPartidos = allPartidos; // Actualizar referencia global
             console.log('[Super Admin] Partidos cargados:', allPartidos.length);
             renderPartidos();
         } else {
@@ -1069,6 +1079,7 @@ async function loadTiposEleccion() {
         
         if (response.success) {
             allTiposEleccion = response.data;
+            window.allTiposEleccion = allTiposEleccion; // Actualizar referencia global
             console.log('[Super Admin] Tipos de elección cargados:', allTiposEleccion.length);
             renderTiposEleccion();
         } else {
@@ -1191,6 +1202,7 @@ async function loadCandidatos() {
         
         if (response.success) {
             allCandidatos = response.data;
+            window.allCandidatos = allCandidatos; // Actualizar referencia global
             console.log('[Super Admin] Candidatos cargados:', allCandidatos.length);
             populateCandidatoFilters();
             renderCandidatos();
