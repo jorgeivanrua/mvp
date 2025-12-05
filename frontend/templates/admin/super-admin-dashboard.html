@@ -5,7 +5,7 @@
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.css">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/personalizacion.css') }}?v=20251205e">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/personalizacion.css') }}?v=20251205f">
 <style>
 .super-admin-header {
     background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
@@ -222,63 +222,79 @@ th.sortable:hover .sort-icon {
     to { opacity: 1; }
 }
 
-/* FORZAR VISIBILIDAD DE TABLA DE USUARIOS */
-#usuarios-lista {
-    display: table-row-group !important;
-    visibility: visible !important;
-    opacity: 1 !important;
+/* FORZAR VISIBILIDAD DE TODAS LAS TABLAS */
+.chart-card {
+    background-color: white !important;
+    color: #212529 !important;
+}
+
+.chart-card .table-responsive {
     background-color: white !important;
 }
 
-#usuarios-lista tr {
-    display: table-row !important;
-    visibility: visible !important;
-    opacity: 1 !important;
+.chart-card table {
+    background-color: white !important;
+    color: #212529 !important;
+}
+
+.chart-card table thead th {
+    background-color: #f8f9fa !important;
+    color: #212529 !important;
+    border-bottom: 2px solid #dee2e6 !important;
+}
+
+.chart-card table tbody {
     background-color: white !important;
 }
 
-#usuarios-lista td {
-    display: table-cell !important;
-    visibility: visible !important;
-    opacity: 1 !important;
+.chart-card table tbody tr {
+    background-color: white !important;
+}
+
+.chart-card table tbody td {
     color: #212529 !important;
     background-color: white !important;
-    padding: 0.75rem !important;
     border-bottom: 1px solid #dee2e6 !important;
 }
 
-#usuarios-lista td strong {
+.chart-card table tbody td strong {
     color: #212529 !important;
 }
 
-#usuarios-lista td small {
+.chart-card table tbody td small {
     color: #6c757d !important;
 }
 
-#users .chart-card {
-    display: block !important;
-    visibility: visible !important;
-    background-color: white !important;
+.chart-card .badge {
+    color: white !important;
 }
 
-#users .table-responsive {
-    display: block !important;
-    visibility: visible !important;
-    overflow-x: auto !important;
-}
-
-#users table {
-    display: table !important;
-    visibility: visible !important;
-    width: 100% !important;
-    background-color: white !important;
-}
-
-#users table thead th {
-    background-color: #f8f9fa !important;
+.chart-card .badge.bg-light {
     color: #212529 !important;
-    padding: 0.75rem !important;
-    border-bottom: 2px solid #dee2e6 !important;
+}
+
+.chart-card .text-muted {
+    color: #6c757d !important;
+}
+
+/* Específicos para cada tabla */
+#usuarios-lista,
+#partidos-lista,
+#candidatos-lista {
+    background-color: white !important;
+}
+
+#usuarios-lista tr,
+#partidos-lista tr,
+#candidatos-lista tr {
+    background-color: white !important;
+}
+
+#usuarios-lista td,
+#partidos-lista td,
+#candidatos-lista td {
+    color: #212529 !important;
+    background-color: white !important;
 }
 
 
@@ -520,79 +536,7 @@ th.sortable:hover .sort-icon {
 
         <!-- Tab: Usuarios -->
         <div class="tab-pane fade" id="users" role="tabpanel">
-            <div class="chart-card">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                        <h5 class="mb-1">Gestión de Usuarios</h5>
-                        <p class="text-muted small mb-0">Administre los usuarios del sistema electoral</p>
-                    </div>
-                    <div class="btn-group">
-                        <button class="btn btn-primary" onclick="showCreateUserModal()">
-                            <i class="bi bi-person-plus"></i> Nuevo Usuario
-                        </button>
-                        <button class="btn btn-outline-secondary" onclick="exportUsers()">
-                            <i class="bi bi-download"></i> Exportar
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Filtros y Búsqueda -->
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <input type="text" class="form-control" id="search-usuarios" placeholder="🔍 Buscar usuario...">
-                    </div>
-                    <div class="col-md-3">
-                        <select class="form-select" id="filtro-rol-usuarios">
-                            <option value="todos">Todos los roles</option>
-                            <option value="super_admin">Super Admin</option>
-                            <option value="auditor_electoral">Auditor Electoral</option>
-                            <option value="coordinador_departamental">Coordinador Departamental</option>
-                            <option value="coordinador_municipal">Coordinador Municipal</option>
-                            <option value="coordinador_puesto">Coordinador Puesto</option>
-                            <option value="testigo_electoral">Testigo Electoral</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <select class="form-select" id="filtro-activo-usuarios">
-                            <option value="todos">Todos los estados</option>
-                            <option value="activos">Activos</option>
-                            <option value="inactivos">Inactivos</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 text-end">
-                        <span class="badge bg-primary fs-6">
-                            <i class="bi bi-people-fill"></i> <span id="usuarios-count">0</span> usuarios
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Tabla de Usuarios -->
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 60px;">ID</th>
-                                <th>Nombre</th>
-                                <th style="width: 180px;">Rol</th>
-                                <th>Ubicación</th>
-                                <th style="width: 100px;">Estado</th>
-                                <th style="width: 150px;">Último Acceso</th>
-                                <th style="width: 120px;" class="text-center">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="usuarios-lista">
-                            <tr>
-                                <td colspan="7" class="text-center py-4">
-                                    <div class="spinner-border text-primary" role="status">
-                                        <span class="visually-hidden">Cargando...</span>
-                                    </div>
-                                    <p class="text-muted mt-2">Cargando usuarios...</p>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            {% include 'admin/usuarios-tab.html' %}
         </div>
 
         <!-- Tab: Configuración -->

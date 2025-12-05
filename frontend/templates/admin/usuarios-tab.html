@@ -1,0 +1,74 @@
+<!-- Tab de Usuarios -->
+<div class="chart-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h5 class="mb-1">Gestión de Usuarios</h5>
+            <p class="text-muted small mb-0">Administre los usuarios del sistema electoral</p>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="showCreateUserModal()">
+                <i class="bi bi-person-plus"></i> Nuevo Usuario
+            </button>
+            <button class="btn btn-outline-secondary" onclick="exportUsers()">
+                <i class="bi bi-download"></i> Exportar
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtros y Búsqueda -->
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <input type="text" class="form-control" id="search-usuarios" placeholder="🔍 Buscar usuario...">
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" id="filtro-rol-usuarios">
+                <option value="todos">Todos los roles</option>
+                <option value="super_admin">Super Admin</option>
+                <option value="auditor_electoral">Auditor Electoral</option>
+                <option value="coordinador_departamental">Coordinador Departamental</option>
+                <option value="coordinador_municipal">Coordinador Municipal</option>
+                <option value="coordinador_puesto">Coordinador Puesto</option>
+                <option value="testigo_electoral">Testigo Electoral</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-select" id="filtro-activo-usuarios">
+                <option value="todos">Todos los estados</option>
+                <option value="activos">Activos</option>
+                <option value="inactivos">Inactivos</option>
+            </select>
+        </div>
+        <div class="col-md-3 text-end">
+            <span class="badge bg-primary fs-6">
+                <i class="bi bi-people-fill"></i> <span id="usuarios-count">0</span> usuarios
+            </span>
+        </div>
+    </div>
+
+    <!-- Tabla de Usuarios -->
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 60px;">ID</th>
+                    <th>Nombre</th>
+                    <th style="width: 180px;">Rol</th>
+                    <th>Ubicación</th>
+                    <th style="width: 100px;">Estado</th>
+                    <th style="width: 150px;">Último Acceso</th>
+                    <th style="width: 120px;" class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="usuarios-lista">
+                <tr>
+                    <td colspan="7" class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <p class="text-muted mt-2">Cargando usuarios...</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
