@@ -12,11 +12,13 @@ class Candidato(db.Model):
     __tablename__ = 'candidatos'
     
     id = db.Column(db.Integer, primary_key=True)
+    codigo = db.Column(db.String(50))  # Código único del candidato
     nombre_completo = db.Column(db.String(200), nullable=False)
     partido_id = db.Column(db.Integer, db.ForeignKey('partidos_politicos.id'), nullable=False)
     tipo_eleccion_id = db.Column(db.Integer, db.ForeignKey('tipos_eleccion.id'), nullable=False)
     cargo = db.Column(db.String(100), nullable=False)  # Presidente, Alcalde, Diputado, etc.
     numero_lista = db.Column(db.Integer)  # Número en la lista electoral
+    orden = db.Column(db.Integer, default=0)  # Orden de visualización
     foto_url = db.Column(db.String(500))
     biografia = db.Column(db.Text)
     activo = db.Column(db.Boolean, default=True, nullable=False)
@@ -36,11 +38,13 @@ class Candidato(db.Model):
         """Convertir a diccionario"""
         data = {
             'id': self.id,
+            'codigo': self.codigo,
             'nombre_completo': self.nombre_completo,
             'partido_id': self.partido_id,
             'tipo_eleccion_id': self.tipo_eleccion_id,
             'cargo': self.cargo,
             'numero_lista': self.numero_lista,
+            'orden': self.orden,
             'foto_url': self.foto_url,
             'biografia': self.biografia,
             'activo': self.activo,

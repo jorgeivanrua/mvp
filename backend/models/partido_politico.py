@@ -17,6 +17,7 @@ class PartidoPolitico(db.Model):
     color = db.Column(db.String(7), nullable=False, default='#000000')  # Formato hex: #RRGGBB
     logo_url = db.Column(db.String(500))
     descripcion = db.Column(db.Text)
+    orden = db.Column(db.Integer, default=0)  # Orden de visualización
     activo = db.Column(db.Boolean, default=True, nullable=False)
     
     # Timestamps
@@ -38,6 +39,7 @@ class PartidoPolitico(db.Model):
             'color': self.color,
             'logo_url': self.logo_url,
             'descripcion': self.descripcion,
+            'orden': self.orden,
             'activo': self.activo,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
