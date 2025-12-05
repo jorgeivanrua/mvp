@@ -44,6 +44,3 @@ whitenoise==6.6.0
 flask-socketio==5.3.6
 python-socketio==5.11.0
 redis==5.0.1
-
-# Procesamiento de imágenes
-Pillow==10.2.0
