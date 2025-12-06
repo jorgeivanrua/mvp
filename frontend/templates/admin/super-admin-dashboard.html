@@ -5,8 +5,7 @@
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.css">
-<!-- TEMPORALMENTE DESACTIVADO PARA DEBUG -->
-<!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/personalizacion.css') }}?v=20251205g"> -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/personalizacion.css') }}?v=20251205g">
 <style>
 .super-admin-header {
     background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
@@ -223,72 +222,66 @@ th.sortable:hover .sort-icon {
     to { opacity: 1; }
 }
 
-/* FORZAR VISIBILIDAD SOLO PARA USUARIOS */
-#users .chart-card {
+/* SOBRESCRIBIR MODERN-DASHBOARD.CSS PARA TODAS LAS TABLAS */
+.chart-card {
     background-color: white !important;
     color: #212529 !important;
 }
 
-#users .table-responsive {
+.chart-card .table-responsive {
     background-color: white !important;
 }
 
-#users table {
+.chart-card table {
     background-color: white !important;
     color: #212529 !important;
 }
 
-#users table thead th {
+.chart-card table thead th {
     background-color: #f8f9fa !important;
     color: #212529 !important;
     border-bottom: 2px solid #dee2e6 !important;
 }
 
-#users table tbody {
+.chart-card table tbody {
     background-color: white !important;
 }
 
-#users table tbody tr {
+.chart-card table tbody tr {
     background-color: white !important;
 }
 
-#users table tbody td {
+.chart-card table tbody td {
     color: #212529 !important;
     background-color: white !important;
     border-bottom: 1px solid #dee2e6 !important;
 }
 
-#users table tbody td strong {
+.chart-card table tbody td strong {
     color: #212529 !important;
 }
 
-#users table tbody td small {
+.chart-card table tbody td small {
     color: #6c757d !important;
 }
 
-#users .badge {
+.chart-card .badge {
     color: white !important;
 }
 
-#users .badge.bg-light {
+.chart-card .badge.bg-light {
     color: #212529 !important;
 }
 
-#users .text-muted {
+.chart-card .text-muted {
     color: #6c757d !important;
 }
 
-#usuarios-lista {
+.chart-card .form-control,
+.chart-card .form-select {
     background-color: white !important;
-}
-
-#usuarios-lista tr {
-    background-color: white !important;
-}
-
-#usuarios-lista td {
     color: #212529 !important;
-    background-color: white !important;
+    border-color: #dee2e6 !important;
 }
 
 
