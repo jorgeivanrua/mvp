@@ -1,8 +1,8 @@
 <!-- Tab de Usuarios -->
-<div class="chart-card">
+<div class="chart-card" style="background-color: white !important; padding: 2rem;">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
-            <h5 class="mb-1">Gestión de Usuarios</h5>
+            <h5 class="mb-1" style="color: #212529 !important;">Gestión de Usuarios</h5>
             <p class="text-muted small mb-0">Administre los usuarios del sistema electoral</p>
         </div>
         <div class="btn-group">
@@ -18,10 +18,10 @@
     <!-- Filtros y Búsqueda -->
     <div class="row mb-3">
         <div class="col-md-4">
-            <input type="text" class="form-control" id="search-usuarios" placeholder="🔍 Buscar usuario...">
+            <input type="text" class="form-control" id="search-usuarios" placeholder="🔍 Buscar usuario..." style="color: #212529 !important; background-color: white !important;">
         </div>
         <div class="col-md-3">
-            <select class="form-select" id="filtro-rol-usuarios">
+            <select class="form-select" id="filtro-rol-usuarios" style="color: #212529 !important; background-color: white !important;">
                 <option value="todos">Todos los roles</option>
                 <option value="super_admin">Super Admin</option>
                 <option value="auditor_electoral">Auditor Electoral</option>
@@ -32,7 +32,7 @@
             </select>
         </div>
         <div class="col-md-2">
-            <select class="form-select" id="filtro-activo-usuarios">
+            <select class="form-select" id="filtro-activo-usuarios" style="color: #212529 !important; background-color: white !important;">
                 <option value="todos">Todos los estados</option>
                 <option value="activos">Activos</option>
                 <option value="inactivos">Inactivos</option>
@@ -46,22 +46,22 @@
     </div>
 
     <!-- Tabla de Usuarios -->
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead class="table-light">
+    <div class="table-responsive" style="background-color: white !important;">
+        <table class="table table-hover align-middle" style="background-color: white !important; color: #212529 !important;">
+            <thead class="table-light" style="background-color: #f8f9fa !important;">
                 <tr>
-                    <th style="width: 60px;">ID</th>
-                    <th>Nombre</th>
-                    <th style="width: 180px;">Rol</th>
-                    <th>Ubicación</th>
-                    <th style="width: 100px;">Estado</th>
-                    <th style="width: 150px;">Último Acceso</th>
-                    <th style="width: 120px;" class="text-center">Acciones</th>
+                    <th style="width: 60px; color: #212529 !important;">ID</th>
+                    <th style="color: #212529 !important;">Nombre</th>
+                    <th style="width: 180px; color: #212529 !important;">Rol</th>
+                    <th style="color: #212529 !important;">Ubicación</th>
+                    <th style="width: 100px; color: #212529 !important;">Estado</th>
+                    <th style="width: 150px; color: #212529 !important;">Último Acceso</th>
+                    <th style="width: 120px; color: #212529 !important;" class="text-center">Acciones</th>
                 </tr>
             </thead>
-            <tbody id="usuarios-lista">
+            <tbody id="usuarios-lista" style="background-color: white !important;">
                 <tr>
-                    <td colspan="7" class="text-center py-4">
+                    <td colspan="7" class="text-center py-4" style="color: #212529 !important; background-color: white !important;">
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Cargando...</span>
                         </div>
