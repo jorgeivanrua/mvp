@@ -5,7 +5,7 @@
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.css">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/personalizacion.css') }}?v=20251205f">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/personalizacion.css') }}?v=20251205g">
 <style>
 .super-admin-header {
     background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
@@ -222,77 +222,70 @@ th.sortable:hover .sort-icon {
     to { opacity: 1; }
 }
 
-/* FORZAR VISIBILIDAD DE TODAS LAS TABLAS */
-.chart-card {
+/* FORZAR VISIBILIDAD SOLO PARA USUARIOS */
+#users .chart-card {
     background-color: white !important;
     color: #212529 !important;
 }
 
-.chart-card .table-responsive {
+#users .table-responsive {
     background-color: white !important;
 }
 
-.chart-card table {
+#users table {
     background-color: white !important;
     color: #212529 !important;
 }
 
-.chart-card table thead th {
+#users table thead th {
     background-color: #f8f9fa !important;
     color: #212529 !important;
     border-bottom: 2px solid #dee2e6 !important;
 }
 
-.chart-card table tbody {
+#users table tbody {
     background-color: white !important;
 }
 
-.chart-card table tbody tr {
+#users table tbody tr {
     background-color: white !important;
 }
 
-.chart-card table tbody td {
+#users table tbody td {
     color: #212529 !important;
     background-color: white !important;
     border-bottom: 1px solid #dee2e6 !important;
 }
 
-.chart-card table tbody td strong {
+#users table tbody td strong {
     color: #212529 !important;
 }
 
-.chart-card table tbody td small {
+#users table tbody td small {
     color: #6c757d !important;
 }
 
-.chart-card .badge {
+#users .badge {
     color: white !important;
 }
 
-.chart-card .badge.bg-light {
+#users .badge.bg-light {
     color: #212529 !important;
 }
 
-.chart-card .text-muted {
+#users .text-muted {
     color: #6c757d !important;
 }
 
-/* Específicos para cada tabla */
-#usuarios-lista,
-#partidos-lista,
-#candidatos-lista {
+#usuarios-lista {
     background-color: white !important;
 }
 
-#usuarios-lista tr,
-#partidos-lista tr,
-#candidatos-lista tr {
+#usuarios-lista tr {
     background-color: white !important;
 }
 
-#usuarios-lista td,
-#partidos-lista td,
-#candidatos-lista td {
+#usuarios-lista td {
     color: #212529 !important;
     background-color: white !important;
 }
