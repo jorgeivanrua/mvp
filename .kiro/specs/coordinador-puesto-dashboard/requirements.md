@@ -224,3 +224,34 @@ El Dashboard del Coordinador de Puesto es una interfaz web que permite a los coo
 5. THE Sistema SHALL permitir al coordinador marcar alertas como atendidas
 6. THE Sistema SHALL mantener un historial de todas las alertas recibidas
 7. THE Sistema SHALL enviar notificación por email al coordinador para delitos muy graves
+
+### Requirement 16: Visualización de Evidencias Fotográficas de Incidentes y Delitos
+
+**User Story:** Como coordinador de puesto, quiero ver las fotos de evidencia de los incidentes y delitos reportados, para evaluar mejor la situación y tomar decisiones informadas.
+
+#### Acceptance Criteria
+
+1. WHEN el Coordinador de Puesto visualiza un incidente, THE Sistema SHALL mostrar todas las fotos de evidencia asociadas en una galería responsive
+2. WHEN el Coordinador de Puesto visualiza un delito, THE Sistema SHALL mostrar todas las fotos de evidencia asociadas en una galería responsive
+3. THE Sistema SHALL mostrar la galería de fotos en formato grid: 2 columnas en móvil, 3 columnas en desktop
+4. THE Sistema SHALL permitir hacer clic en cada foto para abrirla en tamaño completo en una nueva ventana
+5. THE Sistema SHALL mostrar el nombre del archivo debajo de cada foto
+6. THE Sistema SHALL cargar las fotos de forma eficiente sin bloquear la interfaz
+7. THE Sistema SHALL mostrar un contador del número de evidencias fotográficas para cada incidente o delito
+
+### Requirement 17: Visor de Imagen con Zoom para Formularios E-14
+
+**User Story:** Como coordinador de puesto, quiero poder hacer zoom y manipular las imágenes de los formularios E-14, para poder leer con claridad todos los números y validar los datos con precisión.
+
+#### Acceptance Criteria
+
+1. WHEN el Coordinador de Puesto abre un formulario E-14 para validación, THE Sistema SHALL mostrar controles de zoom para la imagen del formulario
+2. THE Sistema SHALL permitir hacer zoom in hasta 300% y zoom out hasta 50% con incrementos de 25%
+3. THE Sistema SHALL permitir rotar la imagen en incrementos de 90 grados para corregir orientación
+4. THE Sistema SHALL permitir arrastrar la imagen cuando el zoom es mayor a 100% para navegar por diferentes áreas
+5. THE Sistema SHALL proporcionar un atajo de teclado (Ctrl + Rueda del mouse) para hacer zoom rápido
+6. THE Sistema SHALL mostrar el porcentaje de zoom actual en el botón de reset
+7. THE Sistema SHALL permitir abrir la imagen en una nueva ventana para comparación con múltiples formularios
+8. THE Sistema SHALL resetear el zoom y rotación automáticamente al cerrar el modal de validación
+9. THE Sistema SHALL mantener una transición suave al aplicar zoom y rotación
+10. THE Sistema SHALL funcionar correctamente en dispositivos móviles con gestos táctiles

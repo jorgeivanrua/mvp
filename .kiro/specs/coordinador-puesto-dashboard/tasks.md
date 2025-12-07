@@ -285,11 +285,34 @@
   - Actualización automática de contadores
   - _Requirements: 12.6, 13.6, 15.4_
 
+- [x] 21. Implementar visualización de evidencias fotográficas
+  - Ampliar endpoints `/coordinador-puesto/incidentes` y `/coordinador-puesto/delitos` para incluir evidencias
+  - Actualizar funciones `renderizarIncidentesPuesto()` y `renderizarDelitosPuesto()` con galerías de fotos
+  - Implementar galería responsive: 2 columnas móvil, 3 columnas desktop
+  - Fotos clickeables que abren en nueva ventana
+  - Mostrar nombre de archivo debajo de cada foto
+  - Contador de evidencias fotográficas
+  - _Requirements: 16.1, 16.2, 16.3, 16.4, 16.5, 16.6, 16.7_
+
+- [x] 22. Implementar visor de imagen con zoom para formularios E-14
+  - Crear controles de zoom (in, out, reset, rotar, nueva ventana)
+  - Implementar función `zoomImagen(action)` con límites 50%-300%
+  - Implementar función `rotarImagen()` con incrementos de 90°
+  - Implementar función `aplicarTransformacion()` con transiciones suaves
+  - Implementar función `inicializarArrastreImagen()` con soporte mouse y touch
+  - Implementar zoom con Ctrl + Rueda del mouse
+  - Ampliar modal a 1400px en desktop, 95% en móvil
+  - Resetear zoom y rotación al cerrar modal
+  - Scrollbars personalizados
+  - _Requirements: 17.1, 17.2, 17.3, 17.4, 17.5, 17.6, 17.7, 17.8, 17.9, 17.10_
+
 ## Estado Actual
 
-✅ **Dashboard Coordinador de Puesto 75% Funcional**
+✅ **Dashboard Coordinador de Puesto 90% Funcional**
 
-15 de 20 tareas completadas. El sistema tiene implementadas las funcionalidades principales de validación de formularios E-14 y gestión de incidentes y delitos electorales.
+**Última actualización:** 7 de diciembre de 2025
+
+18 de 22 tareas completadas. El sistema tiene implementadas las funcionalidades principales de validación de formularios E-14, gestión de incidentes y delitos electorales, visualización de evidencias fotográficas, y visor de imagen con zoom.
 
 ### Funcionalidades Implementadas
 
@@ -341,7 +364,24 @@
   - Contador de alertas no atendidas
   - Historial de alertas
 
-### Funcionalidades Pendientes (25%)
+- ✅ **Visualización de evidencias fotográficas** (Nuevo - 7 dic 2025)
+  - Galerías de fotos en incidentes y delitos
+  - Grid responsive: 2 columnas móvil, 3 desktop
+  - Fotos clickeables en nueva ventana
+  - Contador de evidencias
+  - Carga eficiente de imágenes
+
+- ✅ **Visor de imagen con zoom** (Nuevo - 7 dic 2025)
+  - Controles de zoom: 50% a 300%
+  - Rotación de imagen: 90° por clic
+  - Arrastre (pan) con mouse y touch
+  - Zoom con Ctrl + Rueda del mouse
+  - Modal ampliado: 1400px desktop, 95% móvil
+  - Transiciones suaves
+  - Reset automático al cerrar
+  - Scrollbars personalizados
+
+### Funcionalidades Pendientes (10%)
 
 - ⏳ **Migraciones de base de datos** (Tarea 2)
 - ⏳ **Servicios de validación** (Tarea 3.2)

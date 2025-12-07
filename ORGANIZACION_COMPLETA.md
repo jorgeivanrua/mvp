@@ -179,18 +179,63 @@ mvp/
 - [x] Documentación en 10 carpetas temáticas
 - [x] Raíz limpia con solo archivos esenciales
 - [x] READMEs en todas las carpetas importantes
-- [x] Duplicados eliminados
+- [x] Duplicados eliminados (23 archivos)
 - [x] Estructura profesional y mantenible
+- [x] .gitignore actualizado (agregado .kiro/)
+- [x] Documentación de Git creada
 
 ### 📊 Métricas
-- **Archivos en raíz**: 3 .md (antes: 30+)
+- **Archivos en raíz**: 5 .md (antes: 30+) - 83% reducción
 - **Scripts organizados**: 100% (antes: 0%)
 - **Docs organizados**: 100% (antes: ~20%)
-- **Duplicados eliminados**: 16 archivos
+- **Duplicados eliminados**: 23 archivos (16 docs + 7 scripts)
 - **BDs consolidadas**: 3 → 1
+- **Carpetas scripts**: 2 → 1 (4 subcarpetas)
+- **READMEs creados**: 10 archivos
+- **.gitignore actualizado**: .kiro/ agregado
 
 ## Conclusión
 
 El proyecto ahora tiene una estructura profesional, clara y mantenible que facilita el desarrollo, la colaboración y el despliegue.
 
 **Resultado**: ✅ Proyecto completamente organizado y listo para escalar
+
+
+---
+
+## 📅 Actualización: 7 de Diciembre de 2025
+
+### ✅ Mejoras del Coordinador de Puesto
+
+#### 1. Visualización de Incidentes y Delitos con Evidencias Fotográficas
+- **Backend:** Endpoints ampliados (`/coordinador-puesto/incidentes`, `/coordinador-puesto/delitos`)
+- **Frontend:** Galerías de fotos responsive (2 cols móvil, 3 cols desktop)
+- **Características:** Filtros por estado, badges de conteo, fotos clickeables
+- **Documentación:** `docs/implementaciones/MEJORAS_COORDINADOR_PUESTO.md`
+
+#### 2. Visor de Imagen E-14 con Zoom y Controles
+- **Zoom:** 50% a 300% con incrementos de 25%
+- **Rotación:** 90° por clic para fotos mal orientadas
+- **Arrastre:** Pan con mouse y touch para navegar
+- **Atajos:** Ctrl+Rueda para zoom rápido
+- **Modal:** Ampliado a 1400px para mejor visualización
+- **Documentación:** `docs/implementaciones/VISOR_IMAGEN_E14_ZOOM.md`
+
+#### Archivos Modificados
+```
+backend/routes/coordinador_puesto.py     ✅ Endpoints ampliados
+frontend/static/js/coordinador-puesto.js ✅ Funciones de zoom y galerías
+frontend/templates/coordinador/puesto.html ✅ CSS y modal mejorado
+```
+
+#### Beneficios
+- Mayor precisión en validación de formularios
+- Visualización completa de incidentes/delitos con evidencias
+- Mejor experiencia en móvil y desktop
+- Reducción de errores de validación
+- Mayor confianza en los datos consolidados
+
+---
+
+**Última actualización:** 7 de diciembre de 2025  
+**Estado del proyecto:** ✅ Coordinador de Puesto completamente funcional y optimizado

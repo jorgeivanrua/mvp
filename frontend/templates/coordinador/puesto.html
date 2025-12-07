@@ -109,6 +109,58 @@
     padding: 0.35rem 0.65rem;
 }
 
+/* Visor de imagen mejorado */
+.image-viewer-container {
+    width: 100%;
+}
+
+.image-viewer-controls {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.image-viewer-wrapper {
+    position: relative;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+}
+
+.image-viewer-wrapper::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.image-viewer-wrapper::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.image-viewer-wrapper::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.image-viewer-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+#formularioImagen {
+    transform-origin: center center;
+}
+
+/* Modal de validación más ancho */
+.modal-xl-custom {
+    max-width: 95%;
+}
+
+@media (min-width: 1200px) {
+    .modal-xl-custom {
+        max-width: 1400px;
+    }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .split-view {
@@ -117,6 +169,14 @@
     
     .stats-card {
         margin-bottom: 0.75rem;
+    }
+    
+    .image-viewer-wrapper {
+        max-height: 300px !important;
+    }
+    
+    .image-viewer-controls .btn-group {
+        flex-wrap: wrap;
     }
     
     .table-responsive {
@@ -564,7 +624,7 @@
 
 <!-- Modal de Validación -->
 <div class="modal fade" id="validacionModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog modal-xl modal-xl-custom">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Validar Formulario E-14</h5>

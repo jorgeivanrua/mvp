@@ -195,7 +195,7 @@ def get_testigos():
 @coordinador_puesto_bp.route('/incidentes', methods=['GET'])
 @jwt_required()
 def get_incidentes():
-    """Obtener incidentes del puesto"""
+    """Obtener incidentes del puesto con evidencias fotográficas"""
     try:
         user_id = get_jwt_identity()
         user = User.query.get(int(user_id))
@@ -206,12 +206,154 @@ def get_incidentes():
                 'error': 'No autorizado'
             }), 403
         
-        # TODO: Implementar cuando exista modelo de incidentes
+        if not user.ubicacion_id:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
+        
+        puesto = Location.query.get(user.ubicacion_id)
+        
+        # Importar modelos de incidentes y delitos
+        from backend.models.incidente_electoral import IncidenteElectoral
+        from backend.models.evidencia_fotografica import EvidenciaFotografica
+        
+        # Obtener incidentes del puesto
+        incidentes = IncidenteElectoral.query.join(
+            Location, IncidenteElectoral.mesa_id == Location.id
+        ).filter(
+            Location.puesto_codigo == puesto.puesto_codigo,
+            Location.municipio_codigo == puesto.municipio_codigo,
+            Location.departamento_codigo == puesto.departamento_codigo
+        ).order_by(IncidenteElectoral.fecha_reporte.desc()).all()
+        
         incidentes_data = []
+        for inc in incidentes:
+            # Obtener evidencias fotográficas
+            evidencias = EvidenciaFotografica.query.filter_by(
+                incidente_id=inc.id
+            ).all()
+            
+            mesa = Location.query.get(inc.mesa_id)
+            reportado_por = User.query.get(inc.reportado_por_id)
+            
+            incidentes_data.append({
+                'id': inc.id,
+                'titulo': inc.titulo,
+                'descripcion': inc.descripcion,
+                'tipo_incidente': inc.tipo_incidente,
+                'tipo_incidente_label': inc.get_tipo_incidente_label(),
+                'severidad': inc.severidad,
+                'severidad_label': inc.get_severidad_label(),
+                'estado': inc.estado,
+                'estado_label': inc.get_estado_label(),
+                'fecha_reporte': inc.fecha_reporte.isoformat() if inc.fecha_reporte else None,
+                'ubicacion_gps': inc.ubicacion_gps,
+                'notas_resolucion': inc.notas_resolucion,
+                'mesa_id': inc.mesa_id,
+                'mesa_codigo': mesa.mesa_codigo if mesa else None,
+                'reportado_por_id': inc.reportado_por_id,
+                'reportado_por_nombre': reportado_por.nombre if reportado_por else 'Desconocido',
+                'evidencias': [{
+                    'id': ev.id,
+                    'filename': ev.filename,
+                    'url': ev.url,
+                    'tipo': ev.tipo,
+                    'descripcion': ev.descripcion
+                } for ev in evidencias]
+            })
         
         return jsonify({
             'success': True,
-            'data': incidentes_data
+            'data': incidentes_data,
+            'total': len(incidentes_data)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@coordinador_puesto_bp.route('/delitos', methods=['GET'])
+@jwt_required()
+def get_delitos():
+    """Obtener delitos del puesto con evidencias fotográficas"""
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(int(user_id))
+        
+        if not user or user.rol != 'coordinador_puesto':
+            return jsonify({
+                'success': False,
+                'error': 'No autorizado'
+            }), 403
+        
+        if not user.ubicacion_id:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
+        
+        puesto = Location.query.get(user.ubicacion_id)
+        
+        # Importar modelos de delitos
+        from backend.models.delito_electoral import DelitoElectoral
+        from backend.models.evidencia_fotografica import EvidenciaFotografica
+        
+        # Obtener delitos del puesto
+        delitos = DelitoElectoral.query.join(
+            Location, DelitoElectoral.mesa_id == Location.id
+        ).filter(
+            Location.puesto_codigo == puesto.puesto_codigo,
+            Location.municipio_codigo == puesto.municipio_codigo,
+            Location.departamento_codigo == puesto.departamento_codigo
+        ).order_by(DelitoElectoral.fecha_reporte.desc()).all()
+        
+        delitos_data = []
+        for delito in delitos:
+            # Obtener evidencias fotográficas
+            evidencias = EvidenciaFotografica.query.filter_by(
+                delito_id=delito.id
+            ).all()
+            
+            mesa = Location.query.get(delito.mesa_id)
+            reportado_por = User.query.get(delito.reportado_por_id)
+            
+            delitos_data.append({
+                'id': delito.id,
+                'titulo': delito.titulo,
+                'descripcion': delito.descripcion,
+                'tipo_delito': delito.tipo_delito,
+                'tipo_delito_label': delito.get_tipo_delito_label(),
+                'gravedad': delito.gravedad,
+                'gravedad_label': delito.get_gravedad_label(),
+                'estado': delito.estado,
+                'estado_label': delito.get_estado_label(),
+                'fecha_reporte': delito.fecha_reporte.isoformat() if delito.fecha_reporte else None,
+                'ubicacion_gps': delito.ubicacion_gps,
+                'testigos_adicionales': delito.testigos_adicionales,
+                'denunciado_formalmente': delito.denunciado_formalmente,
+                'numero_denuncia': delito.numero_denuncia,
+                'resultado_investigacion': delito.resultado_investigacion,
+                'mesa_id': delito.mesa_id,
+                'mesa_codigo': mesa.mesa_codigo if mesa else None,
+                'reportado_por_id': delito.reportado_por_id,
+                'reportado_por_nombre': reportado_por.nombre if reportado_por else 'Desconocido',
+                'evidencias': [{
+                    'id': ev.id,
+                    'filename': ev.filename,
+                    'url': ev.url,
+                    'tipo': ev.tipo,
+                    'descripcion': ev.descripcion
+                } for ev in evidencias]
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': delitos_data,
+            'total': len(delitos_data)
         }), 200
         
     except Exception as e:

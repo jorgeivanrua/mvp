@@ -252,13 +252,48 @@ function mostrarDatosValidacion(formulario) {
     document.getElementById('valTarjetasNoMarcadas').textContent = 
         Utils.formatNumber(formulario.tarjetas_no_marcadas);
     
-    // Imagen del formulario
+    // Imagen del formulario con controles de zoom
     const imagenContainer = document.getElementById('imagenFormulario');
     if (formulario.imagen_url) {
         imagenContainer.innerHTML = `
-            <img src="${formulario.imagen_url}" alt="Formulario E-14" 
-                 onclick="this.requestFullscreen()" style="cursor: zoom-in;">
+            <div class="image-viewer-container">
+                <div class="image-viewer-controls mb-2">
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-secondary" onclick="zoomImagen('out')" title="Alejar">
+                            <i class="bi bi-zoom-out"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="zoomImagen('reset')" title="Tamaño original">
+                            <i class="bi bi-arrows-angle-contract"></i> 100%
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="zoomImagen('in')" title="Acercar">
+                            <i class="bi bi-zoom-in"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="rotarImagen()" title="Rotar">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" onclick="abrirImagenNuevaVentana('${formulario.imagen_url}')" title="Abrir en nueva ventana">
+                            <i class="bi bi-box-arrow-up-right"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="image-viewer-wrapper" id="imageViewerWrapper" style="overflow: auto; max-height: 500px; border: 1px solid #dee2e6; border-radius: 8px; background: #f8f9fa; position: relative;">
+                    <img id="formularioImagen" 
+                         src="${formulario.imagen_url}" 
+                         alt="Formulario E-14" 
+                         style="max-width: 100%; height: auto; display: block; margin: 0 auto; cursor: move; transition: transform 0.2s;"
+                         draggable="false">
+                </div>
+                <div class="text-center mt-2">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i> 
+                        Usa los controles para hacer zoom, rotar o arrastrar la imagen para mejor visualización
+                    </small>
+                </div>
+            </div>
         `;
+        
+        // Inicializar funcionalidad de arrastre
+        inicializarArrastreImagen();
     } else {
         imagenContainer.innerHTML = '<p class="text-muted">No hay imagen disponible</p>';
     }
@@ -1140,14 +1175,14 @@ let filtroEstadoIncidentes = '';
 let filtroEstadoDelitos = '';
 
 /**
- * Cargar incidentes del puesto
+ * Cargar incidentes del puesto con evidencias fotográficas
  */
 async function cargarIncidentesPuesto() {
     try {
-        const response = await APIClient.obtenerIncidentes();
+        const response = await APIClient.get('/coordinador-puesto/incidentes');
         
-        if (response.incidentes) {
-            incidentesPuesto = response.incidentes;
+        if (response.success && response.data) {
+            incidentesPuesto = response.data;
             renderizarIncidentesPuesto();
             actualizarBadgeIncidentes();
         }
@@ -1159,14 +1194,14 @@ async function cargarIncidentesPuesto() {
 }
 
 /**
- * Cargar delitos del puesto
+ * Cargar delitos del puesto con evidencias fotográficas
  */
 async function cargarDelitosPuesto() {
     try {
-        const response = await APIClient.obtenerDelitos();
+        const response = await APIClient.get('/coordinador-puesto/delitos');
         
-        if (response.delitos) {
-            delitosPuesto = response.delitos;
+        if (response.success && response.data) {
+            delitosPuesto = response.data;
             renderizarDelitosPuesto();
             actualizarBadgeDelitos();
         }
@@ -1178,7 +1213,7 @@ async function cargarDelitosPuesto() {
 }
 
 /**
- * Renderizar lista de incidentes
+ * Renderizar lista de incidentes con evidencias fotográficas
  */
 function renderizarIncidentesPuesto() {
     const container = document.getElementById('incidentesLista');
@@ -1226,6 +1261,27 @@ function renderizarIncidentesPuesto() {
                                 </small>
                             </div>
                         </div>
+                        
+                        ${incidente.evidencias && incidente.evidencias.length > 0 ? `
+                        <div class="mt-3">
+                            <strong class="d-block mb-2">
+                                <i class="bi bi-camera"></i> Evidencias Fotográficas (${incidente.evidencias.length})
+                            </strong>
+                            <div class="row g-2">
+                                ${incidente.evidencias.map(ev => `
+                                    <div class="col-6 col-md-4">
+                                        <a href="${ev.url}" target="_blank" class="d-block">
+                                            <img src="${ev.url}" 
+                                                 class="img-fluid rounded border" 
+                                                 alt="${ev.filename}"
+                                                 style="max-height: 150px; width: 100%; object-fit: cover; cursor: pointer;">
+                                        </a>
+                                        <small class="text-muted d-block mt-1">${ev.filename}</small>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
                     </div>
                     <div class="text-end">
                         <span class="badge bg-${getEstadoIncidenteColor(incidente.estado)} mb-2">
@@ -1248,7 +1304,7 @@ function renderizarIncidentesPuesto() {
 }
 
 /**
- * Renderizar lista de delitos
+ * Renderizar lista de delitos con evidencias fotográficas
  */
 function renderizarDelitosPuesto() {
     const container = document.getElementById('delitosLista');
@@ -1301,6 +1357,27 @@ function renderizarDelitosPuesto() {
                                 </small>
                             </div>
                         </div>
+                        
+                        ${delito.evidencias && delito.evidencias.length > 0 ? `
+                        <div class="mt-3">
+                            <strong class="d-block mb-2">
+                                <i class="bi bi-camera"></i> Evidencias Fotográficas (${delito.evidencias.length})
+                            </strong>
+                            <div class="row g-2">
+                                ${delito.evidencias.map(ev => `
+                                    <div class="col-6 col-md-4">
+                                        <a href="${ev.url}" target="_blank" class="d-block">
+                                            <img src="${ev.url}" 
+                                                 class="img-fluid rounded border" 
+                                                 alt="${ev.filename}"
+                                                 style="max-height: 150px; width: 100%; object-fit: cover; cursor: pointer;">
+                                        </a>
+                                        <small class="text-muted d-block mt-1">${ev.filename}</small>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
                     </div>
                     <div class="text-end">
                         <span class="badge bg-${getEstadoDelitoColor(delito.estado)} mb-2">
@@ -1803,6 +1880,254 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => {
                 inicializarMapa();
             }, 100);
+        });
+    }
+});
+
+
+// ============================================
+// FUNCIONES AUXILIARES DE COLORES Y BADGES
+// ============================================
+
+/**
+ * Obtener color de severidad
+ */
+function getSeveridadColor(severidad) {
+    const colores = {
+        'baja': 'info',
+        'media': 'warning',
+        'alta': 'danger',
+        'critica': 'danger'
+    };
+    return colores[severidad] || 'secondary';
+}
+
+/**
+ * Obtener color de gravedad
+ */
+function getGravedadColor(gravedad) {
+    const colores = {
+        'leve': 'info',
+        'media': 'warning',
+        'grave': 'danger',
+        'muy_grave': 'danger'
+    };
+    return colores[gravedad] || 'secondary';
+}
+
+/**
+ * Obtener color de estado de incidente
+ */
+function getEstadoIncidenteColor(estado) {
+    const colores = {
+        'reportado': 'warning',
+        'en_revision': 'info',
+        'resuelto': 'success',
+        'escalado': 'danger'
+    };
+    return colores[estado] || 'secondary';
+}
+
+/**
+ * Obtener color de estado de delito
+ */
+function getEstadoDelitoColor(estado) {
+    const colores = {
+        'reportado': 'warning',
+        'en_investigacion': 'info',
+        'investigado': 'primary',
+        'denunciado': 'success',
+        'archivado': 'secondary'
+    };
+    return colores[estado] || 'secondary';
+}
+
+/**
+ * Buscar formularios
+ */
+function buscarFormularios(query) {
+    query = query.toLowerCase().trim();
+    
+    if (!query) {
+        renderFormulariosTable(formularios);
+        return;
+    }
+    
+    const filtrados = formularios.filter(f => 
+        (f.mesa_codigo && f.mesa_codigo.toLowerCase().includes(query)) ||
+        (f.mesa_nombre && f.mesa_nombre.toLowerCase().includes(query)) ||
+        (f.testigo_nombre && f.testigo_nombre.toLowerCase().includes(query))
+    );
+    
+    renderFormulariosTable(filtrados);
+}
+
+/**
+ * Cambiar tab desde bottom navigation (móvil)
+ */
+function cambiarTab(tabName) {
+    // Activar la pestaña correspondiente
+    const tabElement = document.querySelector(`#${tabName}-tab`);
+    if (tabElement) {
+        const tab = new bootstrap.Tab(tabElement);
+        tab.show();
+    }
+    
+    // Actualizar estado activo en bottom nav
+    document.querySelectorAll('.bottom-nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    event.target.closest('.bottom-nav-item').classList.add('active');
+}
+
+
+// ============================================
+// VISOR DE IMAGEN CON ZOOM Y CONTROLES
+// ============================================
+
+let zoomLevel = 1;
+let rotationAngle = 0;
+let isDragging = false;
+let startX, startY, scrollLeft, scrollTop;
+
+/**
+ * Controlar zoom de la imagen
+ */
+function zoomImagen(action) {
+    const imagen = document.getElementById('formularioImagen');
+    if (!imagen) return;
+    
+    switch(action) {
+        case 'in':
+            zoomLevel = Math.min(zoomLevel + 0.25, 3); // Máximo 300%
+            break;
+        case 'out':
+            zoomLevel = Math.max(zoomLevel - 0.25, 0.5); // Mínimo 50%
+            break;
+        case 'reset':
+            zoomLevel = 1;
+            rotationAngle = 0;
+            break;
+    }
+    
+    aplicarTransformacion();
+    
+    // Actualizar texto del botón de reset
+    const btnReset = document.querySelector('.image-viewer-controls button[onclick="zoomImagen(\'reset\')"]');
+    if (btnReset) {
+        btnReset.innerHTML = `<i class="bi bi-arrows-angle-contract"></i> ${Math.round(zoomLevel * 100)}%`;
+    }
+}
+
+/**
+ * Rotar imagen
+ */
+function rotarImagen() {
+    rotationAngle = (rotationAngle + 90) % 360;
+    aplicarTransformacion();
+}
+
+/**
+ * Aplicar transformación (zoom + rotación)
+ */
+function aplicarTransformacion() {
+    const imagen = document.getElementById('formularioImagen');
+    if (!imagen) return;
+    
+    imagen.style.transform = `scale(${zoomLevel}) rotate(${rotationAngle}deg)`;
+}
+
+/**
+ * Abrir imagen en nueva ventana
+ */
+function abrirImagenNuevaVentana(url) {
+    window.open(url, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+}
+
+/**
+ * Inicializar funcionalidad de arrastre de imagen
+ */
+function inicializarArrastreImagen() {
+    const wrapper = document.getElementById('imageViewerWrapper');
+    const imagen = document.getElementById('formularioImagen');
+    
+    if (!wrapper || !imagen) return;
+    
+    // Mouse events
+    wrapper.addEventListener('mousedown', (e) => {
+        if (zoomLevel > 1) {
+            isDragging = true;
+            wrapper.style.cursor = 'grabbing';
+            startX = e.pageX - wrapper.offsetLeft;
+            startY = e.pageY - wrapper.offsetTop;
+            scrollLeft = wrapper.scrollLeft;
+            scrollTop = wrapper.scrollTop;
+        }
+    });
+    
+    wrapper.addEventListener('mouseleave', () => {
+        isDragging = false;
+        wrapper.style.cursor = 'move';
+    });
+    
+    wrapper.addEventListener('mouseup', () => {
+        isDragging = false;
+        wrapper.style.cursor = 'move';
+    });
+    
+    wrapper.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        const x = e.pageX - wrapper.offsetLeft;
+        const y = e.pageY - wrapper.offsetTop;
+        const walkX = (x - startX) * 2;
+        const walkY = (y - startY) * 2;
+        wrapper.scrollLeft = scrollLeft - walkX;
+        wrapper.scrollTop = scrollTop - walkY;
+    });
+    
+    // Touch events para móvil
+    let touchStartX, touchStartY;
+    
+    wrapper.addEventListener('touchstart', (e) => {
+        if (zoomLevel > 1 && e.touches.length === 1) {
+            touchStartX = e.touches[0].pageX - wrapper.scrollLeft;
+            touchStartY = e.touches[0].pageY - wrapper.scrollTop;
+        }
+    });
+    
+    wrapper.addEventListener('touchmove', (e) => {
+        if (zoomLevel > 1 && e.touches.length === 1) {
+            e.preventDefault();
+            const x = e.touches[0].pageX;
+            const y = e.touches[0].pageY;
+            wrapper.scrollLeft = touchStartX - x;
+            wrapper.scrollTop = touchStartY - y;
+        }
+    });
+    
+    // Zoom con rueda del mouse
+    wrapper.addEventListener('wheel', (e) => {
+        if (e.ctrlKey) {
+            e.preventDefault();
+            if (e.deltaY < 0) {
+                zoomImagen('in');
+            } else {
+                zoomImagen('out');
+            }
+        }
+    }, { passive: false });
+}
+
+/**
+ * Resetear visor de imagen al cerrar modal
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    const validacionModal = document.getElementById('validacionModal');
+    if (validacionModal) {
+        validacionModal.addEventListener('hidden.bs.modal', function() {
+            zoomLevel = 1;
+            rotationAngle = 0;
         });
     }
 });

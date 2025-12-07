@@ -93,9 +93,23 @@ Testigo → Formulario E-14 (pendiente) → Coordinador Puesto → Validación/R
 **Componentes:**
 
 - **Vista dividida (split view)**
-  - Lado izquierdo: Imagen del formulario E-14 físico
-    - Zoom in/out
-    - Rotación de imagen
+  - Lado izquierdo: Visor de imagen mejorado del formulario E-14 físico
+    - **Controles de zoom:**
+      - Botón "Zoom In" (🔍+) - Acerca hasta 300%
+      - Botón "Zoom Out" (🔍-) - Aleja hasta 50%
+      - Botón "Reset" (↔️ 100%) - Vuelve a tamaño original y muestra porcentaje actual
+      - Botón "Rotar" (↻) - Rota 90° por clic
+      - Botón "Nueva Ventana" (↗️) - Abre imagen en ventana separada
+    - **Funcionalidades de navegación:**
+      - Arrastre con mouse (pan) cuando zoom > 100%
+      - Arrastre táctil en móvil
+      - Zoom con Ctrl + Rueda del mouse
+      - Scrollbars personalizados
+    - **Características técnicas:**
+      - Transiciones suaves (0.2s)
+      - Transform-origin: center center
+      - Altura máxima: 500px (desktop), 300px (móvil)
+      - Cursor cambia a "move" cuando se puede arrastrar
   - Lado derecho: Datos digitados
     - Información de la mesa
     - Datos de votación
@@ -155,6 +169,165 @@ Testigo → Formulario E-14 (pendiente) → Coordinador Puesto → Validación/R
   - Botón "Generar Reporte PDF"
   - Incluye firma digital del coordinador
   - Timestamp de generación
+
+### 5. Visor de Imagen con Zoom
+
+**Especificaciones Técnicas:**
+
+**Variables de Estado:**
+```javascript
+let zoomLevel = 1;          // Nivel de zoom actual (0.5 a 3)
+let rotationAngle = 0;      // Ángulo de rotación (0, 90, 180, 270)
+let isDragging = false;     // Estado de arrastre
+let startX, startY;         // Posición inicial del mouse
+let scrollLeft, scrollTop;  // Posición inicial del scroll
+```
+
+**Funciones Principales:**
+
+1. **`zoomImagen(action)`**
+   - `action='in'`: Incrementa zoom en 0.25 (máximo 3.0)
+   - `action='out'`: Decrementa zoom en 0.25 (mínimo 0.5)
+   - `action='reset'`: Resetea zoom a 1.0 y rotación a 0°
+   - Actualiza el texto del botón con el porcentaje actual
+
+2. **`rotarImagen()`**
+   - Incrementa rotación en 90°
+   - Ciclo: 0° → 90° → 180° → 270° → 0°
+   - Mantiene el nivel de zoom actual
+
+3. **`aplicarTransformacion()`**
+   - Aplica `transform: scale(${zoomLevel}) rotate(${rotationAngle}deg)`
+   - Transición suave de 0.2s
+
+4. **`inicializarArrastreImagen()`**
+   - Configura event listeners para mouse y touch
+   - Activa arrastre solo cuando zoom > 100%
+   - Implementa zoom con Ctrl + Rueda del mouse
+
+**Estilos CSS:**
+
+```css
+.image-viewer-container {
+    width: 100%;
+}
+
+.image-viewer-controls {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.image-viewer-wrapper {
+    overflow: auto;
+    max-height: 500px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background: #f8f9fa;
+    position: relative;
+    user-select: none;
+}
+
+#formularioImagen {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    cursor: move;
+    transition: transform 0.2s;
+    transform-origin: center center;
+}
+
+/* Modal más ancho para mejor visualización */
+.modal-xl-custom {
+    max-width: 95%;
+}
+
+@media (min-width: 1200px) {
+    .modal-xl-custom {
+        max-width: 1400px;
+    }
+}
+
+/* Responsive móvil */
+@media (max-width: 768px) {
+    .image-viewer-wrapper {
+        max-height: 300px !important;
+    }
+}
+```
+
+**Límites y Rangos:**
+- Zoom mínimo: 50% (0.5)
+- Zoom máximo: 300% (3.0)
+- Incremento de zoom: 25% (0.25)
+- Rotación: 90° por clic
+- Altura máxima desktop: 500px
+- Altura máxima móvil: 300px
+- Ancho modal desktop: 1400px
+- Ancho modal móvil: 95%
+
+### 6. Galerías de Fotos de Evidencias
+
+**Especificaciones Técnicas:**
+
+**Estructura HTML:**
+```html
+<div class="row g-2">
+  <div class="col-6 col-md-4">
+    <a href="/uploads/evidencia.jpg" target="_blank">
+      <img src="/uploads/evidencia.jpg" 
+           class="img-fluid rounded border" 
+           style="max-height: 150px; width: 100%; object-fit: cover; cursor: pointer;">
+    </a>
+    <small class="text-muted">evidencia.jpg</small>
+  </div>
+</div>
+```
+
+**Características:**
+- Grid responsive: 2 columnas en móvil (col-6), 3 columnas en desktop (col-md-4)
+- Imágenes con altura máxima de 150px
+- Object-fit: cover para mantener proporciones
+- Clickeables para abrir en tamaño completo en nueva pestaña
+- Nombre del archivo debajo de cada foto
+- Gap de 0.5rem entre imágenes
+
+**Funciones de Renderizado:**
+
+1. **`renderIncidentesList(incidentes)`**
+   - Renderiza lista de incidentes con galerías de fotos
+   - Incluye badges de severidad y estado
+   - Muestra contador de evidencias
+   - Galería responsive integrada
+
+2. **`renderDelitosList(delitos)`**
+   - Renderiza lista de delitos con galerías de fotos
+   - Incluye badges de gravedad y estado
+   - Badge especial para delitos denunciados
+   - Galería responsive integrada
+
+**Estilos CSS:**
+```css
+.row.g-2 {
+    gap: 0.5rem;
+}
+
+.img-fluid.rounded.border {
+    max-height: 150px;
+    width: 100%;
+    object-fit: cover;
+    cursor: pointer;
+    border-radius: 0.25rem;
+    border: 1px solid #dee2e6;
+}
+
+.img-fluid.rounded.border:hover {
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+```
 
 ## Data Models
 
