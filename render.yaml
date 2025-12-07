@@ -18,12 +18,13 @@ services:
         value: "1"
       - key: RENDER
         value: "true"
-    # Opcional: Descomentar para usar PostgreSQL en lugar de SQLite
-    # databases:
-    #   - name: dia-d-db
-    #     plan: free
-    # envVars:
-    #   - key: DATABASE_URL
-    #     fromDatabase:
-    #       name: dia-d-db
-    #       property: connectionString
+      - key: DATABASE_URL
+        fromDatabase:
+          name: dia-d-db
+          property: connectionString
+
+databases:
+  - name: dia-d-db
+    databaseName: dia_d
+    user: dia_d_user
+    plan: free
