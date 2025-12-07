@@ -13,19 +13,26 @@ let votosData = {};
 let autoRefreshInterval = null;
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Inicializando dashboard de testigo...');
+    
+    // Cargar datos esenciales
     loadUserProfile();
     loadForms();
     loadTiposEleccion();
-    loadTiposIncidentes();
-    loadTiposDelitos();
     
-    // Deshabilitar botón de nuevo formulario inicialmente
-    habilitarBotonNuevoFormulario();
+    // Cargar tipos de incidentes y delitos (opcional, no bloquea)
+    loadTiposIncidentes().catch(err => console.warn('No se pudieron cargar tipos de incidentes:', err));
+    loadTiposDelitos().catch(err => console.warn('No se pudieron cargar tipos de delitos:', err));
+    
+    // Los botones ya están deshabilitados por defecto en el HTML
+    // No es necesario llamar a habilitarBotonNuevoFormulario() aquí
     
     // Inicializar SyncManager para sincronización automática
     if (window.syncManager) {
         window.syncManager.init();
     }
+    
+    console.log('✅ Dashboard inicializado');
     
     // ⭐ MEJORA: Auto-refresh cada 30 segundos
     autoRefreshInterval = setInterval(() => {
@@ -68,7 +75,8 @@ async function verificarPresencia() {
         console.log('Valor seleccionado:', selectorMesa?.value);
         
         if (!selectorMesa.value) {
-            Utils.showError('Debe seleccionar una mesa primero');
+            if (window.Utils) Utils.showError('Debe seleccionar una mesa primero');
+            else alert('Debe seleccionar una mesa primero');
             return;
         }
         
@@ -78,7 +86,8 @@ async function verificarPresencia() {
         console.log('Dataset mesa:', selectedOption?.dataset?.mesa);
         
         if (!selectedOption || !selectedOption.dataset.mesa) {
-            Utils.showError('Error al obtener datos de la mesa');
+            if (window.Utils) Utils.showError('Error al obtener datos de la mesa');
+            else alert('Error al obtener datos de la mesa');
             return;
         }
         
@@ -96,21 +105,38 @@ async function verificarPresencia() {
         if (response.success) {
             console.log('✅ Presencia verificada exitosamente');
             
-            // ⭐ CORRECCIÓN: Recargar perfil para obtener ubicación actualizada
-            await loadUserProfile();
-            
-            // IMPORTANTE: Actualizar variables globales DESPUÉS de recargar perfil
-            window.presenciaVerificada = true;
+            // IMPORTANTE: Actualizar TODAS las variables globales (igual que incidentes-delitos.js)
             presenciaVerificada = true;
+            window.presenciaVerificada = true;
             window.mesaSeleccionadaDashboard = mesaSeleccionadaDashboard;
             
-            console.log('presenciaVerificada ahora es:', presenciaVerificada);
-            console.log('window.presenciaVerificada:', window.presenciaVerificada);
-            console.log('userLocation actualizada:', userLocation);
+            // También guardar en localStorage como respaldo
+            localStorage.setItem('presenciaVerificada', 'true');
+            localStorage.setItem('mesaVerificadaId', mesaSeleccionadaDashboard.id);
+            localStorage.setItem('mesaVerificadaData', JSON.stringify(mesaSeleccionadaDashboard));
+            
+            console.log('✅ Variables globales actualizadas:');
+            console.log('  - presenciaVerificada (local):', presenciaVerificada);
+            console.log('  - window.presenciaVerificada:', window.presenciaVerificada);
+            console.log('  - mesaSeleccionadaDashboard (local):', mesaSeleccionadaDashboard);
+            console.log('  - window.mesaSeleccionadaDashboard:', window.mesaSeleccionadaDashboard);
+            console.log('  - localStorage presenciaVerificada:', localStorage.getItem('presenciaVerificada'));
+            console.log('  - localStorage mesaVerificadaData:', localStorage.getItem('mesaVerificadaData'));
             
             // Actualizar UI
             document.getElementById('btnVerificarPresencia').classList.add('d-none');
             document.getElementById('alertaPresenciaVerificada').classList.remove('d-none');
+            
+            // Actualizar casilla de estado
+            const statEstado = document.getElementById('statEstado');
+            const statEstadoTexto = document.getElementById('statEstadoTexto');
+            if (statEstado) {
+                statEstado.innerHTML = '<i class="bi bi-check-circle-fill"></i>';
+                statEstado.style.color = '#28a745';
+            }
+            if (statEstadoTexto) {
+                statEstadoTexto.textContent = 'Verificado';
+            }
             
             // Mostrar fecha de verificación
             const fechaElement = document.getElementById('presenciaFecha');
@@ -131,57 +157,115 @@ async function verificarPresencia() {
                 fechaElement.textContent = `Verificada el ${fechaColombia}`;
             }
             
-            // Habilitar botón de nuevo formulario directamente
-            console.log('Habilitando botón directamente...');
-            const btnNuevoFormulario = document.getElementById('btnNuevoFormulario');
-            if (btnNuevoFormulario) {
-                btnNuevoFormulario.disabled = false;
-                btnNuevoFormulario.classList.remove('disabled');
-                btnNuevoFormulario.title = 'Crear nuevo formulario E-14';
-                console.log('✅ Botón habilitado directamente');
+            // Habilitar botones de nuevo formulario directamente (desktop y móvil)
+            console.log('🔧 Habilitando botones de formulario...');
+            console.log('🔧 Todos los elementos con ID en el documento:', document.querySelectorAll('[id]').length);
+            
+            // Función para habilitar botones - MÉTODO DIRECTO
+            const habilitarBotones = () => {
+                console.log('🔍 Habilitando botones de formulario...');
+                
+                // Buscar por ID (método más confiable)
+                const btnDesktop = document.getElementById('btnNuevoFormulario');
+                const btnMobile = document.getElementById('btnNuevoFormularioMobile');
+                
+                console.log('  - btnDesktop encontrado:', !!btnDesktop);
+                console.log('  - btnMobile encontrado:', !!btnMobile);
+                
+                if (btnDesktop) {
+                    btnDesktop.disabled = false;
+                    btnDesktop.classList.remove('disabled');
+                    btnDesktop.title = 'Crear nuevo formulario E-14';
+                    console.log('  ✅ btnNuevoFormulario HABILITADO');
+                } else {
+                    console.error('  ❌ btnNuevoFormulario NO ENCONTRADO');
+                    // Buscar todos los botones para debug
+                    const todosBotones = document.querySelectorAll('button');
+                    console.log('  📋 Total de botones en la página:', todosBotones.length);
+                    todosBotones.forEach((btn, i) => {
+                        if (btn.textContent.includes('Formulario')) {
+                            console.log(`    Botón ${i}:`, {
+                                id: btn.id,
+                                text: btn.textContent.trim().substring(0, 30),
+                                disabled: btn.disabled
+                            });
+                        }
+                    });
+                }
+                
+                if (btnMobile) {
+                    btnMobile.disabled = false;
+                    btnMobile.classList.remove('disabled');
+                    btnMobile.title = 'Crear nuevo formulario E-14';
+                    console.log('  ✅ btnNuevoFormularioMobile HABILITADO');
+                } else {
+                    console.warn('  ⚠️ btnNuevoFormularioMobile NO ENCONTRADO (puede ser normal en desktop)');
+                }
+                
+                console.log('✅ Habilitación completada');
+            };
+            
+            // Intentar múltiples veces para asegurar que funcione
+            habilitarBotones();
+            setTimeout(habilitarBotones, 100);
+            setTimeout(habilitarBotones, 300);
+            setTimeout(habilitarBotones, 500);
+            setTimeout(habilitarBotones, 1000);
+            
+            // Mostrar mensaje de éxito
+            if (window.Utils && typeof window.Utils.showSuccess === 'function') {
+                Utils.showSuccess('Presencia verificada exitosamente');
             } else {
-                console.error('❌ No se encontró el botón btnNuevoFormulario');
+                alert('Presencia verificada exitosamente');
             }
-            
-            // También llamar a la función por si acaso
-            habilitarBotonNuevoFormulario();
-            
-            Utils.showSuccess('Presencia verificada exitosamente');
         } else {
             console.error('❌ Respuesta no exitosa:', response);
         }
     } catch (error) {
         console.error('❌ Error al verificar presencia:', error);
-        Utils.showError('Error al verificar presencia: ' + error.message);
+        if (window.Utils) Utils.showError('Error al verificar presencia: ' + error.message);
+        else alert('Error al verificar presencia: ' + error.message);
     }
 }
 
 /**
- * Habilitar o deshabilitar el botón de nuevo formulario
+ * Habilitar o deshabilitar el botón de nuevo formulario (desktop y móvil)
  */
 function habilitarBotonNuevoFormulario() {
-    const btnNuevoFormulario = document.getElementById('btnNuevoFormulario');
+    const btnDesktop = document.getElementById('btnNuevoFormulario');
+    const btnMobile = document.getElementById('btnNuevoFormularioMobile');
     
     console.log('habilitarBotonNuevoFormulario called');
     console.log('presenciaVerificada:', presenciaVerificada);
     console.log('mesaSeleccionadaDashboard:', mesaSeleccionadaDashboard);
-    console.log('btnNuevoFormulario:', btnNuevoFormulario);
     
-    if (presenciaVerificada && mesaSeleccionadaDashboard) {
-        // Habilitar botón
-        if (btnNuevoFormulario) {
-            btnNuevoFormulario.disabled = false;
-            btnNuevoFormulario.classList.remove('disabled');
-            btnNuevoFormulario.title = 'Crear nuevo formulario E-14';
-            console.log('Botón habilitado');
+    const habilitado = presenciaVerificada && mesaSeleccionadaDashboard;
+    
+    // Botón desktop
+    if (btnDesktop) {
+        btnDesktop.disabled = !habilitado;
+        if (habilitado) {
+            btnDesktop.classList.remove('disabled');
+            btnDesktop.title = 'Crear nuevo formulario E-14';
+            console.log('✅ Botón desktop habilitado');
+        } else {
+            btnDesktop.classList.add('disabled');
+            btnDesktop.title = 'Debe seleccionar una mesa y verificar presencia primero';
+            console.log('❌ Botón desktop deshabilitado');
         }
-    } else {
-        // Deshabilitar botón
-        if (btnNuevoFormulario) {
-            btnNuevoFormulario.disabled = true;
-            btnNuevoFormulario.classList.add('disabled');
-            btnNuevoFormulario.title = 'Debe seleccionar una mesa y verificar presencia primero';
-            console.log('Botón deshabilitado');
+    }
+    
+    // Botón móvil
+    if (btnMobile) {
+        btnMobile.disabled = !habilitado;
+        if (habilitado) {
+            btnMobile.classList.remove('disabled');
+            btnMobile.title = 'Crear nuevo formulario E-14';
+            console.log('✅ Botón móvil habilitado');
+        } else {
+            btnMobile.classList.add('disabled');
+            btnMobile.title = 'Debe seleccionar una mesa y verificar presencia primero';
+            console.log('❌ Botón móvil deshabilitado');
         }
     }
 }
@@ -192,15 +276,31 @@ function habilitarBotonNuevoFormulario() {
 async function showCreateForm() {
     try {
         console.log('=== ABRIENDO FORMULARIO E-14 ===');
-        console.log('presenciaVerificada:', presenciaVerificada);
-        console.log('mesaSeleccionadaDashboard:', mesaSeleccionadaDashboard);
-        console.log('userLocation:', userLocation);
         
-        // Verificar que se haya verificado presencia
-        if (!presenciaVerificada) {
-            Utils.showError('Debe verificar su presencia primero');
+        // SIEMPRE restaurar desde localStorage primero (es la fuente de verdad)
+        const verificadaLS = localStorage.getItem('presenciaVerificada') === 'true';
+        const mesaDataLS = localStorage.getItem('mesaVerificadaData');
+        
+        console.log('📦 Restaurando desde localStorage:');
+        console.log('  - presenciaVerificada:', verificadaLS);
+        console.log('  - mesaVerificadaData:', mesaDataLS ? 'existe' : 'null');
+        
+        if (verificadaLS && mesaDataLS) {
+            // Restaurar TODAS las variables
+            window.presenciaVerificada = true;
+            presenciaVerificada = true;
+            window.mesaSeleccionadaDashboard = JSON.parse(mesaDataLS);
+            mesaSeleccionadaDashboard = JSON.parse(mesaDataLS);
+            console.log('✅ Variables restauradas desde localStorage');
+            console.log('  - Mesa:', window.mesaSeleccionadaDashboard.mesa_codigo);
+        } else {
+            console.error('❌ No hay presencia verificada en localStorage');
+            if (window.Utils) Utils.showError('Debe seleccionar una mesa y verificar su presencia antes de crear formularios');
+            else alert('Debe seleccionar una mesa y verificar su presencia antes de crear formularios');
             return;
         }
+        
+        console.log('✅ Verificación exitosa, abriendo formulario...');
         
         // Limpiar formulario
         const form = document.getElementById('e14Form');
@@ -264,10 +364,14 @@ async function showCreateForm() {
                 mesaSelect.disabled = false;
                 
                 console.log('✅ Mesas cargadas en selector:', mesas.length);
+                console.log('Mesa pre-seleccionada:', mesaSelect.value);
                 
                 // Si hay una mesa pre-seleccionada, cargar sus votantes
                 if (mesaSelect.value) {
+                    console.log('Llamando a cambiarMesaFormulario...');
                     await cambiarMesaFormulario();
+                } else {
+                    console.warn('No hay mesa pre-seleccionada');
                 }
                 
             } catch (error) {
@@ -464,24 +568,52 @@ function cambiarMesa() {
  * Cambiar mesa en el formulario E-14 y cargar votantes registrados
  */
 async function cambiarMesaFormulario() {
+    console.log('=== cambiarMesaFormulario llamada ===');
     const selector = document.getElementById('mesaFormulario');
+    console.log('Selector encontrado:', !!selector);
+    
+    if (!selector) {
+        console.error('❌ No se encontró el selector mesaFormulario');
+        return;
+    }
+    
     const selectedOption = selector.options[selector.selectedIndex];
+    console.log('Opción seleccionada:', selectedOption);
+    console.log('Dataset mesa:', selectedOption?.dataset?.mesa);
     
     if (selectedOption && selectedOption.dataset.mesa) {
         const mesaData = JSON.parse(selectedOption.dataset.mesa);
+        console.log('Mesa data parseada:', mesaData);
         
         // Actualizar votantes registrados desde DIVIPOLA
         const votantesInput = document.getElementById('votantesRegistrados');
+        console.log('Input votantes encontrado:', !!votantesInput);
+        
         if (votantesInput) {
             const votantes = mesaData.total_votantes_registrados || 0;
-            votantesInput.value = votantes;
-            votantesInput.readOnly = true;
-            votantesInput.title = 'Total de personas habilitadas para votar en esta mesa según el censo electoral (DIVIPOLA)';
-            console.log('Votantes registrados actualizados:', votantes, 'para mesa:', mesaData.mesa_codigo);
+            
+            if (votantes > 0) {
+                // Si hay datos del censo, usar esos y bloquear el campo
+                votantesInput.value = votantes;
+                votantesInput.readOnly = true;
+                votantesInput.title = 'Total de personas habilitadas para votar en esta mesa según el censo electoral (DIVIPOLA)';
+                console.log('✅ Votantes registrados desde DIVIPOLA:', votantes, 'para mesa:', mesaData.mesa_codigo);
+            } else {
+                // Si no hay datos del censo, permitir ingreso manual
+                votantesInput.value = '';
+                votantesInput.readOnly = false;
+                votantesInput.required = true;
+                votantesInput.placeholder = 'Ingrese número de votantes';
+                votantesInput.title = 'Ingrese el total de votantes registrados en esta mesa (dato del E-14 físico)';
+                console.log('⚠️ No hay datos de DIVIPOLA, permitiendo ingreso manual para mesa:', mesaData.mesa_codigo);
+            }
+        } else {
+            console.error('❌ No se encontró el input votantesRegistrados');
         }
         
         console.log('Mesa seleccionada en formulario:', mesaData);
     } else {
+        console.warn('⚠️ No hay opción seleccionada o no tiene dataset.mesa');
         // Limpiar votantes si no hay mesa seleccionada
         const votantesInput = document.getElementById('votantesRegistrados');
         if (votantesInput) {
@@ -739,10 +871,153 @@ function renderVotacionForm(partidos, candidatosPorPartido) {
     const tipoEleccion = tiposEleccion.find(t => t.id == tipoEleccionSelect.value);
     const esUninominal = tipoEleccion?.es_uninominal || false;
     
+    // Contar total de candidatos
+    let totalCandidatos = 0;
+    partidos.forEach(partido => {
+        const candidatos = candidatosPorPartido[partido.id] || [];
+        totalCandidatos += candidatos.length;
+    });
+    
+    // Si hay más de 20 candidatos, usar pestañas por partido
+    const usarPestanas = totalCandidatos > 20;
+    
+    if (usarPestanas) {
+        renderVotacionConPestanas(partidos, candidatosPorPartido, esUninominal);
+    } else {
+        renderVotacionTradicional(partidos, candidatosPorPartido, esUninominal);
+    }
+}
+
+/**
+ * Renderizar votación con pestañas por partido (para elecciones con muchos candidatos)
+ */
+function renderVotacionConPestanas(partidos, candidatosPorPartido, esUninominal) {
+    const container = document.getElementById('votacionContainer');
+    
+    // Crear pestañas con nav-pills
+    let html = `
+        <div class="alert alert-info mb-3">
+            <i class="bi bi-info-circle"></i>
+            <strong>Navegación por partidos:</strong> Use las pestañas para ingresar votos de cada partido
+        </div>
+        <ul class="nav nav-pills mb-3" id="partidosTabs" role="tablist">
+    `;
+    
+    // Crear pestañas
+    partidos.forEach((partido, index) => {
+        const candidatos = candidatosPorPartido[partido.id] || [];
+        const active = index === 0 ? 'active' : '';
+        
+        html += `
+            <li class="nav-item" role="presentation">
+                <button class="nav-link ${active}" 
+                        id="tab-partido-${partido.id}" 
+                        data-bs-toggle="pill" 
+                        data-bs-target="#content-partido-${partido.id}" 
+                        type="button" 
+                        role="tab"
+                        style="border-left: 6px solid ${partido.color}; padding-left: 12px;">
+                    <span class="fw-bold">${partido.sigla}</span>
+                    <br><small>${candidatos.length} candidato(s)</small>
+                </button>
+            </li>
+        `;
+    });
+    
+    html += `
+        </ul>
+        <div class="tab-content" id="partidosTabContent">
+    `;
+    
+    // Crear contenido de cada pestaña
+    partidos.forEach((partido, index) => {
+        const candidatos = candidatosPorPartido[partido.id] || [];
+        const active = index === 0 ? 'show active' : '';
+        
+        html += `
+            <div class="tab-pane fade ${active}" 
+                 id="content-partido-${partido.id}" 
+                 role="tabpanel">
+                <div class="card">
+                    <div class="card-header" style="background-color: ${partido.color}; border-left: 12px solid ${partido.color};">
+                        <div class="row align-items-center">
+                            <div class="col-8">
+                                <h5 class="mb-0 fw-bold text-white">${partido.nombre}</h5>
+                                <span class="badge bg-dark fw-bold">${partido.sigla}</span>
+                            </div>
+                            ${!esUninominal ? `
+                            <div class="col-4 text-end">
+                                <label class="form-label mb-1 small d-block text-white">Votos solo partido</label>
+                                <input type="number" 
+                                       class="form-control form-control-sm text-center fw-bold" 
+                                       id="partido_${partido.id}" 
+                                       min="0" 
+                                       value="0"
+                                       onchange="calcularTotales()"
+                                       placeholder="0"
+                                       style="max-width: 100px; margin-left: auto; font-size: 1.1rem;">
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <div class="card-body">
+        `;
+        
+        if (candidatos.length === 0) {
+            html += '<p class="text-muted mb-0">No hay candidatos registrados para este partido</p>';
+        } else {
+            // Lista vertical de candidatos (uno debajo del otro)
+            candidatos.forEach((candidato, idx) => {
+                html += `
+                    <div class="mb-2">
+                        <div class="card border">
+                            <div class="card-body p-2">
+                                <div class="row align-items-center">
+                                    <div class="col-1 text-center">
+                                        <span class="badge bg-dark fs-6">${candidato.numero_lista || idx + 1}</span>
+                                    </div>
+                                    <div class="col-8">
+                                        <small class="fw-bold d-block" style="color: #212529;">${candidato.nombre_completo}</small>
+                                    </div>
+                                    <div class="col-3 text-end">
+                                        <input type="number" 
+                                               class="form-control form-control-sm text-center fw-bold" 
+                                               id="candidato_${candidato.id}" 
+                                               min="0" 
+                                               value="0"
+                                               onchange="calcularTotales()"
+                                               placeholder="0"
+                                               style="font-size: 1.1rem;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        html += `
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+/**
+ * Renderizar votación tradicional (para elecciones con pocos candidatos)
+ */
+function renderVotacionTradicional(partidos, candidatosPorPartido, esUninominal) {
+    const container = document.getElementById('votacionContainer');
+    
     partidos.forEach(partido => {
         const partidoDiv = document.createElement('div');
         partidoDiv.className = 'card mb-3';
-        partidoDiv.style.borderLeft = `4px solid ${partido.color || '#6c757d'}`;
+        partidoDiv.style.borderLeft = `8px solid ${partido.color || '#6c757d'}`;
         
         const candidatos = candidatosPorPartido[partido.id] || [];
         
@@ -751,11 +1026,11 @@ function renderVotacionForm(partidos, candidatosPorPartido) {
             const candidato = candidatos[0];
             
             partidoDiv.innerHTML = `
-                <div class="card-header" style="background-color: ${partido.color}20;">
+                <div class="card-header" style="background-color: ${partido.color}; border-left: 8px solid ${partido.color};">
                     <div class="row align-items-center">
                         <div class="col-md-8">
-                            <h6 class="mb-0">${partido.nombre}</h6>
-                            ${candidato ? `<p class="mb-0 small"><strong>Candidato:</strong> ${candidato.nombre_completo}</p>` : '<p class="mb-0 small text-muted">Sin candidato</p>'}
+                            <h6 class="mb-0 fw-bold text-white">${partido.nombre}</h6>
+                            ${candidato ? `<p class="mb-0 small fw-medium text-white"><strong>Candidato:</strong> ${candidato.nombre_completo}</p>` : '<p class="mb-0 small text-white-50">Sin candidato</p>'}
                         </div>
                         <div class="col-md-4">
                             <label class="form-label mb-1 small">Votos</label>
@@ -773,14 +1048,14 @@ function renderVotacionForm(partidos, candidatosPorPartido) {
         } else {
             // Elección por listas: múltiples candidatos + votos de partido
             partidoDiv.innerHTML = `
-                <div class="card-header" style="background-color: ${partido.color}20;">
+                <div class="card-header" style="background-color: ${partido.color}; border-left: 8px solid ${partido.color};">
                     <div class="row align-items-center">
                         <div class="col-8">
-                            <h6 class="mb-0">${partido.nombre}</h6>
-                            <small class="text-muted">${partido.nombre_corto}</small>
+                            <h6 class="mb-0 fw-bold text-white">${partido.nombre}</h6>
+                            <span class="badge bg-dark fw-bold">${partido.sigla}</span>
                         </div>
                         <div class="col-4 text-end">
-                            <label class="form-label mb-1 small d-block">Votos solo partido</label>
+                            <label class="form-label mb-1 small d-block text-white">Votos solo partido</label>
                             <input type="number" 
                                    class="form-control form-control-sm text-center" 
                                    id="partido_${partido.id}" 
@@ -798,10 +1073,10 @@ function renderVotacionForm(partidos, candidatosPorPartido) {
                             <div class="col-12 mb-1">
                                 <div class="row align-items-center">
                                     <div class="col-1 text-center">
-                                        <span class="badge bg-secondary">${candidato.numero_lista || idx + 1}</span>
+                                        <span class="badge bg-dark">${candidato.numero_lista || idx + 1}</span>
                                     </div>
                                     <div class="col-8">
-                                        <small class="fw-medium">${candidato.nombre_completo}</small>
+                                        <small class="fw-bold" style="color: #212529;">${candidato.nombre_completo}</small>
                                     </div>
                                     <div class="col-3 text-end">
                                         <input type="number" 
@@ -821,7 +1096,7 @@ function renderVotacionForm(partidos, candidatosPorPartido) {
                     <div class="mt-2 pt-2 border-top">
                         <div class="row align-items-center">
                             <div class="col-8">
-                                <strong>Total ${partido.nombre_corto}:</strong>
+                                <strong>Total ${partido.sigla}:</strong>
                             </div>
                             <div class="col-4 text-end">
                                 <span id="total_partido_${partido.id}" class="badge bg-primary fs-6">0</span>
@@ -904,7 +1179,7 @@ function calcularTotales() {
     // Actualizar resumen
     document.getElementById('resumenTotal').textContent = Utils.formatNumber(votosValidos);
     document.getElementById('partidoGanador').textContent = partidoGanador ? 
-        `${partidoGanador.nombre_corto} (${Utils.formatNumber(maxVotosPartido)} votos)` : '-';
+        `${partidoGanador.sigla} (${Utils.formatNumber(maxVotosPartido)} votos)` : '-';
 }
 
 async function loadForms() {
@@ -1070,80 +1345,8 @@ function getEstadoLabel(estado) {
     return labels[estado] || estado;
 }
 
-function showCreateForm() {
-    document.getElementById('e14Form').reset();
-    document.getElementById('imagePreview').innerHTML = '<p class="text-muted">Toque el botón para tomar una foto</p>';
-    
-    // HABILITAR selectores para nuevo formulario
-    const mesaSelect = document.getElementById('mesaFormulario');
-    const tipoEleccionSelect = document.getElementById('tipoEleccion');
-    mesaSelect.disabled = false;
-    tipoEleccionSelect.disabled = false;
-    
-    mesaSelect.innerHTML = '<option value="">Seleccione mesa...</option>';
-    
-    // Obtener todas las mesas del puesto
-    const params = {
-        puesto_codigo: userLocation.puesto_codigo,
-        zona_codigo: userLocation.zona_codigo,
-        municipio_codigo: userLocation.municipio_codigo,
-        departamento_codigo: userLocation.departamento_codigo
-    };
-    
-    APIClient.get('/locations/mesas', params).then(response => {
-        if (response.success) {
-            // Obtener mesas que ya tienen formularios
-            const mesasConFormularios = new Set();
-            formularios.forEach(form => {
-                if (form.estado !== 'rechazado') { // Permitir reenviar si fue rechazado
-                    mesasConFormularios.add(form.mesa_id);
-                }
-            });
-            
-            // Agregar borradores locales
-            const borradoresLocales = obtenerBorradoresLocales();
-            Object.values(borradoresLocales).forEach(borrador => {
-                mesasConFormularios.add(borrador.mesa_id);
-            });
-            
-            response.data.forEach(mesa => {
-                const option = document.createElement('option');
-                option.value = mesa.id;
-                
-                // Marcar mesas que ya tienen formulario
-                if (mesasConFormularios.has(mesa.id)) {
-                    option.textContent = `Mesa ${mesa.mesa_codigo} - ${mesa.puesto_nombre} (Ya tiene formulario)`;
-                    option.disabled = true;
-                    option.style.color = '#999';
-                } else {
-                    option.textContent = `Mesa ${mesa.mesa_codigo} - ${mesa.puesto_nombre}`;
-                }
-                
-                option.dataset.votantes = mesa.total_votantes_registrados || 0;
-                mesaSelect.appendChild(option);
-            });
-            
-            // Si hay una mesa seleccionada y no tiene formulario, preseleccionarla
-            if (selectedMesa && !mesasConFormularios.has(selectedMesa.id)) {
-                mesaSelect.value = selectedMesa.id;
-                cambiarMesaFormulario();
-            }
-        }
-    });
-    
-    // Cargar tipos de elección si no están cargados
-    if (tiposEleccion.length === 0) {
-        loadTiposEleccion();
-    }
-    
-    // Limpiar contenedor de votación
-    document.getElementById('votacionContainer').innerHTML = '<p class="text-muted">Seleccione un tipo de elección para cargar los partidos y candidatos</p>';
-    
-    // Configurar preview de imagen cada vez que se abre el modal
-    setupImagePreview();
-    
-    new bootstrap.Modal(document.getElementById('formModal')).show();
-}
+// NOTA: showCreateForm() está definida en testigo-dashboard-final-fix.js
+// Esta definición duplicada ha sido eliminada para evitar conflictos
 
 // Función cambiarMesaFormulario ya está definida arriba (línea ~380)
 
@@ -1797,6 +2000,12 @@ function reportarIncidente() {
         return;
     }
     
+    // Actualizar información de la mesa en el modal
+    const mesaInfo = document.getElementById('mesaInfoIncidente');
+    if (mesaInfo && selectedMesa) {
+        mesaInfo.textContent = `Mesa ${selectedMesa.mesa_codigo} - ${selectedMesa.puesto_nombre || ''}`;
+    }
+    
     document.getElementById('formIncidente').reset();
     new bootstrap.Modal(document.getElementById('incidenteModal')).show();
 }
@@ -2058,6 +2267,12 @@ function reportarDelito() {
     if (!selectedMesa) {
         Utils.showWarning('Por favor selecciona una mesa primero');
         return;
+    }
+    
+    // Actualizar información de la mesa en el modal
+    const mesaInfo = document.getElementById('mesaInfoDelito');
+    if (mesaInfo && selectedMesa) {
+        mesaInfo.textContent = `Mesa ${selectedMesa.mesa_codigo} - ${selectedMesa.puesto_nombre || ''}`;
     }
     
     document.getElementById('formDelito').reset();
@@ -2467,3 +2682,83 @@ document.addEventListener('DOMContentLoaded', function() {
         actualizarIndicadorSincronizacion();
     }, 30000);
 });
+
+
+// ============================================================================
+// EXPONER FUNCIONES GLOBALMENTE
+// ============================================================================
+window.showCreateForm = showCreateForm;
+window.cambiarMesa = cambiarMesa;
+window.cambiarMesaFormulario = cambiarMesaFormulario;
+window.verificarPresencia = verificarPresencia;
+window.habilitarBotonNuevoFormulario = habilitarBotonNuevoFormulario;
+window.loadUserProfile = loadUserProfile;
+window.loadMesas = loadMesas;
+window.loadForms = loadForms;
+window.loadTiposEleccion = loadTiposEleccion;
+window.cargarPartidosYCandidatos = cargarPartidosYCandidatos;
+window.actualizarPanelMesas = actualizarPanelMesas;
+window.saveForm = saveForm;
+window.calcularTotales = calcularTotales;
+window.setupImagePreview = setupImagePreview;
+window.abrirCamara = abrirCamara;
+
+console.log('✅ testigo-dashboard-v2.js cargado - Funciones expuestas globalmente');
+
+
+// ============================================
+// FUNCIONES PARA MANEJO DE FOTOS EN INCIDENTES Y DELITOS
+// ============================================
+
+/**
+ * Configurar preview de foto para incidente
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    const fotoIncidente = document.getElementById('fotoIncidente');
+    if (fotoIncidente) {
+        fotoIncidente.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('imgPreviewIncidente').src = e.target.result;
+                    document.getElementById('previewIncidente').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    const fotoDelito = document.getElementById('fotoDelito');
+    if (fotoDelito) {
+        fotoDelito.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('imgPreviewDelito').src = e.target.result;
+                    document.getElementById('previewDelito').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+});
+
+/**
+ * Limpiar foto de incidente
+ */
+function limpiarFotoIncidente() {
+    document.getElementById('fotoIncidente').value = '';
+    document.getElementById('imgPreviewIncidente').src = '';
+    document.getElementById('previewIncidente').style.display = 'none';
+}
+
+/**
+ * Limpiar foto de delito
+ */
+function limpiarFotoDelito() {
+    document.getElementById('fotoDelito').value = '';
+    document.getElementById('imgPreviewDelito').src = '';
+    document.getElementById('previewDelito').style.display = 'none';
+}

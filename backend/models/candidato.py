@@ -69,7 +69,8 @@ class Candidato(db.Model):
             data['tipo_eleccion'] = {
                 'id': self.tipo_eleccion.id,
                 'nombre': self.tipo_eleccion.nombre,
-                'nivel': self.tipo_eleccion.nivel
+                'codigo': self.tipo_eleccion.codigo,
+                'es_uninominal': self.tipo_eleccion.es_uninominal
             }
         
         return data

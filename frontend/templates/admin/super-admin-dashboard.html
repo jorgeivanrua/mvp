@@ -1465,12 +1465,11 @@ th.sortable:hover .sort-icon {
 <script src="{{ url_for('static', filename='js/candidatos-manager.js') }}?v=20251202"></script>
 <!-- Script de debugging -->
 <script src="{{ url_for('static', filename='js/super-admin-dashboard-debug.js') }}?v=20251201"></script>
-<script src="{{ url_for('static', filename='js/debug-usuarios.js') }}?v=20251205"></script>
-<script src="{{ url_for('static', filename='js/debug-usuarios-v2.js') }}?v=20251205"></script>
-<script src="{{ url_for('static', filename='js/fix-usuarios-display.js') }}?v=20251205"></script>
 <script src="{{ url_for('static', filename='js/force-usuarios-render.js') }}?v=20251205"></script>
-<!-- Fix de inicialización -->
-<script src="{{ url_for('static', filename='js/super-admin-init-fix.js') }}?v=20251201"></script>
+<script src="{{ url_for('static', filename='js/fix-partidos-render.js') }}?v=20251205"></script>
+<script src="{{ url_for('static', filename='js/debug-partidos.js') }}?v=20251205"></script>
+<script src="{{ url_for('static', filename='js/debug-candidatos.js') }}?v=20251205"></script>
+<script src="{{ url_for('static', filename='js/fix-candidatos-render.js') }}?v=20251205"></script>
 <script>
 // Inicializar dashboard
 document.addEventListener('DOMContentLoaded', function() {
@@ -1628,4 +1627,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+<!-- Scripts de debug -->
+<script src="{{ url_for('static', filename='js/debug-partidos.js') }}?v=20251205"></script>
+<script src="{{ url_for('static', filename='js/debug-candidatos.js') }}?v=20251205"></script>
 {% endblock %}
+

@@ -32,51 +32,146 @@ def obtener_puestos():
         zona: Filtrar por zona
     """
     try:
+        from backend.models.formulario_e14 import FormularioE14
+        
         user_id = get_jwt_identity()
         user = User.query.get(int(user_id))
         
         if not user or not user.ubicacion_id:
-            raise ValidationException('Usuario sin ubicación asignada')
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
         
         ubicacion = Location.query.get(user.ubicacion_id)
         
         if not ubicacion or ubicacion.tipo != 'municipio':
-            raise ValidationException('Usuario no asignado a un municipio válido')
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no asignado a un municipio válido'
+            }), 400
         
-        # Obtener filtros
-        filtros = {}
-        if request.args.get('estado'):
-            filtros['estado'] = request.args.get('estado')
-        if request.args.get('zona'):
-            filtros['zona'] = request.args.get('zona')
+        # Obtener todos los puestos del municipio
+        puestos = Location.query.filter_by(
+            municipio_codigo=ubicacion.municipio_codigo,
+            departamento_codigo=ubicacion.departamento_codigo,
+            tipo='puesto',
+            activo=True
+        ).all()
         
-        # Obtener puestos
-        resultado = MunicipalService.obtener_puestos_municipio(ubicacion.id, filtros)
+        puestos_data = []
+        total_puestos = len(puestos)
+        puestos_completos = 0
+        puestos_incompletos = 0
+        puestos_con_discrepancias = 0
         
-        if not resultado:
-            raise NotFoundException('No se pudieron obtener los puestos del municipio')
+        for puesto in puestos:
+            # Contar mesas del puesto
+            mesas = Location.query.filter_by(
+                puesto_codigo=puesto.puesto_codigo,
+                departamento_codigo=puesto.departamento_codigo,
+                municipio_codigo=puesto.municipio_codigo,
+                zona_codigo=puesto.zona_codigo,
+                tipo='mesa',
+                activo=True
+            ).count()
+            
+            # Obtener IDs de mesas
+            mesa_ids = [m.id for m in Location.query.filter_by(
+                puesto_codigo=puesto.puesto_codigo,
+                departamento_codigo=puesto.departamento_codigo,
+                municipio_codigo=puesto.municipio_codigo,
+                zona_codigo=puesto.zona_codigo,
+                tipo='mesa'
+            ).all()]
+            
+            # Contar formularios
+            formularios_validados = FormularioE14.query.filter(
+                FormularioE14.mesa_id.in_(mesa_ids),
+                FormularioE14.estado == 'validado'
+            ).count() if mesa_ids else 0
+            
+            formularios_pendientes = FormularioE14.query.filter(
+                FormularioE14.mesa_id.in_(mesa_ids),
+                FormularioE14.estado == 'pendiente'
+            ).count() if mesa_ids else 0
+            
+            formularios_rechazados = FormularioE14.query.filter(
+                FormularioE14.mesa_id.in_(mesa_ids),
+                FormularioE14.estado == 'rechazado'
+            ).count() if mesa_ids else 0
+            
+            # Calcular porcentaje de avance
+            porcentaje_avance = (formularios_validados / mesas * 100) if mesas > 0 else 0
+            
+            # Determinar estado
+            if formularios_validados == mesas and mesas > 0:
+                estado = 'completo'
+                puestos_completos += 1
+            elif formularios_rechazados > 0:
+                estado = 'con_discrepancias'
+                puestos_con_discrepancias += 1
+            else:
+                estado = 'incompleto'
+                puestos_incompletos += 1
+            
+            # Buscar coordinador del puesto
+            coordinador = User.query.filter_by(
+                ubicacion_id=puesto.id,
+                rol='coordinador_puesto',
+                activo=True
+            ).first()
+            
+            puestos_data.append({
+                'id': puesto.id,
+                'codigo': puesto.puesto_codigo,
+                'nombre': puesto.puesto_nombre,
+                'zona_codigo': puesto.zona_codigo,
+                'total_mesas': mesas,
+                'mesas_reportadas': formularios_validados + formularios_pendientes + formularios_rechazados,
+                'formularios_validados': formularios_validados,
+                'formularios_pendientes': formularios_pendientes,
+                'formularios_rechazados': formularios_rechazados,
+                'porcentaje_avance': round(porcentaje_avance, 2),
+                'estado': estado,
+                'tiene_discrepancias': formularios_rechazados > 0,
+                'coordinador': {
+                    'id': coordinador.id,
+                    'nombre': coordinador.nombre,
+                    'ultimo_acceso': coordinador.ultimo_acceso.isoformat() if coordinador and coordinador.ultimo_acceso else None
+                } if coordinador else None
+            })
         
-        # Registrar en audit log
-        audit_log = AuditLog(
-            user_id=int(user_id),
-            accion='visualizar_puestos',
-            recurso='municipio',
-            recurso_id=ubicacion.id,
-            detalles={'filtros': filtros},
-            ip_address=request.remote_addr,
-            user_agent=request.headers.get('User-Agent')
-        )
-        db.session.add(audit_log)
-        db.session.commit()
+        # Aplicar filtros
+        filtro_estado = request.args.get('estado')
+        if filtro_estado:
+            puestos_data = [p for p in puestos_data if p['estado'] == filtro_estado]
+        
+        filtro_zona = request.args.get('zona')
+        if filtro_zona:
+            puestos_data = [p for p in puestos_data if p['zona_codigo'] == filtro_zona]
+        
+        # Estadísticas
+        estadisticas = {
+            'total_puestos': total_puestos,
+            'puestos_completos': puestos_completos,
+            'puestos_incompletos': puestos_incompletos,
+            'puestos_con_discrepancias': puestos_con_discrepancias,
+            'cobertura_porcentaje': (puestos_completos / total_puestos * 100) if total_puestos > 0 else 0
+        }
         
         return jsonify({
             'success': True,
-            'data': resultado
+            'data': {
+                'puestos': puestos_data,
+                'estadisticas': estadisticas
+            }
         }), 200
         
-    except BaseAPIException as e:
-        return jsonify(e.to_dict()), e.status_code
     except Exception as e:
+        import traceback
+        print(f"Error en obtener_puestos: {str(e)}")
+        print(traceback.format_exc())
         return jsonify({
             'success': False,
             'error': str(e)
@@ -94,36 +189,105 @@ def obtener_consolidado():
         tipo_eleccion_id: ID del tipo de elección (opcional)
     """
     try:
+        from backend.models.formulario_e14 import FormularioE14, VotoPartido
+        from backend.models.partido_politico import PartidoPolitico as Partido
+        
         user_id = get_jwt_identity()
         user = User.query.get(int(user_id))
         
         if not user or not user.ubicacion_id:
-            raise ValidationException('Usuario sin ubicación asignada')
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
         
         ubicacion = Location.query.get(user.ubicacion_id)
         
         if not ubicacion or ubicacion.tipo != 'municipio':
-            raise ValidationException('Usuario no asignado a un municipio válido')
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no asignado a un municipio válido'
+            }), 400
         
-        tipo_eleccion_id = request.args.get('tipo_eleccion_id', type=int)
+        # Obtener todos los puestos del municipio
+        puestos = Location.query.filter_by(
+            municipio_codigo=ubicacion.municipio_codigo,
+            departamento_codigo=ubicacion.departamento_codigo,
+            tipo='puesto'
+        ).all()
         
-        # Calcular consolidado
-        consolidado = ConsolidadoService.calcular_consolidado_municipal(
-            ubicacion.id,
-            tipo_eleccion_id=tipo_eleccion_id
-        )
+        # Obtener todas las mesas de estos puestos
+        mesa_ids = []
+        for puesto in puestos:
+            mesas = Location.query.filter_by(
+                puesto_codigo=puesto.puesto_codigo,
+                departamento_codigo=puesto.departamento_codigo,
+                municipio_codigo=puesto.municipio_codigo,
+                zona_codigo=puesto.zona_codigo,
+                tipo='mesa'
+            ).all()
+            mesa_ids.extend([m.id for m in mesas])
         
-        if not consolidado:
-            raise NotFoundException('No se pudo calcular el consolidado municipal')
+        # Obtener formularios validados
+        formularios = FormularioE14.query.filter(
+            FormularioE14.mesa_id.in_(mesa_ids),
+            FormularioE14.estado == 'validado'
+        ).all()
+        
+        # Calcular totales
+        total_votantes_registrados = sum(f.votantes_registrados or 0 for f in formularios)
+        total_votos = sum(f.total_votos or 0 for f in formularios)
+        votos_validos = sum(f.votos_validos or 0 for f in formularios)
+        votos_nulos = sum(f.votos_nulos or 0 for f in formularios)
+        votos_blanco = sum(f.votos_blanco or 0 for f in formularios)
+        
+        participacion_porcentaje = (total_votos / total_votantes_registrados * 100) if total_votantes_registrados > 0 else 0
+        
+        # Consolidar votos por partido
+        votos_por_partido = {}
+        for formulario in formularios:
+            votos_partidos = VotoPartido.query.filter_by(formulario_id=formulario.id).all()
+            for vp in votos_partidos:
+                if vp.partido_id not in votos_por_partido:
+                    partido = Partido.query.get(vp.partido_id)
+                    votos_por_partido[vp.partido_id] = {
+                        'partido_id': vp.partido_id,
+                        'partido_nombre': partido.nombre if partido else 'Desconocido',
+                        'partido_nombre_corto': partido.sigla if partido else 'N/A',
+                        'partido_color': partido.color if partido else '#6c757d',
+                        'total_votos': 0
+                    }
+                votos_por_partido[vp.partido_id]['total_votos'] += vp.votos
+        
+        # Calcular porcentajes
+        votos_por_partido_lista = list(votos_por_partido.values())
+        for vp in votos_por_partido_lista:
+            vp['porcentaje'] = (vp['total_votos'] / votos_validos * 100) if votos_validos > 0 else 0
+        
+        # Ordenar por votos
+        votos_por_partido_lista.sort(key=lambda x: x['total_votos'], reverse=True)
+        
+        consolidado = {
+            'resumen': {
+                'total_votantes_registrados': total_votantes_registrados,
+                'total_votos': total_votos,
+                'votos_validos': votos_validos,
+                'votos_nulos': votos_nulos,
+                'votos_blanco': votos_blanco,
+                'participacion_porcentaje': round(participacion_porcentaje, 2)
+            },
+            'votos_por_partido': votos_por_partido_lista
+        }
         
         return jsonify({
             'success': True,
             'data': consolidado
         }), 200
         
-    except BaseAPIException as e:
-        return jsonify(e.to_dict()), e.status_code
     except Exception as e:
+        import traceback
+        print(f"Error en obtener_consolidado: {str(e)}")
+        print(traceback.format_exc())
         return jsonify({
             'success': False,
             'error': str(e)
@@ -141,34 +305,183 @@ def obtener_puesto_detallado(puesto_id):
         puesto_id: ID del puesto
     """
     try:
+        from backend.models.formulario_e14 import FormularioE14
+        
         user_id = get_jwt_identity()
+        user = User.query.get(int(user_id))
         
-        # Obtener detalles del puesto
-        puesto_detallado = MunicipalService.obtener_puesto_detallado(puesto_id, int(user_id))
+        if not user or not user.ubicacion_id:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
         
-        if not puesto_detallado:
-            raise NotFoundException('Puesto no encontrado o sin permisos para acceder')
+        # Obtener puesto
+        puesto = Location.query.get(puesto_id)
         
-        # Registrar en audit log
-        audit_log = AuditLog(
-            user_id=int(user_id),
-            accion='visualizar_puesto_detallado',
-            recurso='puesto',
-            recurso_id=puesto_id,
-            ip_address=request.remote_addr,
-            user_agent=request.headers.get('User-Agent')
-        )
-        db.session.add(audit_log)
-        db.session.commit()
+        if not puesto or puesto.tipo != 'puesto':
+            return jsonify({
+                'success': False,
+                'error': 'Puesto no encontrado'
+            }), 404
+        
+        # Verificar que el puesto pertenece al municipio del coordinador
+        ubicacion = Location.query.get(user.ubicacion_id)
+        if puesto.municipio_codigo != ubicacion.municipio_codigo:
+            return jsonify({
+                'success': False,
+                'error': 'No tiene permisos para acceder a este puesto'
+            }), 403
+        
+        # Obtener mesas del puesto
+        mesas = Location.query.filter_by(
+            puesto_codigo=puesto.puesto_codigo,
+            departamento_codigo=puesto.departamento_codigo,
+            municipio_codigo=puesto.municipio_codigo,
+            zona_codigo=puesto.zona_codigo,
+            tipo='mesa'
+        ).all()
+        
+        mesa_ids = [m.id for m in mesas]
+        
+        # Contar formularios
+        formularios_validados = FormularioE14.query.filter(
+            FormularioE14.mesa_id.in_(mesa_ids),
+            FormularioE14.estado == 'validado'
+        ).count() if mesa_ids else 0
+        
+        formularios_pendientes = FormularioE14.query.filter(
+            FormularioE14.mesa_id.in_(mesa_ids),
+            FormularioE14.estado == 'pendiente'
+        ).count() if mesa_ids else 0
+        
+        formularios_rechazados = FormularioE14.query.filter(
+            FormularioE14.mesa_id.in_(mesa_ids),
+            FormularioE14.estado == 'rechazado'
+        ).count() if mesa_ids else 0
+        
+        # Calcular porcentaje de avance
+        total_mesas = len(mesas)
+        porcentaje_avance = (formularios_validados / total_mesas * 100) if total_mesas > 0 else 0
+        
+        # Buscar coordinador del puesto
+        coordinador = User.query.filter_by(
+            ubicacion_id=puesto.id,
+            rol='coordinador_puesto',
+            activo=True
+        ).first()
+        
+        # Obtener información de mesas
+        mesas_info = []
+        for mesa in mesas[:10]:  # Limitar a 10 mesas para no sobrecargar
+            formulario = FormularioE14.query.filter_by(mesa_id=mesa.id).first()
+            mesas_info.append({
+                'codigo': mesa.mesa_codigo or 'N/A',
+                'votantes': mesa.total_votantes_registrados or 0,
+                'estado': formulario.estado if formulario else 'sin_reporte'
+            })
+        
+        # Obtener incidentes y delitos del puesto con detalles completos
+        from backend.models.incidentes_delitos import IncidenteElectoral, DelitoElectoral, EvidenciaFotografica
+        
+        # Obtener incidentes con evidencias
+        incidentes = IncidenteElectoral.query.filter_by(puesto_id=puesto.id).all()
+        incidentes_data = []
+        for inc in incidentes:
+            # Obtener evidencias fotográficas
+            evidencias = EvidenciaFotografica.query.filter_by(incidente_id=inc.id).all()
+            
+            incidentes_data.append({
+                'id': inc.id,
+                'tipo_incidente': inc.tipo_incidente,
+                'tipo_incidente_label': inc.TIPOS_INCIDENTE.get(inc.tipo_incidente, inc.tipo_incidente),
+                'titulo': inc.titulo,
+                'descripcion': inc.descripcion,
+                'severidad': inc.severidad,
+                'severidad_label': inc.SEVERIDADES.get(inc.severidad, inc.severidad),
+                'estado': inc.estado,
+                'estado_label': inc.ESTADOS.get(inc.estado, inc.estado),
+                'fecha_incidente': inc.fecha_incidente.isoformat() if inc.fecha_incidente else None,
+                'fecha_reporte': inc.fecha_reporte.isoformat() if inc.fecha_reporte else None,
+                'reportado_por': inc.reportado_por.nombre if inc.reportado_por else 'Desconocido',
+                'ubicacion_gps': inc.ubicacion_gps,
+                'notas_resolucion': inc.notas_resolucion,
+                'evidencias': [{
+                    'id': ev.id,
+                    'url': ev.url,
+                    'filename': ev.filename_original,
+                    'fecha_subida': ev.fecha_subida.isoformat() if ev.fecha_subida else None
+                } for ev in evidencias]
+            })
+        
+        # Obtener delitos con evidencias
+        delitos = DelitoElectoral.query.filter_by(puesto_id=puesto.id).all()
+        delitos_data = []
+        for delito in delitos:
+            # Obtener evidencias fotográficas
+            evidencias = EvidenciaFotografica.query.filter_by(delito_id=delito.id).all()
+            
+            delitos_data.append({
+                'id': delito.id,
+                'tipo_delito': delito.tipo_delito,
+                'tipo_delito_label': delito.TIPOS_DELITO.get(delito.tipo_delito, delito.tipo_delito),
+                'titulo': delito.titulo,
+                'descripcion': delito.descripcion,
+                'gravedad': delito.gravedad,
+                'gravedad_label': delito.GRAVEDADES.get(delito.gravedad, delito.gravedad),
+                'estado': delito.estado,
+                'estado_label': delito.ESTADOS.get(delito.estado, delito.estado),
+                'fecha_delito': delito.fecha_delito.isoformat() if delito.fecha_delito else None,
+                'fecha_reporte': delito.fecha_reporte.isoformat() if delito.fecha_reporte else None,
+                'reportado_por': delito.reportado_por.nombre if delito.reportado_por else 'Desconocido',
+                'ubicacion_gps': delito.ubicacion_gps,
+                'denunciado_formalmente': delito.denunciado_formalmente,
+                'numero_denuncia': delito.numero_denuncia,
+                'resultado_investigacion': delito.resultado_investigacion,
+                'evidencias': [{
+                    'id': ev.id,
+                    'url': ev.url,
+                    'filename': ev.filename_original,
+                    'fecha_subida': ev.fecha_subida.isoformat() if ev.fecha_subida else None
+                } for ev in evidencias]
+            })
+        
+        puesto_detallado = {
+            'puesto': {
+                'id': puesto.id,
+                'codigo': puesto.puesto_codigo,
+                'nombre': puesto.puesto_nombre,
+                'zona_codigo': puesto.zona_codigo,
+                'total_mesas': total_mesas,
+                'direccion': puesto.direccion
+            },
+            'coordinador': {
+                'id': coordinador.id,
+                'nombre': coordinador.nombre,
+                'ultimo_acceso': coordinador.ultimo_acceso.isoformat() if coordinador.ultimo_acceso else None
+            } if coordinador else None,
+            'estadisticas': {
+                'formularios_validados': formularios_validados,
+                'formularios_pendientes': formularios_pendientes,
+                'formularios_rechazados': formularios_rechazados,
+                'porcentaje_avance': round(porcentaje_avance, 2),
+                'incidentes': len(incidentes_data),
+                'delitos': len(delitos_data)
+            },
+            'mesas': mesas_info,
+            'incidentes': incidentes_data,
+            'delitos': delitos_data
+        }
         
         return jsonify({
             'success': True,
             'data': puesto_detallado
         }), 200
         
-    except BaseAPIException as e:
-        return jsonify(e.to_dict()), e.status_code
     except Exception as e:
+        import traceback
+        print(f"Error en obtener_puesto_detallado: {str(e)}")
+        print(traceback.format_exc())
         return jsonify({
             'success': False,
             'error': str(e)
@@ -183,28 +496,72 @@ def obtener_discrepancias():
     Obtener puestos con discrepancias o anomalías
     """
     try:
+        from backend.models.formulario_e14 import FormularioE14
+        
         user_id = get_jwt_identity()
         user = User.query.get(int(user_id))
         
         if not user or not user.ubicacion_id:
-            raise ValidationException('Usuario sin ubicación asignada')
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
         
         ubicacion = Location.query.get(user.ubicacion_id)
         
         if not ubicacion or ubicacion.tipo != 'municipio':
-            raise ValidationException('Usuario no asignado a un municipio válido')
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no asignado a un municipio válido'
+            }), 400
         
-        # Detectar discrepancias
-        discrepancias = DiscrepanciaService.detectar_discrepancias_municipio(ubicacion.id)
+        # Obtener puestos del municipio
+        puestos = Location.query.filter_by(
+            municipio_codigo=ubicacion.municipio_codigo,
+            departamento_codigo=ubicacion.departamento_codigo,
+            tipo='puesto'
+        ).all()
+        
+        discrepancias = []
+        
+        for puesto in puestos:
+            # Obtener mesas del puesto
+            mesas = Location.query.filter_by(
+                puesto_codigo=puesto.puesto_codigo,
+                departamento_codigo=puesto.departamento_codigo,
+                municipio_codigo=puesto.municipio_codigo,
+                zona_codigo=puesto.zona_codigo,
+                tipo='mesa'
+            ).all()
+            
+            mesa_ids = [m.id for m in mesas]
+            
+            # Contar formularios rechazados
+            formularios_rechazados = FormularioE14.query.filter(
+                FormularioE14.mesa_id.in_(mesa_ids),
+                FormularioE14.estado == 'rechazado'
+            ).count() if mesa_ids else 0
+            
+            if formularios_rechazados > 0:
+                discrepancias.append({
+                    'puesto_id': puesto.id,
+                    'puesto_nombre': puesto.puesto_nombre,
+                    'puesto_codigo': puesto.puesto_codigo,
+                    'descripcion': f'{formularios_rechazados} formulario(s) rechazado(s)',
+                    'severidad': 'alta' if formularios_rechazados > 2 else 'media',
+                    'tipo': 'formularios_rechazados',
+                    'cantidad': formularios_rechazados
+                })
         
         return jsonify({
             'success': True,
             'data': discrepancias
         }), 200
         
-    except BaseAPIException as e:
-        return jsonify(e.to_dict()), e.status_code
     except Exception as e:
+        import traceback
+        print(f"Error en obtener_discrepancias: {str(e)}")
+        print(traceback.format_exc())
         return jsonify({
             'success': False,
             'error': str(e)
@@ -341,51 +698,105 @@ def obtener_estadisticas():
     Obtener estadísticas detalladas del municipio
     """
     try:
+        from backend.models.formulario_e14 import FormularioE14
+        
         user_id = get_jwt_identity()
         user = User.query.get(int(user_id))
         
         if not user or not user.ubicacion_id:
-            raise ValidationException('Usuario sin ubicación asignada')
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
         
         ubicacion = Location.query.get(user.ubicacion_id)
         
         if not ubicacion or ubicacion.tipo != 'municipio':
-            raise ValidationException('Usuario no asignado a un municipio válido')
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no asignado a un municipio válido'
+            }), 400
         
-        # Obtener puestos y consolidado
-        resultado_puestos = MunicipalService.obtener_puestos_municipio(ubicacion.id)
-        consolidado = ConsolidadoService.calcular_consolidado_municipal(ubicacion.id)
+        # Obtener puestos
+        puestos = Location.query.filter_by(
+            municipio_codigo=ubicacion.municipio_codigo,
+            departamento_codigo=ubicacion.departamento_codigo,
+            tipo='puesto'
+        ).all()
         
-        if not resultado_puestos or not consolidado:
-            raise NotFoundException('No se pudieron obtener las estadísticas')
+        total_puestos = len(puestos)
+        puestos_completos = 0
+        puestos_incompletos = 0
+        puestos_con_discrepancias = 0
         
-        # Calcular estadísticas adicionales
-        puestos = resultado_puestos.get('puestos', [])
-        
-        # Tiempo promedio de validación (simulado por ahora)
-        tiempo_promedio_validacion = 0
-        
-        # Tasa de rechazo por puesto
         tasa_rechazo_por_puesto = []
+        
         for puesto in puestos:
-            stats = MunicipalService.calcular_estadisticas_puesto(puesto['id'])
-            if stats:
-                formularios = stats.get('formularios', {})
-                total = formularios.get('total', 0)
-                rechazados = formularios.get('rechazados', 0)
-                tasa = (rechazados / total * 100) if total > 0 else 0
-                
-                tasa_rechazo_por_puesto.append({
-                    'puesto_id': puesto['id'],
-                    'puesto_nombre': puesto['nombre'],
-                    'tasa_rechazo': round(tasa, 2)
-                })
+            # Obtener mesas
+            mesas = Location.query.filter_by(
+                puesto_codigo=puesto.puesto_codigo,
+                departamento_codigo=puesto.departamento_codigo,
+                municipio_codigo=puesto.municipio_codigo,
+                zona_codigo=puesto.zona_codigo,
+                tipo='mesa'
+            ).all()
+            
+            mesa_ids = [m.id for m in mesas]
+            total_mesas = len(mesas)
+            
+            # Contar formularios
+            formularios_validados = FormularioE14.query.filter(
+                FormularioE14.mesa_id.in_(mesa_ids),
+                FormularioE14.estado == 'validado'
+            ).count() if mesa_ids else 0
+            
+            formularios_rechazados = FormularioE14.query.filter(
+                FormularioE14.mesa_id.in_(mesa_ids),
+                FormularioE14.estado == 'rechazado'
+            ).count() if mesa_ids else 0
+            
+            total_formularios = FormularioE14.query.filter(
+                FormularioE14.mesa_id.in_(mesa_ids)
+            ).count() if mesa_ids else 0
+            
+            # Clasificar puesto
+            if formularios_validados == total_mesas and total_mesas > 0:
+                puestos_completos += 1
+            elif formularios_rechazados > 0:
+                puestos_con_discrepancias += 1
+            else:
+                puestos_incompletos += 1
+            
+            # Calcular tasa de rechazo
+            if total_formularios > 0:
+                tasa = (formularios_rechazados / total_formularios * 100)
+                if tasa > 0:
+                    tasa_rechazo_por_puesto.append({
+                        'puesto_id': puesto.id,
+                        'puesto_nombre': puesto.puesto_nombre,
+                        'rechazados': formularios_rechazados,
+                        'total': total_formularios,
+                        'tasa_rechazo': round(tasa, 2)
+                    })
+        
+        # Ordenar por tasa de rechazo
+        tasa_rechazo_por_puesto.sort(key=lambda x: x['tasa_rechazo'], reverse=True)
+        
+        # Obtener consolidado
+        consolidado_response = obtener_consolidado()
+        consolidado_data = consolidado_response[0].get_json() if consolidado_response else {}
+        consolidado = consolidado_data.get('data', {}) if consolidado_data.get('success') else {}
         
         estadisticas = {
-            'resumen_general': resultado_puestos.get('estadisticas', {}),
+            'resumen_general': {
+                'total_puestos': total_puestos,
+                'puestos_completos': puestos_completos,
+                'puestos_incompletos': puestos_incompletos,
+                'puestos_con_discrepancias': puestos_con_discrepancias,
+                'porcentaje_avance': (puestos_completos / total_puestos * 100) if total_puestos > 0 else 0
+            },
             'consolidado': consolidado.get('resumen', {}),
-            'tiempo_promedio_validacion': tiempo_promedio_validacion,
-            'tasa_rechazo_por_puesto': tasa_rechazo_por_puesto
+            'tasa_rechazo_por_puesto': tasa_rechazo_por_puesto[:10]  # Top 10
         }
         
         return jsonify({
@@ -393,9 +804,10 @@ def obtener_estadisticas():
             'data': estadisticas
         }), 200
         
-    except BaseAPIException as e:
-        return jsonify(e.to_dict()), e.status_code
     except Exception as e:
+        import traceback
+        print(f"Error en obtener_estadisticas: {str(e)}")
+        print(traceback.format_exc())
         return jsonify({
             'success': False,
             'error': str(e)
@@ -730,6 +1142,510 @@ def obtener_consolidado_por_zona():
     except BaseAPIException as e:
         return jsonify(e.to_dict()), e.status_code
     except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+# ============================================================================
+# ENDPOINTS DE INCIDENTES
+# ============================================================================
+
+@coordinador_municipal_bp.route('/incidentes', methods=['GET'])
+@jwt_required()
+@role_required(['coordinador_municipal'])
+def obtener_incidentes():
+    """
+    Obtener incidentes del municipio
+    
+    Query params:
+        estado: Filtrar por estado (reportado, en_revision, resuelto, escalado)
+        severidad: Filtrar por severidad (baja, media, alta, critica)
+        tipo: Filtrar por tipo de incidente
+        fecha_desde: Fecha desde (YYYY-MM-DD)
+        fecha_hasta: Fecha hasta (YYYY-MM-DD)
+    """
+    try:
+      
+        from backend.models.incidentes_delitos import IncidenteElectoral
+        
+        user_id = get_jwt_identity()
+        user = User.query.get(int(user_id))
+        
+        if not user or not user.ubicacion_id:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
+        
+        ubicacion = Location.query.get(user.ubicacion_id)
+        
+        if not ubicacion or ubicacion.tipo != 'municipio':
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no asignado a un municipio válido'
+            }), 400
+        
+        # Obtener puestos del municipio
+        puestos = Location.query.filter_by(
+            municipio_codigo=ubicacion.municipio_codigo,
+            departamento_codigo=ubicacion.departamento_codigo,
+            tipo='puesto'
+        ).all()
+        
+        # Obtener mesas de estos puestos
+        mesa_ids = []
+        for puesto in puestos:
+            mesas = Location.query.filter_by(
+                puesto_codigo=puesto.puesto_codigo,
+                departamento_codigo=puesto.departamento_codigo,
+                municipio_codigo=puesto.municipio_codigo,
+                zona_codigo=puesto.zona_codigo,
+                tipo='mesa'
+            ).all()
+            mesa_ids.extend([m.id for m in mesas])
+        
+        # Query base
+        query = IncidenteElectoral.query.filter(
+            IncidenteElectoral.mesa_id.in_(mesa_ids)
+        )
+        
+        # Aplicar filtros
+        estado = request.args.get('estado')
+        if estado:
+            query = query.filter(IncidenteElectoral.estado == estado)
+        
+        severidad = request.args.get('severidad')
+        if severidad:
+            query = query.filter(IncidenteElectoral.severidad == severidad)
+        
+        tipo = request.args.get('tipo')
+        if tipo:
+            query = query.filter(IncidenteElectoral.tipo == tipo)
+        
+        # Ordenar por fecha de creación (más recientes primero)
+        incidentes = query.order_by(IncidenteElectoral.created_at.desc()).all()
+        
+        # Formatear respuesta
+        incidentes_data = []
+        for incidente in incidentes:
+            mesa = Location.query.get(incidente.mesa_id)
+            reportante = User.query.get(incidente.reportado_por) if incidente.reportado_por else None
+            
+            incidentes_data.append({
+                'id': incidente.id,
+                'tipo': incidente.tipo,
+                'descripcion': incidente.descripcion,
+                'severidad': incidente.severidad,
+                'estado': incidente.estado,
+                'mesa': {
+                    'id': mesa.id,
+                    'codigo': mesa.mesa_codigo,
+                    'nombre': mesa.nombre_completo,
+                    'puesto_nombre': mesa.puesto_nombre
+                } if mesa else None,
+                'reportante': {
+                    'id': reportante.id,
+                    'nombre': reportante.nombre
+                } if reportante else None,
+                'fecha_reporte': incidente.created_at.isoformat() if incidente.created_at else None,
+                'fecha_resolucion': incidente.fecha_resolucion.isoformat() if incidente.fecha_resolucion else None,
+                'tiene_evidencia': bool(incidente.evidencia_url)
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': incidentes_data,
+            'total': len(incidentes_data)
+        }), 200
+        
+    except Exception as e:
+        import traceback
+        print(f"Error en obtener_incidentes: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+# ============================================================================
+# ENDPOINTS DE DELITOS
+# ============================================================================
+
+@coordinador_municipal_bp.route('/delitos', methods=['GET'])
+@jwt_required()
+@role_required(['coordinador_municipal'])
+def obtener_delitos():
+    """
+    Obtener delitos electorales del municipio
+    
+    Query params:
+        estado: Filtrar por estado (reportado, en_investigacion, investigado, archivado)
+        gravedad: Filtrar por gravedad (leve, grave, muy_grave)
+        tipo: Filtrar por tipo de delito
+    """
+    try:
+        from backend.models.incidentes_delitos import DelitoElectoral
+        
+        user_id = get_jwt_identity()
+        user = User.query.get(int(user_id))
+        
+        if not user or not user.ubicacion_id:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
+        
+        ubicacion = Location.query.get(user.ubicacion_id)
+        
+        if not ubicacion or ubicacion.tipo != 'municipio':
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no asignado a un municipio válido'
+            }), 400
+        
+        # Obtener puestos del municipio
+        puestos = Location.query.filter_by(
+            municipio_codigo=ubicacion.municipio_codigo,
+            departamento_codigo=ubicacion.departamento_codigo,
+            tipo='puesto'
+        ).all()
+        
+        # Obtener mesas de estos puestos
+        mesa_ids = []
+        for puesto in puestos:
+            mesas = Location.query.filter_by(
+                puesto_codigo=puesto.puesto_codigo,
+                departamento_codigo=puesto.departamento_codigo,
+                municipio_codigo=puesto.municipio_codigo,
+                zona_codigo=puesto.zona_codigo,
+                tipo='mesa'
+            ).all()
+            mesa_ids.extend([m.id for m in mesas])
+        
+        # Query base
+        query = DelitoElectoral.query.filter(
+            DelitoElectoral.mesa_id.in_(mesa_ids)
+        )
+        
+        # Aplicar filtros
+        estado = request.args.get('estado')
+        if estado:
+            query = query.filter(DelitoElectoral.estado == estado)
+        
+        gravedad = request.args.get('gravedad')
+        if gravedad:
+            query = query.filter(DelitoElectoral.gravedad == gravedad)
+        
+        tipo = request.args.get('tipo')
+        if tipo:
+            query = query.filter(DelitoElectoral.tipo == tipo)
+        
+        # Ordenar por fecha de creación (más recientes primero)
+        delitos = query.order_by(DelitoElectoral.created_at.desc()).all()
+        
+        # Formatear respuesta
+        delitos_data = []
+        for delito in delitos:
+            mesa = Location.query.get(delito.mesa_id)
+            reportante = User.query.get(delito.reportado_por) if delito.reportado_por else None
+            
+            delitos_data.append({
+                'id': delito.id,
+                'tipo': delito.tipo,
+                'descripcion': delito.descripcion,
+                'gravedad': delito.gravedad,
+                'estado': delito.estado,
+                'mesa': {
+                    'id': mesa.id,
+                    'codigo': mesa.mesa_codigo,
+                    'nombre': mesa.nombre_completo,
+                    'puesto_nombre': mesa.puesto_nombre
+                } if mesa else None,
+                'reportante': {
+                    'id': reportante.id,
+                    'nombre': reportante.nombre
+                } if reportante else None,
+                'fecha_reporte': delito.created_at.isoformat() if delito.created_at else None,
+                'tiene_evidencia': bool(delito.evidencia_url),
+                'autoridad_notificada': delito.autoridad_notificada
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': delitos_data,
+            'total': len(delitos_data)
+        }), 200
+        
+    except Exception as e:
+        import traceback
+        print(f"Error en obtener_delitos: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+# ============================================================================
+# ENDPOINTS DE COORDINADORES
+# ============================================================================
+
+@coordinador_municipal_bp.route('/coordinadores', methods=['GET'])
+@jwt_required()
+@role_required(['coordinador_municipal'])
+def obtener_coordinadores():
+    """
+    Obtener lista de coordinadores de puesto del municipio
+    
+    Query params:
+        estado: Filtrar por estado de conexión (activo, inactivo, ausente)
+    """
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(int(user_id))
+        
+        if not user or not user.ubicacion_id:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
+        
+        ubicacion = Location.query.get(user.ubicacion_id)
+        
+        if not ubicacion or ubicacion.tipo != 'municipio':
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no asignado a un municipio válido'
+            }), 400
+        
+        # Obtener puestos del municipio
+        puestos = Location.query.filter_by(
+            municipio_codigo=ubicacion.municipio_codigo,
+            departamento_codigo=ubicacion.departamento_codigo,
+            tipo='puesto',
+            activo=True
+        ).all()
+        
+        puesto_ids = [p.id for p in puestos]
+        
+        # Obtener coordinadores de estos puestos
+        coordinadores = User.query.filter(
+            User.ubicacion_id.in_(puesto_ids),
+            User.rol == 'coordinador_puesto',
+            User.activo == True
+        ).all()
+        
+        # Formatear respuesta
+        coordinadores_data = []
+        for coord in coordinadores:
+            puesto = Location.query.get(coord.ubicacion_id)
+            
+            # Determinar estado de conexión
+            from datetime import datetime, timedelta
+            estado_conexion = 'ausente'
+            if coord.ultimo_acceso:
+                tiempo_inactivo = datetime.utcnow() - coord.ultimo_acceso
+                if tiempo_inactivo < timedelta(minutes=5):
+                    estado_conexion = 'activo'
+                elif tiempo_inactivo < timedelta(hours=1):
+                    estado_conexion = 'inactivo'
+            
+            # Obtener estadísticas del puesto
+            mesas = Location.query.filter_by(
+                puesto_codigo=puesto.puesto_codigo,
+                departamento_codigo=puesto.departamento_codigo,
+                municipio_codigo=puesto.municipio_codigo,
+                zona_codigo=puesto.zona_codigo,
+                tipo='mesa'
+            ).all() if puesto else []
+            
+            mesa_ids = [m.id for m in mesas]
+            
+            from backend.models.formulario_e14 import FormularioE14
+            formularios_validados = FormularioE14.query.filter(
+                FormularioE14.mesa_id.in_(mesa_ids),
+                FormularioE14.estado == 'validado'
+            ).count() if mesa_ids else 0
+            
+            total_mesas = len(mesas)
+            porcentaje_avance = (formularios_validados / total_mesas * 100) if total_mesas > 0 else 0
+            
+            coordinadores_data.append({
+                'id': coord.id,
+                'nombre': coord.nombre,
+                'puesto': {
+                    'id': puesto.id,
+                    'codigo': puesto.puesto_codigo,
+                    'nombre': puesto.puesto_nombre,
+                    'zona_codigo': puesto.zona_codigo
+                } if puesto else None,
+                'estado_conexion': estado_conexion,
+                'ultimo_acceso': coord.ultimo_acceso.isoformat() if coord.ultimo_acceso else None,
+                'estadisticas': {
+                    'total_mesas': total_mesas,
+                    'formularios_validados': formularios_validados,
+                    'porcentaje_avance': round(porcentaje_avance, 2)
+                },
+                'latitud': coord.ultima_latitud,
+                'longitud': coord.ultima_longitud
+            })
+        
+        # Aplicar filtro de estado si se proporciona
+        filtro_estado = request.args.get('estado')
+        if filtro_estado:
+            coordinadores_data = [c for c in coordinadores_data if c['estado_conexion'] == filtro_estado]
+        
+        # Ordenar por estado de conexión (activos primero)
+        orden_estado = {'activo': 0, 'inactivo': 1, 'ausente': 2}
+        coordinadores_data.sort(key=lambda x: orden_estado.get(x['estado_conexion'], 3))
+        
+        return jsonify({
+            'success': True,
+            'data': coordinadores_data,
+            'total': len(coordinadores_data)
+        }), 200
+        
+    except Exception as e:
+        import traceback
+        print(f"Error en obtener_coordinadores: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+# ============================================================================
+# ENDPOINTS DE GEOLOCALIZACIÓN
+# ============================================================================
+
+@coordinador_municipal_bp.route('/geolocalizacion', methods=['GET'])
+@jwt_required()
+@role_required(['coordinador_municipal'])
+def obtener_geolocalizacion():
+    """
+    Obtener datos de geolocalización del municipio para el mapa
+    """
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(int(user_id))
+        
+        if not user or not user.ubicacion_id:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
+        
+        ubicacion = Location.query.get(user.ubicacion_id)
+        
+        if not ubicacion or ubicacion.tipo != 'municipio':
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no asignado a un municipio válido'
+            }), 400
+        
+        # Obtener puestos del municipio con coordenadas
+        puestos = Location.query.filter_by(
+            municipio_codigo=ubicacion.municipio_codigo,
+            departamento_codigo=ubicacion.departamento_codigo,
+            tipo='puesto',
+            activo=True
+        ).filter(
+            Location.latitud.isnot(None),
+            Location.longitud.isnot(None)
+        ).all()
+        
+        puestos_data = []
+        for puesto in puestos:
+            # Obtener estadísticas del puesto
+            mesas = Location.query.filter_by(
+                puesto_codigo=puesto.puesto_codigo,
+                departamento_codigo=puesto.departamento_codigo,
+                municipio_codigo=puesto.municipio_codigo,
+                zona_codigo=puesto.zona_codigo,
+                tipo='mesa'
+            ).all()
+            
+            mesa_ids = [m.id for m in mesas]
+            
+            from backend.models.formulario_e14 import FormularioE14
+            formularios_validados = FormularioE14.query.filter(
+                FormularioE14.mesa_id.in_(mesa_ids),
+                FormularioE14.estado == 'validado'
+            ).count() if mesa_ids else 0
+            
+            total_mesas = len(mesas)
+            
+            puestos_data.append({
+                'id': puesto.id,
+                'codigo': puesto.puesto_codigo,
+                'nombre': puesto.puesto_nombre,
+                'zona_codigo': puesto.zona_codigo,
+                'latitud': float(puesto.latitud),
+                'longitud': float(puesto.longitud),
+                'direccion': puesto.direccion,
+                'total_mesas': total_mesas,
+                'formularios_validados': formularios_validados,
+                'porcentaje_avance': (formularios_validados / total_mesas * 100) if total_mesas > 0 else 0
+            })
+        
+        # Obtener coordinadores con geolocalización
+        coordinadores = User.query.filter(
+            User.ubicacion_id.in_([p.id for p in puestos]),
+            User.rol == 'coordinador_puesto',
+            User.activo == True
+        ).filter(
+            User.ultima_latitud.isnot(None),
+            User.ultima_longitud.isnot(None)
+        ).all()
+        
+        coordinadores_data = []
+        for coord in coordinadores:
+            puesto = Location.query.get(coord.ubicacion_id)
+            
+            # Determinar estado de conexión
+            from datetime import datetime, timedelta
+            estado_conexion = 'ausente'
+            if coord.ultimo_acceso:
+                tiempo_inactivo = datetime.utcnow() - coord.ultimo_acceso
+                if tiempo_inactivo < timedelta(minutes=5):
+                    estado_conexion = 'activo'
+                elif tiempo_inactivo < timedelta(hours=1):
+                    estado_conexion = 'inactivo'
+            
+            coordinadores_data.append({
+                'id': coord.id,
+                'nombre': coord.nombre,
+                'latitud': float(coord.ultima_latitud),
+                'longitud': float(coord.ultima_longitud),
+                'estado_conexion': estado_conexion,
+                'puesto': {
+                    'id': puesto.id,
+                    'codigo': puesto.puesto_codigo,
+                    'nombre': puesto.puesto_nombre
+                } if puesto else None,
+                'ultimo_acceso': coord.ultimo_acceso.isoformat() if coord.ultimo_acceso else None
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'puestos': puestos_data,
+                'coordinadores': coordinadores_data,
+                'centro': {
+                    'latitud': float(ubicacion.latitud) if ubicacion.latitud else 1.6,
+                    'longitud': float(ubicacion.longitud) if ubicacion.longitud else -75.6
+                }
+            }
+        }), 200
+        
+    except Exception as e:
+        import traceback
+        print(f"Error en obtener_geolocalizacion: {str(e)}")
+        print(traceback.format_exc())
         return jsonify({
             'success': False,
             'error': str(e)

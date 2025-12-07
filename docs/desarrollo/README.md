@@ -1,71 +1,31 @@
-# 🛠️ Documentación de Desarrollo
+# Documentación Técnica y Arquitectura
 
-Esta carpeta contiene toda la documentación generada durante el proceso de desarrollo del sistema electoral.
+Esta carpeta contiene la documentación técnica del sistema.
 
-## 📋 Organización
+## Contenido
 
-### 📊 Análisis y Auditorías
-- `ANALISIS_*.md` - Análisis de funcionalidades y flujos
-- `AUDITORIA_*.md` - Auditorías del sistema
-- `REVISION_*.md` - Revisiones completas
+### Arquitectura
+- `ARQUITECTURA.md` - Arquitectura general del sistema
+- `ARQUITECTURA_Y_FLUJO_DATOS.md` - Arquitectura y flujo de datos detallado
+- `DISEÑO_MVP.md` - Diseño del MVP
 
-### 🔧 Correcciones
-- `CORRECCIONES_*.md` - Correcciones implementadas
-- `CORRECIONES_*.md` - Correcciones específicas
-- `SOLUCION_*.md` - Soluciones a problemas específicos
+### Estructura
+- `ESTRUCTURA_PROYECTO.md` - Estructura general del proyecto
+- `ESTRUCTURA_PROYECTO_MONITOREO.md` - Estructura del módulo de monitoreo
 
-### 📖 Guías
-- `GUIA_*.md` - Guías de implementación y uso
-- `MANUAL_*.md` - Manuales de funcionamiento
-- `INICIO_RAPIDO.md` - Guía de inicio rápido
-- `INSTALACION_RAPIDA.md` - Instalación rápida
+### Flujos y Datos
+- `FLUJO_DATOS_ELECTORALES.md` - Flujo de datos electorales
+- `ROLES_Y_FLUJOS.md` - Roles del sistema y sus flujos
 
-### 📝 Resúmenes de Sesiones
-- `RESUMEN_SESION_*.md` - Resúmenes de sesiones de trabajo
-- `RESUMEN_*.md` - Resúmenes de implementaciones
-- `PROGRESO_*.md` - Progreso de implementaciones
+### Sistemas Específicos
+- `SISTEMA_INICIALIZACION.md` - Sistema de inicialización
+- `SISTEMA_LOGOS.md` - Sistema de logos de partidos
+- `sistemadelogin.md` - Sistema de login y autenticación
 
-### 🎯 Implementaciones
-- `IMPLEMENTACION_MEJORAS_*.md` - Mejoras por rol
-- `FUNCIONALIDAD_*.md` - Funcionalidades específicas
+### Seguridad y Tipos
+- `SEGURIDAD.md` - Seguridad del sistema
+- `TIPOS_ELECCIONES_COLOMBIA.md` - Tipos de elecciones en Colombia
 
-### 📋 Planificación
-- `PLAN_*.md` - Planes de mejoras
-- `PROPUESTA_*.md` - Propuestas de mejoras
-- `TAREAS_MVP.md` - Tareas del MVP
-- `REQUERIMIENTOS_MVP.md` - Requerimientos
+## Uso
 
-### 🔐 Credenciales y Acceso
-- `CREDENCIALES_ACCESO.md` - Credenciales del sistema
-- `contraseñas.md` - Contraseñas
-- `USUARIOS_SISTEMA.md` - Usuarios del sistema
-
-### 📚 Recursos
-- `recursos/` - Archivos PDF y otros recursos
-
-## 📌 Documentación Actual
-
-Para documentación actualizada y en uso, consulta:
-
-### Sistema de Monitoreo
-- `../INICIO_RAPIDO_MONITOREO.md` - Inicio rápido
-- `../GUIA_COMPLETA_MONITOREO.md` - Guía completa
-- `../ESTRUCTURA_PROYECTO_MONITOREO.md` - Estructura
-
-### Optimizaciones
-- `../optimizaciones/` - Optimizaciones implementadas
-
-### Features
-- `../features/` - Documentación de features
-
-### Histórico
-- `../historico/` - Correcciones históricas
-
-## ⚠️ Nota Importante
-
-Esta documentación es histórica y se mantiene como referencia del proceso de desarrollo.
-Para información actual del sistema, consulta la documentación principal en `docs/`.
-
----
-
-**Última actualización**: 28 de Noviembre de 2025
+Estos documentos son de referencia para entender la arquitectura y funcionamiento técnico del sistema.

@@ -49,8 +49,8 @@ class PartidosManager {
 
         if (this.partidos.length === 0) {
             container.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center text-muted py-4">
+                <tr style="background: white !important;">
+                    <td colspan="6" class="text-center text-muted py-4" style="color: #6c757d !important;">
                         No hay partidos registrados
                     </td>
                 </tr>
@@ -59,8 +59,8 @@ class PartidosManager {
         }
 
         container.innerHTML = this.partidos.map(partido => `
-            <tr>
-                <td>
+            <tr style="display: table-row !important; background: white !important; color: #212529 !important;">
+                <td style="display: table-cell !important; color: #212529 !important;">
                     <div class="d-flex align-items-center gap-2">
                         ${partido.logo_url ? 
                             `<img src="${partido.logo_url}" alt="${partido.sigla}" style="width: 30px; height: 30px; object-fit: contain;">` :
@@ -68,20 +68,20 @@ class PartidosManager {
                         }
                     </div>
                 </td>
-                <td><strong>${partido.nombre}</strong></td>
-                <td><span class="badge" style="background-color: ${partido.color};">${partido.sigla}</span></td>
-                <td>
+                <td style="display: table-cell !important; color: #212529 !important;"><strong>${partido.nombre}</strong></td>
+                <td style="display: table-cell !important; color: #212529 !important;"><span class="badge" style="background-color: ${partido.color}; color: white;">${partido.sigla}</span></td>
+                <td style="display: table-cell !important; color: #212529 !important;">
                     <div class="d-flex align-items-center gap-2">
                         <div style="width: 20px; height: 20px; background-color: ${partido.color}; border: 1px solid #ddd; border-radius: 3px;"></div>
-                        <code>${partido.color}</code>
+                        <code style="color: #212529 !important;">${partido.color}</code>
                     </div>
                 </td>
-                <td>
+                <td style="display: table-cell !important; color: #212529 !important;">
                     <span class="badge bg-${partido.activo ? 'success' : 'secondary'}">
                         ${partido.activo ? 'Activo' : 'Inactivo'}
                     </span>
                 </td>
-                <td>
+                <td style="display: table-cell !important; color: #212529 !important;">
                     <div class="btn-group btn-group-sm">
                         <button class="btn btn-outline-primary" onclick="partidosManager.editarPartido(${partido.id})" title="Editar">
                             <i class="bi bi-pencil"></i>
@@ -99,6 +99,18 @@ class PartidosManager {
         if (contador) {
             contador.textContent = this.partidos.length;
         }
+
+        // Forzar visibilidad de elementos internos (NO del tab contenedor)
+        const table = container.closest('table');
+        const chartCard = container.closest('.chart-card');
+        
+        if (chartCard) {
+            chartCard.style.cssText = 'opacity: 1 !important; visibility: visible !important; background: white !important;';
+        }
+        if (table) {
+            table.style.cssText = 'opacity: 1 !important; visibility: visible !important;';
+        }
+        container.style.cssText = 'opacity: 1 !important; visibility: visible !important;';
     }
 
     /**

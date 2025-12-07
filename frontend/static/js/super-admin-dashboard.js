@@ -320,7 +320,7 @@ function renderUsers(users) {
     
     if (users.length === 0) {
         console.log('ℹ️ No hay usuarios para mostrar');
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4"><p class="text-muted">No hay usuarios registrados en el sistema</p></td></tr>';
+        tbody.innerHTML = '<tr style="background: white !important;"><td colspan="7" class="text-center py-4" style="color: #6c757d !important;"><p class="text-muted" style="color: #6c757d !important;">No hay usuarios registrados en el sistema</p></td></tr>';
         return;
     }
     
@@ -334,21 +334,18 @@ function renderUsers(users) {
         }
         
         return `
-            <tr>
-                <td>${user.id}</td>
-                <td><strong>${user.nombre}</strong></td>
-                <td><span class="badge bg-${getRoleBadgeColor(user.rol)}">${user.rol}</span></td>
-                <td>${user.ubicacion_nombre || '<span class="text-muted">Sin asignar</span>'}</td>
-                <td class="text-center">
-                    <span class="text-muted" style="font-family: monospace;">••••••••</span>
-                </td>
-                <td class="text-center">
+            <tr style="background: white !important; color: #212529 !important;">
+                <td style="color: #212529 !important;">${user.id}</td>
+                <td style="color: #212529 !important;"><strong>${user.nombre}</strong></td>
+                <td style="color: #212529 !important;"><span class="badge bg-${getRoleBadgeColor(user.rol)}">${user.rol}</span></td>
+                <td style="color: #212529 !important;">${user.ubicacion_nombre || '<span class="text-muted" style="color: #6c757d !important;">Sin asignar</span>'}</td>
+                <td class="text-center" style="color: #212529 !important;">
                     <span class="badge bg-${user.activo ? 'success' : 'secondary'}">
                         ${user.activo ? 'Activo' : 'Inactivo'}
                     </span>
                 </td>
-                <td><small>${user.ultimo_acceso ? Utils.formatDateTime(user.ultimo_acceso) : '<span class="text-muted">Nunca</span>'}</small></td>
-                <td class="text-center">
+                <td style="color: #212529 !important;"><small>${user.ultimo_acceso ? Utils.formatDateTime(user.ultimo_acceso) : '<span class="text-muted" style="color: #6c757d !important;">Nunca</span>'}</small></td>
+                <td class="text-center" style="color: #212529 !important;">
                     <div class="btn-group btn-group-sm">
                         <button class="btn btn-outline-primary" onclick="editUser(${user.id})" title="Editar">
                             <i class="bi bi-pencil"></i>
@@ -942,90 +939,22 @@ async function toggleUserStatus(userId, newStatus) {
 
 /**
  * Cargar partidos
+ * NOTA: Esta función está deshabilitada porque partidos-manager.js se encarga de cargar y renderizar
  */
 async function loadPartidos() {
-    try {
-        console.log('[Super Admin] Cargando partidos...');
-        const response = await APIClient.getSuperAdminPartidos();
-        console.log('[Super Admin] Respuesta partidos:', response);
-        
-        if (response.success) {
-            allPartidos = response.data;
-            window.allPartidos = allPartidos; // Actualizar referencia global
-            console.log('[Super Admin] Partidos cargados:', allPartidos.length);
-            renderPartidos();
-        } else {
-            console.error('[Super Admin] Error en respuesta:', response);
-        }
-    } catch (error) {
-        console.error('[Super Admin] Error cargando partidos:', error);
-        Utils.showError('Error cargando partidos: ' + error.message);
-    }
+    // Deshabilitado - partidos-manager.js maneja la carga y renderizado
+    console.log('[Super Admin] loadPartidos() deshabilitado - usando partidos-manager.js');
+    return;
 }
 
 /**
  * Renderizar partidos
+ * NOTA: Esta función está deshabilitada porque partidos-manager.js se encarga del renderizado
  */
 function renderPartidos() {
-    const container = document.getElementById('partidos-lista');
-    
-    if (!container) {
-        console.warn('Elemento partidos-lista no encontrado');
-        return;
-    }
-    
-    if (allPartidos.length === 0) {
-        container.innerHTML = '<p class="text-muted">No hay partidos registrados</p>';
-        return;
-    }
-    
-    container.innerHTML = allPartidos.map(partido => {
-        // Determinar las iniciales del partido
-        const iniciales = partido.nombre_corto ? 
-            partido.nombre_corto.substring(0, 3).toUpperCase() : 
-            partido.nombre.split(' ').map(p => p[0]).join('').substring(0, 3).toUpperCase();
-        
-        // Color por defecto si no tiene
-        const color = partido.color || '#6c757d';
-        
-        // Generar el logo/avatar
-        const logoHtml = partido.logo_url ? 
-            `<img src="${partido.logo_url}" 
-                  alt="${partido.nombre}" 
-                  class="partido-logo" 
-                  style="width: 50px; height: 50px; object-fit: contain; margin-right: 12px; border: 2px solid ${color}; border-radius: 8px; padding: 4px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" 
-                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-             <div class="partido-avatar" style="display: none; width: 50px; height: 50px; background: linear-gradient(135deg, ${color} 0%, ${color}dd 100%); border-radius: 8px; margin-right: 12px; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 2px solid ${color};">
-                <span style="color: white; font-weight: bold; font-size: 14px; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">${iniciales}</span>
-             </div>` :
-            `<div class="partido-avatar" style="width: 50px; height: 50px; background: linear-gradient(135deg, ${color} 0%, ${color}dd 100%); border-radius: 8px; margin-right: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 2px solid ${color};">
-                <span style="color: white; font-weight: bold; font-size: 14px; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">${iniciales}</span>
-             </div>`;
-        
-        return `
-            <div class="d-flex align-items-center justify-content-between mb-2 p-2 border rounded ${!partido.activo ? 'opacity-50' : ''}" style="transition: all 0.2s;">
-                <div class="d-flex align-items-center flex-grow-1">
-                    ${logoHtml}
-                    <div>
-                        <strong>${partido.nombre}</strong>
-                        <br><small class="text-muted">${partido.nombre_corto || 'Sin sigla'}</small>
-                        ${partido.logo_url ? '<br><small class="text-success"><i class="bi bi-check-circle-fill"></i> Con logo</small>' : '<br><small class="text-muted"><i class="bi bi-image"></i> Sin logo</small>'}
-                        ${!partido.activo ? '<br><span class="badge bg-secondary">Deshabilitado</span>' : '<br><span class="badge bg-success">Habilitado</span>'}
-                    </div>
-                </div>
-                <div class="d-flex gap-1">
-                    <button class="btn btn-sm btn-${partido.activo ? 'warning' : 'success'}" 
-                            onclick="togglePartido(${partido.id}, ${!partido.activo})"
-                            title="${partido.activo ? 'Deshabilitar' : 'Habilitar'}">
-                        <i class="bi bi-${partido.activo ? 'toggle-on' : 'toggle-off'}"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-primary" onclick="editPartido(${partido.id})" title="Editar partido">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-    }).join('');
+    // Deshabilitado - partidos-manager.js maneja el renderizado
+    console.log('[Super Admin] renderPartidos() deshabilitado - usando partidos-manager.js');
+    return;
 }
 
 /**

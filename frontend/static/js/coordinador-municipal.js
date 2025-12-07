@@ -13,20 +13,29 @@ let autoRefreshInterval = null;
 let chartConsolidado = null;
 
 // Inicialización
-document.addEventListener('DOMContentLoaded', function() {
-    loadUserProfile();
-    loadPuestos();
-    loadEstadisticas();
-    loadConsolidadoMunicipal();
-    loadDiscrepancias();
-    
-    // Auto-refresh cada 60 segundos
-    autoRefreshInterval = setInterval(() => {
-        loadPuestos();
-        loadEstadisticas();
-        loadConsolidadoMunicipal();
-        loadDiscrepancias();
-    }, 60000);
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        console.log('[Coordinador Municipal] Inicializando dashboard...');
+        
+        await loadUserProfile();
+        await loadPuestos();
+        await loadEstadisticas();
+        await loadConsolidadoMunicipal();
+        await loadDiscrepancias();
+        
+        console.log('[Coordinador Municipal] Dashboard inicializado correctamente');
+        
+        // Auto-refresh cada 60 segundos
+        autoRefreshInterval = setInterval(() => {
+            loadPuestos();
+            loadEstadisticas();
+            loadConsolidadoMunicipal();
+            loadDiscrepancias();
+        }, 60000);
+    } catch (error) {
+        console.error('[Coordinador Municipal] Error inicializando dashboard:', error);
+        Utils.showError('Error al inicializar el dashboard. Por favor, recarga la página.');
+    }
 });
 
 // Limpiar interval al salir
@@ -41,24 +50,32 @@ window.addEventListener('beforeunload', function() {
  */
 async function loadUserProfile() {
     try {
-        const response = await APIClient.getProfile();
+        console.log('[Coordinador Municipal] Cargando perfil...');
+        const response = await APIClient.get('/auth/profile');
         
-        if (response.success) {
+        if (response && response.success) {
             currentUser = response.data.user;
             userLocation = response.data.ubicacion;
             
-            console.log('User profile loaded:', currentUser);
-            console.log('User location:', userLocation);
+            console.log('[Coordinador Municipal] Perfil cargado:', currentUser);
+            console.log('[Coordinador Municipal] Ubicación:', userLocation);
             
             // Mostrar información del municipio
-            if (userLocation) {
-                document.getElementById('municipioInfo').textContent = 
+            const municipioInfo = document.getElementById('municipioInfo');
+            if (municipioInfo && userLocation) {
+                municipioInfo.textContent = 
                     `${userLocation.municipio_nombre || userLocation.nombre_completo} - Código: ${userLocation.municipio_codigo || 'N/A'}`;
             }
+        } else {
+            throw new Error(response?.error || 'Error al cargar perfil');
         }
     } catch (error) {
-        console.error('Error loading profile:', error);
-        Utils.showError('Error al cargar perfil: ' + error.message);
+        console.error('[Coordinador Municipal] Error loading profile:', error);
+        const municipioInfo = document.getElementById('municipioInfo');
+        if (municipioInfo) {
+            municipioInfo.textContent = 'Error al cargar información del municipio';
+        }
+        // No mostrar error al usuario en este caso, solo log
     }
 }
 

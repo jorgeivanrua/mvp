@@ -25,6 +25,15 @@ class SyncManager {
      * Inicializar SyncManager
      */
     init() {
+        // Verificar si el rol actual necesita sincronización
+        const rolesConSincronizacion = ['testigo', 'coordinador_puesto'];
+        const currentUserRol = this.getCurrentUserRole();
+        
+        if (!rolesConSincronizacion.includes(currentUserRol)) {
+            console.log(`SyncManager: Sincronización deshabilitada para rol ${currentUserRol}`);
+            return;
+        }
+        
         // Escuchar cambios de conectividad
         window.addEventListener('online', () => this.handleConnectionChange(true));
         window.addEventListener('offline', () => this.handleConnectionChange(false));
@@ -38,6 +47,23 @@ class SyncManager {
         }
         
         console.log('SyncManager inicializado');
+    }
+    
+    /**
+     * Obtener rol del usuario actual desde el token
+     */
+    getCurrentUserRole() {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return null;
+            
+            // Decodificar JWT (simple, sin validación)
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return payload.rol || null;
+        } catch (error) {
+            console.error('Error obteniendo rol del usuario:', error);
+            return null;
+        }
     }
 
     /**
@@ -537,6 +563,38 @@ class SyncManager {
         
         const byteArray = new Uint8Array(byteNumbers);
         return new Blob([byteArray], { type: mimeType });
+    }
+    
+    /**
+     * Obtener incidentes locales (stub para compatibilidad)
+     */
+    async getLocalIncidents() {
+        try {
+            // Intentar obtener de IndexedDB si está disponible
+            if (window.indexedDBService) {
+                return await window.indexedDBService.getAll('incidentes');
+            }
+            return [];
+        } catch (error) {
+            console.warn('Error obteniendo incidentes locales:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Obtener delitos locales (stub para compatibilidad)
+     */
+    async getLocalCrimes() {
+        try {
+            // Intentar obtener de IndexedDB si está disponible
+            if (window.indexedDBService) {
+                return await window.indexedDBService.getAll('delitos');
+            }
+            return [];
+        } catch (error) {
+            console.warn('Error obteniendo delitos locales:', error);
+            return [];
+        }
     }
 }
 

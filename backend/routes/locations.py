@@ -766,7 +766,10 @@ def get_mesas_query():
                 'puesto_nombre': mesa.puesto_nombre,
                 'zona_codigo': mesa.zona_codigo,
                 'municipio_codigo': mesa.municipio_codigo,
-                'departamento_codigo': mesa.departamento_codigo
+                'departamento_codigo': mesa.departamento_codigo,
+                'total_votantes_registrados': mesa.total_votantes_registrados,
+                'mujeres': mesa.mujeres,
+                'hombres': mesa.hombres
             } for mesa in mesas]
         }), 200
         
@@ -881,6 +884,10 @@ def get_todos_puestos():
             Location.longitud.isnot(None)
         ).all()
         
+        from backend.models.user import User
+        from backend.models.formulario_e14 import FormularioE14
+        from backend.models.incidentes_delitos import IncidenteElectoral, DelitoElectoral
+        
         puestos_data = []
         for puesto in puestos:
             # Contar mesas del puesto
@@ -892,9 +899,56 @@ def get_todos_puestos():
                 Location.puesto_codigo == puesto.puesto_codigo
             ).count()
             
+            # Contar testigos del puesto
+            testigos_verificados = User.query.filter(
+                User.rol == 'testigo_electoral',
+                User.ubicacion_id == puesto.id,
+                User.presencia_verificada == True
+            ).count()
+            
+            testigos_pendientes = User.query.filter(
+                User.rol == 'testigo_electoral',
+                User.ubicacion_id == puesto.id,
+                User.presencia_verificada == False
+            ).count()
+            
+            # Obtener IDs de mesas del puesto
+            mesas_ids = [m.id for m in Location.query.filter(
+                Location.tipo == 'mesa',
+                Location.departamento_codigo == puesto.departamento_codigo,
+                Location.municipio_codigo == puesto.municipio_codigo,
+                Location.zona_codigo == puesto.zona_codigo,
+                Location.puesto_codigo == puesto.puesto_codigo
+            ).all()]
+            
+            # Contar formularios E-14
+            formularios_validados = FormularioE14.query.filter(
+                FormularioE14.mesa_id.in_(mesas_ids),
+                FormularioE14.estado == 'validado'
+            ).count() if mesas_ids else 0
+            
+            formularios_pendientes = FormularioE14.query.filter(
+                FormularioE14.mesa_id.in_(mesas_ids),
+                FormularioE14.estado == 'pendiente'
+            ).count() if mesas_ids else 0
+            
+            formularios_rechazados = FormularioE14.query.filter(
+                FormularioE14.mesa_id.in_(mesas_ids),
+                FormularioE14.estado == 'rechazado'
+            ).count() if mesas_ids else 0
+            
+            # Contar incidentes y delitos
+            total_incidentes = IncidenteElectoral.query.filter(
+                IncidenteElectoral.mesa_id.in_(mesas_ids)
+            ).count() if mesas_ids else 0
+            
+            total_delitos = DelitoElectoral.query.filter(
+                DelitoElectoral.mesa_id.in_(mesas_ids)
+            ).count() if mesas_ids else 0
+            
             puestos_data.append({
                 'id': puesto.id,
-                'codigo': puesto.puesto_codigo,
+                'puesto_codigo': puesto.puesto_codigo,
                 'nombre': puesto.puesto_nombre or puesto.nombre_completo,
                 'latitud': puesto.latitud,
                 'longitud': puesto.longitud,
@@ -903,7 +957,15 @@ def get_todos_puestos():
                 'municipio_codigo': puesto.municipio_codigo,
                 'municipio_nombre': puesto.municipio_nombre,
                 'zona_codigo': puesto.zona_codigo,
-                'total_mesas': total_mesas
+                'direccion': puesto.direccion,
+                'total_mesas': total_mesas,
+                'testigos_verificados': testigos_verificados,
+                'testigos_pendientes': testigos_pendientes,
+                'formularios_validados': formularios_validados,
+                'formularios_pendientes': formularios_pendientes,
+                'formularios_rechazados': formularios_rechazados,
+                'total_incidentes': total_incidentes,
+                'total_delitos': total_delitos
             })
         
         return jsonify({

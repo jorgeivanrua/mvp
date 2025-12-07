@@ -10,6 +10,8 @@ class MapaGeolocalizacion {
         this.markers = {};
         this.puestosData = []; // Almacenar datos de puestos para filtrado
         this.filtrosActivos = {
+            testigos: true,
+            coordinadores: true,
             incidentes: false,
             delitos: false,
             pendientes: false,
@@ -194,10 +196,10 @@ class MapaGeolocalizacion {
         // Construir sección de alertas si existen
         let seccionAlertas = '';
         if (tieneAlertas) {
-            const incidentesActivos = puesto.incidentes_activos || 0;
-            const incidentesCriticos = puesto.incidentes_criticos || 0;
-            const delitosActivos = puesto.delitos_activos || 0;
-            const delitosGraves = puesto.delitos_graves || 0;
+            const incidentesActivos = (puesto.incidentes && puesto.incidentes.total) || 0;
+            const incidentesCriticos = (puesto.incidentes && puesto.incidentes.criticos) || 0;
+            const delitosActivos = (puesto.delitos && puesto.delitos.total) || 0;
+            const delitosGraves = (puesto.delitos && puesto.delitos.graves) || 0;
             
             seccionAlertas = '<hr style="margin: 8px 0;">';
             seccionAlertas += '<div class="alertas-section">';
@@ -262,6 +264,20 @@ class MapaGeolocalizacion {
         // Eliminar marker anterior si existe
         if (this.markers[markerId]) {
             this.map.removeLayer(this.markers[markerId]);
+        }
+
+        // Aplicar filtros de testigos y coordinadores
+        const esTestigo = usuario.rol === 'testigo_electoral';
+        const esCoordinador = usuario.rol && usuario.rol.includes('coordinador');
+        
+        // Si el filtro de testigos está desactivado y es testigo, no mostrar
+        if (esTestigo && !this.filtrosActivos.testigos) {
+            return;
+        }
+        
+        // Si el filtro de coordinadores está desactivado y es coordinador, no mostrar
+        if (esCoordinador && !this.filtrosActivos.coordinadores) {
+            return;
         }
 
         // Determinar color según estado
@@ -512,6 +528,8 @@ class MapaGeolocalizacion {
      */
     limpiarFiltros() {
         this.filtrosActivos = {
+            testigos: true,
+            coordinadores: true,
             incidentes: false,
             delitos: false,
             pendientes: false,

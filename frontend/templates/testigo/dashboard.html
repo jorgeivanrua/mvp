@@ -79,6 +79,34 @@
 .card-body {
     padding: 0.75rem;
 }
+
+/* FORZAR color blanco en pestañas activas de partidos */
+#votacionContainer #partidosTabs .nav-link.active,
+#votacionContainer #partidosTabs button.nav-link.active {
+    background-color: #0d6efd !important;
+    color: #ffffff !important;
+}
+
+#votacionContainer #partidosTabs .nav-link.active span,
+#votacionContainer #partidosTabs .nav-link.active small,
+#votacionContainer #partidosTabs button.nav-link.active span,
+#votacionContainer #partidosTabs button.nav-link.active small {
+    color: #ffffff !important;
+}
+
+/* Color oscuro en pestañas inactivas */
+#votacionContainer #partidosTabs .nav-link:not(.active),
+#votacionContainer #partidosTabs button.nav-link:not(.active) {
+    color: #495057 !important;
+    background-color: transparent !important;
+}
+
+#votacionContainer #partidosTabs .nav-link:not(.active) span,
+#votacionContainer #partidosTabs .nav-link:not(.active) small,
+#votacionContainer #partidosTabs button.nav-link:not(.active) span,
+#votacionContainer #partidosTabs button.nav-link:not(.active) small {
+    color: #495057 !important;
+}
 </style>
 {% endblock %}
 
@@ -98,8 +126,9 @@
                 <button class="btn btn-outline-primary btn-sm d-none d-md-inline-flex" onclick="window.syncManager && window.syncManager.syncAll()" title="Sincronizar datos">
                     <i class="bi bi-arrow-repeat"></i> Sincronizar
                 </button>
-                <button class="btn btn-outline-danger btn-sm d-none d-md-inline-flex" onclick="logout()">
-                    <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                <button class="btn btn-outline-danger btn-sm" onclick="logout()" title="Cerrar sesión">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span class="d-none d-md-inline"> Cerrar Sesión</span>
                 </button>
             </div>
         </div>
@@ -167,7 +196,7 @@
                     <div class="form-group-touch">
                         <label class="form-label-touch">Verificación de Presencia</label>
                         <div id="presenciaContainer">
-                            <button class="btn-touch btn-success-touch btn-touch-block" id="btnVerificarPresencia" onclick="verificarPresencia()">
+                            <button class="btn-touch btn-success-touch btn-touch-block" id="btnVerificarPresencia" onclick="verificarPresenciaSimple()">
                                 <i class="bi bi-check-circle"></i> Verificar Mi Presencia
                             </button>
                             <div class="alert alert-success mt-2 d-none" id="alertaPresenciaVerificada">
@@ -195,7 +224,7 @@
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">Mis Formularios E-14</h5>
-                            <button class="btn btn-primary d-none d-md-inline-flex" id="btnNuevoFormulario" onclick="showCreateForm()" disabled title="Debe seleccionar una mesa y verificar presencia primero">
+                            <button class="btn btn-primary" id="btnNuevoFormulario" onclick="showCreateForm()" disabled title="Debe seleccionar una mesa y verificar presencia primero">
                                 <i class="bi bi-plus-circle"></i> Nuevo Formulario
                             </button>
                         </div>
@@ -284,7 +313,7 @@
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">Incidentes Reportados</h5>
-                            <button class="btn btn-warning d-none d-md-inline-flex" onclick="reportarIncidente()">
+                            <button class="btn btn-warning" onclick="reportarIncidente()">
                                 <i class="bi bi-plus-circle"></i> Reportar Incidente
                             </button>
                         </div>
@@ -332,7 +361,7 @@
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">Delitos Electorales Reportados</h5>
-                            <button class="btn btn-danger d-none d-md-inline-flex" onclick="reportarDelito()">
+                            <button class="btn btn-danger" onclick="reportarDelito()">
                                 <i class="bi bi-plus-circle"></i> Reportar Delito
                             </button>
                         </div>
@@ -401,12 +430,12 @@
 </nav>
 
 <!-- Modal para crear/editar formulario E-14 -->
-<div class="modal fade" id="formModal" tabindex="-1">
+<div class="modal fade" id="formModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Formulario E-14</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <div class="modal-body">
                 <form id="e14Form" enctype="multipart/form-data">
@@ -461,7 +490,7 @@
                                     <div class="col-6 col-md-3">
                                         <div class="p-2 bg-primary bg-opacity-10 rounded">
                                             <label class="form-label small mb-1 text-primary fw-bold">📊 Votantes Registrados</label>
-                                            <input type="number" class="form-control form-control-sm border-primary bg-light" name="total_votantes_registrados" id="votantesRegistrados" min="0" readonly>
+                                            <input type="number" class="form-control form-control-sm border-primary bg-light" name="total_votantes_registrados" id="votantesRegistrados" min="0" value="0" readonly>
                                             <small class="text-muted">Automático</small>
                                         </div>
                                     </div>
@@ -488,21 +517,21 @@
                                     <div class="col-4">
                                         <div class="p-2 bg-success bg-opacity-10 rounded">
                                             <label class="form-label small mb-1 text-success fw-bold">✅ Votos Válidos</label>
-                                            <input type="number" class="form-control form-control-sm border-success bg-light" name="votos_validos" id="votosValidos" min="0" readonly>
+                                            <input type="number" class="form-control form-control-sm border-success bg-light" name="votos_validos" id="votosValidos" min="0" value="0" readonly>
                                             <small class="text-muted">Automático</small>
                                         </div>
                                     </div>
                                     <div class="col-4">
                                         <div class="p-2 bg-info bg-opacity-10 rounded">
                                             <label class="form-label small mb-1 text-info fw-bold">📈 Total Votos</label>
-                                            <input type="number" class="form-control form-control-sm border-info bg-light" name="total_votos" id="totalVotos" min="0" readonly>
+                                            <input type="number" class="form-control form-control-sm border-info bg-light" name="total_votos" id="totalVotos" min="0" value="0" readonly>
                                             <small class="text-muted">Automático</small>
                                         </div>
                                     </div>
                                     <div class="col-4">
                                         <div class="p-2 bg-dark bg-opacity-10 rounded">
                                             <label class="form-label small mb-1 text-dark fw-bold">📋 Total Tarjetas</label>
-                                            <input type="number" class="form-control form-control-sm border-dark bg-light" name="total_tarjetas" id="totalTarjetas" readonly>
+                                            <input type="number" class="form-control form-control-sm border-dark bg-light" name="total_tarjetas" id="totalTarjetas" value="0" readonly>
                                             <small class="text-muted">Automático</small>
                                         </div>
                                     </div>
@@ -573,7 +602,14 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="formIncidente">
+                <!-- Información de la mesa verificada -->
+                <div class="alert alert-info" id="alertMesaIncidente">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Mesa:</strong> <span id="mesaInfoIncidente">-</span>
+                    <br><small>Este incidente se reportará para la mesa verificada actualmente</small>
+                </div>
+                
+                <form id="formIncidente" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label class="form-label">Tipo de Incidente *</label>
                         <select class="form-select" id="tipoIncidente" name="tipo_incidente" required>
@@ -597,6 +633,37 @@
                         <label class="form-label">Descripción *</label>
                         <textarea class="form-control" name="descripcion" rows="4" required placeholder="Describa el incidente con el mayor detalle posible..."></textarea>
                     </div>
+                    
+                    <!-- Evidencia Fotográfica -->
+                    <div class="mb-3">
+                        <label class="form-label">📸 Evidencia Fotográfica (opcional)</label>
+                        <div class="input-group">
+                            <input type="file" class="form-control" id="fotoIncidente" name="foto" accept="image/*" capture="environment">
+                            <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('fotoIncidente').click()">
+                                <i class="bi bi-camera"></i> Tomar Foto
+                            </button>
+                        </div>
+                        <small class="text-muted">Puede adjuntar una foto como evidencia del incidente</small>
+                        <div id="previewIncidente" class="mt-2" style="display: none;">
+                            <img id="imgPreviewIncidente" src="" alt="Vista previa" class="img-fluid rounded" style="max-height: 200px;">
+                            <button type="button" class="btn btn-sm btn-danger mt-2" onclick="limpiarFotoIncidente()">
+                                <i class="bi bi-trash"></i> Eliminar foto
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Hora del incidente -->
+                    <div class="mb-3">
+                        <label class="form-label">Hora del Incidente *</label>
+                        <input type="time" class="form-control" name="hora_incidente" required>
+                        <small class="text-muted">Hora aproximada en que ocurrió el incidente</small>
+                    </div>
+                    
+                    <!-- Personas involucradas -->
+                    <div class="mb-3">
+                        <label class="form-label">Personas Involucradas (opcional)</label>
+                        <input type="text" class="form-control" name="personas_involucradas" placeholder="Nombres o descripción de las personas involucradas">
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -618,11 +685,18 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
+                <!-- Información de la mesa verificada -->
+                <div class="alert alert-info" id="alertMesaDelito">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Mesa:</strong> <span id="mesaInfoDelito">-</span>
+                    <br><small>Este delito se reportará para la mesa verificada actualmente</small>
+                </div>
+                
                 <div class="alert alert-danger">
                     <i class="bi bi-exclamation-triangle"></i>
                     <strong>Advertencia:</strong> Este reporte será enviado a las autoridades electorales competentes.
                 </div>
-                <form id="formDelito">
+                <form id="formDelito" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label class="form-label">Tipo de Delito *</label>
                         <select class="form-select" id="tipoDelito" name="tipo_delito" required>
@@ -646,9 +720,48 @@
                         <label class="form-label">Descripción Detallada *</label>
                         <textarea class="form-control" name="descripcion" rows="5" required placeholder="Describa el delito con el mayor detalle posible: qué ocurrió, quiénes estuvieron involucrados, cuándo sucedió, etc."></textarea>
                     </div>
+                    
+                    <!-- Evidencia Fotográfica -->
+                    <div class="mb-3">
+                        <label class="form-label">📸 Evidencia Fotográfica (opcional pero recomendada)</label>
+                        <div class="input-group">
+                            <input type="file" class="form-control" id="fotoDelito" name="foto" accept="image/*" capture="environment">
+                            <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('fotoDelito').click()">
+                                <i class="bi bi-camera"></i> Tomar Foto
+                            </button>
+                        </div>
+                        <small class="text-muted">La evidencia fotográfica fortalece el reporte ante las autoridades</small>
+                        <div id="previewDelito" class="mt-2" style="display: none;">
+                            <img id="imgPreviewDelito" src="" alt="Vista previa" class="img-fluid rounded" style="max-height: 200px;">
+                            <button type="button" class="btn btn-sm btn-danger mt-2" onclick="limpiarFotoDelito()">
+                                <i class="bi bi-trash"></i> Eliminar foto
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Hora del delito -->
+                    <div class="mb-3">
+                        <label class="form-label">Hora del Delito *</label>
+                        <input type="time" class="form-control" name="hora_delito" required>
+                        <small class="text-muted">Hora aproximada en que ocurrió el delito</small>
+                    </div>
+                    
+                    <!-- Personas involucradas -->
+                    <div class="mb-3">
+                        <label class="form-label">Personas Involucradas *</label>
+                        <textarea class="form-control" name="personas_involucradas" rows="2" required placeholder="Descripción de las personas involucradas (nombres, características físicas, vestimenta, etc.)"></textarea>
+                    </div>
+                    
+                    <!-- Testigos adicionales -->
                     <div class="mb-3">
                         <label class="form-label">Testigos Adicionales (opcional)</label>
-                        <input type="text" class="form-control" name="testigos_adicionales" placeholder="Nombres de otros testigos presenciales">
+                        <input type="text" class="form-control" name="testigos_adicionales" placeholder="Nombres y contactos de otros testigos presenciales">
+                    </div>
+                    
+                    <!-- Ubicación específica -->
+                    <div class="mb-3">
+                        <label class="form-label">Ubicación Específica (opcional)</label>
+                        <input type="text" class="form-control" name="ubicacion_especifica" placeholder="Ej: Entrada principal del puesto, fila de votación, etc.">
                     </div>
                 </form>
             </div>
@@ -665,24 +778,26 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- API Client (PRIMERO) -->
-<script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
-<!-- Correcciones de dashboards -->
-<script src="{{ url_for('static', filename='js/dashboard-fixes.js') }}"></script>
+<!-- API Client ya está cargado en base.html -->
 
+<!-- Script de verificación SIMPLE (se carga primero) -->
+<script src="{{ url_for('static', filename='js/testigo-verificacion-simple.js') }}"></script>
+
+<!-- Script de depuración -->
+<script src="{{ url_for('static', filename='js/testigo-debug-buttons.js') }}"></script>
+
+<!-- Script para habilitar botones automáticamente -->
+<script src="{{ url_for('static', filename='js/testigo-enable-buttons.js') }}"></script>
+
+<!-- Script para forzar verificación manualmente -->
+<script src="{{ url_for('static', filename='js/testigo-force-verification.js') }}"></script>
+
+<!-- Módulos independientes -->
 <script src="{{ url_for('static', filename='js/incidentes-delitos.js') }}"></script>
+
+<!-- Dashboard principal (incluye toda la funcionalidad) -->
 <script src="{{ url_for('static', filename='js/testigo-dashboard-v2.js') }}"></script>
-<script src="{{ url_for('static', filename='js/testigo-presencia-simple.js') }}"></script>
-<!-- Solución definitiva que sobrescribe las funciones problemáticas -->
-<script src="{{ url_for('static', filename='js/testigo-dashboard-final-fix.js') }}"></script>
-<!-- Fix para problema de sesión al tomar fotos -->
-<script src="{{ url_for('static', filename='js/testigo-session-fix.js') }}"></script>
-<!-- Mejoras UI/UX Mobile-First -->
-<script src="{{ url_for('static', filename='js/testigo-mejoras.js') }}"></script>
-<!-- Fix para botones y tipos de elección -->
-<script src="{{ url_for('static', filename='js/testigo-dashboard-fix-buttons.js') }}"></script>
-<!-- Inicialización del dashboard (ÚLTIMO) -->
-<script src="{{ url_for('static', filename='js/testigo-init.js') }}"></script>
-<!-- Script de debugging -->
-<script src="{{ url_for('static', filename='js/testigo-dashboard-debug.js') }}"></script>
+
+<!-- Fix de visibilidad de botones - DESHABILITADO porque causa conflictos -->
+<!-- <script src="{{ url_for('static', filename='js/testigo-fix-buttons-visibility.js') }}"></script> -->
 {% endblock %}

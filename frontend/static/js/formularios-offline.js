@@ -25,6 +25,12 @@ class FormulariosOfflineManager {
      */
     async migrarDatosLocales() {
         try {
+            // Verificar que syncManager esté disponible
+            if (!window.syncManager) {
+                console.warn('SyncManager no disponible, saltando migración');
+                return;
+            }
+
             // Migrar borradores E-14
             const borradoresE14 = localStorage.getItem('formularios_e14_borradores');
             if (borradoresE14) {
@@ -32,7 +38,7 @@ class FormulariosOfflineManager {
                 for (const key in borradores) {
                     const borrador = borradores[key];
                     borrador.tipo = 'formulario_e14';
-                    await this.guardarFormularioOffline(borrador);
+                    await window.syncManager.guardarReporteOffline(borrador);
                 }
                 localStorage.removeItem('formularios_e14_borradores');
                 console.log('Borradores E-14 migrados a IndexedDB');

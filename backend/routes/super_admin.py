@@ -1443,7 +1443,7 @@ def reset_campana(campana_id):
         from backend.database import db
         from backend.models.configuracion_electoral import Campana
         from backend.models.formulario_e14 import FormularioE14
-        from backend.models.incidentes_delitos import Incidente, Delito
+        from backend.models.incidentes_delitos import IncidenteElectoral, DelitoElectoral
         
         data = request.get_json()
         confirmacion = data.get('confirmacion', '')
@@ -1463,13 +1463,13 @@ def reset_campana(campana_id):
         
         # Contar registros antes de eliminar
         formularios_count = FormularioE14.query.filter_by(campana_id=campana_id).count()
-        incidentes_count = Incidente.query.filter_by(campana_id=campana_id).count()
-        delitos_count = Delito.query.filter_by(campana_id=campana_id).count()
+        incidentes_count = IncidenteElectoral.query.filter_by(campana_id=campana_id).count()
+        delitos_count = DelitoElectoral.query.filter_by(campana_id=campana_id).count()
         
         # Eliminar datos de la campaña
         FormularioE14.query.filter_by(campana_id=campana_id).delete()
-        Incidente.query.filter_by(campana_id=campana_id).delete()
-        Delito.query.filter_by(campana_id=campana_id).delete()
+        IncidenteElectoral.query.filter_by(campana_id=campana_id).delete()
+        DelitoElectoral.query.filter_by(campana_id=campana_id).delete()
         
         db.session.commit()
         
@@ -1504,7 +1504,7 @@ def delete_campana(campana_id):
         from backend.database import db
         from backend.models.configuracion_electoral import Campana
         from backend.models.formulario_e14 import FormularioE14
-        from backend.models.incidentes_delitos import Incidente, Delito
+        from backend.models.incidentes_delitos import IncidenteElectoral, DelitoElectoral
         
         data = request.get_json()
         confirmacion = data.get('confirmacion', '')
@@ -1530,8 +1530,8 @@ def delete_campana(campana_id):
         
         # Eliminar todos los datos asociados
         FormularioE14.query.filter_by(campana_id=campana_id).delete()
-        Incidente.query.filter_by(campana_id=campana_id).delete()
-        Delito.query.filter_by(campana_id=campana_id).delete()
+        IncidenteElectoral.query.filter_by(campana_id=campana_id).delete()
+        DelitoElectoral.query.filter_by(campana_id=campana_id).delete()
         
         # Eliminar la campaña
         db.session.delete(campana)
@@ -1684,7 +1684,7 @@ def system_audit():
     """
     try:
         from backend.models.formulario_e14 import FormularioE14
-        from backend.models.incidentes_delitos import Incidente, Delito
+        from backend.models.incidentes_delitos import IncidenteElectoral, DelitoElectoral
         
         audit_results = {
             'timestamp': datetime.utcnow().isoformat(),
@@ -1795,8 +1795,8 @@ def system_audit():
         
         # Check 6: Incidentes y Delitos
         try:
-            incidentes_count = Incidente.query.count()
-            delitos_count = Delito.query.count()
+            incidentes_count = IncidenteElectoral.query.count()
+            delitos_count = DelitoElectoral.query.count()
             
             audit_results['checks'].append({
                 'name': 'Incidents & Crimes',
@@ -1917,10 +1917,10 @@ def get_incidentes_delitos_admin():
     Obtener todos los incidentes y delitos del sistema con información completa
     """
     try:
-        from backend.models.incidentes_delitos import Incidente, Delito
+        from backend.models.incidentes_delitos import IncidenteElectoral, DelitoElectoral
         
         # Obtener incidentes
-        incidentes = Incidente.query.order_by(Incidente.fecha_reporte.desc()).limit(50).all()
+        incidentes = IncidenteElectoral.query.order_by(IncidenteElectoral.fecha_reporte.desc()).limit(50).all()
         
         incidentes_data = []
         for inc in incidentes:
@@ -1968,7 +1968,7 @@ def get_incidentes_delitos_admin():
             })
         
         # Obtener delitos
-        delitos = Delito.query.order_by(Delito.fecha_reporte.desc()).limit(50).all()
+        delitos = DelitoElectoral.query.order_by(DelitoElectoral.fecha_reporte.desc()).limit(50).all()
         
         delitos_data = []
         for delito in delitos:
@@ -2215,11 +2215,11 @@ def get_partidos():
             'success': True,
             'data': [{
                 'id': p.id,
-                'codigo': p.codigo,
+                'sigla': p.sigla,
                 'nombre': p.nombre,
-                'nombre_corto': p.nombre_corto,
                 'color': p.color,
                 'logo_url': p.logo_url,
+                'descripcion': p.descripcion,
                 'activo': p.activo,
                 'orden': p.orden
             } for p in partidos]
@@ -2568,9 +2568,19 @@ def init_test_data():
         ]
         
         for partido_data in partidos:
-            existing = Partido.query.filter_by(codigo=partido_data['codigo']).first()
+            # Usar sigla en lugar de codigo (el modelo no tiene codigo)
+            sigla = partido_data.pop('codigo')  # Remover codigo y usarlo como sigla
+            nombre_corto = partido_data.pop('nombre_corto', sigla)  # Remover nombre_corto si existe
+            
+            existing = Partido.query.filter_by(sigla=sigla).first()
             if not existing:
-                partido = Partido(**partido_data)
+                partido = Partido(
+                    sigla=sigla,
+                    nombre=partido_data['nombre'],
+                    color=partido_data['color'],
+                    orden=partido_data.get('orden', 0),
+                    activo=partido_data.get('activo', True)
+                )
                 db.session.add(partido)
                 results['partidos']['created'] += 1
             else:
@@ -2583,10 +2593,10 @@ def init_test_data():
         tipo_senado = TipoEleccion.query.filter_by(codigo='SENADO').first()
         tipo_camara = TipoEleccion.query.filter_by(codigo='CAMARA').first()
         
-        partido_liberal = Partido.query.filter_by(codigo='LIBERAL').first()
-        partido_conservador = Partido.query.filter_by(codigo='CONSERVADOR').first()
-        partido_verde = Partido.query.filter_by(codigo='VERDE').first()
-        partido_centro_dem = Partido.query.filter_by(codigo='CENTRO_DEM').first()
+        partido_liberal = Partido.query.filter_by(sigla='LIBERAL').first()
+        partido_conservador = Partido.query.filter_by(sigla='CONSERVADOR').first()
+        partido_verde = Partido.query.filter_by(sigla='VERDE').first()
+        partido_centro_dem = Partido.query.filter_by(sigla='CENTRO_DEM').first()
         
         if all([tipo_pres, tipo_senado, tipo_camara, partido_liberal, partido_conservador, partido_verde, partido_centro_dem]):
             candidatos = [

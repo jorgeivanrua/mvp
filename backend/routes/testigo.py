@@ -202,9 +202,8 @@ def get_partidos():
         for partido in partidos:
             partidos_data.append({
                 'id': partido.id,
-                'codigo': partido.codigo,
+                'sigla': partido.sigla,
                 'nombre': partido.nombre,
-                'nombre_corto': partido.nombre_corto,
                 'color': partido.color,
                 'logo_url': partido.logo_url
             })
@@ -253,7 +252,7 @@ def get_candidatos():
                 'numero_lista': candidato.numero_lista,
                 'partido_id': candidato.partido_id,
                 'partido_nombre': partido.nombre if partido else None,
-                'partido_nombre_corto': partido.nombre_corto if partido else None,
+                'partido_sigla': partido.sigla if partido else None,
                 'partido_color': partido.color if partido else None,
                 'tipo_eleccion_id': candidato.tipo_eleccion_id,
                 'tipo_eleccion_nombre': tipo_eleccion.nombre if tipo_eleccion else None,

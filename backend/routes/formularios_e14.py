@@ -14,6 +14,122 @@ from backend.utils.decorators import role_required
 formularios_bp = Blueprint('formularios', __name__, url_prefix='/api/formularios')
 
 
+@formularios_bp.route('/todos', methods=['GET'])
+@jwt_required()
+@role_required(['super_admin', 'monitoreo', 'auditor_electoral'])
+def obtener_todos_formularios():
+    """
+    Obtener todos los formularios E-14 del sistema
+    Para roles de monitoreo, super admin y auditor
+    
+    Query params:
+        estado: Filtrar por estado (opcional)
+        municipio_codigo: Filtrar por municipio (opcional)
+        tipo_eleccion_id: Filtrar por tipo de elección (opcional)
+        page: Número de página (default: 1)
+        per_page: Resultados por página (default: 100)
+    """
+    try:
+        from backend.models.formulario_e14 import FormularioE14
+        from backend.models.candidato import Candidato
+        from backend.models.partido_politico import PartidoPolitico as Partido
+        from backend.models.configuracion_electoral import TipoEleccion
+        
+        # Obtener parámetros de query
+        estado = request.args.get('estado')
+        municipio_codigo = request.args.get('municipio_codigo')
+        tipo_eleccion_id = request.args.get('tipo_eleccion_id', type=int)
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 100, type=int)
+        
+        # Construir query
+        query = FormularioE14.query
+        
+        # Aplicar filtros
+        if estado:
+            query = query.filter_by(estado=estado)
+        
+        if tipo_eleccion_id:
+            query = query.filter_by(tipo_eleccion_id=tipo_eleccion_id)
+        
+        if municipio_codigo:
+            # Filtrar por municipio a través de la mesa
+            query = query.join(Location, FormularioE14.mesa_id == Location.id)\
+                        .filter(Location.municipio_codigo == municipio_codigo)
+        
+        # Ordenar por fecha de creación (más recientes primero)
+        query = query.order_by(FormularioE14.created_at.desc())
+        
+        # Obtener todos los formularios (sin paginación para el dashboard)
+        formularios = query.all()
+        
+        # Serializar formularios con información completa
+        formularios_data = []
+        for form in formularios:
+            # Obtener votos por partido
+            votos_partidos = []
+            for vp in form.votos_partidos:
+                votos_partidos.append({
+                    'partido_id': vp.partido_id,
+                    'partido': {
+                        'id': vp.partido.id,
+                        'nombre': vp.partido.nombre,
+                        'sigla': vp.partido.sigla,
+                        'color': vp.partido.color
+                    } if vp.partido else None,
+                    'votos': vp.votos
+                })
+            
+            formularios_data.append({
+                'id': form.id,
+                'mesa_id': form.mesa_id,
+                'mesa': {
+                    'id': form.mesa.id,
+                    'mesa_nombre': form.mesa.mesa_nombre,
+                    'puesto_nombre': form.mesa.puesto_nombre,
+                    'municipio_nombre': form.mesa.municipio_nombre,
+                    'departamento_nombre': form.mesa.departamento_nombre,
+                    'zona_codigo': form.mesa.zona_codigo,
+                    'puesto_codigo': form.mesa.puesto_codigo
+                } if form.mesa else None,
+                'testigo_id': form.testigo_id,
+                'testigo': {
+                    'id': form.testigo.id,
+                    'nombre': form.testigo.nombre
+                } if form.testigo else None,
+                'tipo_eleccion_id': form.tipo_eleccion_id,
+                'tipo_eleccion': {
+                    'id': form.tipo_eleccion.id,
+                    'nombre': form.tipo_eleccion.nombre,
+                    'codigo': form.tipo_eleccion.codigo
+                } if form.tipo_eleccion else None,
+                'total_votos': form.total_votos,
+                'votos_validos': form.votos_validos,
+                'votos_nulos': form.votos_nulos,
+                'votos_blanco': form.votos_blanco,
+                'votos_partidos': votos_partidos,
+                'estado': form.estado,
+                'observaciones': form.observaciones,
+                'created_at': form.created_at.isoformat() if form.created_at else None,
+                'updated_at': form.updated_at.isoformat() if form.updated_at else None
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': formularios_data,
+            'total': len(formularios_data)
+        }), 200
+        
+    except Exception as e:
+        import traceback
+        print(f"Error obteniendo todos los formularios: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @formularios_bp.route('/puesto', methods=['GET'])
 @jwt_required()
 @role_required(['coordinador_puesto'])

@@ -1,102 +1,129 @@
-# 📚 Documentación del Sistema Electoral MVP
+# Documentación del Proyecto
 
-Bienvenido a la documentación del Sistema Electoral MVP. Esta documentación está organizada en carpetas temáticas para facilitar la navegación.
+Esta carpeta contiene toda la documentación del proyecto organizada por categorías.
 
-## 🗂️ Estructura de Documentación
+## Estructura
 
-### 📋 Documentos Principales (raíz)
-- **README.md** (este archivo) - Punto de entrada a la documentación
-- **INDICE_DOCUMENTACION.md** - Índice completo y detallado
-- **ARQUITECTURA.md** - Arquitectura del sistema
-- **SEGURIDAD.md** - Documentación de seguridad
-- **TROUBLESHOOTING.md** - Solución de problemas generales
-
-### 🔧 [setup/](./setup/) - Configuración e Inicialización
-Documentación sobre la configuración inicial del sistema, usuarios básicos y credenciales.
-- Inicialización automática de datos
-- Configuración del super administrador
-- Credenciales del sistema
-- Usuarios básicos
-
-### 📖 [guias/](./guias/) - Guías de Uso
-Guías prácticas para usar el sistema.
-- Guía completa de monitoreo
+### 📁 `/guias`
+Guías de uso y referencia:
+- Guías de implementación
+- Guías de usuario
+- Instrucciones de debug
+- Checklists
+- Troubleshooting
 - Inicio rápido
-- Pruebas del sistema
-- Optimizaciones
 
-### 🚀 [deployment/](./deployment/) - Despliegue
-Documentación sobre el despliegue en Render y solución de problemas.
-- Correcciones para Render
-- Resetear contraseñas
-- Troubleshooting específico de Render
+### 📁 `/desarrollo`
+Documentación técnica y arquitectura:
+- Arquitectura del sistema
+- Flujos de datos
+- Roles y permisos
+- Seguridad
+- Sistemas específicos
+- Tipos de datos
 
-### 👨‍💻 [desarrollo/](./desarrollo/) - Desarrollo
-Documentación técnica para desarrolladores.
-- Arquitectura y flujo de datos
-- Estructura del proyecto
-- Análisis de dashboards
-- Sincronización y debugging
+### 📁 `/setup`
+Configuración e instalación:
+- Configuración de base de datos
+- Datos electorales
+- Setup inicial
+- Variables de entorno
 
-### ✨ [features/](./features/) - Características
-Documentación de características específicas del sistema.
-- Ubicaciones y DIVIPOLA
-- Logos de partidos
-- Implementaciones específicas
+### 📁 `/sesiones`
+Resúmenes de sesiones de trabajo:
+- Resúmenes de implementaciones
+- Estados de componentes
+- Verificaciones realizadas
+- Pruebas completadas
 
-### ⚡ [optimizaciones/](./optimizaciones/) - Optimizaciones
-Documentación de optimizaciones del dashboard.
-- Sistema de caché
-- Paginación
-- Lazy loading
-- Búsqueda avanzada
+### 📁 `/correcciones`
+Documentación de correcciones:
+- Correcciones de errores
+- Soluciones implementadas
+- Fixes aplicados
 
-### 📦 [historico/](./historico/) - Histórico
-Archivos históricos, resúmenes de sesiones anteriores y correcciones aplicadas.
+### 📁 `/implementaciones`
+Nuevas funcionalidades:
+- Implementaciones de features
+- Ampliaciones
+- Mejoras aplicadas
 
-## 🚀 Inicio Rápido
+### 📁 `/optimizaciones`
+Optimizaciones realizadas:
+- Mejoras de rendimiento
+- Optimizaciones de código
+- Refactorizaciones
 
-### Para nuevos usuarios
-1. Lee [setup/INICIALIZACION_AUTOMATICA.md](./setup/INICIALIZACION_AUTOMATICA.md)
-2. Revisa [guias/INICIO_RAPIDO_MONITOREO.md](./guias/INICIO_RAPIDO_MONITOREO.md)
-3. Consulta [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) si tienes problemas
+### 📁 `/deployment`
+Documentación de despliegue:
+- Configuración de Render
+- Deploy en producción
+- CI/CD
 
-### Para desarrolladores
-1. Lee [ARQUITECTURA.md](./ARQUITECTURA.md)
-2. Revisa [desarrollo/ESTRUCTURA_PROYECTO.md](./desarrollo/ESTRUCTURA_PROYECTO.md)
-3. Consulta [SEGURIDAD.md](./SEGURIDAD.md)
+### 📁 `/features`
+Documentación de características:
+- Features específicas
+- Funcionalidades del sistema
 
-### Para despliegue
-1. Lee [deployment/FIX_COMPLETO_RENDER.md](./deployment/FIX_COMPLETO_RENDER.md)
-2. Sigue [deployment/INSTRUCCIONES_RESETEAR_PASSWORDS_RENDER.md](./deployment/INSTRUCCIONES_RESETEAR_PASSWORDS_RENDER.md)
+### 📁 `/historico`
+Documentación histórica:
+- Changelogs antiguos
+- Documentos de organización
+- Archivos de referencia histórica
 
-## 📊 Estadísticas
+### 📁 `/testing`
+Documentación de pruebas:
+- Planes de prueba
+- Resultados de testing
+- Casos de prueba
 
-- **Total de carpetas**: 7
-- **Documentos principales**: 5
-- **Guías de uso**: 5
-- **Documentos de configuración**: 9
-- **Documentos de deployment**: 4
-- **Documentos de desarrollo**: 80+
-- **Documentos históricos**: 30+
+### 📁 Raíz de `/docs`
+Documentación principal:
+- README.md (este archivo)
+- INDICE_DOCUMENTACION.md (índice completo)
 
-## 🔍 Búsqueda Rápida
+## Convenciones
 
-| Necesito... | Ver documento... |
-|-------------|------------------|
-| Configurar el sistema | [setup/INICIALIZACION_AUTOMATICA.md](./setup/INICIALIZACION_AUTOMATICA.md) |
-| Usar el monitoreo | [guias/GUIA_COMPLETA_MONITOREO.md](./guias/GUIA_COMPLETA_MONITOREO.md) |
-| Desplegar en Render | [deployment/FIX_COMPLETO_RENDER.md](./deployment/FIX_COMPLETO_RENDER.md) |
-| Entender la arquitectura | [ARQUITECTURA.md](./ARQUITECTURA.md) |
-| Solucionar problemas | [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) |
-| Ver credenciales | [setup/CREDENCIALES_SISTEMA.md](./setup/CREDENCIALES_SISTEMA.md) |
+### Nombres de Archivos
 
-## 📞 Soporte
+- **RESUMEN_*.md**: Resúmenes de sesiones o implementaciones completas
+- **CORRECCION_*.md**: Documentación de correcciones específicas
+- **IMPLEMENTACION_*.md**: Documentación de implementaciones nuevas
+- **AMPLIACION_*.md**: Documentación de ampliaciones de funcionalidad
+- **OPTIMIZACION_*.md**: Documentación de optimizaciones
+- **MEJORAS_*.md**: Documentación de mejoras aplicadas
+- **ESTADO_*.md**: Estados actuales de componentes
+- **SOLUCION_*.md**: Soluciones a problemas específicos
 
-Para más información detallada, consulta el [INDICE_DOCUMENTACION.md](./INDICE_DOCUMENTACION.md) que contiene un índice completo de toda la documentación disponible.
+## Documentos Importantes
 
----
+### Sesiones Recientes
+- `sesiones/RESUMEN_IMPLEMENTACION_FINAL.md` - Última implementación de incidentes/delitos
+- `sesiones/RESUMEN_SESION_COORDINADOR_MUNICIPAL.md` - Sesión del coordinador municipal
+- `sesiones/RESUMEN_OPTIMIZACION_MOBILE.md` - Optimización móvil
 
-**Última actualización**: 30 de Noviembre de 2025  
-**Versión**: 2.0  
-**Mantenido por**: Equipo de Desarrollo
+### Implementaciones Clave
+- `implementaciones/IMPLEMENTACION_INCIDENTES_DELITOS_MODAL.md` - Modal de incidentes/delitos
+- `implementaciones/AMPLIACION_MODAL_INCIDENTES_DELITOS.md` - Ampliación con fotos
+- `implementaciones/OPTIMIZACION_MOBILE_TODOS_ROLES.md` - Responsive design
+
+### Correcciones Importantes
+- `correcciones/CORRECCION_NAVEGACION_MOVIL.md` - Fix navegación móvil
+- `correcciones/CORRECCION_SYNC_MANAGER_ROLES.md` - Fix sync manager
+- `correcciones/SOLUCION_ZONA_CODIGO.md` - Solución códigos de zona
+
+## Mantenimiento
+
+Al crear nueva documentación:
+1. Usar el prefijo apropiado según el tipo de documento
+2. Colocar en la carpeta correspondiente
+3. Actualizar este README si es un documento importante
+4. Usar formato Markdown consistente
+5. Incluir fecha en el documento
+
+## Scripts
+
+Los scripts de prueba y utilidades están en `/scripts`:
+- Scripts de prueba: `test_*.py`, `test_*.html`
+- Scripts de corrección: `fix_*.py`, `check_*.py`
+- Scripts de utilidades: `add_*.py`, `reset_*.py`, etc.

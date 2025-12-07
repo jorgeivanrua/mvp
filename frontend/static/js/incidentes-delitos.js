@@ -240,6 +240,18 @@ function renderizarDelitos() {
  * Abrir modal para reportar incidente
  */
 function reportarIncidente() {
+    // Verificar que haya una mesa verificada
+    if (!window.mesaSeleccionadaDashboard || !window.presenciaVerificada) {
+        Utils.showError('Debe seleccionar una mesa y verificar su presencia antes de reportar incidentes');
+        return;
+    }
+    
+    // Mostrar información de la mesa en el modal
+    const mesaInfoElement = document.getElementById('mesaInfoIncidente');
+    if (mesaInfoElement && window.mesaSeleccionadaDashboard) {
+        mesaInfoElement.textContent = `Mesa ${window.mesaSeleccionadaDashboard.mesa_codigo} - ${window.mesaSeleccionadaDashboard.puesto_nombre || ''}`;
+    }
+    
     // Limpiar formulario
     document.getElementById('formIncidente').reset();
     
@@ -273,12 +285,20 @@ async function guardarIncidente() {
     
     const formData = new FormData(form);
     
+    // Usar la mesa verificada (mesaSeleccionadaDashboard)
+    const mesaId = window.mesaSeleccionadaDashboard ? window.mesaSeleccionadaDashboard.id : null;
+    
+    if (!mesaId) {
+        Utils.showError('No hay una mesa verificada. Por favor, seleccione y verifique una mesa primero.');
+        return;
+    }
+    
     const data = {
         tipo_incidente: formData.get('tipo_incidente'),
         titulo: formData.get('titulo'),
         descripcion: formData.get('descripcion'),
         severidad: formData.get('severidad'),
-        mesa_id: selectedMesa ? selectedMesa.id : null,
+        mesa_id: mesaId,
         tipo: 'incidente'
     };
     
@@ -388,6 +408,18 @@ async function guardarIncidenteOffline(data, fotos) {
  * Abrir modal para reportar delito
  */
 function reportarDelito() {
+    // Verificar que haya una mesa verificada
+    if (!window.mesaSeleccionadaDashboard || !window.presenciaVerificada) {
+        Utils.showError('Debe seleccionar una mesa y verificar su presencia antes de reportar delitos');
+        return;
+    }
+    
+    // Mostrar información de la mesa en el modal
+    const mesaInfoElement = document.getElementById('mesaInfoDelito');
+    if (mesaInfoElement && window.mesaSeleccionadaDashboard) {
+        mesaInfoElement.textContent = `Mesa ${window.mesaSeleccionadaDashboard.mesa_codigo} - ${window.mesaSeleccionadaDashboard.puesto_nombre || ''}`;
+    }
+    
     // Limpiar formulario
     document.getElementById('formDelito').reset();
     
@@ -421,13 +453,21 @@ async function guardarDelito() {
     
     const formData = new FormData(form);
     
+    // Usar la mesa verificada (mesaSeleccionadaDashboard)
+    const mesaId = window.mesaSeleccionadaDashboard ? window.mesaSeleccionadaDashboard.id : null;
+    
+    if (!mesaId) {
+        Utils.showError('No hay una mesa verificada. Por favor, seleccione y verifique una mesa primero.');
+        return;
+    }
+    
     const data = {
         tipo_delito: formData.get('tipo_delito'),
         titulo: formData.get('titulo'),
         descripcion: formData.get('descripcion'),
         gravedad: formData.get('gravedad'),
         testigos_adicionales: formData.get('testigos_adicionales') || '',
-        mesa_id: selectedMesa ? selectedMesa.id : null,
+        mesa_id: mesaId,
         tipo: 'delito'
     };
     

@@ -133,8 +133,8 @@ class CandidatosManager {
 
         if (this.candidatos.length === 0) {
             container.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center text-muted py-4">
+                <tr style="background: white !important;">
+                    <td colspan="7" class="text-center text-muted py-4" style="color: #6c757d !important;">
                         No hay candidatos registrados
                     </td>
                 </tr>
@@ -143,8 +143,8 @@ class CandidatosManager {
         }
 
         container.innerHTML = this.candidatos.map(candidato => `
-            <tr>
-                <td>
+            <tr style="background: white !important; color: #212529 !important;">
+                <td style="color: #212529 !important;">
                     ${candidato.foto_url ? 
                         `<img src="${candidato.foto_url}" alt="${candidato.nombre_completo}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">` :
                         `<div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; color: white;">
@@ -152,28 +152,28 @@ class CandidatosManager {
                         </div>`
                     }
                 </td>
-                <td><strong>${candidato.nombre_completo}</strong></td>
-                <td>
+                <td style="color: #212529 !important;"><strong>${candidato.nombre_completo}</strong></td>
+                <td style="color: #212529 !important;">
                     ${candidato.partido ? 
-                        `<span class="badge" style="background-color: ${candidato.partido.color};">
+                        `<span class="badge" style="background-color: ${candidato.partido.color}; color: white;">
                             ${candidato.partido.sigla}
                         </span>` :
-                        '<span class="text-muted">N/A</span>'
+                        '<span class="text-muted" style="color: #6c757d !important;">N/A</span>'
                     }
                 </td>
-                <td>${candidato.cargo}</td>
-                <td>
+                <td style="color: #212529 !important;">${candidato.cargo}</td>
+                <td style="color: #212529 !important;">
                     ${candidato.tipo_eleccion ? 
                         `<small>${candidato.tipo_eleccion.nombre}</small>` :
-                        '<span class="text-muted">N/A</span>'
+                        '<span class="text-muted" style="color: #6c757d !important;">N/A</span>'
                     }
                 </td>
-                <td>
+                <td style="color: #212529 !important;">
                     <span class="badge bg-${candidato.activo ? 'success' : 'secondary'}">
                         ${candidato.activo ? 'Activo' : 'Inactivo'}
                     </span>
                 </td>
-                <td>
+                <td style="color: #212529 !important;">
                     <div class="btn-group btn-group-sm">
                         <button class="btn btn-outline-primary" onclick="candidatosManager.editarCandidato(${candidato.id})" title="Editar">
                             <i class="bi bi-pencil"></i>

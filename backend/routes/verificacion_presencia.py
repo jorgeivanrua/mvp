@@ -308,7 +308,7 @@ def ping_presencia():
 
 @verificacion_bp.route('/usuarios-geolocalizados', methods=['GET'])
 @jwt_required()
-@role_required(['coordinador_puesto', 'coordinador_municipal', 'coordinador_departamental', 'super_admin', 'auditor_electoral'])
+@role_required(['coordinador_puesto', 'coordinador_municipal', 'coordinador_departamental', 'super_admin', 'auditor_electoral', 'monitoreo'])
 def obtener_usuarios_geolocalizados():
     """
     Obtener usuarios con geolocalización activa
