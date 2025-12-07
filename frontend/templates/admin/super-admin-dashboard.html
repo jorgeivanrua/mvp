@@ -473,11 +473,36 @@ th.sortable:hover .sort-icon {
                         <button class="btn btn-info quick-action-btn" onclick="showConfigModal()">
                             <i class="bi bi-gear"></i> Configurar Sistema
                         </button>
-                        <button class="btn btn-warning quick-action-btn" onclick="exportAllData()">
-                            <i class="bi bi-download"></i> Exportar Datos
+                    </div>
+                    
+                    <!-- 🆕 Backup y Restauración de Base de Datos -->
+                    <div class="quick-action-card">
+                        <h5 class="mb-3"><i class="bi bi-database"></i> Base de Datos</h5>
+                        <div class="mb-3 p-2 bg-light rounded">
+                            <small class="text-muted d-block mb-1">Estadísticas:</small>
+                            <div id="dbStats" class="small">
+                                <div class="d-flex justify-content-between">
+                                    <span>Usuarios:</span>
+                                    <strong id="statUsers">-</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Ubicaciones:</span>
+                                    <strong id="statLocations">-</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Formularios:</span>
+                                    <strong id="statFormularios">-</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-success quick-action-btn" onclick="exportDatabase()">
+                            <i class="bi bi-download"></i> Exportar Base de Datos
                         </button>
-                        <button class="btn btn-success quick-action-btn" onclick="createBackup()">
-                            <i class="bi bi-shield-check"></i> Crear Respaldo
+                        <button class="btn btn-warning quick-action-btn" onclick="showImportModal()">
+                            <i class="bi bi-upload"></i> Importar Base de Datos
+                        </button>
+                        <button class="btn btn-outline-info quick-action-btn" onclick="loadDatabaseStats()">
+                            <i class="bi bi-arrow-clockwise"></i> Actualizar Estadísticas
                         </button>
                     </div>
                     
@@ -1442,6 +1467,51 @@ th.sortable:hover .sort-icon {
 
 <!-- Modales se agregarán aquí -->
 
+<!-- 🆕 Modal de Importación de Base de Datos -->
+<div class="modal fade" id="importDatabaseModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">
+                    <i class="bi bi-upload"></i> Importar Base de Datos
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>¡Atención!</strong> Esta acción importará datos desde un archivo JSON.
+                    Los datos existentes no se eliminarán, pero se agregarán los nuevos.
+                </div>
+                
+                <div class="mb-3">
+                    <label for="databaseFile" class="form-label">Seleccionar archivo JSON:</label>
+                    <input type="file" class="form-control" id="databaseFile" accept=".json">
+                    <small class="text-muted">
+                        Archivo generado con "Exportar Base de Datos"
+                    </small>
+                </div>
+                
+                <div id="importProgress" class="d-none">
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 100%"></div>
+                    </div>
+                    <p class="text-center mt-2">Importando datos...</p>
+                </div>
+                
+                <div id="importResult" class="d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" onclick="confirmImportDatabase()">
+                    <i class="bi bi-upload"></i> Importar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -1631,5 +1701,176 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- Scripts de debug -->
 <script src="{{ url_for('static', filename='js/debug-partidos.js') }}?v=20251205"></script>
 <script src="{{ url_for('static', filename='js/debug-candidatos.js') }}?v=20251205"></script>
+
+<!-- 🆕 Funciones de Backup y Restauración de Base de Datos -->
+<script>
+/**
+ * Cargar estadísticas de la base de datos
+ */
+async function loadDatabaseStats() {
+    try {
+        const response = await APIClient.get('/database/stats');
+        
+        if (response.success) {
+            document.getElementById('statUsers').textContent = response.data.users;
+            document.getElementById('statLocations').textContent = response.data.locations;
+            document.getElementById('statFormularios').textContent = response.data.formularios;
+        }
+    } catch (error) {
+        console.error('Error loading database stats:', error);
+    }
+}
+
+/**
+ * Exportar base de datos
+ */
+async function exportDatabase() {
+    if (!confirm('¿Deseas exportar toda la base de datos a un archivo JSON?\n\nEsto incluirá usuarios, ubicaciones, formularios, incidentes y delitos.')) {
+        return;
+    }
+    
+    try {
+        Utils.showInfo('Exportando base de datos...');
+        
+        const response = await fetch('/api/database/export', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Error al exportar base de datos');
+        }
+        
+        // Descargar archivo
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `database_backup_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        Utils.showSuccess('✅ Base de datos exportada exitosamente');
+        
+    } catch (error) {
+        console.error('Error exporting database:', error);
+        Utils.showError('Error al exportar base de datos: ' + error.message);
+    }
+}
+
+/**
+ * Mostrar modal de importación
+ */
+function showImportModal() {
+    // Limpiar formulario
+    document.getElementById('databaseFile').value = '';
+    document.getElementById('importProgress').classList.add('d-none');
+    document.getElementById('importResult').classList.add('d-none');
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('importDatabaseModal'));
+    modal.show();
+}
+
+/**
+ * Confirmar importación de base de datos
+ */
+async function confirmImportDatabase() {
+    const fileInput = document.getElementById('databaseFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        Utils.showError('Por favor selecciona un archivo JSON');
+        return;
+    }
+    
+    if (!file.name.endsWith('.json')) {
+        Utils.showError('El archivo debe ser un JSON');
+        return;
+    }
+    
+    if (!confirm('¿Estás seguro de importar esta base de datos?\n\nLos datos se agregarán a la base de datos actual.')) {
+        return;
+    }
+    
+    try {
+        // Mostrar progreso
+        document.getElementById('importProgress').classList.remove('d-none');
+        document.getElementById('importResult').classList.add('d-none');
+        
+        // Crear FormData
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        // Enviar archivo
+        const response = await fetch('/api/database/import', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        // Ocultar progreso
+        document.getElementById('importProgress').classList.add('d-none');
+        
+        if (data.success) {
+            // Mostrar resultado
+            const resultHtml = `
+                <div class="alert alert-success">
+                    <h6><i class="bi bi-check-circle"></i> Importación Exitosa</h6>
+                    <ul class="mb-0">
+                        <li>Usuarios: ${data.stats.users_imported}</li>
+                        <li>Ubicaciones: ${data.stats.locations_imported}</li>
+                        <li>Formularios: ${data.stats.formularios_imported}</li>
+                        <li>Votos: ${data.stats.votos_imported}</li>
+                        <li>Incidentes: ${data.stats.incidentes_imported}</li>
+                        <li>Delitos: ${data.stats.delitos_imported}</li>
+                    </ul>
+                    <p class="mt-2 mb-0">
+                        <strong>⚠️ Importante:</strong> Los usuarios importados tienen contraseña temporal: <code>cambiar123</code>
+                    </p>
+                </div>
+            `;
+            document.getElementById('importResult').innerHTML = resultHtml;
+            document.getElementById('importResult').classList.remove('d-none');
+            
+            // Actualizar estadísticas
+            setTimeout(() => {
+                loadDatabaseStats();
+                loadStats();
+            }, 1000);
+            
+        } else {
+            throw new Error(data.error || 'Error desconocido');
+        }
+        
+    } catch (error) {
+        console.error('Error importing database:', error);
+        document.getElementById('importProgress').classList.add('d-none');
+        
+        const errorHtml = `
+            <div class="alert alert-danger">
+                <h6><i class="bi bi-x-circle"></i> Error en la Importación</h6>
+                <p class="mb-0">${error.message}</p>
+            </div>
+        `;
+        document.getElementById('importResult').innerHTML = errorHtml;
+        document.getElementById('importResult').classList.remove('d-none');
+    }
+}
+
+// Cargar estadísticas al iniciar
+document.addEventListener('DOMContentLoaded', function() {
+    loadDatabaseStats();
+});
+</script>
+
 {% endblock %}
 

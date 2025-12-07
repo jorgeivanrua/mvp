@@ -118,6 +118,7 @@ def register_blueprints(app):
     from backend.routes.seguimiento import seguimiento_bp
     from backend.routes.partidos import partidos_bp
     from backend.routes.candidatos import candidatos_bp
+    from backend.routes.database_backup import database_backup_bp
     
     # API routes
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -146,6 +147,7 @@ def register_blueprints(app):
     app.register_blueprint(seguimiento_bp)
     app.register_blueprint(partidos_bp)  # Gestión de partidos políticos
     app.register_blueprint(candidatos_bp)  # Gestión de candidatos
+    app.register_blueprint(database_backup_bp, url_prefix='/api/database')  # Backup y restauración
     
     # Public routes (sin autenticación)
     from backend.routes.public import public_bp
