@@ -141,8 +141,47 @@ def main():
             "Inicializar configuración electoral"
         )
     
-    # PASO 6: Inicialización automática de datos
-    print_header("PASO 6: INICIALIZACIÓN AUTOMÁTICA DE DATOS")
+    # PASO 6: Importación automática de datos desde JSON
+    print_header("PASO 6: IMPORTACIÓN AUTOMÁTICA DE DATOS")
+    
+    # Buscar archivo de datos para importar
+    data_paths = [
+        'data/render_initial_data.json',
+        'render_initial_data.json',
+        'initial_data.json'
+    ]
+    
+    data_file_found = False
+    for data_path in data_paths:
+        if os.path.exists(data_path):
+            print(f"✅ Archivo de datos encontrado: {data_path}")
+            data_file_found = True
+            
+            # Importar datos usando el script de importación
+            print(">> Importando ubicaciones, usuarios y datos...")
+            if run_command(
+                f"{sys.executable} scripts/utils/import_data_from_json.py {data_path}",
+                "Importar datos desde JSON"
+            ):
+                print("✅ Datos importados exitosamente")
+            else:
+                print("⚠️  Error importando datos, continuando...")
+            break
+    
+    if not data_file_found:
+        print("⚠️  No se encontró archivo de datos inicial")
+        print("   Archivos buscados:")
+        for path in data_paths:
+            print(f"   - {path}")
+        print("\n💡 Para cargar datos automáticamente en Render:")
+        print("   1. Exporta tu BD local: python scripts/utils/export_data_to_json.py")
+        print("   2. Renombra el archivo a: render_initial_data.json")
+        print("   3. Colócalo en la raíz del proyecto")
+        print("   4. Haz commit y push")
+        print("   5. Render lo importará automáticamente en el próximo despliegue")
+    
+    # PASO 7: Inicialización automática de datos (scripts adicionales)
+    print_header("PASO 7: SCRIPTS DE INICIALIZACIÓN ADICIONALES")
     init_script = 'scripts/inicializar_datos_automatico.py'
     if os.path.exists(init_script):
         run_command(

@@ -4,6 +4,18 @@ Scripts de utilidades generales y herramientas.
 
 ## Uso Común
 
+### Preparar Datos para Render ⭐ NUEVO
+```bash
+# Script TODO-EN-UNO para preparar datos para Render
+python scripts/utils/preparar_datos_render.py
+```
+Este script ejecuta automáticamente:
+1. Marca usuarios definitivos como básicos
+2. Verifica usuarios básicos
+3. Limpia usuarios de prueba (opcional)
+4. Exporta BD a JSON
+5. Copia archivo a data/render_initial_data.json
+
 ### Gestión de Usuarios Básicos del Sistema
 ```bash
 # Verificar usuarios básicos del sistema
@@ -22,7 +34,7 @@ python scripts/utils/limpiar_usuarios_prueba.py
 python scripts/utils/export_data_to_json.py
 
 # Importar base de datos desde JSON
-python scripts/utils/import_data_from_json.py
+python scripts/utils/import_data_from_json.py [archivo.json]
 ```
 
 ### Actualización de Datos
@@ -48,15 +60,18 @@ python scripts/utils/listar_testigos.py
 
 ## Categorías
 
+### Preparación para Render ⭐ NUEVO
+- `preparar_datos_render.py` - Script TODO-EN-UNO para preparar datos (RECOMENDADO)
+
 ### Gestión de Usuarios Básicos ⭐ NUEVO
 - `verificar_usuarios_basicos.py` - Verificar usuarios básicos del sistema
 - `limpiar_usuarios_prueba.py` - Eliminar usuarios de prueba
-- `marcar_usuarios_definitivos_basicos.py` - Marcar usuarios definitivos como básicos (RECOMENDADO)
+- `marcar_usuarios_definitivos_basicos.py` - Marcar usuarios definitivos como básicos
 - `marcar_testigos_basicos.py` - Marcar solo testigos como usuarios básicos
 
 ### Backup y Restauración ⭐ NUEVO
 - `export_data_to_json.py` - Exportar BD completa a JSON
-- `import_data_from_json.py` - Importar BD desde JSON
+- `import_data_from_json.py` - Importar BD desde JSON (acepta archivo como argumento)
 
 ### Actualización de Datos
 - `actualizar_candidatos_completos.py` - Candidatos
@@ -126,7 +141,15 @@ Estos usuarios tienen `es_usuario_basico=True` y están protegidos en:
 
 ## Flujo de Trabajo Recomendado
 
-### 1. Desarrollo Local
+### 1. Desarrollo Local - Preparar para Render
+
+**Opción A: Script TODO-EN-UNO (Recomendado)**
+```bash
+python scripts/utils/preparar_datos_render.py
+```
+Este script hace todo automáticamente y genera `data/render_initial_data.json`
+
+**Opción B: Paso a paso**
 ```bash
 # 1. Marcar usuarios definitivos como básicos
 python scripts/utils/marcar_usuarios_definitivos_basicos.py
@@ -139,6 +162,9 @@ python scripts/utils/limpiar_usuarios_prueba.py
 
 # 4. Exportar BD limpia
 python scripts/utils/export_data_to_json.py
+
+# 5. Copiar a data/render_initial_data.json
+cp data_export_*.json data/render_initial_data.json
 ```
 
 ### 2. Despliegue en Render

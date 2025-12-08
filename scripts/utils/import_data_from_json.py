@@ -251,8 +251,10 @@ def main():
     print("IMPORTACIÓN DE DATOS DE JSON A POSTGRESQL".center(80))
     print("=" * 80)
     
+    # Obtener archivo de entrada (argumento o por defecto)
+    input_file = sys.argv[1] if len(sys.argv) > 1 else 'data_export.json'
+    
     # Verificar que existe el archivo
-    input_file = 'data_export.json'
     if not os.path.exists(input_file):
         print(f"\n❌ Error: No se encontró el archivo '{input_file}'")
         print("   Ejecuta primero: python scripts/utils/export_data_to_json.py")
@@ -267,16 +269,21 @@ def main():
     print(f"   Base de datos origen: {data['database']}")
     
     # Crear app (usará DATABASE_URL si está configurada)
-    app = create_app()
+    config_name = os.getenv('FLASK_ENV', 'development')
+    app = create_app(config_name)
     
     with app.app_context():
         print(f"\n🔗 Conectado a: {app.config['SQLALCHEMY_DATABASE_URI'][:50]}...")
         
-        # Confirmar antes de importar
-        response = input("\n⚠️  ¿Deseas continuar con la importación? (s/n): ")
-        if response.lower() != 's':
-            print("❌ Importación cancelada")
-            sys.exit(0)
+        # Confirmar antes de importar (solo si es interactivo)
+        is_render = os.getenv('RENDER') == 'true'
+        if not is_render and sys.stdin.isatty():
+            response = input("\n⚠️  ¿Deseas continuar con la importación? (s/n): ")
+            if response.lower() != 's':
+                print("❌ Importación cancelada")
+                sys.exit(0)
+        else:
+            print("\n✅ Modo automático detectado, continuando con importación...")
         
         # Importar en orden (respetando relaciones)
         try:
