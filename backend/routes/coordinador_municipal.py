@@ -1650,3 +1650,377 @@ def obtener_geolocalizacion():
             'success': False,
             'error': str(e)
         }), 500
+
+
+# ============================================================================
+# ENDPOINT DE GEOLOCALIZACIÓN PARA MAPA
+# ============================================================================
+
+@coordinador_municipal_bp.route('/mapa-datos', methods=['GET'])
+@jwt_required()
+@role_required(['coordinador_municipal'])
+def obtener_datos_mapa():
+    """
+    Obtener datos completos para el mapa del coordinador municipal
+    Incluye: puestos, coordinadores, testigos, incidentes, delitos
+    
+    Query params:
+        zona: Filtrar por zona
+        estado: Filtrar por estado (completo, incompleto, con_discrepancias)
+    """
+    try:
+        from backend.models.formulario_e14 import FormularioE14
+        from backend.models.incidentes_delitos import IncidenteElectoral, DelitoElectoral
+        from datetime import datetime, timedelta
+        
+        user_id = get_jwt_identity()
+        user = User.query.get(int(user_id))
+        
+        if not user or not user.ubicacion_id:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
+        
+        ubicacion = Location.query.get(user.ubicacion_id)
+        
+        if not ubicacion or ubicacion.tipo != 'municipio':
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no asignado a un municipio válido'
+            }), 400
+        
+        # Filtros
+        filtro_zona = request.args.get('zona')
+        filtro_estado = request.args.get('estado')
+        
+        # Obtener puestos del municipio
+        query_puestos = Location.query.filter_by(
+            municipio_codigo=ubicacion.municipio_codigo,
+            departamento_codigo=ubicacion.departamento_codigo,
+            tipo='puesto',
+            activo=True
+        )
+        
+        if filtro_zona:
+            query_puestos = query_puestos.filter_by(zona_codigo=filtro_zona)
+        
+        puestos = query_puestos.all()
+        
+        # Datos para el mapa
+        puestos_data = []
+        coordinadores_data = []
+        testigos_data = []
+        incidentes_data = []
+        delitos_data = []
+        
+        for puesto in puestos:
+            # Obtener mesas del puesto
+            mesas = Location.query.filter_by(
+                puesto_codigo=puesto.puesto_codigo,
+                departamento_codigo=puesto.departamento_codigo,
+                municipio_codigo=puesto.municipio_codigo,
+                zona_codigo=puesto.zona_codigo,
+                tipo='mesa',
+                activo=True
+            ).all()
+            
+            mesa_ids = [m.id for m in mesas]
+            total_mesas = len(mesas)
+            
+            # Contar formularios
+            formularios_validados = FormularioE14.query.filter(
+                FormularioE14.mesa_id.in_(mesa_ids),
+                FormularioE14.estado == 'validado'
+            ).count() if mesa_ids else 0
+            
+            formularios_rechazados = FormularioE14.query.filter(
+                FormularioE14.mesa_id.in_(mesa_ids),
+                FormularioE14.estado == 'rechazado'
+            ).count() if mesa_ids else 0
+            
+            # Determinar estado
+            if formularios_validados == total_mesas and total_mesas > 0:
+                estado = 'completo'
+            elif formularios_rechazados > 0:
+                estado = 'con_discrepancias'
+            else:
+                estado = 'incompleto'
+            
+            # Aplicar filtro de estado
+            if filtro_estado and estado != filtro_estado:
+                continue
+            
+            # Calcular porcentaje
+            porcentaje_avance = (formularios_validados / total_mesas * 100) if total_mesas > 0 else 0
+            
+            # Buscar coordinador del puesto
+            coordinador = User.query.filter_by(
+                ubicacion_id=puesto.id,
+                rol='coordinador_puesto',
+                activo=True
+            ).first()
+            
+            # Contar incidentes y delitos
+            incidentes_count = IncidenteElectoral.query.filter(
+                IncidenteElectoral.mesa_id.in_(mesa_ids)
+            ).count() if mesa_ids else 0
+            
+            delitos_count = DelitoElectoral.query.filter(
+                DelitoElectoral.mesa_id.in_(mesa_ids)
+            ).count() if mesa_ids else 0
+            
+            # Datos del puesto para el mapa
+            puesto_info = {
+                'id': puesto.id,
+                'tipo': 'puesto',
+                'codigo': puesto.puesto_codigo,
+                'nombre': puesto.puesto_nombre,
+                'zona_codigo': puesto.zona_codigo,
+                'latitud': puesto.latitud,
+                'longitud': puesto.longitud,
+                'direccion': puesto.direccion,
+                'total_mesas': total_mesas,
+                'formularios_validados': formularios_validados,
+                'formularios_rechazados': formularios_rechazados,
+                'porcentaje_avance': round(porcentaje_avance, 2),
+                'estado': estado,
+                'incidentes': incidentes_count,
+                'delitos': delitos_count,
+                'tiene_alertas': incidentes_count > 0 or delitos_count > 0 or formularios_rechazados > 0,
+                'coordinador': {
+                    'id': coordinador.id,
+                    'nombre': coordinador.nombre,
+                    'ultimo_acceso': coordinador.ultimo_acceso.isoformat() if coordinador.ultimo_acceso else None
+                } if coordinador else None
+            }
+            
+            puestos_data.append(puesto_info)
+            
+            # Agregar coordinador si tiene geolocalización
+            if coordinador and coordinador.ultima_latitud and coordinador.ultima_longitud:
+                # Determinar estado de conexión
+                estado_conexion = 'ausente'
+                if coordinador.ultimo_acceso:
+                    tiempo_inactivo = datetime.utcnow() - coordinador.ultimo_acceso
+                    if tiempo_inactivo < timedelta(minutes=5):
+                        estado_conexion = 'activo'
+                    elif tiempo_inactivo < timedelta(hours=1):
+                        estado_conexion = 'inactivo'
+                
+                coordinadores_data.append({
+                    'id': coordinador.id,
+                    'tipo': 'coordinador',
+                    'nombre': coordinador.nombre,
+                    'rol': coordinador.rol,
+                    'latitud': coordinador.ultima_latitud,
+                    'longitud': coordinador.ultima_longitud,
+                    'precision': coordinador.precision_geolocalizacion,
+                    'ultima_actualizacion': coordinador.ultima_geolocalizacion_at.isoformat() if coordinador.ultima_geolocalizacion_at else None,
+                    'estado_conexion': estado_conexion,
+                    'puesto': {
+                        'id': puesto.id,
+                        'nombre': puesto.puesto_nombre,
+                        'codigo': puesto.puesto_codigo
+                    }
+                })
+            
+            # Agregar testigos con geolocalización
+            testigos = User.query.filter_by(
+                ubicacion_id=puesto.id,
+                rol='testigo_electoral',
+                activo=True
+            ).filter(
+                User.ultima_latitud.isnot(None),
+                User.ultima_longitud.isnot(None)
+            ).all()
+            
+            for testigo in testigos:
+                # Determinar estado de conexión
+                estado_conexion = 'ausente'
+                if testigo.ultimo_acceso:
+                    tiempo_inactivo = datetime.utcnow() - testigo.ultimo_acceso
+                    if tiempo_inactivo < timedelta(minutes=5):
+                        estado_conexion = 'activo'
+                    elif tiempo_inactivo < timedelta(hours=1):
+                        estado_conexion = 'inactivo'
+                
+                testigos_data.append({
+                    'id': testigo.id,
+                    'tipo': 'testigo',
+                    'nombre': testigo.nombre,
+                    'rol': testigo.rol,
+                    'latitud': testigo.ultima_latitud,
+                    'longitud': testigo.ultima_longitud,
+                    'precision': testigo.precision_geolocalizacion,
+                    'ultima_actualizacion': testigo.ultima_geolocalizacion_at.isoformat() if testigo.ultima_geolocalizacion_at else None,
+                    'estado_conexion': estado_conexion,
+                    'presencia_verificada': testigo.presencia_verificada,
+                    'puesto': {
+                        'id': puesto.id,
+                        'nombre': puesto.puesto_nombre,
+                        'codigo': puesto.puesto_codigo
+                    }
+                })
+            
+            # Agregar incidentes con geolocalización
+            incidentes = IncidenteElectoral.query.filter(
+                IncidenteElectoral.mesa_id.in_(mesa_ids),
+                IncidenteElectoral.ubicacion_gps.isnot(None)
+            ).all() if mesa_ids else []
+            
+            for incidente in incidentes:
+                if incidente.ubicacion_gps:
+                    try:
+                        lat, lng = map(float, incidente.ubicacion_gps.split(','))
+                        incidentes_data.append({
+                            'id': incidente.id,
+                            'tipo': 'incidente',
+                            'tipo_incidente': incidente.tipo_incidente,
+                            'titulo': incidente.titulo,
+                            'descripcion': incidente.descripcion,
+                            'severidad': incidente.severidad,
+                            'estado': incidente.estado,
+                            'latitud': lat,
+                            'longitud': lng,
+                            'fecha_reporte': incidente.fecha_reporte.isoformat() if incidente.fecha_reporte else None,
+                            'puesto': {
+                                'id': puesto.id,
+                                'nombre': puesto.puesto_nombre,
+                                'codigo': puesto.puesto_codigo
+                            }
+                        })
+                    except:
+                        pass
+            
+            # Agregar delitos con geolocalización
+            delitos = DelitoElectoral.query.filter(
+                DelitoElectoral.mesa_id.in_(mesa_ids),
+                DelitoElectoral.ubicacion_gps.isnot(None)
+            ).all() if mesa_ids else []
+            
+            for delito in delitos:
+                if delito.ubicacion_gps:
+                    try:
+                        lat, lng = map(float, delito.ubicacion_gps.split(','))
+                        delitos_data.append({
+                            'id': delito.id,
+                            'tipo': 'delito',
+                            'tipo_delito': delito.tipo_delito,
+                            'titulo': delito.titulo,
+                            'descripcion': delito.descripcion,
+                            'gravedad': delito.gravedad,
+                            'estado': delito.estado,
+                            'latitud': lat,
+                            'longitud': lng,
+                            'fecha_reporte': delito.fecha_reporte.isoformat() if delito.fecha_reporte else None,
+                            'puesto': {
+                                'id': puesto.id,
+                                'nombre': puesto.puesto_nombre,
+                                'codigo': puesto.puesto_codigo
+                            }
+                        })
+                    except:
+                        pass
+        
+        # Centro del mapa (municipio)
+        centro = {
+            'latitud': ubicacion.latitud or 1.6144,
+            'longitud': ubicacion.longitud or -75.6062,
+            'zoom': 12
+        }
+        
+        # Estadísticas generales
+        estadisticas = {
+            'total_puestos': len(puestos_data),
+            'puestos_completos': len([p for p in puestos_data if p['estado'] == 'completo']),
+            'puestos_incompletos': len([p for p in puestos_data if p['estado'] == 'incompleto']),
+            'puestos_con_discrepancias': len([p for p in puestos_data if p['estado'] == 'con_discrepancias']),
+            'coordinadores_activos': len([c for c in coordinadores_data if c['estado_conexion'] == 'activo']),
+            'testigos_activos': len([t for t in testigos_data if t['estado_conexion'] == 'activo']),
+            'total_incidentes': len(incidentes_data),
+            'total_delitos': len(delitos_data)
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'centro': centro,
+                'puestos': puestos_data,
+                'coordinadores': coordinadores_data,
+                'testigos': testigos_data,
+                'incidentes': incidentes_data,
+                'delitos': delitos_data,
+                'estadisticas': estadisticas
+            }
+        }), 200
+        
+    except Exception as e:
+        import traceback
+        print(f"Error en obtener_datos_mapa: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@coordinador_municipal_bp.route('/zonas', methods=['GET'])
+@jwt_required()
+@role_required(['coordinador_municipal'])
+def obtener_zonas():
+    """
+    Obtener lista de zonas del municipio para filtros
+    """
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(int(user_id))
+        
+        if not user or not user.ubicacion_id:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
+        
+        ubicacion = Location.query.get(user.ubicacion_id)
+        
+        if not ubicacion or ubicacion.tipo != 'municipio':
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no asignado a un municipio válido'
+            }), 400
+        
+        # Obtener zonas únicas del municipio
+        zonas = db.session.query(
+            Location.zona_codigo,
+            db.func.count(Location.id).label('total_puestos')
+        ).filter(
+            Location.municipio_codigo == ubicacion.municipio_codigo,
+            Location.departamento_codigo == ubicacion.departamento_codigo,
+            Location.tipo == 'puesto',
+            Location.zona_codigo.isnot(None),
+            Location.activo == True
+        ).group_by(Location.zona_codigo).all()
+        
+        zonas_data = [{
+            'codigo': zona.zona_codigo,
+            'nombre': f'Zona {zona.zona_codigo}',
+            'total_puestos': zona.total_puestos
+        } for zona in zonas]
+        
+        # Ordenar por código
+        zonas_data.sort(key=lambda x: x['codigo'])
+        
+        return jsonify({
+            'success': True,
+            'data': zonas_data
+        }), 200
+        
+    except Exception as e:
+        import traceback
+        print(f"Error en obtener_zonas: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500

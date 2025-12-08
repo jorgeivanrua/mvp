@@ -275,12 +275,119 @@
 
         <!-- Tab 4: Mapa -->
         <div class="tab-pane fade" id="mapa" role="tabpanel">
-            <div class="card">
+            <!-- Filtros del Mapa -->
+            <div class="card mb-3">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-map"></i> Mapa de Puestos</h5>
+                    <h6 class="mb-0"><i class="bi bi-funnel"></i> Filtros del Mapa</h6>
                 </div>
                 <div class="card-body">
-                    <div id="mapa-municipal" style="height: 500px; border-radius: 8px;"></div>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Zona</label>
+                            <select class="form-select form-select-sm" id="filtro-mapa-zona">
+                                <option value="">Todas las zonas</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Estado</label>
+                            <select class="form-select form-select-sm" id="filtro-mapa-estado">
+                                <option value="">Todos</option>
+                                <option value="completo">Completos</option>
+                                <option value="incompleto">Incompletos</option>
+                                <option value="con_discrepancias">Con Discrepancias</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Mostrar en el mapa</label>
+                            <div class="d-flex gap-3 flex-wrap">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="mostrar-coordinadores" checked>
+                                    <label class="form-check-label" for="mostrar-coordinadores">
+                                        Coordinadores
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="mostrar-testigos" checked>
+                                    <label class="form-check-label" for="mostrar-testigos">
+                                        Testigos
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="mostrar-incidentes" checked>
+                                    <label class="form-check-label" for="mostrar-incidentes">
+                                        Incidentes
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="mostrar-delitos" checked>
+                                    <label class="form-check-label" for="mostrar-delitos">
+                                        Delitos
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mapa -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-map"></i> Mapa de Geolocalización</h5>
+                    <div class="d-flex gap-2 align-items-center">
+                        <span class="badge bg-success" id="usuarios-activos-badge">0 usuarios activos</span>
+                        <button class="btn btn-sm btn-outline-primary" onclick="refrescarMapa()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="mapa-municipal" style="height: 600px;"></div>
+                </div>
+            </div>
+
+            <!-- Leyenda -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Leyenda</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-2">Puestos</h6>
+                            <div class="d-flex align-items-center mb-2">
+                                <div style="width: 20px; height: 20px; background-color: #28a745; border-radius: 50%; margin-right: 10px;"></div>
+                                <span>Completo</span>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <div style="width: 20px; height: 20px; background-color: #ffc107; border-radius: 50%; margin-right: 10px;"></div>
+                                <span>Incompleto</span>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <div style="width: 20px; height: 20px; background-color: #dc3545; border-radius: 50%; margin-right: 10px;"></div>
+                                <span>Con Discrepancias</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-2">Usuarios</h6>
+                            <div class="d-flex align-items-center mb-2">
+                                <div style="width: 18px; height: 18px; background-color: #28a745; border-radius: 50%; margin-right: 10px;"></div>
+                                <span>Coordinador Activo</span>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <div style="width: 16px; height: 16px; background-color: #17a2b8; border-radius: 50%; margin-right: 10px;"></div>
+                                <span>Testigo</span>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <div style="width: 18px; height: 18px; background-color: #ffc107; border-radius: 4px; margin-right: 10px;"></div>
+                                <span>Incidente</span>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <div style="width: 18px; height: 18px; background-color: #721c24; border-radius: 4px; margin-right: 10px;"></div>
+                                <span>Delito</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -401,28 +508,98 @@ function confirmarGenerarE24() {
     console.log('Generando E-24...');
 }
 
-// Inicializar mapa de geolocalización cuando se abre el tab de mapa
+// Inicializar mapa mejorado cuando se abre el tab de mapa
 document.addEventListener('DOMContentLoaded', function() {
     const mapaTab = document.getElementById('mapa-tab');
     if (mapaTab) {
-        mapaTab.addEventListener('shown.bs.tab', function() {
+        mapaTab.addEventListener('shown.bs.tab', async function() {
             if (!window.mapaMunicipal) {
-                console.log('Inicializando mapa municipal...');
-                window.mapaMunicipal = new MapaGeolocalizacion('mapa-municipal', {
-                    center: [1.6144, -75.6062], // Caquetá, Colombia
-                    zoom: 11,
-                    autoUpdate: true,
-                    updateInterval: 30000, // 30 segundos
-                    showPuestos: true,
-                    showUsuarios: true
-                });
-                window.mapaMunicipal.init();
+                console.log('Inicializando mapa municipal mejorado...');
+                window.mapaMunicipal = new MapaCoordinadorMunicipal('mapa-municipal');
+                await window.mapaMunicipal.init();
+                
+                // Cargar zonas para filtro
+                await cargarZonasParaFiltro();
+                
+                // Configurar event listeners de filtros
+                configurarFiltrosMapa();
             }
         });
     }
 });
+
+// Cargar zonas para el filtro
+async function cargarZonasParaFiltro() {
+    try {
+        const response = await APIClient.get('/coordinador-municipal/zonas');
+        if (response.success) {
+            const select = document.getElementById('filtro-mapa-zona');
+            if (select) {
+                response.data.forEach(zona => {
+                    const option = document.createElement('option');
+                    option.value = zona.codigo;
+                    option.textContent = `${zona.nombre} (${zona.total_puestos} puestos)`;
+                    select.appendChild(option);
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error cargando zonas:', error);
+    }
+}
+
+// Configurar filtros del mapa
+function configurarFiltrosMapa() {
+    // Filtro de zona
+    document.getElementById('filtro-mapa-zona')?.addEventListener('change', function() {
+        if (window.mapaMunicipal) {
+            window.mapaMunicipal.aplicarFiltros({ zona: this.value });
+        }
+    });
+    
+    // Filtro de estado
+    document.getElementById('filtro-mapa-estado')?.addEventListener('change', function() {
+        if (window.mapaMunicipal) {
+            window.mapaMunicipal.aplicarFiltros({ estado: this.value });
+        }
+    });
+    
+    // Checkboxes de capas
+    document.getElementById('mostrar-coordinadores')?.addEventListener('change', function() {
+        if (window.mapaMunicipal) {
+            window.mapaMunicipal.aplicarFiltros({ mostrarCoordinadores: this.checked });
+        }
+    });
+    
+    document.getElementById('mostrar-testigos')?.addEventListener('change', function() {
+        if (window.mapaMunicipal) {
+            window.mapaMunicipal.aplicarFiltros({ mostrarTestigos: this.checked });
+        }
+    });
+    
+    document.getElementById('mostrar-incidentes')?.addEventListener('change', function() {
+        if (window.mapaMunicipal) {
+            window.mapaMunicipal.aplicarFiltros({ mostrarIncidentes: this.checked });
+        }
+    });
+    
+    document.getElementById('mostrar-delitos')?.addEventListener('change', function() {
+        if (window.mapaMunicipal) {
+            window.mapaMunicipal.aplicarFiltros({ mostrarDelitos: this.checked });
+        }
+    });
+}
+
+// Refrescar mapa
+function refrescarMapa() {
+    if (window.mapaMunicipal) {
+        window.mapaMunicipal.cargarDatos();
+        Utils.showSuccess('Mapa actualizado');
+    }
+}
 </script>
 <script src="{{ url_for('static', filename='js/coordinador-municipal.js') }}"></script>
+<script src="{{ url_for('static', filename='js/coordinador-municipal-mapa.js') }}"></script>
 <!-- Mejoras UI/UX Mobile-First -->
 <script src="{{ url_for('static', filename='js/coordinador-municipal-mejoras.js') }}"></script>
 {% endblock %}

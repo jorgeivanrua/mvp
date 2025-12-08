@@ -997,7 +997,19 @@ function renderVotacionConPestanas(partidos, candidatosPorPartido, esUninominal)
             });
         }
         
+        // Agregar total del partido
         html += `
+                        <div class="mt-3 pt-3 border-top">
+                            <div class="row align-items-center">
+                                <div class="col-8">
+                                    <strong class="fs-5">Total ${partido.sigla}:</strong>
+                                    <br><small class="text-muted">(Votos partido + Votos candidatos)</small>
+                                </div>
+                                <div class="col-4 text-end">
+                                    <span id="total_partido_${partido.id}" class="badge bg-primary fs-4 px-3 py-2">0</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1123,6 +1135,9 @@ function renderVotacionTradicional(partidos, candidatosPorPartido, esUninominal)
 }
 
 function calcularTotales() {
+    console.log('[calcularTotales] Iniciando cálculo...');
+    console.log('[calcularTotales] votosData:', votosData);
+    
     let votosValidos = 0;
     let maxVotosPartido = 0;
     let partidoGanador = null;
@@ -1131,9 +1146,13 @@ function calcularTotales() {
     Object.keys(votosData).forEach(partidoId => {
         const data = votosData[partidoId];
         
-        // Votos del partido
-        const inputPartido = document.getElementById(`partido_${partidoId}`);
-        const votosPartido = parseInt(inputPartido?.value || 0);
+        // Votos del partido (solo si NO es uninominal)
+        let votosPartido = 0;
+        if (!data.esUninominal) {
+            const inputPartido = document.getElementById(`partido_${partidoId}`);
+            votosPartido = parseInt(inputPartido?.value || 0);
+            console.log(`[calcularTotales] Partido ${partidoId} - Votos partido: ${votosPartido}`);
+        }
         data.votosPartido = votosPartido;
         
         // Votos de candidatos
@@ -1143,11 +1162,14 @@ function calcularTotales() {
             const votos = parseInt(inputCandidato?.value || 0);
             candidato.votos = votos;
             votosCandidatos += votos;
+            console.log(`[calcularTotales] Candidato ${candidato.id} (${candidato.nombre_completo}): ${votos} votos`);
         });
         
         // Total del partido (votos partido + votos candidatos)
         data.total = votosPartido + votosCandidatos;
         votosValidos += data.total;
+        
+        console.log(`[calcularTotales] Partido ${partidoId} - Total: ${data.total} (partido: ${votosPartido} + candidatos: ${votosCandidatos})`);
         
         // Actualizar display del total del partido
         const totalSpan = document.getElementById(`total_partido_${partidoId}`);
@@ -1162,24 +1184,44 @@ function calcularTotales() {
         }
     });
     
+    console.log(`[calcularTotales] Total votos válidos: ${votosValidos}`);
+    
     // Obtener otros valores
     const votosNulos = parseInt(document.getElementById('votosNulos')?.value || 0);
     const votosBlanco = parseInt(document.getElementById('votosBlanco')?.value || 0);
     const tarjetasNoMarcadas = parseInt(document.getElementById('tarjetasNoMarcadas')?.value || 0);
     
+    console.log(`[calcularTotales] Votos nulos: ${votosNulos}, Votos blanco: ${votosBlanco}, Tarjetas no marcadas: ${tarjetasNoMarcadas}`);
+    
     // Calcular totales
     const totalVotos = votosValidos + votosNulos + votosBlanco;
     const totalTarjetas = totalVotos + tarjetasNoMarcadas;
     
+    console.log(`[calcularTotales] Total votos: ${totalVotos}, Total tarjetas: ${totalTarjetas}`);
+    
     // Actualizar campos automáticos
-    document.getElementById('votosValidos').value = votosValidos;
-    document.getElementById('totalVotos').value = totalVotos;
-    document.getElementById('totalTarjetas').value = totalTarjetas;
+    const votosValidosInput = document.getElementById('votosValidos');
+    const totalVotosInput = document.getElementById('totalVotos');
+    const totalTarjetasInput = document.getElementById('totalTarjetas');
+    
+    if (votosValidosInput) votosValidosInput.value = votosValidos;
+    if (totalVotosInput) totalVotosInput.value = totalVotos;
+    if (totalTarjetasInput) totalTarjetasInput.value = totalTarjetas;
     
     // Actualizar resumen
-    document.getElementById('resumenTotal').textContent = Utils.formatNumber(votosValidos);
-    document.getElementById('partidoGanador').textContent = partidoGanador ? 
-        `${partidoGanador.sigla} (${Utils.formatNumber(maxVotosPartido)} votos)` : '-';
+    const resumenTotal = document.getElementById('resumenTotal');
+    const partidoGanadorSpan = document.getElementById('partidoGanador');
+    
+    if (resumenTotal) {
+        resumenTotal.textContent = Utils.formatNumber(votosValidos);
+    }
+    
+    if (partidoGanadorSpan) {
+        partidoGanadorSpan.textContent = partidoGanador ? 
+            `${partidoGanador.sigla} (${Utils.formatNumber(maxVotosPartido)} votos)` : '-';
+    }
+    
+    console.log('[calcularTotales] Cálculo completado');
 }
 
 async function loadForms() {
