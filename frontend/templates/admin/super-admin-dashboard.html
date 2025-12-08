@@ -1815,6 +1815,13 @@ async function confirmImportDatabase() {
             body: formData
         });
         
+        // Verificar si la respuesta es JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            throw new Error(`Respuesta no es JSON. Status: ${response.status}. Respuesta: ${text.substring(0, 200)}`);
+        }
+        
         const data = await response.json();
         
         // Ocultar progreso

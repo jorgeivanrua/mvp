@@ -248,7 +248,18 @@ def import_database():
             }), 400
         
         # Leer y parsear JSON
-        data = json.load(file)
+        try:
+            data = json.load(file)
+        except json.JSONDecodeError as e:
+            return jsonify({
+                'success': False,
+                'error': f'Error al parsear JSON: {str(e)}'
+            }), 400
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': f'Error al leer archivo: {str(e)}'
+            }), 400
         
         stats = {
             'users_imported': 0,
