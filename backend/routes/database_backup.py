@@ -2,7 +2,7 @@
 Rutas para backup y restauración de base de datos
 Solo accesible para Super Admin
 """
-from flask import Blueprint, request, jsonify, send_file
+from flask import Blueprint, request, jsonify, send_file, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.models.user import User
 from backend.database import db
@@ -13,6 +13,7 @@ from datetime import datetime
 import json
 import os
 import tempfile
+import traceback
 
 database_backup_bp = Blueprint('database_backup', __name__)
 
@@ -336,28 +337,128 @@ def import_database():
         
         # Importar usuarios
         for user_data in data.get('users', []):
-            existing = User.query.filter_by(
-                nombre=user_data['nombre'],
-                rol=user_data['rol']
-            ).first()
-            
-            if not existing:
-                user = User(
+            try:
+                existing = User.query.filter_by(
                     nombre=user_data['nombre'],
-                    rol=user_data['rol'],
-                    ubicacion_id=user_data.get('ubicacion_id'),
-                    activo=user_data.get('activo', True),
-                    es_usuario_basico=user_data.get('es_usuario_basico', False),
-                    presencia_verificada=user_data.get('presencia_verificada', False),
-                )
-                user.set_password('cambiar123')  # Contraseña temporal
-                db.session.add(user)
-                stats['users_imported'] += 1
+                    rol=user_data['rol']
+                ).first()
+                
+                if not existing:
+                    user = User(
+                        nombre=user_data['nombre'],
+                        rol=user_data['rol'],
+                        ubicacion_id=user_data.get('ubicacion_id'),
+                        activo=user_data.get('activo', True),
+                        es_usuario_basico=user_data.get('es_usuario_basico', False),
+                        presencia_verificada=user_data.get('presencia_verificada', False),
+                    )
+                    user.set_password('cambiar123')  # Contraseña temporal
+                    db.session.add(user)
+                    stats['users_imported'] += 1
+            except Exception as e:
+                print(f"Error importando usuario {user_data.get('nombre')}: {str(e)}")
+                continue
         
         db.session.commit()
         
-        # Importar formularios, votos, incidentes, delitos, evidencias...
-        # (Similar al script de importación)
+        # Importar formularios
+        for form_data in data.get('formularios', []):
+            try:
+                existing = FormularioE14.query.get(form_data['id'])
+                if not existing:
+                    formulario = FormularioE14(
+                        mesa_id=form_data['mesa_id'],
+                        testigo_id=form_data['testigo_id'],
+                        total_votantes_registrados=form_data['total_votantes_registrados'],
+                        total_votos=form_data['total_votos'],
+                        votos_validos=form_data['votos_validos'],
+                        votos_nulos=form_data['votos_nulos'],
+                        votos_blanco=form_data['votos_blanco'],
+                        tarjetas_no_marcadas=form_data['tarjetas_no_marcadas'],
+                        total_tarjetas=form_data['total_tarjetas'],
+                        estado=form_data['estado'],
+                    )
+                    db.session.add(formulario)
+                    stats['formularios_imported'] += 1
+            except Exception as e:
+                print(f"Error importando formulario {form_data.get('id')}: {str(e)}")
+                continue
+        
+        db.session.commit()
+        
+        # Importar votos por partido
+        for voto_data in data.get('votos_partidos', []):
+            try:
+                voto = VotoPartido(
+                    formulario_id=voto_data['formulario_id'],
+                    partido_id=voto_data['partido_id'],
+                    votos=voto_data['votos'],
+                )
+                db.session.add(voto)
+                stats['votos_imported'] += 1
+            except Exception as e:
+                print(f"Error importando voto: {str(e)}")
+                continue
+        
+        db.session.commit()
+        
+        # Importar incidentes
+        for inc_data in data.get('incidentes', []):
+            try:
+                incidente = IncidenteElectoral(
+                    titulo=inc_data['titulo'],
+                    descripcion=inc_data['descripcion'],
+                    tipo_incidente=inc_data['tipo_incidente'],
+                    severidad=inc_data['severidad'],
+                    estado=inc_data['estado'],
+                    mesa_id=inc_data.get('mesa_id'),
+                    reportado_por_id=inc_data.get('reportado_por_id'),
+                )
+                db.session.add(incidente)
+                stats['incidentes_imported'] += 1
+            except Exception as e:
+                print(f"Error importando incidente: {str(e)}")
+                continue
+        
+        db.session.commit()
+        
+        # Importar delitos
+        for del_data in data.get('delitos', []):
+            try:
+                delito = DelitoElectoral(
+                    titulo=del_data['titulo'],
+                    descripcion=del_data['descripcion'],
+                    tipo_delito=del_data['tipo_delito'],
+                    gravedad=del_data['gravedad'],
+                    estado=del_data['estado'],
+                    mesa_id=del_data.get('mesa_id'),
+                    reportado_por_id=del_data.get('reportado_por_id'),
+                )
+                db.session.add(delito)
+                stats['delitos_imported'] += 1
+            except Exception as e:
+                print(f"Error importando delito: {str(e)}")
+                continue
+        
+        db.session.commit()
+        
+        # Importar evidencias
+        for ev_data in data.get('evidencias', []):
+            try:
+                evidencia = EvidenciaFotografica(
+                    filename=ev_data['filename'],
+                    url=ev_data['url'],
+                    tipo=ev_data['tipo'],
+                    incidente_id=ev_data.get('incidente_id'),
+                    delito_id=ev_data.get('delito_id'),
+                )
+                db.session.add(evidencia)
+                stats['evidencias_imported'] += 1
+            except Exception as e:
+                print(f"Error importando evidencia: {str(e)}")
+                continue
+        
+        db.session.commit()
         
         return jsonify({
             'success': True,
@@ -367,9 +468,12 @@ def import_database():
         
     except Exception as e:
         db.session.rollback()
+        error_trace = traceback.format_exc()
+        current_app.logger.error(f"Error en importación: {error_trace}")
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': str(e),
+            'trace': error_trace if current_app.debug else None
         }), 500
 
 
