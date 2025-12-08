@@ -104,35 +104,33 @@ def main():
         print("⚠️  Archivo DIVIPOLA no encontrado")
         print("   Las ubicaciones deberán cargarse manualmente después del despliegue")
     
-    # PASO 4: Crear usuarios del sistema
-    print_header("PASO 4: CREACIÓN DE USUARIOS")
+    # PASO 4: Verificar usuarios básicos del sistema
+    print_header("PASO 4: VERIFICACIÓN DE USUARIOS BÁSICOS")
     
-    # Verificar si ya existen usuarios
+    # Los usuarios básicos se crean automáticamente al iniciar la app
+    # Solo verificamos que existan
     try:
         from backend.app import create_app
         from backend.database import db
         from backend.models.user import User
+        from backend.utils.init_usuarios_basicos import verificar_usuarios_basicos
         
         app = create_app('production')
         with app.app_context():
             user_count = User.query.count()
+            usuarios_basicos = User.query.filter_by(es_usuario_basico=True).count()
             
-            if user_count > 0:
-                print(f"✅ Ya existen {user_count} usuarios en la base de datos")
-                print("   Omitiendo creación de usuarios")
+            print(f"📊 Total de usuarios: {user_count}")
+            print(f"📊 Usuarios básicos del sistema: {usuarios_basicos}")
+            
+            if verificar_usuarios_basicos():
+                print("✅ Todos los usuarios básicos del sistema están presentes")
             else:
-                print(">> No hay usuarios, creando usuarios del sistema...")
-                run_command(
-                    f"{sys.executable} scripts/create_fixed_users.py",
-                    "Crear usuarios fijos"
-                )
+                print("⚠️  Faltan algunos usuarios básicos")
+                print("   Se crearán automáticamente al iniciar la aplicación")
     except Exception as e:
         print(f"⚠️  Error verificando usuarios: {e}")
-        print("   Intentando crear usuarios de todos modos...")
-        run_command(
-            f"{sys.executable} scripts/create_fixed_users.py",
-            "Crear usuarios fijos"
-        )
+        print("   Los usuarios básicos se crearán al iniciar la aplicación")
     
     # PASO 5: Configuración electoral
     print_header("PASO 5: CONFIGURACIÓN ELECTORAL")

@@ -12,9 +12,16 @@ def init_usuarios_basicos():
     """
     Inicializar usuarios básicos del sistema
     Se ejecuta automáticamente al iniciar la aplicación
+    
+    SOLO usuarios SIN ubicación específica:
+    - Super Admin: Acceso global
+    - Monitoreo: Acceso global de solo lectura
+    
+    Los coordinadores y auditores tienen ubicaciones específicas,
+    por lo que NO son usuarios básicos del sistema.
     """
     try:
-        # Definir usuarios básicos
+        # Definir usuarios básicos (SOLO usuarios globales sin ubicación)
         usuarios_basicos = [
             {
                 'nombre': 'Super Admin',
@@ -26,30 +33,6 @@ def init_usuarios_basicos():
                 'nombre': 'Monitoreo',
                 'password': 'test123',
                 'rol': 'monitoreo',
-                'activo': True
-            },
-            {
-                'nombre': 'Coordinador Departamental',
-                'password': 'test123',
-                'rol': 'coordinador_departamental',
-                'activo': True
-            },
-            {
-                'nombre': 'Coordinador Municipal',
-                'password': 'test123',
-                'rol': 'coordinador_municipal',
-                'activo': True
-            },
-            {
-                'nombre': 'Coordinador Puesto',
-                'password': 'test123',
-                'rol': 'coordinador_puesto',
-                'activo': True
-            },
-            {
-                'nombre': 'Auditor Electoral',
-                'password': 'test123',
-                'rol': 'auditor_electoral',
                 'activo': True
             }
         ]
@@ -96,18 +79,16 @@ def verificar_usuarios_basicos():
     """
     Verificar que todos los usuarios básicos existan
     Retorna True si todos existen, False si falta alguno
+    
+    SOLO verifica usuarios globales sin ubicación
     """
     roles_basicos = [
         'super_admin',
-        'monitoreo',
-        'coordinador_departamental',
-        'coordinador_municipal',
-        'coordinador_puesto',
-        'auditor_electoral'
+        'monitoreo'
     ]
     
     for rol in roles_basicos:
-        usuario = User.query.filter_by(rol=rol, activo=True).first()
+        usuario = User.query.filter_by(rol=rol, activo=True, es_usuario_basico=True).first()
         if not usuario:
             logger.warning(f"Usuario básico faltante: {rol}")
             return False

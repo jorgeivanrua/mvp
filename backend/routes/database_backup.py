@@ -335,26 +335,42 @@ def import_database():
         
         db.session.commit()
         
-        # Importar usuarios
+        # Importar usuarios (PROTEGER USUARIOS BÁSICOS DEL SISTEMA)
         for user_data in data.get('users', []):
             try:
+                # Verificar si ya existe un usuario con el mismo nombre y rol
                 existing = User.query.filter_by(
                     nombre=user_data['nombre'],
                     rol=user_data['rol']
                 ).first()
                 
-                if not existing:
-                    user = User(
-                        nombre=user_data['nombre'],
-                        rol=user_data['rol'],
-                        ubicacion_id=user_data.get('ubicacion_id'),
-                        activo=user_data.get('activo', True),
-                        es_usuario_basico=user_data.get('es_usuario_basico', False),
-                        presencia_verificada=user_data.get('presencia_verificada', False),
-                    )
-                    user.set_password('cambiar123')  # Contraseña temporal
-                    db.session.add(user)
-                    stats['users_imported'] += 1
+                # NO importar si:
+                # 1. Ya existe un usuario con ese nombre y rol
+                # 2. El usuario existente es un usuario básico del sistema
+                if existing:
+                    if existing.es_usuario_basico:
+                        print(f"⚠️  Omitiendo usuario básico del sistema: {user_data['nombre']} ({user_data['rol']})")
+                        continue
+                    else:
+                        # Actualizar usuario existente que NO es básico
+                        existing.ubicacion_id = user_data.get('ubicacion_id')
+                        existing.activo = user_data.get('activo', True)
+                        existing.presencia_verificada = user_data.get('presencia_verificada', False)
+                        stats['users_imported'] += 1
+                        continue
+                
+                # Crear nuevo usuario solo si no existe
+                user = User(
+                    nombre=user_data['nombre'],
+                    rol=user_data['rol'],
+                    ubicacion_id=user_data.get('ubicacion_id'),
+                    activo=user_data.get('activo', True),
+                    es_usuario_basico=user_data.get('es_usuario_basico', False),
+                    presencia_verificada=user_data.get('presencia_verificada', False),
+                )
+                user.set_password('cambiar123')  # Contraseña temporal
+                db.session.add(user)
+                stats['users_imported'] += 1
             except Exception as e:
                 print(f"Error importando usuario {user_data.get('nombre')}: {str(e)}")
                 continue
