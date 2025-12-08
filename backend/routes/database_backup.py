@@ -69,26 +69,32 @@ def export_database():
         
         # Exportar ubicaciones
         locations = Location.query.all()
-        locations_data = [{
-            'id': l.id,
-            'tipo': l.tipo,
-            'departamento_codigo': l.departamento_codigo,
-            'municipio_codigo': l.municipio_codigo,
-            'zona_codigo': l.zona_codigo,
-            'puesto_codigo': l.puesto_codigo,
-            'mesa_codigo': l.mesa_codigo,
-            'departamento_nombre': getattr(l, 'departamento_nombre', None),
-            'municipio_nombre': getattr(l, 'municipio_nombre', None),
-            'puesto_nombre': getattr(l, 'puesto_nombre', None),
-            'mesa_nombre': getattr(l, 'mesa_nombre', None),
-            'nombre_completo': l.nombre_completo,
-            'total_votantes_registrados': l.total_votantes_registrados,
-            'mujeres': l.mujeres,
-            'hombres': l.hombres,
-            'latitud': l.latitud,
-            'longitud': l.longitud,
-            'activo': l.activo,
-        } for l in locations]
+        locations_data = []
+        for l in locations:
+            loc_dict = {
+                'id': l.id,
+                'tipo': l.tipo,
+                'departamento_codigo': l.departamento_codigo,
+                'municipio_codigo': l.municipio_codigo,
+                'zona_codigo': l.zona_codigo,
+                'puesto_codigo': l.puesto_codigo,
+                'mesa_codigo': l.mesa_codigo,
+                'nombre_completo': l.nombre_completo,
+                'total_votantes_registrados': l.total_votantes_registrados or 0,
+                'mujeres': l.mujeres or 0,
+                'hombres': l.hombres or 0,
+                'latitud': l.latitud,
+                'longitud': l.longitud,
+                'activo': l.activo,
+            }
+            
+            # Agregar campos opcionales si existen
+            optional_fields = ['departamento_nombre', 'municipio_nombre', 'puesto_nombre', 'mesa_nombre', 'comuna', 'direccion', 'parent_id']
+            for field in optional_fields:
+                if hasattr(l, field):
+                    loc_dict[field] = getattr(l, field)
+            
+            locations_data.append(loc_dict)
         
         # Exportar formularios
         formularios = FormularioE14.query.all()
@@ -256,29 +262,62 @@ def import_database():
         
         # Importar ubicaciones primero (sin dependencias)
         for loc_data in data.get('locations', []):
-            existing = Location.query.filter_by(
-                departamento_codigo=loc_data.get('departamento_codigo'),
-                municipio_codigo=loc_data.get('municipio_codigo'),
-                puesto_codigo=loc_data.get('puesto_codigo'),
-                mesa_codigo=loc_data.get('mesa_codigo')
-            ).first()
-            
-            if not existing:
-                location = Location(
-                    tipo=loc_data['tipo'],
+            # Verificar si ya existe por código completo
+            existing = None
+            if loc_data.get('mesa_codigo'):
+                existing = Location.query.filter_by(
                     departamento_codigo=loc_data.get('departamento_codigo'),
                     municipio_codigo=loc_data.get('municipio_codigo'),
-                    zona_codigo=loc_data.get('zona_codigo'),
                     puesto_codigo=loc_data.get('puesto_codigo'),
-                    mesa_codigo=loc_data.get('mesa_codigo'),
-                    nombre_completo=loc_data.get('nombre_completo'),
-                    total_votantes_registrados=loc_data.get('total_votantes_registrados'),
-                    mujeres=loc_data.get('mujeres'),
-                    hombres=loc_data.get('hombres'),
-                    latitud=loc_data.get('latitud'),
-                    longitud=loc_data.get('longitud'),
-                    activo=loc_data.get('activo', True),
-                )
+                    mesa_codigo=loc_data.get('mesa_codigo')
+                ).first()
+            elif loc_data.get('puesto_codigo'):
+                existing = Location.query.filter_by(
+                    departamento_codigo=loc_data.get('departamento_codigo'),
+                    municipio_codigo=loc_data.get('municipio_codigo'),
+                    puesto_codigo=loc_data.get('puesto_codigo'),
+                    mesa_codigo=None
+                ).first()
+            elif loc_data.get('municipio_codigo'):
+                existing = Location.query.filter_by(
+                    departamento_codigo=loc_data.get('departamento_codigo'),
+                    municipio_codigo=loc_data.get('municipio_codigo'),
+                    puesto_codigo=None,
+                    mesa_codigo=None
+                ).first()
+            else:
+                existing = Location.query.filter_by(
+                    departamento_codigo=loc_data.get('departamento_codigo'),
+                    municipio_codigo=None,
+                    puesto_codigo=None,
+                    mesa_codigo=None
+                ).first()
+            
+            if not existing:
+                # Preparar datos con valores por defecto para campos requeridos
+                location_data = {
+                    'tipo': loc_data['tipo'],
+                    'departamento_codigo': loc_data.get('departamento_codigo'),
+                    'municipio_codigo': loc_data.get('municipio_codigo'),
+                    'zona_codigo': loc_data.get('zona_codigo'),
+                    'puesto_codigo': loc_data.get('puesto_codigo'),
+                    'mesa_codigo': loc_data.get('mesa_codigo'),
+                    'nombre_completo': loc_data.get('nombre_completo', ''),
+                    'total_votantes_registrados': loc_data.get('total_votantes_registrados', 0),
+                    'mujeres': loc_data.get('mujeres', 0),
+                    'hombres': loc_data.get('hombres', 0),
+                    'latitud': loc_data.get('latitud'),
+                    'longitud': loc_data.get('longitud'),
+                    'activo': loc_data.get('activo', True),
+                }
+                
+                # Agregar campos opcionales solo si existen en el modelo
+                optional_fields = ['departamento_nombre', 'municipio_nombre', 'puesto_nombre', 'mesa_nombre', 'comuna', 'direccion', 'parent_id']
+                for field in optional_fields:
+                    if field in loc_data and loc_data[field] is not None:
+                        location_data[field] = loc_data[field]
+                
+                location = Location(**location_data)
                 db.session.add(location)
                 stats['locations_imported'] += 1
         
