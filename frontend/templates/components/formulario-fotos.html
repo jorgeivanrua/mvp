@@ -1,4 +1,4 @@
-<!-- Componente para manejo de múltiples fotos de formularios E-14 -->
+.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             <!-- Componente para manejo de múltiples fotos de formularios E-14 -->
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">
@@ -135,14 +135,19 @@
 <!-- Script de inicialización -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Obtener parámetros de la página
-    const formularioId = window.formularioId || {{ formulario_id if formulario_id is defined else 'null' }};
-    const esCoordinador = window.esCoordinador || {{ 'true' if es_coordinador is defined and es_coordinador else 'false' }};
-    
-    if (formularioId) {
-        window.formularioFotos = inicializarFormularioFotos(formularioId, esCoordinador);
-    } else {
-        console.error('ID de formulario no definido');
-    }
+    // Los parámetros se establecerán desde el script de integración
+    // No se inicializa automáticamente aquí para evitar conflictos
+    console.log('Componente de fotos de formulario cargado');
 });
+
+// Función para inicializar el componente con parámetros específicos
+window.initFormularioFotosComponent = function(formularioId, esCoordinador = false) {
+    if (formularioId && window.inicializarFormularioFotos) {
+        window.formularioFotos = window.inicializarFormularioFotos(formularioId, esCoordinador);
+        return window.formularioFotos;
+    } else {
+        console.error('ID de formulario no definido o función inicializarFormularioFotos no disponible');
+        return null;
+    }
+};
 </script>

@@ -234,15 +234,19 @@
 <!-- Script de inicialización -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Obtener parámetros de la página
-    const tipoReporte = window.tipoReporte || '{% if tipo_reporte is defined %}{{ tipo_reporte }}{% else %}{% endif %}';
-    const reporteId = window.reporteId || {% if reporte_id is defined %}{{ reporte_id }}{% else %}null{% endif %};
-    const esCoordinador = window.esCoordinador || {% if es_coordinador is defined and es_coordinador %}true{% else %}false{% endif %};
-    
-    if (tipoReporte && reporteId) {
-        window.incidentesDelitosFotos = inicializarIncidentesDelitosFotos(tipoReporte, reporteId, esCoordinador);
-    } else {
-        console.error('Parámetros de reporte no definidos');
-    }
+    // Los parámetros se establecerán desde el script de integración
+    // No se inicializa automáticamente aquí para evitar conflictos
+    console.log('Componente de evidencias fotográficas cargado');
 });
+
+// Función para inicializar el componente con parámetros específicos
+window.initIncidentesDelitosFotosComponent = function(tipoReporte, reporteId, esCoordinador = false) {
+    if (tipoReporte && reporteId && window.inicializarIncidentesDelitosFotos) {
+        window.incidentesDelitosFotos = window.inicializarIncidentesDelitosFotos(tipoReporte, reporteId, esCoordinador);
+        return window.incidentesDelitosFotos;
+    } else {
+        console.error('Parámetros de reporte no definidos o función inicializarIncidentesDelitosFotos no disponible');
+        return null;
+    }
+};
 </script>

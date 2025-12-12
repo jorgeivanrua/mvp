@@ -35,10 +35,14 @@ class TestigoFotosIntegration {
                 const html = await response.text();
                 container.innerHTML = html;
 
-                // Inicializar la funcionalidad JavaScript
-                if (window.inicializarFormularioFotos) {
-                    this.formularioFotosInstance = window.inicializarFormularioFotos(formularioId, false);
-                }
+                // Esperar a que el DOM se actualice y luego inicializar
+                setTimeout(() => {
+                    if (window.initFormularioFotosComponent) {
+                        this.formularioFotosInstance = window.initFormularioFotosComponent(formularioId, false);
+                    } else {
+                        console.error('Función initFormularioFotosComponent no disponible');
+                    }
+                }, 100);
             } else {
                 throw new Error('Error al cargar componente de fotos');
             }
@@ -83,10 +87,14 @@ class TestigoFotosIntegration {
                 const html = await response.text();
                 container.innerHTML = html;
 
-                // Inicializar la funcionalidad JavaScript
-                if (window.inicializarIncidentesDelitosFotos) {
-                    this.incidenteFotosInstance = window.inicializarIncidentesDelitosFotos('incidente', incidenteId, false);
-                }
+                // Esperar a que el DOM se actualice y luego inicializar
+                setTimeout(() => {
+                    if (window.initIncidentesDelitosFotosComponent) {
+                        this.incidenteFotosInstance = window.initIncidentesDelitosFotosComponent('incidente', incidenteId, false);
+                    } else {
+                        console.error('Función initIncidentesDelitosFotosComponent no disponible');
+                    }
+                }, 100);
             } else {
                 throw new Error('Error al cargar componente de evidencias');
             }
@@ -128,10 +136,14 @@ class TestigoFotosIntegration {
                 const html = await response.text();
                 container.innerHTML = html;
 
-                // Inicializar la funcionalidad JavaScript
-                if (window.inicializarIncidentesDelitosFotos) {
-                    this.delitoFotosInstance = window.inicializarIncidentesDelitosFotos('delito', delitoId, false);
-                }
+                // Esperar a que el DOM se actualice y luego inicializar
+                setTimeout(() => {
+                    if (window.initIncidentesDelitosFotosComponent) {
+                        this.delitoFotosInstance = window.initIncidentesDelitosFotosComponent('delito', delitoId, false);
+                    } else {
+                        console.error('Función initIncidentesDelitosFotosComponent no disponible');
+                    }
+                }, 100);
             } else {
                 throw new Error('Error al cargar componente de evidencias');
             }
