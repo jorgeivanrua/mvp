@@ -158,20 +158,66 @@
         </div>
     </div>
 
-    <!-- Tabs Desktop (ocultos en móvil) -->
+    <!-- ⭐ SECCIÓN DE VERIFICACIÓN DE MESA (Siempre visible) -->
+    <div class="card mb-3 border-primary" id="verificacionMesaCard">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-check-circle"></i> Verificación de Mesa
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row align-items-end">
+                <div class="col-md-5 mb-3 mb-md-0">
+                    <label class="form-label fw-bold">Seleccione su Mesa</label>
+                    <select class="form-select form-select-lg" id="mesa" required onchange="cambiarMesa()">
+                        <option value="">Seleccione mesa...</option>
+                    </select>
+                    <small class="text-muted">Seleccione la mesa donde está asignado</small>
+                </div>
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <div id="presenciaContainer">
+                        <button class="btn btn-success btn-lg w-100" id="btnVerificarPresencia" onclick="verificarPresenciaSimple()" disabled>
+                            <i class="bi bi-geo-alt-fill"></i> Verificar Mi Presencia
+                        </button>
+                        <div class="alert alert-success mt-2 mb-0 d-none" id="alertaPresenciaVerificada">
+                            <i class="bi bi-check-circle-fill"></i> <strong>Presencia verificada</strong>
+                            <br><small id="presenciaFecha"></small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="alert alert-warning mb-0" id="alertMesaNoVerificada">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <small><strong>Debe verificar su mesa</strong> para habilitar las funciones</small>
+                    </div>
+                    <div class="alert alert-success mb-0 d-none" id="alertMesaVerificada">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <small><strong>Mesa verificada</strong><br>Todas las funciones habilitadas</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs Desktop (ocultos en móvil) - DESHABILITADOS hasta verificar mesa -->
     <ul class="nav nav-tabs mb-3 d-none d-md-flex" id="testigoTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="formularios-tab" data-bs-toggle="tab" data-bs-target="#formularios" type="button" role="tab">
+            <button class="nav-link active disabled" id="participacion-tab" data-bs-toggle="tab" data-bs-target="#participacion" type="button" role="tab" disabled>
+                <i class="bi bi-people-fill"></i> Participación
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link disabled" id="formularios-tab" data-bs-toggle="tab" data-bs-target="#formularios" type="button" role="tab" disabled>
                 <i class="bi bi-file-earmark-text"></i> Formularios E-14
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="incidentes-tab" data-bs-toggle="tab" data-bs-target="#incidentes" type="button" role="tab">
+            <button class="nav-link disabled" id="incidentes-tab" data-bs-toggle="tab" data-bs-target="#incidentes" type="button" role="tab" disabled>
                 <i class="bi bi-exclamation-triangle"></i> Incidentes
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="delitos-tab" data-bs-toggle="tab" data-bs-target="#delitos" type="button" role="tab">
+            <button class="nav-link disabled" id="delitos-tab" data-bs-toggle="tab" data-bs-target="#delitos" type="button" role="tab" disabled>
                 <i class="bi bi-shield-exclamation"></i> Delitos
             </button>
         </li>
@@ -180,36 +226,92 @@
     <!-- Contenido de las pestañas -->
     <div class="tab-content" id="testigoTabsContent">
         
-        <!-- Tab 1: Formularios E-14 -->
-        <div class="tab-pane fade show active" id="formularios" role="tabpanel">
-            <!-- Selector de Mesa y Verificación de Presencia -->
-            <div class="row mb-3">
-                <div class="col-md-6 mb-3">
-                    <div class="form-group-touch">
-                        <label class="form-label-touch">Mesa</label>
-                        <select class="form-control-touch" id="mesa" required onchange="cambiarMesa()">
-                            <option value="">Seleccione mesa...</option>
-                        </select>
+        <!-- Tab 1: Participación Horaria (E-11) -->
+        <div class="tab-pane fade show active" id="participacion" role="tabpanel">
+            <!-- Botón de acción rápida móvil -->
+            <div class="d-md-none mb-3">
+                <button class="btn-touch btn-info-touch btn-touch-block" onclick="reportarParticipacion()">
+                    <i class="bi bi-plus-circle"></i> Reportar Participación
+                </button>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Reporte de Participación Horaria</h5>
+                            <button class="btn btn-info" onclick="reportarParticipacion()">
+                                <i class="bi bi-plus-circle"></i> Reportar Participación
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning" id="ventanaTiempoInfo">
+                                <i class="bi bi-clock"></i>
+                                <strong>Ventana de Tiempo:</strong> <span id="ventanaActual">Cargando...</span>
+                                <br><small id="ventanaDetalle"></small>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>Instrucciones:</strong> Reporte cada hora cuántas personas han votado según el formulario E-11 (registro de votantes).
+                                Los reportes son acumulados (total de personas que han votado hasta ese momento).
+                                <br><br>
+                                <strong>⏰ Ventanas de Tiempo:</strong> Solo puede reportar dentro de los primeros 30 minutos de cada hora.
+                                <br>Ejemplo: Reporte de 9am → Entre 9:00am y 9:30am
+                            </div>
+                            
+                            <!-- Histórico de Reportes -->
+                            <div id="participacionLista">
+                                <div class="text-center py-4 text-muted">
+                                    <i class="bi bi-people" style="font-size: 3rem;"></i>
+                                    <p class="mt-2">No hay reportes de participación</p>
+                                    <small>Reporte cada hora cuántas personas han votado</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Gráfico de Tendencia -->
+                            <div id="participacionGrafico" class="mt-4 d-none">
+                                <h6>Tendencia de Participación</h6>
+                                <canvas id="participacionChart" height="80"></canvas>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <div class="form-group-touch">
-                        <label class="form-label-touch">Verificación de Presencia</label>
-                        <div id="presenciaContainer">
-                            <button class="btn-touch btn-success-touch btn-touch-block" id="btnVerificarPresencia" onclick="verificarPresenciaSimple()">
-                                <i class="bi bi-check-circle"></i> Verificar Mi Presencia
-                            </button>
-                            <div class="alert alert-success mt-2 d-none" id="alertaPresenciaVerificada">
-                                <i class="bi bi-check-circle-fill"></i> Presencia verificada
-                                <br><small id="presenciaFecha"></small>
+                <div class="col-md-4 d-none d-md-block">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Información</h5>
+                        </div>
+                        <div class="card-body">
+                            <h6><i class="bi bi-clock"></i> Horario de Votación</h6>
+                            <p class="small">8:00 AM - 4:00 PM</p>
+                            
+                            <h6 class="mt-3"><i class="bi bi-calendar-check"></i> Frecuencia</h6>
+                            <p class="small">Reporte cada hora (ideal) o cada 2 horas (mínimo)</p>
+                            
+                            <h6 class="mt-3"><i class="bi bi-file-text"></i> Fuente de Datos</h6>
+                            <p class="small">Formulario E-11 (registro de votantes que han firmado)</p>
+                            
+                            <h6 class="mt-3"><i class="bi bi-info-circle"></i> Dato a Reportar</h6>
+                            <p class="small">Número <strong>acumulado</strong> de personas que han votado hasta ese momento</p>
+                            
+                            <div class="alert alert-warning mt-3">
+                                <small>
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    <strong>Importante:</strong> Los reportes son acumulados, no incrementales. 
+                                    Ej: Si a las 9am votaron 45 personas y a las 10am votaron 75 más, 
+                                    debes reportar 120 (45+75) a las 10am.
+                                </small>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-
-
+        </div>
+        <!-- Fin Tab Participación -->
+        
+        <!-- Tab 2: Formularios E-14 -->
+        <div class="tab-pane fade" id="formularios" role="tabpanel">
             <!-- Botón Nuevo Formulario para Móvil -->
             <div class="d-md-none mb-3">
                 <button class="btn-touch btn-primary-touch btn-touch-block" id="btnNuevoFormularioMobile" onclick="showCreateForm()" disabled title="Debe seleccionar una mesa y verificar presencia primero">
@@ -299,7 +401,7 @@
         </div>
         <!-- Fin Tab Formularios -->
 
-        <!-- Tab 2: Incidentes y Problemas -->
+        <!-- Tab 3: Incidentes y Problemas -->
         <div class="tab-pane fade" id="incidentes" role="tabpanel">
             <!-- Botón de acción rápida móvil -->
             <div class="d-md-none mb-3">
@@ -411,7 +513,11 @@
 
 <!-- Bottom Navigation (Solo Móvil) -->
 <nav class="bottom-nav d-md-none">
-    <a href="#formularios" class="bottom-nav-item active" data-bs-toggle="tab" data-tab="formularios">
+    <a href="#participacion" class="bottom-nav-item active" data-bs-toggle="tab" data-tab="participacion">
+        <i class="bi bi-people-fill"></i>
+        <span>Participación</span>
+    </a>
+    <a href="#formularios" class="bottom-nav-item" data-bs-toggle="tab" data-tab="formularios">
         <i class="bi bi-file-earmark-text-fill"></i>
         <span>Formularios</span>
     </a>
@@ -422,10 +528,6 @@
     <a href="#delitos" class="bottom-nav-item" data-bs-toggle="tab" data-tab="delitos">
         <i class="bi bi-shield-fill-exclamation"></i>
         <span>Delitos</span>
-    </a>
-    <a href="#" class="bottom-nav-item" onclick="logout()">
-        <i class="bi bi-box-arrow-right"></i>
-        <span>Salir</span>
     </a>
 </nav>
 
@@ -775,12 +877,74 @@
     </div>
 </div>
 
+<!-- Modal para Reportar Participación -->
+<div class="modal fade" id="participacionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-send"></i> Enviar Reporte de Participación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="participacionForm">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <small>
+                            <strong>Este reporte se enviará directamente a los coordinadores</strong> para el monitoreo en tiempo real.
+                            Reporte cuántas personas <strong>han votado en total</strong> hasta este momento según el formulario E-11.
+                        </small>
+                    </div>
+                    
+                    <div class="alert alert-warning d-none" id="alertVentanaTiempo">
+                        <!-- Se llenará dinámicamente con JavaScript -->
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Hora del Reporte</label>
+                        <input type="datetime-local" class="form-control" id="horaReporte" required readonly>
+                        <small class="text-muted">Hora automática según ventana de tiempo actual</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Personas que Han Votado (Total Acumulado)</label>
+                        <input type="number" class="form-control" id="personasVotadas" min="0" required>
+                        <small class="text-muted">Total de personas que han votado hasta este momento</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Observaciones (Opcional)</label>
+                        <textarea class="form-control" id="observacionesParticipacion" rows="2" placeholder="Ej: Flujo normal de votantes"></textarea>
+                    </div>
+                    
+                    <div id="participacionInfo" class="alert alert-secondary d-none">
+                        <small>
+                            <strong>Votantes Registrados:</strong> <span id="infoVotantesRegistrados">0</span><br>
+                            <strong>Porcentaje de Participación:</strong> <span id="infoPorcentaje">0%</span>
+                        </small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-info" onclick="enviarReporteParticipacion()">
+                    <i class="bi bi-send"></i> Enviar Reporte
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
 <!-- API Client ya está cargado en base.html -->
 
-<!-- Script de verificación SIMPLE (se carga primero) -->
+<!-- Script para habilitar/deshabilitar funciones según verificación -->
+<script src="{{ url_for('static', filename='js/testigo-habilitar-funciones.js') }}"></script>
+
+<!-- Script de verificación SIMPLE (se carga después) -->
 <script src="{{ url_for('static', filename='js/testigo-verificacion-simple.js') }}"></script>
 
 <!-- Script de depuración -->
@@ -797,6 +961,12 @@
 
 <!-- Dashboard principal (incluye toda la funcionalidad) -->
 <script src="{{ url_for('static', filename='js/testigo-dashboard-v2.js') }}"></script>
+
+<!-- Gestión de reportes de participación horaria (E-11) -->
+<script src="{{ url_for('static', filename='js/testigo-participacion.js') }}"></script>
+
+<!-- Script de limpieza de IndexedDB (solo para debugging) -->
+<script src="{{ url_for('static', filename='js/limpiar-indexeddb.js') }}"></script>
 
 <!-- Fix de visibilidad de botones - DESHABILITADO porque causa conflictos -->
 <!-- <script src="{{ url_for('static', filename='js/testigo-fix-buttons-visibility.js') }}"></script> -->

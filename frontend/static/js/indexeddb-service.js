@@ -187,6 +187,31 @@ class IndexedDBService {
     }
 
     /**
+     * Eliminar reporte de la base de datos
+     */
+    async eliminarReporte(id) {
+        if (!this.db) {
+            return false;
+        }
+
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['reportes_pendientes'], 'readwrite');
+            const store = transaction.objectStore('reportes_pendientes');
+            const request = store.delete(id);
+
+            request.onsuccess = () => {
+                console.log(`Reporte ${id} eliminado de IndexedDB`);
+                resolve(true);
+            };
+
+            request.onerror = () => {
+                console.error(`Error eliminando reporte ${id}:`, request.error);
+                reject(request.error);
+            };
+        });
+    }
+
+    /**
      * Guardar evidencia offline
      */
     async guardarEvidenciaOffline(evidencia) {

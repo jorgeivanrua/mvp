@@ -149,6 +149,10 @@ def register_blueprints(app):
     app.register_blueprint(candidatos_bp)  # Gestión de candidatos
     app.register_blueprint(database_backup_bp, url_prefix='/api/database')  # Backup y restauración
     
+    # Reporte de participación horaria (E-11)
+    from backend.routes.reporte_participacion import reporte_participacion_bp
+    app.register_blueprint(reporte_participacion_bp)
+    
     # Public routes (sin autenticación)
     from backend.routes.public import public_bp
     app.register_blueprint(public_bp)

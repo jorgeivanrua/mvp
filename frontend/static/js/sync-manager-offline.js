@@ -54,7 +54,7 @@ class SyncManager {
      */
     getCurrentUserRole() {
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
             if (!token) return null;
             
             // Decodificar JWT (simple, sin validación)
@@ -237,8 +237,17 @@ class SyncManager {
                     console.error('Error sincronizando reporte:', error);
                     errores++;
                     
-                    // Incrementar intentos
-                    await this.incrementarIntentos(reporte.id);
+                    // Si es error de validación (422) o el reporte tiene demasiados intentos, eliminarlo
+                    const esErrorValidacion = error.message && error.message.includes('Errores de validación');
+                    const demasiadosIntentos = reporte.intentos_sync >= 3;
+                    
+                    if (esErrorValidacion || demasiadosIntentos) {
+                        console.warn(`Eliminando reporte ${reporte.id} - Error de validación o demasiados intentos`);
+                        await window.indexedDBService.eliminarReporte(reporte.id);
+                    } else {
+                        // Incrementar intentos solo si no es error de validación
+                        await this.incrementarIntentos(reporte.id);
+                    }
                 }
             }
             

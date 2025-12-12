@@ -14,6 +14,7 @@ from backend.models.coordinador_departamental import ReporteDepartamental, VotoP
 from backend.models.incidentes_delitos import IncidenteElectoral, DelitoElectoral, NotificacionReporte
 from backend.models.seguimiento import SeguimientoReporte
 from backend.models.configuracion_sistema import ConfiguracionSistema, FondoLogin
+from backend.models.reporte_participacion import ReporteParticipacion
 
 __all__ = [
     'User',
@@ -40,5 +41,6 @@ __all__ = [
     'SeguimientoReporte',
     'NotificacionReporte',
     'ConfiguracionSistema',
-    'FondoLogin'
+    'FondoLogin',
+    'ReporteParticipacion'
 ]

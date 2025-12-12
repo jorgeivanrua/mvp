@@ -548,19 +548,51 @@ function cambiarMesa() {
         selectedMesa = JSON.parse(selectedOption.dataset.mesa);
         mesaSeleccionadaDashboard = selectedMesa;
         
+        // Habilitar botón de verificar presencia
+        const btnVerificar = document.getElementById('btnVerificarPresencia');
+        if (btnVerificar) {
+            btnVerificar.removeAttribute('disabled');
+            btnVerificar.classList.remove('disabled');
+        }
+        
         // Resetear verificación de presencia al cambiar de mesa
         presenciaVerificada = false;
+        localStorage.removeItem('presenciaVerificada');
+        localStorage.removeItem('mesaVerificadaId');
+        localStorage.removeItem('mesaVerificadaData');
+        
         document.getElementById('btnVerificarPresencia').classList.remove('d-none');
         document.getElementById('alertaPresenciaVerificada').classList.add('d-none');
         
-        // Deshabilitar botón de nuevo formulario
-        habilitarBotonNuevoFormulario();
+        // Deshabilitar todas las funciones hasta que se verifique
+        if (window.deshabilitarFuncionesTestigo) {
+            deshabilitarFuncionesTestigo();
+        }
+        
+        // Actualizar info de mesa
+        const mesaInfo = document.getElementById('mesaInfo');
+        if (mesaInfo) {
+            mesaInfo.textContent = `${selectedMesa.mesa_codigo} - ${selectedMesa.mesa_nombre}`;
+        }
+        
+        // Actualizar votantes registrados en stats
+        const statVotantes = document.getElementById('statVotantes');
+        if (statVotantes) {
+            statVotantes.textContent = selectedMesa.total_votantes_registrados || 0;
+        }
         
         // Recargar formularios de esta mesa
         loadForms();
         
         // Actualizar panel lateral con todas las mesas
         actualizarPanelMesas();
+    } else {
+        // Si no hay mesa seleccionada, deshabilitar botón de verificar
+        const btnVerificar = document.getElementById('btnVerificarPresencia');
+        if (btnVerificar) {
+            btnVerificar.setAttribute('disabled', 'disabled');
+            btnVerificar.classList.add('disabled');
+        }
     }
 }
 
@@ -886,6 +918,13 @@ function renderVotacionForm(partidos, candidatosPorPartido) {
     } else {
         renderVotacionTradicional(partidos, candidatosPorPartido, esUninominal);
     }
+    
+    // ⭐ IMPORTANTE: Llamar calcularTotales() después de renderizar para inicializar los badges
+    // Usar setTimeout para asegurar que el DOM esté completamente actualizado
+    setTimeout(() => {
+        console.log('🔄 Inicializando totales después de renderizar...');
+        calcularTotales();
+    }, 100);
 }
 
 /**
@@ -1018,6 +1057,20 @@ function renderVotacionConPestanas(partidos, candidatosPorPartido, esUninominal)
     
     html += '</div>';
     container.innerHTML = html;
+    
+    // ⭐ IMPORTANTE: Inicializar votosData para cada partido
+    partidos.forEach(partido => {
+        const candidatos = candidatosPorPartido[partido.id] || [];
+        votosData[partido.id] = {
+            partido: partido,
+            votosPartido: 0,
+            candidatos: candidatos.map(c => ({ ...c, votos: 0 })),
+            total: 0,
+            esUninominal: esUninominal
+        };
+    });
+    
+    console.log('✅ votosData inicializado:', votosData);
 }
 
 /**
@@ -1173,8 +1226,13 @@ function calcularTotales() {
         
         // Actualizar display del total del partido
         const totalSpan = document.getElementById(`total_partido_${partidoId}`);
+        console.log(`[calcularTotales] Badge total_partido_${partidoId}:`, totalSpan ? 'ENCONTRADO' : 'NO ENCONTRADO');
         if (totalSpan) {
-            totalSpan.textContent = Utils.formatNumber(data.total);
+            const valorFormateado = Utils.formatNumber(data.total);
+            totalSpan.textContent = valorFormateado;
+            console.log(`[calcularTotales] ✅ Badge actualizado a: ${valorFormateado}`);
+        } else {
+            console.error(`[calcularTotales] ❌ No se encontró el badge total_partido_${partidoId} en el DOM`);
         }
         
         // Verificar partido con más votos en esta mesa
@@ -1225,18 +1283,24 @@ function calcularTotales() {
 }
 
 async function loadForms() {
+    console.log('[loadForms] Iniciando carga de formularios...');
     try {
         const params = selectedMesa ? { mesa_id: selectedMesa.id } : {};
+        console.log('[loadForms] Parámetros:', params);
         
         // Obtener formularios del servidor
         let formulariosServidor = [];
         try {
+            console.log('[loadForms] Llamando a APIClient.getFormulariosE14...');
             const response = await APIClient.getFormulariosE14(params);
+            console.log('[loadForms] Respuesta del servidor:', response);
             if (response.success) {
                 formulariosServidor = response.data.formularios || response.data || [];
+                console.log('[loadForms] Formularios del servidor:', formulariosServidor.length);
             }
         } catch (error) {
-            console.error('Error al cargar formularios del servidor:', error);
+            console.error('[loadForms] Error al cargar formularios del servidor:', error);
+            console.error('[loadForms] Detalles del error:', error.message);
             // Continuar para mostrar al menos los borradores locales
         }
         
@@ -1410,6 +1474,12 @@ async function saveForm(accion = 'borrador') {
         return;
     }
     
+    // Validar que haya datos de votación
+    if (!votosData || Object.keys(votosData).length === 0) {
+        Utils.showError('Debe seleccionar un tipo de elección y cargar los partidos primero');
+        return;
+    }
+    
     // Deshabilitar botones para prevenir doble envío
     const btnGuardar = document.querySelector('.btn-warning[onclick*="saveForm"]');
     const btnEnviar = document.querySelector('.btn-primary[onclick*="saveForm"]');
@@ -1421,6 +1491,10 @@ async function saveForm(accion = 'borrador') {
     if (btnCancelar) btnCancelar.disabled = true;
     
     try {
+        // ⭐ IMPORTANTE: Calcular totales ANTES de enviar para asegurar coherencia
+        console.log('[saveForm] Calculando totales antes de enviar...');
+        calcularTotales();
+        
         const formData = new FormData(form);
         console.log('FormData created');
         
@@ -1428,11 +1502,18 @@ async function saveForm(accion = 'borrador') {
         const votosPartidos = [];
         const votosCandidatos = [];
         
+        console.log('[saveForm] votosData:', votosData);
+        
         Object.keys(votosData).forEach(partidoId => {
             const data = votosData[partidoId];
             
+            if (!data) {
+                console.warn(`[saveForm] No hay datos para partido ${partidoId}`);
+                return;
+            }
+            
             // Votos del partido
-            if (data.votosPartido > 0) {
+            if (data.votosPartido && data.votosPartido > 0) {
                 votosPartidos.push({
                     partido_id: parseInt(partidoId),
                     votos: data.votosPartido
@@ -1440,20 +1521,35 @@ async function saveForm(accion = 'borrador') {
             }
             
             // Votos de candidatos
-            data.candidatos.forEach(candidato => {
-                if (candidato.votos > 0) {
-                    votosCandidatos.push({
-                        candidato_id: candidato.id,
-                        votos: candidato.votos
-                    });
-                }
-            });
+            if (data.candidatos && Array.isArray(data.candidatos)) {
+                data.candidatos.forEach(candidato => {
+                    // Solo agregar si tiene votos > 0 Y tiene un ID válido
+                    if (candidato.votos > 0 && candidato.id && !isNaN(candidato.id)) {
+                        votosCandidatos.push({
+                            candidato_id: parseInt(candidato.id),
+                            votos: parseInt(candidato.votos)
+                        });
+                    }
+                });
+            }
         });
+        
+        console.log('[saveForm] votosPartidos:', votosPartidos);
+        console.log('[saveForm] votosCandidatos:', votosCandidatos);
+        
+        // Obtener tipo de elección
+        const tipoEleccionValue = formData.get('tipo_eleccion');
+        console.log('[saveForm] tipo_eleccion del FormData:', tipoEleccionValue);
+        
+        if (!tipoEleccionValue || tipoEleccionValue === '' || tipoEleccionValue === 'null') {
+            Utils.showError('Debe seleccionar un tipo de elección');
+            return;
+        }
         
         // Construir objeto de datos
         const data = {
             mesa_id: parseInt(mesaId),
-            tipo_eleccion_id: parseInt(formData.get('tipo_eleccion')),
+            tipo_eleccion_id: parseInt(tipoEleccionValue),
             total_votantes_registrados: parseInt(formData.get('total_votantes_registrados')),
             total_votos: parseInt(formData.get('total_votos')),
             votos_validos: parseInt(formData.get('votos_validos')),
@@ -1467,12 +1563,42 @@ async function saveForm(accion = 'borrador') {
             votos_candidatos: votosCandidatos
         };
         
-        console.log('Saving form data:', data);
+        // Validar que todos los campos numéricos sean válidos
+        const camposNumericos = [
+            'mesa_id', 'tipo_eleccion_id', 'total_votantes_registrados',
+            'total_votos', 'votos_validos', 'votos_nulos', 'votos_blanco',
+            'tarjetas_no_marcadas', 'total_tarjetas'
+        ];
+        
+        for (const campo of camposNumericos) {
+            if (isNaN(data[campo]) || data[campo] === null || data[campo] === undefined) {
+                Utils.showError(`El campo ${campo} tiene un valor inválido: ${data[campo]}`);
+                console.error(`[saveForm] Campo inválido: ${campo} =`, data[campo]);
+                return;
+            }
+        }
+        
+        console.log('[saveForm] ===== DATOS A ENVIAR =====');
+        console.log('[saveForm] Votos válidos:', data.votos_validos);
+        console.log('[saveForm] Votos nulos:', data.votos_nulos);
+        console.log('[saveForm] Votos blanco:', data.votos_blanco);
+        console.log('[saveForm] Total votos:', data.total_votos);
+        console.log('[saveForm] Tarjetas no marcadas:', data.tarjetas_no_marcadas);
+        console.log('[saveForm] Total tarjetas:', data.total_tarjetas);
+        console.log('[saveForm] Validación: votos_validos + nulos + blanco =', 
+            data.votos_validos + data.votos_nulos + data.votos_blanco, 
+            '(debe ser igual a total_votos:', data.total_votos + ')');
+        console.log('[saveForm] Validación: total_votos + tarjetas_no_marcadas =', 
+            data.total_votos + data.tarjetas_no_marcadas, 
+            '(debe ser igual a total_tarjetas:', data.total_tarjetas + ')');
+        console.log('[saveForm] Objeto completo:', data);
         
         // Intentar guardar en el servidor (tanto borrador como envío)
         try {
             Utils.showInfo(accion === 'borrador' ? 'Guardando borrador...' : 'Enviando formulario...');
             const response = await APIClient.createFormularioE14(data);
+            
+            console.log('[saveForm] Respuesta del servidor:', response);
             
             if (response.success) {
                 // Eliminar borrador local si existe (ya está en BD)
@@ -1516,9 +1642,69 @@ async function saveForm(accion = 'borrador') {
             }
         } catch (error) {
             console.error('Error guardando en servidor:', error);
+            console.error('Error completo:', error);
+            console.error('Error.message:', error.message);
+            console.error('Error.validationErrors:', error.validationErrors);
             
-            // Si falla, guardar localmente solo como backup
-            if (accion === 'borrador') {
+            // El mensaje de error ya viene formateado del APIClient
+            let errorMessage = error.message || 'Error desconocido';
+            
+            // Si el error menciona que ya existe un formulario, dar opción de editar
+            if (errorMessage.includes('Ya existe un formulario') || errorMessage.includes('mesa_tipo_eleccion')) {
+                // Extraer el mensaje limpio
+                const mensajeLimpio = errorMessage.split('\n\n')[1] || errorMessage;
+                const confirmMsg = `${mensajeLimpio}\n\n¿Desea buscar y editar el formulario existente?`;
+                
+                if (confirm(confirmMsg)) {
+                    // Cerrar modal
+                    const modalElement = document.getElementById('formModal');
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) modal.hide();
+                    
+                    // Limpiar backdrops
+                    document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style.removeProperty('overflow');
+                    document.body.style.removeProperty('padding-right');
+                    
+                    // Intentar cargar el formulario existente directamente del servidor
+                    try {
+                        console.log('[saveForm] Buscando formulario existente para mesa:', data.mesa_id, 'tipo:', data.tipo_eleccion_id);
+                        const response = await APIClient.getFormulariosE14({ mesa_id: data.mesa_id });
+                        console.log('[saveForm] Respuesta búsqueda formulario:', response);
+                        
+                        if (response.success && response.data.formularios && response.data.formularios.length > 0) {
+                            // Encontró formularios, buscar el del tipo de elección correcto
+                            const formularioExistente = response.data.formularios.find(f => f.tipo_eleccion_id === data.tipo_eleccion_id);
+                            if (formularioExistente) {
+                                Utils.showInfo(`Formulario encontrado (ID: ${formularioExistente.id}). Cargando para edición...`);
+                                // Recargar formularios y abrir el existente para edición
+                                await loadForms();
+                                // TODO: Abrir automáticamente el formulario para edición
+                                return;
+                            }
+                        }
+                        
+                        // Si no lo encontró, solo recargar la lista
+                        await loadForms();
+                        Utils.showWarning('No se pudo encontrar el formulario existente. Verifique la lista de formularios.');
+                    } catch (searchError) {
+                        console.error('[saveForm] Error buscando formulario existente:', searchError);
+                        await loadForms();
+                        Utils.showWarning('Error al buscar el formulario. Verifique la lista de formularios.');
+                    }
+                    return;
+                }
+                return; // No mostrar error adicional
+            }
+            
+            console.log('[saveForm] Mensaje de error procesado:', errorMessage);
+            
+            // Mostrar error específico
+            Utils.showError(`Error al ${accion === 'borrador' ? 'guardar' : 'enviar'} formulario:\n\n${errorMessage}`);
+            
+            // Si falla por error de conexión, guardar localmente solo como backup
+            if (accion === 'borrador' && (error.message.includes('Network') || error.message.includes('Failed to fetch'))) {
                 guardarBorradorLocal(data);
                 Utils.showWarning('⚠️ Guardado localmente (sin conexión). Se sincronizará automáticamente.');
                 
@@ -1538,27 +1724,27 @@ async function saveForm(accion = 'borrador') {
                 return;
             }
             
-            // Si es envío y falla, preguntar si guardar como borrador
-            if (confirm('No se pudo enviar el formulario. ¿Desea guardarlo como borrador para enviarlo después?')) {
-                // Cambiar a borrador y guardar localmente
-                data.estado = 'borrador';
-                guardarBorradorLocal(data);
-                Utils.showWarning('Guardado como borrador local. Se sincronizará cuando haya conexión.');
-                
-                setTimeout(() => {
-                    const modalElement = document.getElementById('formModal');
-                    const modal = bootstrap.Modal.getInstance(modalElement);
-                    if (modal) {
-                        modal.hide();
-                    }
-                    document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
-                    document.body.classList.remove('modal-open');
-                }, 500);
-                
-                await loadForms();
-                await actualizarPanelMesas();
-            } else {
-                Utils.showError('Error al enviar formulario: ' + error.message);
+            // Si es envío y falla por conexión, preguntar si guardar como borrador
+            if (accion === 'enviar' && (error.message.includes('Network') || error.message.includes('Failed to fetch'))) {
+                if (confirm('No se pudo enviar el formulario por problemas de conexión. ¿Desea guardarlo como borrador para enviarlo después?')) {
+                    // Cambiar a borrador y guardar localmente
+                    data.estado = 'borrador';
+                    guardarBorradorLocal(data);
+                    Utils.showWarning('Guardado como borrador local. Se sincronizará cuando haya conexión.');
+                    
+                    setTimeout(() => {
+                        const modalElement = document.getElementById('formModal');
+                        const modal = bootstrap.Modal.getInstance(modalElement);
+                        if (modal) {
+                            modal.hide();
+                        }
+                        document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+                        document.body.classList.remove('modal-open');
+                    }, 500);
+                    
+                    await loadForms();
+                    await actualizarPanelMesas();
+                }
             }
             return;
         }
@@ -2743,7 +2929,6 @@ window.actualizarPanelMesas = actualizarPanelMesas;
 window.saveForm = saveForm;
 window.calcularTotales = calcularTotales;
 window.setupImagePreview = setupImagePreview;
-window.abrirCamara = abrirCamara;
 
 console.log('✅ testigo-dashboard-v2.js cargado - Funciones expuestas globalmente');
 

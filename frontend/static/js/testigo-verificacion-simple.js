@@ -78,14 +78,15 @@ window.verificarPresenciaSimple = async function() {
             statEstadoTexto.textContent = 'Verificado';
         }
         
-        // 7. Habilitar botones (se hará automáticamente por el script de enable-buttons)
+        // 7. Habilitar pestañas y botones
+        habilitarFuncionesTestigo();
         console.log('✅ [SIMPLE] Verificación completada exitosamente');
         
         // Mostrar mensaje de éxito
         if (window.Utils && window.Utils.showSuccess) {
-            Utils.showSuccess('✅ Presencia verificada exitosamente');
+            Utils.showSuccess('✅ Presencia verificada exitosamente. Todas las funciones habilitadas.');
         } else {
-            alert('✅ Presencia verificada exitosamente');
+            alert('✅ Presencia verificada exitosamente. Todas las funciones habilitadas.');
         }
         
     } catch (error) {

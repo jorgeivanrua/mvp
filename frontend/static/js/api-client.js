@@ -57,6 +57,34 @@ class APIClient {
                 throw new Error('Endpoint no encontrado. Verifica que el backend esté funcionando correctamente.');
             }
             
+            if (response.status === 400) {
+                // Error de validación - incluir detalles
+                if (data.errors) {
+                    const errorDetails = Object.entries(data.errors)
+                        .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+                        .join('\n');
+                    const error = new Error(data.error || 'Errores de validación');
+                    error.validationErrors = data.errors;
+                    error.message = `${error.message}\n\n${errorDetails}`;
+                    throw error;
+                }
+                throw new Error(data.error || 'Error de validación');
+            }
+            
+            if (response.status === 422) {
+                // Error de validación (UNPROCESSABLE ENTITY) - incluir detalles
+                if (data.errors) {
+                    const errorDetails = Object.entries(data.errors)
+                        .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+                        .join('\n');
+                    const error = new Error(data.error || 'Errores de validación');
+                    error.validationErrors = data.errors;
+                    error.message = `${error.message}\n\n${errorDetails}`;
+                    throw error;
+                }
+                throw new Error(data.error || 'Error de validación');
+            }
+            
             if (response.status === 500) {
                 throw new Error(data.error || 'Error interno del servidor');
             }

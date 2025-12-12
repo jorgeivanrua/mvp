@@ -22,7 +22,7 @@ def init_db(app):
     # Importar modelos para que Alembic los detecte (cuando existan)
     with app.app_context():
         try:
-            from backend.models import user, location, form_e14, political_party, notification, audit_log
+            from backend.models import user, location, form_e14, political_party, notification, audit_log, reporte_participacion
         except ImportError:
             # Los modelos aún no están creados
             pass
