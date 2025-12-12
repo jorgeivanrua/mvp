@@ -93,16 +93,48 @@ function reportarParticipacion() {
     const modal = new bootstrap.Modal(document.getElementById('participacionModal'));
     modal.show();
     
-    // Calcular porcentaje al cambiar personas votadas
-    document.getElementById('personasVotadas').addEventListener('input', function() {
-        const personasVotadas = parseInt(this.value) || 0;
+    // Calcular porcentaje al cambiar personas votadas (incremental)
+    document.getElementById('personasVotadas').addEventListener('input', async function() {
+        const personasVotadasHora = parseInt(this.value) || 0;
         const votantesRegistrados = mesa.total_votantes_registrados || 0;
         
-        if (votantesRegistrados > 0 && personasVotadas > 0) {
-            const porcentaje = (personasVotadas / votantesRegistrados * 100).toFixed(2);
+        if (votantesRegistrados > 0 && personasVotadasHora >= 0) {
+            // Obtener total acumulado actual
+            let totalAcumuladoActual = 0;
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/api/reporte-participacion/mesa/${mesa.id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data.reportes) {
+                        totalAcumuladoActual = data.data.reportes.reduce((sum, r) => sum + r.personas_votadas, 0);
+                    }
+                }
+            } catch (error) {
+                console.warn('Error obteniendo reportes previos:', error);
+            }
+            
+            // Calcular nuevo total acumulado
+            const nuevoTotalAcumulado = totalAcumuladoActual + personasVotadasHora;
+            const porcentaje = (nuevoTotalAcumulado / votantesRegistrados * 100).toFixed(2);
+            
             document.getElementById('infoVotantesRegistrados').textContent = votantesRegistrados;
             document.getElementById('infoPorcentaje').textContent = porcentaje + '%';
-            document.getElementById('participacionInfo').classList.remove('d-none');
+            
+            // Mostrar información adicional
+            const infoElement = document.getElementById('participacionInfo');
+            infoElement.innerHTML = `
+                <small>
+                    <strong>Votantes Registrados:</strong> ${votantesRegistrados}<br>
+                    <strong>Total Acumulado Previo:</strong> ${totalAcumuladoActual}<br>
+                    <strong>Votarán en Esta Hora:</strong> ${personasVotadasHora}<br>
+                    <strong>Nuevo Total Acumulado:</strong> ${nuevoTotalAcumulado}<br>
+                    <strong>Porcentaje de Participación:</strong> ${porcentaje}%
+                </small>
+            `;
+            infoElement.classList.remove('d-none');
         } else {
             document.getElementById('participacionInfo').classList.add('d-none');
         }
@@ -285,14 +317,30 @@ function mostrarReportesParticipacion(data) {
         return;
     }
     
+    // Calcular totales acumulados para mostrar correctamente
+    let totalAcumulado = 0;
+    const reportesConAcumulado = reportes.map(reporte => {
+        totalAcumulado += reporte.personas_votadas;
+        return {
+            ...reporte,
+            total_acumulado: totalAcumulado
+        };
+    });
+    
     // Mostrar tabla de reportes
     let html = `
+        <div class="alert alert-info mb-3">
+            <i class="bi bi-info-circle"></i>
+            <strong>Datos Incrementales:</strong> Cada reporte muestra las personas que votaron en esa hora específica.
+            El total acumulado se calcula sumando todos los incrementos.
+        </div>
         <div class="table-responsive">
             <table class="table table-striped">
                 <thead>
                     <tr>
                         <th>Hora</th>
-                        <th>Personas Votadas</th>
+                        <th>Votaron en la Hora</th>
+                        <th>Total Acumulado</th>
                         <th>Participación</th>
                         <th>Observaciones</th>
                     </tr>
@@ -300,14 +348,21 @@ function mostrarReportesParticipacion(data) {
                 <tbody>
     `;
     
-    reportes.forEach(reporte => {
+    reportesConAcumulado.forEach(reporte => {
         const hora = new Date(reporte.hora_reporte);
         const horaFormateada = hora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
         
         html += `
             <tr>
                 <td><strong>${horaFormateada}</strong></td>
-                <td>${reporte.personas_votadas}</td>
+                <td>
+                    <span class="badge bg-primary">${reporte.personas_votadas}</span>
+                    <small class="text-muted d-block">incremental</small>
+                </td>
+                <td>
+                    <strong>${reporte.total_acumulado}</strong>
+                    <small class="text-muted d-block">total hasta ahora</small>
+                </td>
                 <td>
                     <span class="badge bg-info">${reporte.porcentaje_participacion}%</span>
                 </td>
@@ -346,30 +401,54 @@ function mostrarGraficoParticipacion(reportes) {
         return hora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
     });
     
-    const datos = reportes.map(r => r.personas_votadas);
+    // Datos incrementales (por hora)
+    const datosIncrementales = reportes.map(r => r.personas_votadas);
+    
+    // Datos acumulados
+    let totalAcumulado = 0;
+    const datosAcumulados = reportes.map(r => {
+        totalAcumulado += r.personas_votadas;
+        return totalAcumulado;
+    });
     
     // Destruir gráfico anterior si existe
     if (window.participacionChart) {
         window.participacionChart.destroy();
     }
     
-    // Crear nuevo gráfico
+    // Crear nuevo gráfico con dos líneas
     window.participacionChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
-            datasets: [{
-                label: 'Personas que Han Votado',
-                data: datos,
-                borderColor: 'rgb(75, 192, 192)',
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                tension: 0.1,
-                fill: true
-            }]
+            datasets: [
+                {
+                    label: 'Votaron por Hora (Incremental)',
+                    data: datosIncrementales,
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    tension: 0.1,
+                    fill: false,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Total Acumulado',
+                    data: datosAcumulados,
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    tension: 0.1,
+                    fill: true,
+                    yAxisID: 'y1'
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: true,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
             plugins: {
                 legend: {
                     display: true,
@@ -378,14 +457,45 @@ function mostrarGraficoParticipacion(reportes) {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            return context.parsed.y + ' personas';
+                            const label = context.dataset.label || '';
+                            return label + ': ' + context.parsed.y + ' personas';
                         }
                     }
                 }
             },
             scales: {
+                x: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Hora del Reporte'
+                    }
+                },
                 y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Personas por Hora'
+                    },
                     beginAtZero: true,
+                    ticks: {
+                        stepSize: 10
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Total Acumulado'
+                    },
+                    beginAtZero: true,
+                    grid: {
+                        drawOnChartArea: false,
+                    },
                     ticks: {
                         stepSize: 50
                     }

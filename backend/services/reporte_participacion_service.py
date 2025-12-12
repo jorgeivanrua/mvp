@@ -103,18 +103,23 @@ class ReporteParticipacionService:
                 ]
             })
         
-        # Validar que sea mayor o igual al reporte anterior (acumulado)
-        reporte_anterior = ReporteParticipacion.query.filter(
-            ReporteParticipacion.mesa_id == data['mesa_id'],
-            ReporteParticipacion.hora_reporte < hora_reporte
-        ).order_by(ReporteParticipacion.hora_reporte.desc()).first()
-        
-        if reporte_anterior and personas_votadas < reporte_anterior.personas_votadas:
+        # ⭐ CAMBIO: Los reportes ahora son incrementales por hora
+        # Validar que el número de personas sea razonable para una hora
+        if personas_votadas > 500:  # Límite razonable por hora
             raise ValidationException({
                 'personas_votadas': [
-                    f'El número de personas votadas ({personas_votadas}) no puede ser menor '
-                    f'al reporte anterior ({reporte_anterior.personas_votadas}). '
-                    f'Los reportes son acumulados.'
+                    f'El número de personas votadas en una hora ({personas_votadas}) parece muy alto. '
+                    f'Verifique que esté reportando solo las personas que votaron en esta hora específica.'
+                ]
+            })
+        
+        # Validar que el total acumulado no exceda los votantes registrados
+        total_acumulado = ReporteParticipacionService._calcular_total_acumulado(data['mesa_id'], hora_reporte, personas_votadas)
+        if votantes_registrados > 0 and total_acumulado > votantes_registrados:
+            raise ValidationException({
+                'personas_votadas': [
+                    f'El total acumulado ({total_acumulado}) excedería los votantes registrados ({votantes_registrados}). '
+                    f'Verifique el número de personas que votaron solo en esta hora.'
                 ]
             })
         
@@ -134,10 +139,11 @@ class ReporteParticipacionService:
                 ]
             })
         
-        # Calcular porcentaje de participación
+        # Calcular porcentaje de participación basado en el total acumulado
+        total_acumulado = ReporteParticipacionService._calcular_total_acumulado(data['mesa_id'], hora_reporte, personas_votadas)
         porcentaje_participacion = 0
         if votantes_registrados > 0:
-            porcentaje_participacion = (personas_votadas / votantes_registrados) * 100
+            porcentaje_participacion = (total_acumulado / votantes_registrados) * 100
         
         # Crear reporte
         reporte = ReporteParticipacion(
@@ -214,20 +220,23 @@ class ReporteParticipacionService:
         mesa_ids = [m.id for m in mesas]
         total_votantes = sum(m.total_votantes_registrados or 0 for m in mesas)
         
-        # Obtener último reporte de cada mesa
+        # Obtener total acumulado de cada mesa (suma de todos los incrementos)
         mesas_data = []
         total_personas_votadas = 0
         mesas_reportadas = 0
         ultima_hora_reporte = None
         
         for mesa in mesas:
+            # Obtener el total acumulado de la mesa (suma de todos los reportes incrementales)
+            total_acumulado_mesa = ReporteParticipacionService.obtener_total_acumulado_mesa(mesa.id)
+            
             ultimo_reporte = ReporteParticipacion.query.filter_by(
                 mesa_id=mesa.id
             ).order_by(ReporteParticipacion.hora_reporte.desc()).first()
             
             if ultimo_reporte:
                 mesas_reportadas += 1
-                total_personas_votadas += ultimo_reporte.personas_votadas
+                total_personas_votadas += total_acumulado_mesa  # Sumar el total acumulado, no solo el último reporte
                 
                 if not ultima_hora_reporte or ultimo_reporte.hora_reporte > ultima_hora_reporte:
                     ultima_hora_reporte = ultimo_reporte.hora_reporte
@@ -236,6 +245,7 @@ class ReporteParticipacionService:
                 'mesa_id': mesa.id,
                 'mesa_codigo': mesa.mesa_codigo,
                 'votantes_registrados': mesa.total_votantes_registrados or 0,
+                'total_acumulado': total_acumulado_mesa,
                 'ultimo_reporte': ultimo_reporte.to_dict() if ultimo_reporte else None,
                 'tendencia': ReporteParticipacionService._calcular_tendencia(mesa.id) if ultimo_reporte else 'sin_datos'
             })
@@ -261,9 +271,44 @@ class ReporteParticipacionService:
         }
     
     @staticmethod
+    def _calcular_total_acumulado(mesa_id, hasta_hora, incluir_nuevo_reporte=0):
+        """
+        Calcular el total acumulado de personas que han votado hasta una hora específica
+        
+        Args:
+            mesa_id: ID de la mesa
+            hasta_hora: Hora hasta la cual calcular
+            incluir_nuevo_reporte: Número de personas del nuevo reporte a incluir
+            
+        Returns:
+            int: Total acumulado de personas que han votado
+        """
+        reportes_anteriores = ReporteParticipacion.query.filter(
+            ReporteParticipacion.mesa_id == mesa_id,
+            ReporteParticipacion.hora_reporte < hasta_hora
+        ).all()
+        
+        total = sum(r.personas_votadas for r in reportes_anteriores) + incluir_nuevo_reporte
+        return total
+    
+    @staticmethod
+    def obtener_total_acumulado_mesa(mesa_id):
+        """
+        Obtener el total acumulado actual de una mesa
+        
+        Args:
+            mesa_id: ID de la mesa
+            
+        Returns:
+            int: Total acumulado de personas que han votado
+        """
+        reportes = ReporteParticipacion.query.filter_by(mesa_id=mesa_id).all()
+        return sum(r.personas_votadas for r in reportes)
+    
+    @staticmethod
     def _calcular_tendencia(mesa_id):
         """
-        Calcular tendencia de participación de una mesa
+        Calcular tendencia de participación de una mesa basada en reportes incrementales
         
         Args:
             mesa_id: ID de la mesa
@@ -281,13 +326,15 @@ class ReporteParticipacionService:
         ultimo = reportes[0]
         penultimo = reportes[1]
         
-        crecimiento = ultimo.personas_votadas - penultimo.personas_votadas
+        # Comparar los incrementos por hora (no acumulados)
+        incremento_ultimo = ultimo.personas_votadas
+        incremento_penultimo = penultimo.personas_votadas
         
-        if crecimiento == 0:
+        if incremento_ultimo == 0:
             return 'estancada'
-        elif crecimiento < 20:
+        elif incremento_ultimo < 20:
             return 'lenta'
-        elif crecimiento > 100:
+        elif incremento_ultimo > 100:
             return 'rapida'
         else:
             return 'normal'

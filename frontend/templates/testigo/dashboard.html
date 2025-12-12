@@ -254,7 +254,7 @@
                             <div class="alert alert-info">
                                 <i class="bi bi-info-circle"></i>
                                 <strong>Instrucciones:</strong> Reporte cada hora cuántas personas han votado según el formulario E-11 (registro de votantes).
-                                Los reportes son acumulados (total de personas que han votado hasta ese momento).
+                                Los reportes son <strong>incrementales por hora</strong> (solo las personas que votaron en esa hora específica).
                                 <br><br>
                                 <strong>⏰ Ventanas de Tiempo:</strong> Solo puede reportar dentro de los primeros 30 minutos de cada hora.
                                 <br>Ejemplo: Reporte de 9am → Entre 9:00am y 9:30am
@@ -293,14 +293,14 @@
                             <p class="small">Formulario E-11 (registro de votantes que han firmado)</p>
                             
                             <h6 class="mt-3"><i class="bi bi-info-circle"></i> Dato a Reportar</h6>
-                            <p class="small">Número <strong>acumulado</strong> de personas que han votado hasta ese momento</p>
+                            <p class="small">Número <strong>incremental</strong> de personas que votaron en esa hora específica</p>
                             
-                            <div class="alert alert-warning mt-3">
+                            <div class="alert alert-success mt-3">
                                 <small>
-                                    <i class="bi bi-exclamation-triangle"></i>
-                                    <strong>Importante:</strong> Los reportes son acumulados, no incrementales. 
-                                    Ej: Si a las 9am votaron 45 personas y a las 10am votaron 75 más, 
-                                    debes reportar 120 (45+75) a las 10am.
+                                    <i class="bi bi-check-circle"></i>
+                                    <strong>Importante:</strong> Los reportes son incrementales por hora. 
+                                    Ej: Si a las 9am votaron 45 personas y a las 10am votaron 75 personas, 
+                                    debes reportar 75 a las 10am (solo las de esa hora).
                                 </small>
                             </div>
                         </div>
@@ -873,11 +873,13 @@
             </div>
             <div class="modal-body">
                 <form id="participacionForm">
-                    <div class="alert alert-info">
+                    <div class="alert alert-success">
                         <i class="bi bi-info-circle"></i>
                         <small>
                             <strong>Este reporte se enviará directamente a los coordinadores</strong> para el monitoreo en tiempo real.
-                            Reporte cuántas personas <strong>han votado en total</strong> hasta este momento según el formulario E-11.
+                            Reporte cuántas personas <strong>votaron específicamente en esta hora</strong> según el formulario E-11.
+                            <br><br>
+                            <strong>Importante:</strong> Solo reporte las personas que votaron en esta hora, no el total acumulado.
                         </small>
                     </div>
                     
@@ -892,9 +894,9 @@
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label">Personas que Han Votado (Total Acumulado)</label>
+                        <label class="form-label">Personas que Votaron en Esta Hora</label>
                         <input type="number" class="form-control" id="personasVotadas" min="0" required>
-                        <small class="text-muted">Total de personas que han votado hasta este momento</small>
+                        <small class="text-muted">Número de personas que votaron específicamente en esta hora</small>
                     </div>
                     
                     <div class="mb-3">

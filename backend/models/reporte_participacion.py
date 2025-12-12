@@ -73,4 +73,27 @@ class ReporteParticipacion(db.Model):
                 'nombre': testigo.nombre
             }
         
+        # Calcular total acumulado hasta esta hora
+        reportes_anteriores = ReporteParticipacion.query.filter(
+            ReporteParticipacion.mesa_id == self.mesa_id,
+            ReporteParticipacion.hora_reporte <= self.hora_reporte
+        ).all()
+        
+        data['total_acumulado'] = sum(r.personas_votadas for r in reportes_anteriores)
+        data['es_incremental'] = True  # Indicar que los datos son incrementales
+        
         return data
+    
+    @staticmethod
+    def obtener_total_acumulado_mesa(mesa_id):
+        """
+        Obtener el total acumulado de personas que han votado en una mesa
+        
+        Args:
+            mesa_id: ID de la mesa
+            
+        Returns:
+            int: Total acumulado
+        """
+        reportes = ReporteParticipacion.query.filter_by(mesa_id=mesa_id).all()
+        return sum(r.personas_votadas for r in reportes)
