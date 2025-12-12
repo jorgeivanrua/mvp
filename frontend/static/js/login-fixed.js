@@ -30,24 +30,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function setupPasswordToggle() {
-    const togglePassword = document.getElementById('togglePassword');
-    const passwordInput = document.getElementById('password');
-    const eyeIcon = document.getElementById('eyeIcon');
-    
-    if (togglePassword && passwordInput && eyeIcon) {
-        togglePassword.addEventListener('click', () => {
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
-            
-            if (type === 'text') {
-                eyeIcon.classList.remove('bi-eye');
-                eyeIcon.classList.add('bi-eye-slash');
-            } else {
-                eyeIcon.classList.remove('bi-eye-slash');
-                eyeIcon.classList.add('bi-eye');
-            }
-        });
-    }
+    // Esta función se ha movido a login-mejoras.js para evitar duplicación
+    // La funcionalidad del toggle de contraseña se maneja allí
+    console.log('[LOGIN] Toggle de contraseña manejado por login-mejoras.js');
 }
 
 function setupEventListeners() {

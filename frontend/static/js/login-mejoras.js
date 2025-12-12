@@ -89,25 +89,50 @@
         const passwordInput = document.getElementById('password');
         const eyeIcon = document.getElementById('eyeIcon');
         
+        console.log('🔍 Inicializando toggle de contraseña...');
+        console.log('Toggle button:', toggleBtn);
+        console.log('Password input:', passwordInput);
+        console.log('Eye icon:', eyeIcon);
+        
         if (toggleBtn && passwordInput && eyeIcon) {
-            toggleBtn.addEventListener('click', function() {
-                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                passwordInput.setAttribute('type', type);
+            // Remover cualquier listener previo
+            toggleBtn.replaceWith(toggleBtn.cloneNode(true));
+            const newToggleBtn = document.getElementById('togglePassword');
+            
+            newToggleBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                console.log('👁️ Toggle password clicked');
+                
+                const currentType = passwordInput.getAttribute('type');
+                const newType = currentType === 'password' ? 'text' : 'password';
+                
+                console.log('Cambiando tipo de:', currentType, 'a:', newType);
+                
+                passwordInput.setAttribute('type', newType);
                 
                 // Cambiar icono
-                if (type === 'text') {
+                const eyeIcon = document.getElementById('eyeIcon');
+                if (newType === 'text') {
                     eyeIcon.classList.remove('bi-eye');
                     eyeIcon.classList.add('bi-eye-slash');
+                    newToggleBtn.setAttribute('aria-label', 'Ocultar contraseña');
+                    console.log('👁️ Contraseña visible - icono cambiado a eye-slash');
                 } else {
                     eyeIcon.classList.remove('bi-eye-slash');
                     eyeIcon.classList.add('bi-eye');
+                    newToggleBtn.setAttribute('aria-label', 'Mostrar contraseña');
+                    console.log('👁️ Contraseña oculta - icono cambiado a eye');
                 }
                 
-                // Vibración deshabilitada para evitar advertencias de Chrome
-                // if (navigator.vibrate) {
-                //     navigator.vibrate(10);
-                // }
+                // Mantener el foco en el input de contraseña
+                passwordInput.focus();
             });
+            
+            console.log('✅ Toggle de contraseña configurado correctamente');
+        } else {
+            console.error('❌ No se pudieron encontrar los elementos del toggle de contraseña');
         }
     }
 
@@ -273,26 +298,63 @@
             return;
         }
         
-        // Inicializar componentes
-        initAnimations();
-        addHapticFeedback();
-        initValidation();
-        enhancePasswordToggle();
-        enhanceLoadingState();
-        initAutoFocus();
-        enhanceMobileSelects();
-        initKeyboardShortcuts();
-        preventIOSZoom();
-        enhanceAccessibility();
+        // Inicializar componentes con un pequeño delay para asegurar que todo esté cargado
+        setTimeout(() => {
+            initAnimations();
+            addHapticFeedback();
+            initValidation();
+            enhancePasswordToggle(); // Esta es la función crítica
+            enhanceLoadingState();
+            initAutoFocus();
+            enhanceMobileSelects();
+            initKeyboardShortcuts();
+            preventIOSZoom();
+            enhanceAccessibility();
+            
+            console.log('✅ Mejoras UI/UX inicializadas correctamente');
+        }, 100);
         
         // Exponer funciones globales
         window.loginMejoras = {
             showToast
         };
-        
-        console.log('✅ Mejoras UI/UX inicializadas correctamente');
     }
 
     // Iniciar
     init();
+    
+    // Función de respaldo para el toggle de contraseña
+    // Se ejecuta después de 1 segundo si la primera no funcionó
+    setTimeout(() => {
+        const toggleBtn = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        const eyeIcon = document.getElementById('eyeIcon');
+        
+        if (toggleBtn && passwordInput && eyeIcon) {
+            // Verificar si ya tiene el event listener
+            if (!toggleBtn.hasAttribute('data-toggle-initialized')) {
+                console.log('🔄 Configurando toggle de contraseña (respaldo)...');
+                
+                toggleBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const currentType = passwordInput.type;
+                    const newType = currentType === 'password' ? 'text' : 'password';
+                    
+                    passwordInput.type = newType;
+                    
+                    if (newType === 'text') {
+                        eyeIcon.className = 'bi bi-eye-slash';
+                    } else {
+                        eyeIcon.className = 'bi bi-eye';
+                    }
+                    
+                    console.log('👁️ Toggle ejecutado (respaldo):', newType);
+                });
+                
+                toggleBtn.setAttribute('data-toggle-initialized', 'true');
+                console.log('✅ Toggle de contraseña configurado (respaldo)');
+            }
+        }
+    }, 1000);
 })();
