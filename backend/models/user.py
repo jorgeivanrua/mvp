@@ -14,6 +14,7 @@ class User(db.Model):
     # Campos
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
+    cedula = db.Column(db.String(20), nullable=True, unique=True, index=True)  # Nuevo campo para testigos
     password_hash = db.Column(db.String(255), nullable=False)
     rol = db.Column(db.String(50), nullable=False)
     ubicacion_id = db.Column(db.Integer, nullable=True)  # FK se agregará cuando Location exista

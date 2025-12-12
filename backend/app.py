@@ -122,6 +122,10 @@ def register_blueprints(app):
     
     # API routes
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    
+    # Autenticación de testigos por cédula
+    from backend.routes.auth_testigo import auth_testigo_bp
+    app.register_blueprint(auth_testigo_bp, url_prefix='/api/auth-testigo')
     app.register_blueprint(locations_bp, url_prefix='/api/locations')
     app.register_blueprint(locations_geo_bp)
     app.register_blueprint(configuracion_bp, url_prefix='/api/configuracion')
@@ -152,6 +156,10 @@ def register_blueprints(app):
     # Reporte de participación horaria (E-11)
     from backend.routes.reporte_participacion import reporte_participacion_bp
     app.register_blueprint(reporte_participacion_bp)
+    
+    # Testigos registrados (nuevo sistema por cédula)
+    from backend.routes.testigos_registrados import testigos_bp
+    app.register_blueprint(testigos_bp, url_prefix='/api/testigos-registrados')
     
     # Public routes (sin autenticación)
     from backend.routes.public import public_bp

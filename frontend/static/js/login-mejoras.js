@@ -105,12 +105,28 @@
                 
                 console.log('👁️ Toggle password clicked');
                 
-                const currentType = passwordInput.getAttribute('type');
+                const currentType = passwordInput.type; // Usar .type en lugar de getAttribute
                 const newType = currentType === 'password' ? 'text' : 'password';
                 
                 console.log('Cambiando tipo de:', currentType, 'a:', newType);
                 
+                // Usar múltiples métodos para asegurar el cambio
+                passwordInput.type = newType;
                 passwordInput.setAttribute('type', newType);
+                
+                // Verificar que el cambio se aplicó
+                setTimeout(() => {
+                    const actualType = passwordInput.type;
+                    console.log('Tipo actual después del cambio:', actualType);
+                    
+                    if (actualType !== newType) {
+                        console.warn('⚠️ El tipo no cambió correctamente, forzando...');
+                        // Crear un nuevo input si es necesario
+                        const newInput = passwordInput.cloneNode(true);
+                        newInput.type = newType;
+                        passwordInput.parentNode.replaceChild(newInput, passwordInput);
+                    }
+                }, 10);
                 
                 // Cambiar icono
                 const eyeIcon = document.getElementById('eyeIcon');
@@ -127,7 +143,10 @@
                 }
                 
                 // Mantener el foco en el input de contraseña
-                passwordInput.focus();
+                const currentInput = document.getElementById('password');
+                if (currentInput) {
+                    currentInput.focus();
+                }
             });
             
             console.log('✅ Toggle de contraseña configurado correctamente');
@@ -337,12 +356,40 @@
                 
                 toggleBtn.addEventListener('click', function(e) {
                     e.preventDefault();
+                    e.stopPropagation();
                     
                     const currentType = passwordInput.type;
                     const newType = currentType === 'password' ? 'text' : 'password';
                     
+                    console.log('🔄 Respaldo - Cambiando de:', currentType, 'a:', newType);
+                    
+                    // Método más agresivo - recrear el input si es necesario
+                    const value = passwordInput.value;
+                    const placeholder = passwordInput.placeholder;
+                    const className = passwordInput.className;
+                    const id = passwordInput.id;
+                    const name = passwordInput.name;
+                    
+                    // Cambiar tipo directamente
                     passwordInput.type = newType;
                     
+                    // Si no funcionó, recrear el elemento
+                    if (passwordInput.type !== newType) {
+                        console.log('🔄 Recreando input de contraseña...');
+                        const newInput = document.createElement('input');
+                        newInput.type = newType;
+                        newInput.value = value;
+                        newInput.placeholder = placeholder;
+                        newInput.className = className;
+                        newInput.id = id;
+                        newInput.name = name;
+                        newInput.required = true;
+                        newInput.setAttribute('autocomplete', 'current-password');
+                        
+                        passwordInput.parentNode.replaceChild(newInput, passwordInput);
+                    }
+                    
+                    // Cambiar icono
                     if (newType === 'text') {
                         eyeIcon.className = 'bi bi-eye-slash';
                     } else {
@@ -350,6 +397,12 @@
                     }
                     
                     console.log('👁️ Toggle ejecutado (respaldo):', newType);
+                    
+                    // Verificar el resultado
+                    setTimeout(() => {
+                        const finalInput = document.getElementById('password');
+                        console.log('🔍 Tipo final del input:', finalInput.type);
+                    }, 50);
                 });
                 
                 toggleBtn.setAttribute('data-toggle-initialized', 'true');
@@ -357,4 +410,36 @@
             }
         }
     }, 1000);
+    
+    // Función de emergencia - se ejecuta inmediatamente
+    document.addEventListener('click', function(e) {
+        if (e.target && (e.target.id === 'togglePassword' || e.target.id === 'eyeIcon')) {
+            console.log('🚨 Función de emergencia activada');
+            
+            const passwordInput = document.getElementById('password');
+            if (passwordInput) {
+                const isPassword = passwordInput.type === 'password';
+                const newType = isPassword ? 'text' : 'password';
+                
+                console.log('🚨 Emergencia - Forzando cambio a:', newType);
+                
+                // Método más directo posible
+                passwordInput.removeAttribute('type');
+                passwordInput.setAttribute('type', newType);
+                passwordInput.type = newType;
+                
+                // Cambiar icono también
+                const eyeIcon = document.getElementById('eyeIcon');
+                if (eyeIcon) {
+                    if (newType === 'text') {
+                        eyeIcon.className = 'bi bi-eye-slash';
+                    } else {
+                        eyeIcon.className = 'bi bi-eye';
+                    }
+                }
+                
+                console.log('🚨 Emergencia completada. Tipo actual:', passwordInput.type);
+            }
+        }
+    });
 })();

@@ -1,0 +1,442 @@
+{% extends "base.html" %}
+
+{% block title %}Login Testigo - Sistema Electoral{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard-universal-v2.css') }}">
+<style>
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: linear-gradient(180deg, 
+        #FCD116 0%, 
+        #FCD116 50%, 
+        #003893 50%, 
+        #003893 75%, 
+        #CE1126 75%, 
+        #CE1126 100%
+    );
+    position: relative;
+    overflow: hidden;
+}
+
+.login-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(2px);
+}
+
+.login-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    padding: 2rem;
+    width: 100%;
+    max-width: 500px;
+    position: relative;
+    z-index: 1;
+    border: 3px solid rgba(252, 209, 22, 0.3);
+}
+
+@media (max-width: 576px) {
+    .login-card {
+        padding: 1.5rem;
+        border-radius: 16px;
+        margin: 0.5rem;
+    }
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.logo-container {
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.logo-dia-d {
+    font-size: 3.5rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #FCD116 0%, #003893 50%, #CE1126 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.05em;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    line-height: 1;
+    font-family: 'Arial Black', sans-serif;
+}
+
+.logo-subtitle {
+    font-size: 0.9rem;
+    color: #003893;
+    font-weight: 600;
+    margin-top: 0.5rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.testigo-badge {
+    background: linear-gradient(135deg, #003893 0%, #001f5c 100%);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin: 1rem 0;
+    display: inline-block;
+}
+
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.form-control {
+    border-radius: 10px;
+    border: 2px solid #e1e5e9;
+    padding: 0.85rem 1rem;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    min-height: 48px;
+}
+
+.form-control:focus {
+    border-color: #003893;
+    box-shadow: 0 0 0 0.25rem rgba(0, 56, 147, 0.15);
+    outline: none;
+}
+
+@media (max-width: 576px) {
+    .form-control {
+        font-size: 16px;
+        padding: 0.9rem 1rem;
+    }
+}
+
+.btn-login {
+    background: linear-gradient(135deg, #003893 0%, #001f5c 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 1rem 2rem;
+    font-weight: 700;
+    width: 100%;
+    transition: all 0.3s ease;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 1rem;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 56, 147, 0.4);
+    background: linear-gradient(135deg, #001f5c 0%, #003893 100%);
+    color: white;
+}
+
+.btn-login:active {
+    transform: translateY(0);
+}
+
+.alert {
+    border-radius: 10px;
+    border: none;
+    margin-bottom: 1rem;
+}
+
+.info-section {
+    background: linear-gradient(135deg, rgba(252, 209, 22, 0.1) 0%, rgba(0, 56, 147, 0.05) 100%);
+    border-radius: 10px;
+    padding: 1.2rem;
+    margin: 1rem 0;
+    border: 2px solid rgba(0, 56, 147, 0.1);
+}
+
+.input-group .btn-outline-secondary {
+    border-color: #e1e5e9;
+    color: #666;
+    min-height: 48px;
+    border-radius: 0 10px 10px 0;
+}
+
+.input-group .btn-outline-secondary:hover {
+    background-color: #f8f9fa;
+    border-color: #003893;
+    color: #003893;
+}
+
+.input-group .form-control {
+    border-right: none;
+    border-radius: 10px 0 0 10px;
+}
+
+.cedula-input {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem 1.5rem;
+    color: white;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    color: white;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.login-card {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@media (max-width: 576px) {
+    .logo-dia-d {
+        font-size: 3rem;
+    }
+    
+    .btn-login {
+        padding: 1.1rem 2rem;
+        font-size: 1.05rem;
+        min-height: 56px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <!-- Logo Día D -->
+            <div class="logo-container">
+                <div class="logo-dia-d">DÍA D</div>
+                <div class="logo-subtitle">Sistema Electoral</div>
+            </div>
+            
+            <div class="testigo-badge">
+                <i class="bi bi-person-check"></i> Acceso Testigos Electorales
+            </div>
+            
+            <h1 style="color: #003893; font-weight: 700; margin-bottom: 0.5rem; font-size: 1.3rem;">
+                🗳️ Acceso por Cédula
+            </h1>
+            <p style="color: #666; margin: 0; font-size: 0.9rem;">
+                Ingrese solo su número de cédula para acceder
+            </p>
+        </div>
+        
+        <!-- Información del nuevo proceso -->
+        <div class="info-section">
+            <h6 style="color: #003893; margin-bottom: 1rem; font-weight: 700;">
+                <i class="bi bi-info-circle"></i> Nuevo Proceso de Validación
+            </h6>
+            <ul style="margin: 0; padding-left: 1.2rem; font-size: 0.85rem; color: #555;">
+                <li>Los testigos se registran por <strong>municipio</strong>, no por mesa específica</li>
+                <li>Solo necesita su <strong>número de cédula</strong> para acceder</li>
+                <li>Una vez validado, podrá acceder a <strong>cualquier mesa del municipio</strong></li>
+                <li>El sistema verificará automáticamente su registro con los partidos</li>
+            </ul>
+        </div>
+        
+        <div id="alert-container"></div>
+        
+        <form id="testigoLoginForm">
+            <!-- Cédula -->
+            <div class="form-group">
+                <label for="cedula" class="form-label">
+                    <i class="bi bi-card-text"></i> Número de Cédula
+                </label>
+                <input type="text" class="form-control cedula-input" id="cedula" name="cedula" 
+                       placeholder="Ej: 12345678" required maxlength="12" 
+                       pattern="[0-9]+" title="Solo números">
+                <small class="form-text text-muted">Ingrese solo números, sin puntos ni espacios</small>
+            </div>
+            
+
+            
+            <!-- Botón Login -->
+            <button type="submit" class="btn btn-primary btn-login" id="loginBtn">
+                <i class="bi bi-check-circle"></i>
+                <span id="loginText">Validar y Acceder</span>
+                <span id="loginSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+            </button>
+        </form>
+        
+        <!-- Link al login tradicional -->
+        <div class="text-center mt-3">
+            <a href="/login" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Login Tradicional
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
+<script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Inicializando login de testigos por cédula...');
+    
+    // Setup form
+    setupForm();
+    
+    // Formatear cédula mientras se escribe
+    setupCedulaFormatting();
+});
+
+
+
+function setupForm() {
+    const form = document.getElementById('testigoLoginForm');
+    
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const cedula = document.getElementById('cedula').value.trim();
+        
+        if (!cedula) {
+            Utils.showError('El número de cédula es requerido');
+            return;
+        }
+        
+        // Validar cédula
+        if (!/^\d{6,12}$/.test(cedula)) {
+            Utils.showError('La cédula debe tener entre 6 y 12 dígitos');
+            return;
+        }
+        
+        await loginTestigo(cedula);
+    });
+}
+
+function setupCedulaFormatting() {
+    const cedulaInput = document.getElementById('cedula');
+    
+    cedulaInput.addEventListener('input', function(e) {
+        // Solo permitir números
+        let value = e.target.value.replace(/\D/g, '');
+        
+        // Limitar a 12 dígitos
+        if (value.length > 12) {
+            value = value.substring(0, 12);
+        }
+        
+        e.target.value = value;
+    });
+    
+    cedulaInput.addEventListener('paste', function(e) {
+        setTimeout(() => {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 12) {
+                value = value.substring(0, 12);
+            }
+            e.target.value = value;
+        }, 10);
+    });
+}
+
+async function loginTestigo(cedula) {
+    try {
+        console.log('🔐 Iniciando login de testigo...');
+        
+        // Mostrar loading
+        const loginBtn = document.getElementById('loginBtn');
+        const loginText = document.getElementById('loginText');
+        const loginSpinner = document.getElementById('loginSpinner');
+        
+        loginBtn.disabled = true;
+        loginText.textContent = 'Validando...';
+        loginSpinner.classList.remove('d-none');
+        
+        // Llamar al endpoint de login simplificado
+        const response = await fetch('/api/auth-testigo/login-cedula', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                cedula: cedula
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Error en la validación');
+        }
+        
+        if (data.success) {
+            // Guardar tokens
+            localStorage.setItem('access_token', data.data.access_token);
+            localStorage.setItem('refresh_token', data.data.refresh_token);
+            localStorage.setItem('user_data', JSON.stringify(data.data.user));
+            
+            Utils.showSuccess('✅ Validación exitosa. Redirigiendo al dashboard...');
+            
+            setTimeout(() => {
+                window.location.href = '/testigo/dashboard';
+            }, 1500);
+        } else {
+            throw new Error(data.error || 'Error desconocido');
+        }
+        
+    } catch (error) {
+        console.error('Error en login:', error);
+        Utils.showError(error.message || 'Error en la validación');
+    } finally {
+        // Restaurar botón
+        const loginBtn = document.getElementById('loginBtn');
+        const loginText = document.getElementById('loginText');
+        const loginSpinner = document.getElementById('loginSpinner');
+        
+        loginBtn.disabled = false;
+        loginText.textContent = 'Validar y Acceder';
+        loginSpinner.classList.add('d-none');
+    }
+}
+</script>
+{% endblock %}

@@ -138,13 +138,17 @@ def crear_testigos_puesto():
             
             password = generar_password_seguro()
             
+            # Generar cédula única para el testigo (basada en puesto y número)
+            cedula_generada = f"{puesto.puesto_codigo}{numero_testigo:04d}"
+            
             testigo = User(
                 nombre=username,
+                cedula=cedula_generada,  # Nuevo campo
                 rol='testigo_electoral',
                 ubicacion_id=puesto.id,  # Asignado al PUESTO, no a la mesa
                 activo=True
             )
-            testigo.set_password(password)
+            testigo.set_password('test123')  # Contraseña fija
             
             db.session.add(testigo)
             

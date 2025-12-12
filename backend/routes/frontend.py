@@ -25,6 +25,13 @@ def login():
     return render_template('auth/login.html')
 
 
+@frontend_bp.route('/login-testigo')
+@frontend_bp.route('/auth/login-testigo')
+def login_testigo():
+    """Página de login para testigos por cédula"""
+    return render_template('auth/login-testigo.html')
+
+
 @frontend_bp.route('/dashboard')
 def dashboard():
     """Dashboard genérico"""
