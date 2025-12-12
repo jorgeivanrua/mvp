@@ -93,45 +93,27 @@ function reportarParticipacion() {
     const modal = new bootstrap.Modal(document.getElementById('participacionModal'));
     modal.show();
     
-    // Calcular porcentaje al cambiar personas votadas (incremental)
-    document.getElementById('personasVotadas').addEventListener('input', async function() {
+    // Calcular información al cambiar personas votadas (reporte independiente)
+    document.getElementById('personasVotadas').addEventListener('input', function() {
         const personasVotadasHora = parseInt(this.value) || 0;
         const votantesRegistrados = mesa.total_votantes_registrados || 0;
         
         if (votantesRegistrados > 0 && personasVotadasHora >= 0) {
-            // Obtener total acumulado actual
-            let totalAcumuladoActual = 0;
-            try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`/api/reporte-participacion/mesa/${mesa.id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success && data.data.reportes) {
-                        totalAcumuladoActual = data.data.reportes.reduce((sum, r) => sum + r.personas_votadas, 0);
-                    }
-                }
-            } catch (error) {
-                console.warn('Error obteniendo reportes previos:', error);
-            }
-            
-            // Calcular nuevo total acumulado
-            const nuevoTotalAcumulado = totalAcumuladoActual + personasVotadasHora;
-            const porcentaje = (nuevoTotalAcumulado / votantesRegistrados * 100).toFixed(2);
+            // Calcular porcentaje de flujo para esta hora
+            const porcentajeFlujo = (personasVotadasHora / votantesRegistrados * 100).toFixed(2);
             
             document.getElementById('infoVotantesRegistrados').textContent = votantesRegistrados;
-            document.getElementById('infoPorcentaje').textContent = porcentaje + '%';
+            document.getElementById('infoPorcentaje').textContent = porcentajeFlujo + '%';
             
-            // Mostrar información adicional
+            // Mostrar información del reporte independiente
             const infoElement = document.getElementById('participacionInfo');
             infoElement.innerHTML = `
                 <small>
-                    <strong>Votantes Registrados:</strong> ${votantesRegistrados}<br>
-                    <strong>Total Acumulado Previo:</strong> ${totalAcumuladoActual}<br>
-                    <strong>Votarán en Esta Hora:</strong> ${personasVotadasHora}<br>
-                    <strong>Nuevo Total Acumulado:</strong> ${nuevoTotalAcumulado}<br>
-                    <strong>Porcentaje de Participación:</strong> ${porcentaje}%
+                    <strong>Votantes Registrados en la Mesa:</strong> ${votantesRegistrados}<br>
+                    <strong>Personas que Votaron en Esta Hora:</strong> ${personasVotadasHora}<br>
+                    <strong>Porcentaje de Flujo Horario:</strong> ${porcentajeFlujo}%<br>
+                    <br>
+                    <em>Este reporte es independiente. Los coordinadores verán la suma de todos los reportes por hora para obtener totales por puesto/zona/municipio.</em>
                 </small>
             `;
             infoElement.classList.remove('d-none');
@@ -317,38 +299,38 @@ function mostrarReportesParticipacion(data) {
         return;
     }
     
-    // Calcular totales acumulados para mostrar correctamente
-    let totalAcumulado = 0;
-    const reportesConAcumulado = reportes.map(reporte => {
-        totalAcumulado += reporte.personas_votadas;
+    // Calcular total histórico para referencia
+    let totalHistorico = 0;
+    const reportesConHistorico = reportes.map(reporte => {
+        totalHistorico += reporte.personas_votadas;
         return {
             ...reporte,
-            total_acumulado: totalAcumulado
+            total_historico_hasta_hora: totalHistorico
         };
     });
     
     // Mostrar tabla de reportes
     let html = `
-        <div class="alert alert-info mb-3">
-            <i class="bi bi-info-circle"></i>
-            <strong>Datos Incrementales:</strong> Cada reporte muestra las personas que votaron en esa hora específica.
-            El total acumulado se calcula sumando todos los incrementos.
+        <div class="alert alert-success mb-3">
+            <i class="bi bi-clock"></i>
+            <strong>Reportes Independientes por Hora:</strong> Cada reporte es una "fotografía" del flujo en esa hora específica.
+            Los coordinadores suman estos reportes por puesto/zona/municipio para ver el flujo total.
         </div>
         <div class="table-responsive">
             <table class="table table-striped">
                 <thead>
                     <tr>
                         <th>Hora</th>
-                        <th>Votaron en la Hora</th>
-                        <th>Total Acumulado</th>
-                        <th>Participación</th>
+                        <th>Flujo en la Hora</th>
+                        <th>Total Histórico</th>
+                        <th>% Flujo Horario</th>
                         <th>Observaciones</th>
                     </tr>
                 </thead>
                 <tbody>
     `;
     
-    reportesConAcumulado.forEach(reporte => {
+    reportesConHistorico.forEach(reporte => {
         const hora = new Date(reporte.hora_reporte);
         const horaFormateada = hora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
         
@@ -356,15 +338,16 @@ function mostrarReportesParticipacion(data) {
             <tr>
                 <td><strong>${horaFormateada}</strong></td>
                 <td>
-                    <span class="badge bg-primary">${reporte.personas_votadas}</span>
-                    <small class="text-muted d-block">incremental</small>
+                    <span class="badge bg-primary fs-6">${reporte.personas_votadas}</span>
+                    <small class="text-muted d-block">personas en esta hora</small>
                 </td>
                 <td>
-                    <strong>${reporte.total_acumulado}</strong>
-                    <small class="text-muted d-block">total hasta ahora</small>
+                    <span class="text-success fw-bold">${reporte.total_historico_hasta_hora}</span>
+                    <small class="text-muted d-block">suma histórica</small>
                 </td>
                 <td>
                     <span class="badge bg-info">${reporte.porcentaje_participacion}%</span>
+                    <small class="text-muted d-block">de la mesa</small>
                 </td>
                 <td><small>${reporte.observaciones || '-'}</small></td>
             </tr>
@@ -401,14 +384,14 @@ function mostrarGraficoParticipacion(reportes) {
         return hora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
     });
     
-    // Datos incrementales (por hora)
-    const datosIncrementales = reportes.map(r => r.personas_votadas);
+    // Datos de flujo por hora (reportes independientes)
+    const datosFlujoHorario = reportes.map(r => r.personas_votadas);
     
-    // Datos acumulados
-    let totalAcumulado = 0;
-    const datosAcumulados = reportes.map(r => {
-        totalAcumulado += r.personas_votadas;
-        return totalAcumulado;
+    // Datos históricos (suma progresiva para referencia)
+    let totalHistorico = 0;
+    const datosHistoricos = reportes.map(r => {
+        totalHistorico += r.personas_votadas;
+        return totalHistorico;
     });
     
     // Destruir gráfico anterior si existe
@@ -416,28 +399,29 @@ function mostrarGraficoParticipacion(reportes) {
         window.participacionChart.destroy();
     }
     
-    // Crear nuevo gráfico con dos líneas
+    // Crear gráfico de barras para flujo horario + línea para histórico
     window.participacionChart = new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: {
             labels: labels,
             datasets: [
                 {
-                    label: 'Votaron por Hora (Incremental)',
-                    data: datosIncrementales,
+                    type: 'bar',
+                    label: 'Flujo por Hora (Independiente)',
+                    data: datosFlujoHorario,
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
                     borderColor: 'rgb(255, 99, 132)',
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    tension: 0.1,
-                    fill: false,
+                    borderWidth: 1,
                     yAxisID: 'y'
                 },
                 {
-                    label: 'Total Acumulado',
-                    data: datosAcumulados,
+                    type: 'line',
+                    label: 'Total Histórico (Referencia)',
+                    data: datosHistoricos,
                     borderColor: 'rgb(54, 162, 235)',
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
                     tension: 0.1,
-                    fill: true,
+                    fill: false,
                     yAxisID: 'y1'
                 }
             ]
@@ -450,6 +434,10 @@ function mostrarGraficoParticipacion(reportes) {
                 intersect: false,
             },
             plugins: {
+                title: {
+                    display: true,
+                    text: 'Flujo de Votación por Hora (Reportes Independientes)'
+                },
                 legend: {
                     display: true,
                     position: 'top'
@@ -458,7 +446,11 @@ function mostrarGraficoParticipacion(reportes) {
                     callbacks: {
                         label: function(context) {
                             const label = context.dataset.label || '';
-                            return label + ': ' + context.parsed.y + ' personas';
+                            if (context.dataset.type === 'bar') {
+                                return label + ': ' + context.parsed.y + ' personas votaron en esta hora';
+                            } else {
+                                return label + ': ' + context.parsed.y + ' personas en total hasta esta hora';
+                            }
                         }
                     }
                 }
@@ -477,7 +469,7 @@ function mostrarGraficoParticipacion(reportes) {
                     position: 'left',
                     title: {
                         display: true,
-                        text: 'Personas por Hora'
+                        text: 'Flujo por Hora'
                     },
                     beginAtZero: true,
                     ticks: {
@@ -490,7 +482,7 @@ function mostrarGraficoParticipacion(reportes) {
                     position: 'right',
                     title: {
                         display: true,
-                        text: 'Total Acumulado'
+                        text: 'Total Histórico'
                     },
                     beginAtZero: true,
                     grid: {

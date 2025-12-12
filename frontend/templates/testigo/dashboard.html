@@ -251,13 +251,15 @@
                                 <br><small id="ventanaDetalle"></small>
                             </div>
                             
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle"></i>
-                                <strong>Instrucciones:</strong> Reporte cada hora cuántas personas han votado según el formulario E-11 (registro de votantes).
-                                Los reportes son <strong>incrementales por hora</strong> (solo las personas que votaron en esa hora específica).
+                            <div class="alert alert-success">
+                                <i class="bi bi-clock"></i>
+                                <strong>Reportes Independientes por Hora:</strong> Cada reporte es una "fotografía" del flujo de votación en esa hora específica.
+                                Reporte <strong>solo las personas que votaron en esa hora</strong>, no el total acumulado.
                                 <br><br>
                                 <strong>⏰ Ventanas de Tiempo:</strong> Solo puede reportar dentro de los primeros 30 minutos de cada hora.
                                 <br>Ejemplo: Reporte de 9am → Entre 9:00am y 9:30am
+                                <br><br>
+                                <strong>📊 Agregación:</strong> Los coordinadores suman estos reportes por puesto/zona/municipio para ver el flujo total.
                             </div>
                             
                             <!-- Histórico de Reportes -->
@@ -295,12 +297,13 @@
                             <h6 class="mt-3"><i class="bi bi-info-circle"></i> Dato a Reportar</h6>
                             <p class="small">Número <strong>incremental</strong> de personas que votaron en esa hora específica</p>
                             
-                            <div class="alert alert-success mt-3">
+                            <div class="alert alert-primary mt-3">
                                 <small>
-                                    <i class="bi bi-check-circle"></i>
-                                    <strong>Importante:</strong> Los reportes son incrementales por hora. 
-                                    Ej: Si a las 9am votaron 45 personas y a las 10am votaron 75 personas, 
-                                    debes reportar 75 a las 10am (solo las de esa hora).
+                                    <i class="bi bi-lightbulb"></i>
+                                    <strong>Ejemplo:</strong> Si a las 9am votaron 45 personas y a las 10am votaron 75 personas más, 
+                                    debes reportar: <strong>9am = 45</strong> y <strong>10am = 75</strong> (cada hora por separado).
+                                    <br><br>
+                                    Los coordinadores verán: <strong>Puesto Total = 45 + 75 = 120 personas</strong>
                                 </small>
                             </div>
                         </div>

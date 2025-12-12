@@ -103,7 +103,8 @@ class ReporteParticipacionService:
                 ]
             })
         
-        # ⭐ CAMBIO: Los reportes ahora son incrementales por hora
+        # ⭐ REPORTES INDEPENDIENTES POR HORA
+        # Cada reporte es una "fotografía" del flujo en esa hora específica
         # Validar que el número de personas sea razonable para una hora
         if personas_votadas > 500:  # Límite razonable por hora
             raise ValidationException({
@@ -113,13 +114,12 @@ class ReporteParticipacionService:
                 ]
             })
         
-        # Validar que el total acumulado no exceda los votantes registrados
-        total_acumulado = ReporteParticipacionService._calcular_total_acumulado(data['mesa_id'], hora_reporte, personas_votadas)
-        if votantes_registrados > 0 and total_acumulado > votantes_registrados:
+        # Validar que no exceda los votantes registrados de la mesa (por hora)
+        if votantes_registrados > 0 and personas_votadas > votantes_registrados:
             raise ValidationException({
                 'personas_votadas': [
-                    f'El total acumulado ({total_acumulado}) excedería los votantes registrados ({votantes_registrados}). '
-                    f'Verifique el número de personas que votaron solo en esta hora.'
+                    f'El número de personas votadas en una hora ({personas_votadas}) no puede exceder '
+                    f'los votantes registrados de la mesa ({votantes_registrados}).'
                 ]
             })
         
@@ -139,11 +139,11 @@ class ReporteParticipacionService:
                 ]
             })
         
-        # Calcular porcentaje de participación basado en el total acumulado
-        total_acumulado = ReporteParticipacionService._calcular_total_acumulado(data['mesa_id'], hora_reporte, personas_votadas)
+        # Calcular porcentaje de participación para esta hora específica
+        # Cada reporte es independiente - muestra el flujo de esa hora
         porcentaje_participacion = 0
         if votantes_registrados > 0:
-            porcentaje_participacion = (total_acumulado / votantes_registrados) * 100
+            porcentaje_participacion = (personas_votadas / votantes_registrados) * 100
         
         # Crear reporte
         reporte = ReporteParticipacion(
@@ -194,12 +194,13 @@ class ReporteParticipacionService:
         }
     
     @staticmethod
-    def obtener_participacion_puesto(puesto_id):
+    def obtener_participacion_puesto(puesto_id, hora_especifica=None):
         """
         Obtener participación de todas las mesas de un puesto
         
         Args:
             puesto_id: ID del puesto
+            hora_especifica: Hora específica para filtrar reportes (opcional)
             
         Returns:
             dict: Diccionario con participación del puesto
@@ -214,29 +215,40 @@ class ReporteParticipacionService:
             departamento_codigo=puesto.departamento_codigo,
             municipio_codigo=puesto.municipio_codigo,
             zona_codigo=puesto.zona_codigo,
-            tipo='mesa'
+            tipo='mesa',
+            activo=True
         ).all()
         
-        mesa_ids = [m.id for m in mesas]
         total_votantes = sum(m.total_votantes_registrados or 0 for m in mesas)
         
-        # Obtener total acumulado de cada mesa (suma de todos los incrementos)
+        # Obtener reportes por hora o histórico completo
         mesas_data = []
         total_personas_votadas = 0
         mesas_reportadas = 0
         ultima_hora_reporte = None
         
         for mesa in mesas:
-            # Obtener el total acumulado de la mesa (suma de todos los reportes incrementales)
-            total_acumulado_mesa = ReporteParticipacionService.obtener_total_acumulado_mesa(mesa.id)
-            
-            ultimo_reporte = ReporteParticipacion.query.filter_by(
-                mesa_id=mesa.id
-            ).order_by(ReporteParticipacion.hora_reporte.desc()).first()
+            if hora_especifica:
+                # Obtener reporte de hora específica
+                reporte = ReporteParticipacion.query.filter_by(
+                    mesa_id=mesa.id,
+                    hora_reporte=hora_especifica
+                ).first()
+                
+                personas_mesa = reporte.personas_votadas if reporte else 0
+                ultimo_reporte = reporte
+            else:
+                # Obtener histórico completo (suma de todos los reportes independientes)
+                reportes = ReporteParticipacion.query.filter_by(mesa_id=mesa.id).all()
+                personas_mesa = sum(r.personas_votadas for r in reportes)
+                
+                ultimo_reporte = ReporteParticipacion.query.filter_by(
+                    mesa_id=mesa.id
+                ).order_by(ReporteParticipacion.hora_reporte.desc()).first()
             
             if ultimo_reporte:
                 mesas_reportadas += 1
-                total_personas_votadas += total_acumulado_mesa  # Sumar el total acumulado, no solo el último reporte
+                total_personas_votadas += personas_mesa
                 
                 if not ultima_hora_reporte or ultimo_reporte.hora_reporte > ultima_hora_reporte:
                     ultima_hora_reporte = ultimo_reporte.hora_reporte
@@ -245,7 +257,7 @@ class ReporteParticipacionService:
                 'mesa_id': mesa.id,
                 'mesa_codigo': mesa.mesa_codigo,
                 'votantes_registrados': mesa.total_votantes_registrados or 0,
-                'total_acumulado': total_acumulado_mesa,
+                'personas_votadas': personas_mesa,
                 'ultimo_reporte': ultimo_reporte.to_dict() if ultimo_reporte else None,
                 'tendencia': ReporteParticipacionService._calcular_tendencia(mesa.id) if ultimo_reporte else 'sin_datos'
             })
@@ -265,42 +277,113 @@ class ReporteParticipacionService:
                 'total_personas_votadas': total_personas_votadas,
                 'porcentaje_participacion': round(porcentaje_participacion, 2),
                 'mesas_reportadas': mesas_reportadas,
-                'ultimo_reporte': ultima_hora_reporte.isoformat() if ultima_hora_reporte else None
+                'ultimo_reporte': ultima_hora_reporte.isoformat() if ultima_hora_reporte else None,
+                'hora_especifica': hora_especifica.isoformat() if hora_especifica else None
             },
             'mesas': mesas_data
         }
     
     @staticmethod
-    def _calcular_total_acumulado(mesa_id, hasta_hora, incluir_nuevo_reporte=0):
+    def obtener_flujo_por_hora(puesto_id=None, municipio_id=None, zona_id=None):
         """
-        Calcular el total acumulado de personas que han votado hasta una hora específica
+        Obtener flujo de votación por hora para análisis de tendencias
         
         Args:
-            mesa_id: ID de la mesa
-            hasta_hora: Hora hasta la cual calcular
-            incluir_nuevo_reporte: Número de personas del nuevo reporte a incluir
+            puesto_id: ID del puesto (opcional)
+            municipio_id: ID del municipio (opcional) 
+            zona_id: ID de la zona (opcional)
             
         Returns:
-            int: Total acumulado de personas que han votado
+            dict: Flujo por hora agregado
         """
-        reportes_anteriores = ReporteParticipacion.query.filter(
-            ReporteParticipacion.mesa_id == mesa_id,
-            ReporteParticipacion.hora_reporte < hasta_hora
+        from datetime import datetime, time
+        from sqlalchemy import func
+        
+        # Construir filtros según el nivel
+        if puesto_id:
+            puesto = Location.query.get(puesto_id)
+            if not puesto:
+                raise NotFoundException('Puesto no encontrado')
+            
+            mesas = Location.query.filter_by(
+                puesto_codigo=puesto.puesto_codigo,
+                departamento_codigo=puesto.departamento_codigo,
+                municipio_codigo=puesto.municipio_codigo,
+                zona_codigo=puesto.zona_codigo,
+                tipo='mesa',
+                activo=True
+            ).all()
+        elif zona_id:
+            zona = Location.query.get(zona_id)
+            if not zona:
+                raise NotFoundException('Zona no encontrada')
+            
+            mesas = Location.query.filter_by(
+                zona_codigo=zona.zona_codigo,
+                departamento_codigo=zona.departamento_codigo,
+                municipio_codigo=zona.municipio_codigo,
+                tipo='mesa',
+                activo=True
+            ).all()
+        elif municipio_id:
+            municipio = Location.query.get(municipio_id)
+            if not municipio:
+                raise NotFoundException('Municipio no encontrado')
+            
+            mesas = Location.query.filter_by(
+                municipio_codigo=municipio.municipio_codigo,
+                departamento_codigo=municipio.departamento_codigo,
+                tipo='mesa',
+                activo=True
+            ).all()
+        else:
+            raise ValidationException({'filtro': ['Debe especificar puesto_id, zona_id o municipio_id']})
+        
+        mesa_ids = [m.id for m in mesas]
+        
+        # Obtener reportes agrupados por hora
+        reportes_por_hora = db.session.query(
+            ReporteParticipacion.hora_reporte,
+            func.sum(ReporteParticipacion.personas_votadas).label('total_personas')
+        ).filter(
+            ReporteParticipacion.mesa_id.in_(mesa_ids)
+        ).group_by(
+            ReporteParticipacion.hora_reporte
+        ).order_by(
+            ReporteParticipacion.hora_reporte
         ).all()
         
-        total = sum(r.personas_votadas for r in reportes_anteriores) + incluir_nuevo_reporte
-        return total
+        # Formatear datos para gráficos
+        flujo_data = []
+        for hora, total in reportes_por_hora:
+            flujo_data.append({
+                'hora': hora.strftime('%H:00'),
+                'hora_completa': hora.isoformat(),
+                'personas_votadas': total,
+                'porcentaje_hora': 0  # Se puede calcular si se conoce el total esperado
+            })
+        
+        return {
+            'flujo_por_hora': flujo_data,
+            'total_mesas': len(mesas),
+            'total_reportes': len(reportes_por_hora),
+            'resumen': {
+                'hora_pico': max(flujo_data, key=lambda x: x['personas_votadas']) if flujo_data else None,
+                'total_personas': sum(item['personas_votadas'] for item in flujo_data),
+                'promedio_por_hora': sum(item['personas_votadas'] for item in flujo_data) / len(flujo_data) if flujo_data else 0
+            }
+        }
     
     @staticmethod
-    def obtener_total_acumulado_mesa(mesa_id):
+    def obtener_total_historico_mesa(mesa_id):
         """
-        Obtener el total acumulado actual de una mesa
+        Obtener el total histórico de una mesa (suma de todos los reportes independientes)
         
         Args:
             mesa_id: ID de la mesa
             
         Returns:
-            int: Total acumulado de personas que han votado
+            int: Total histórico de personas que han votado
         """
         reportes = ReporteParticipacion.query.filter_by(mesa_id=mesa_id).all()
         return sum(r.personas_votadas for r in reportes)
