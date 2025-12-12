@@ -97,6 +97,7 @@ function handleRoleChange(rol) {
     const municipioGroup = document.getElementById('municipioGroup');
     const zonaGroup = document.getElementById('zonaGroup');
     const puestoGroup = document.getElementById('puestoGroup');
+    const cedulaSection = document.getElementById('cedulaSection');
     
     // Ocultar todo por defecto
     locationSection.style.display = 'none';
@@ -104,6 +105,29 @@ function handleRoleChange(rol) {
     municipioGroup.style.display = 'none';
     zonaGroup.style.display = 'none';
     puestoGroup.style.display = 'none';
+    
+    // Manejar campo de cédula - Solo para testigos
+    if (cedulaSection) {
+        if (rol === 'testigo_electoral') {
+            cedulaSection.style.display = 'block';
+            // Hacer el campo requerido
+            const cedulaInput = document.getElementById('cedula');
+            if (cedulaInput) {
+                cedulaInput.required = true;
+                setupCedulaFormatting();
+            }
+            console.log('[LOGIN] Campo de cédula activado para testigo');
+        } else {
+            cedulaSection.style.display = 'none';
+            // Quitar requerimiento
+            const cedulaInput = document.getElementById('cedula');
+            if (cedulaInput) {
+                cedulaInput.required = false;
+                cedulaInput.value = '';
+            }
+            console.log('[LOGIN] Campo de cédula desactivado');
+        }
+    }
     
     clearLocationSelectors();
     
@@ -249,6 +273,11 @@ async function handleLogin() {
         
         const requiredFields = ['rol', 'password'];
         
+        // Testigos requieren cédula
+        if (rol === 'testigo_electoral') {
+            requiredFields.push('cedula');
+        }
+        
         // Super admin y monitoreo no requieren ubicación
         if (rol !== 'super_admin' && rol !== 'monitoreo') {
             requiredFields.push('departamento');
@@ -268,25 +297,68 @@ async function handleLogin() {
             return;
         }
         
-        const loginData = {
-            rol: formData.rol,
-            password: formData.password
-        };
-        
-        if (formData.departamento) {
-            loginData.departamento_codigo = formData.departamento;
-        }
-        if (formData.municipio) {
-            loginData.municipio_codigo = formData.municipio;
-        }
-        if (formData.zona) {
-            loginData.zona_codigo = formData.zona;
-        }
-        if (formData.puesto) {
-            loginData.puesto_codigo = formData.puesto;
+        // Validación específica de cédula para testigos
+        if (rol === 'testigo_electoral') {
+            const cedula = formData.cedula;
+            if (!/^\d{6,12}$/.test(cedula)) {
+                Utils.showError('La cédula debe tener entre 6 y 12 dígitos');
+                return;
+            }
         }
         
-        const response = await APIClient.login(loginData);
+        let response;
+        
+        // Para testigos, usar endpoint específico con cédula
+        if (rol === 'testigo_electoral') {
+            const testigoLoginData = {
+                cedula: formData.cedula,
+                departamento_codigo: formData.departamento,
+                municipio_codigo: formData.municipio,
+                zona_codigo: formData.zona,
+                puesto_codigo: formData.puesto,
+                password: formData.password
+            };
+            
+            console.log('[LOGIN] Usando login de testigo con cédula:', testigoLoginData.cedula);
+            
+            // Llamar al endpoint específico de testigos registrados
+            response = await fetch('/api/testigos-registrados/login-cedula-simple', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ cedula: testigoLoginData.cedula })
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Error en la validación de testigo');
+            }
+            
+            response = data; // Usar la respuesta parseada
+        } else {
+            // Para otros roles, usar login tradicional
+            const loginData = {
+                rol: formData.rol,
+                password: formData.password
+            };
+            
+            if (formData.departamento) {
+                loginData.departamento_codigo = formData.departamento;
+            }
+            if (formData.municipio) {
+                loginData.municipio_codigo = formData.municipio;
+            }
+            if (formData.zona) {
+                loginData.zona_codigo = formData.zona;
+            }
+            if (formData.puesto) {
+                loginData.puesto_codigo = formData.puesto;
+            }
+            
+            response = await APIClient.login(loginData);
+        }
         
         localStorage.setItem('access_token', response.data.access_token);
         localStorage.setItem('refresh_token', response.data.refresh_token);
@@ -321,4 +393,41 @@ function redirectToDashboard(rol) {
     
     const dashboard = dashboards[rol] || '/dashboard';
     window.location.href = dashboard;
+}
+function setupCedulaFormatting() {
+    const cedulaInput = document.getElementById('cedula');
+    
+    if (!cedulaInput) return;
+    
+    // Remover listeners previos para evitar duplicados
+    cedulaInput.removeEventListener('input', formatCedulaInput);
+    cedulaInput.removeEventListener('paste', formatCedulaPaste);
+    
+    // Agregar nuevos listeners
+    cedulaInput.addEventListener('input', formatCedulaInput);
+    cedulaInput.addEventListener('paste', formatCedulaPaste);
+    
+    console.log('[LOGIN] Formateo de cédula configurado');
+}
+
+function formatCedulaInput(e) {
+    // Solo permitir números
+    let value = e.target.value.replace(/\D/g, '');
+    
+    // Limitar a 12 dígitos
+    if (value.length > 12) {
+        value = value.substring(0, 12);
+    }
+    
+    e.target.value = value;
+}
+
+function formatCedulaPaste(e) {
+    setTimeout(() => {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length > 12) {
+            value = value.substring(0, 12);
+        }
+        e.target.value = value;
+    }, 10);
 }

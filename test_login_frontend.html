@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Login Testigo</title>
+    <script>
+    async function testLogin() {
+        const cedula = document.getElementById('cedula').value;
+        
+        try {
+            console.log('Probando login con cédula:', cedula);
+            
+            const response = await fetch('/api/testigos-registrados/login-cedula-simple', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ cedula: cedula })
+            });
+            
+            const data = await response.json();
+            
+            console.log('Response status:', response.status);
+            console.log('Response data:', data);
+            
+            if (response.ok && data.success) {
+                document.getElementById('result').innerHTML = `
+                    <h3>✅ Login Exitoso!</h3>
+                    <p><strong>Usuario:</strong> ${data.data.user.nombre}</p>
+                    <p><strong>Rol:</strong> ${data.data.user.rol}</p>
+                    <p><strong>Ubicación:</strong> ${data.data.ubicacion.nombre_completo}</p>
+                    <p><strong>Token:</strong> ${data.data.access_token.substring(0, 50)}...</p>
+                `;
+                
+                // Guardar en localStorage como lo hace el sistema real
+                localStorage.setItem('access_token', data.data.access_token);
+                localStorage.setItem('refresh_token', data.data.refresh_token);
+                localStorage.setItem('user_data', JSON.stringify(data.data.user));
+                
+                // Redirigir al dashboard
+                setTimeout(() => {
+                    window.location.href = '/testigo/dashboard';
+                }, 2000);
+                
+            } else {
+                document.getElementById('result').innerHTML = `
+                    <h3>❌ Error</h3>
+                    <p>${data.error || 'Error desconocido'}</p>
+                `;
+            }
+            
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('result').innerHTML = `
+                <h3>❌ Error de Conexión</h3>
+                <p>${error.message}</p>
+            `;
+        }
+    }
+    </script>
+</head>
+<body>
+    <h1>Test Login Testigo</h1>
+    
+    <div>
+        <label>Cédula:</label>
+        <input type="text" id="cedula" value="12345678" placeholder="Ingrese cédula">
+        <button onclick="testLogin()">Probar Login</button>
+    </div>
+    
+    <div id="result" style="margin-top: 20px; padding: 20px; border: 1px solid #ccc;"></div>
+    
+    <h3>Cédulas disponibles para probar:</h3>
+    <ul>
+        <li><strong>12345678</strong> - Juan Pérez García (validado)</li>
+        <li><strong>87654321</strong> - María López Rodríguez</li>
+        <li><strong>11223344</strong> - Carlos Martínez Silva</li>
+    </ul>
+</body>
+</html>

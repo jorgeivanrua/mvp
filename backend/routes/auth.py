@@ -179,6 +179,7 @@ def profile():
             'data': {
                 'user': {
                     'id': user.id,
+                    'cedula': user.cedula,  # ⭐ AGREGADO: Cédula como ID único
                     'nombre': user.nombre,
                     'rol': user.rol,
                     'ubicacion_id': user.ubicacion_id,

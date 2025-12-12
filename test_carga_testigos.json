@@ -1,0 +1,18 @@
+{
+    "departamento_codigo": "44",
+    "municipio_codigo": "01",
+    "testigos": [
+        {
+            "cedula": "20000001",
+            "nombre_completo": "Ana María García López"
+        },
+        {
+            "cedula": "20000002", 
+            "nombre_completo": "Carlos Eduardo Martínez Silva"
+        },
+        {
+            "cedula": "20000003",
+            "nombre_completo": "María Elena Rodríguez Pérez"
+        }
+    ]
+}

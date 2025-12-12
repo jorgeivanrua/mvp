@@ -80,8 +80,13 @@ class TestigoService:
             
             logger.info(f"Testigo validado automáticamente: {cedula_limpia} - {testigo.nombre_completo}")
         else:
-            # Ya estaba validado
-            usuario = User.query.get(testigo.user_id)
+            # Ya estaba validado, obtener usuario existente
+            if testigo.user_id:
+                usuario = User.query.get(testigo.user_id)
+            else:
+                # Si no tiene usuario, crearlo ahora
+                usuario = testigo.crear_usuario_sistema()
+                db.session.commit()
         
         # Log exitoso
         TestigoService._log_intento_validacion(
@@ -368,4 +373,133 @@ class TestigoService:
             'intentos_24h': intentos_24h,
             'exitosos_24h': exitosos_24h,
             'tasa_exito_24h': round((exitosos_24h / intentos_24h * 100), 2) if intentos_24h > 0 else 0
+        }
+    
+    @staticmethod
+    def cargar_testigos_masivo(departamento_codigo, municipio_codigo, testigos_data, registrado_por=None):
+        """
+        Cargar testigos masivamente por municipio
+        
+        Args:
+            departamento_codigo: Código del departamento
+            municipio_codigo: Código del municipio
+            testigos_data: Lista de diccionarios con datos de testigos
+            registrado_por: Quien registra los testigos
+            
+        Returns:
+            dict: Resultado de la carga masiva
+        """
+        from backend.models.partido_politico import PartidoPolitico
+        
+        exitosos = 0
+        errores = 0
+        detalles_errores = []
+        testigos_creados = []
+        
+        # Validar que el municipio existe
+        municipio = Location.query.filter_by(
+            tipo='municipio',
+            departamento_codigo=departamento_codigo,
+            municipio_codigo=municipio_codigo
+        ).first()
+        
+        if not municipio:
+            raise ValidationException({
+                'municipio': [f'No se encontró el municipio {departamento_codigo}-{municipio_codigo}']
+            })
+        
+        logger.info(f"Iniciando carga masiva de {len(testigos_data)} testigos para {municipio.nombre_completo}")
+        
+        for i, testigo_data in enumerate(testigos_data, 1):
+            try:
+                # Validar campos requeridos
+                if not testigo_data.get('cedula'):
+                    raise ValidationException({'cedula': ['Cédula es requerida']})
+                
+                if not testigo_data.get('nombre_completo'):
+                    raise ValidationException({'nombre_completo': ['Nombre completo es requerido']})
+                
+                # Limpiar cédula (remover puntos, espacios, guiones)
+                cedula_limpia = ''.join(filter(str.isdigit, str(testigo_data['cedula'])))
+                
+                if not cedula_limpia or len(cedula_limpia) < 6:
+                    raise ValidationException({'cedula': ['Número de cédula inválido']})
+                
+                # Usar partido por defecto (primer partido activo) o crear uno genérico
+                partido_id = testigo_data.get('partido_id')
+                if not partido_id:
+                    # Buscar o crear partido genérico para testigos
+                    partido_generico = PartidoPolitico.query.filter_by(sigla='TESTIGOS').first()
+                    if not partido_generico:
+                        partido_generico = PartidoPolitico(
+                            nombre='Testigos Electorales',
+                            sigla='TESTIGOS',
+                            color='#6c757d',
+                            activo=True
+                        )
+                        db.session.add(partido_generico)
+                        db.session.flush()
+                    partido_id = partido_generico.id
+                
+                # Verificar que no exista ya
+                testigo_existente = TestigoRegistrado.query.filter_by(cedula=cedula_limpia).first()
+                if testigo_existente:
+                    raise ValidationException({'cedula': ['Ya existe un testigo con esta cédula']})
+                
+                # Crear testigo
+                testigo = TestigoRegistrado(
+                    cedula=cedula_limpia,
+                    nombre_completo=testigo_data['nombre_completo'].strip().title(),
+                    partido_id=partido_id,
+                    departamento_codigo=departamento_codigo,
+                    municipio_codigo=municipio_codigo,
+                    registrado_por=registrado_por
+                )
+                
+                db.session.add(testigo)
+                testigos_creados.append(testigo)
+                exitosos += 1
+                
+                # Commit cada 50 registros para evitar transacciones muy largas
+                if exitosos % 50 == 0:
+                    db.session.commit()
+                    logger.info(f"Procesados {exitosos} testigos...")
+                
+            except ValidationException as e:
+                errores += 1
+                error_msg = '; '.join([f"{field}: {', '.join(messages)}" for field, messages in e.errors.items()])
+                detalles_errores.append({
+                    'fila': i,
+                    'cedula': testigo_data.get('cedula', 'N/A'),
+                    'nombre': testigo_data.get('nombre_completo', 'N/A'),
+                    'error': error_msg
+                })
+                logger.warning(f"Error en fila {i}: {error_msg}")
+                
+            except Exception as e:
+                errores += 1
+                detalles_errores.append({
+                    'fila': i,
+                    'cedula': testigo_data.get('cedula', 'N/A'),
+                    'nombre': testigo_data.get('nombre_completo', 'N/A'),
+                    'error': str(e)
+                })
+                logger.error(f"Error inesperado en fila {i}: {e}")
+        
+        # Commit final
+        try:
+            db.session.commit()
+            logger.info(f"Carga masiva completada: {exitosos} exitosos, {errores} errores")
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error en commit final: {e}")
+            raise ValidationException({'database': ['Error guardando los datos']})
+        
+        return {
+            'exitosos': exitosos,
+            'errores': errores,
+            'total_procesados': len(testigos_data),
+            'municipio': municipio.nombre_completo,
+            'detalles_errores': detalles_errores[:10],  # Solo los primeros 10 errores
+            'testigos_creados': [t.to_dict() for t in testigos_creados[:5]]  # Solo los primeros 5 para muestra
         }

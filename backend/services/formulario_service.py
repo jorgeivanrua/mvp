@@ -70,6 +70,7 @@ class FormularioService:
         formulario = FormularioE14(
             mesa_id=data['mesa_id'],
             testigo_id=testigo_id,
+            testigo_cedula=testigo.cedula,  # ⭐ AGREGADO: Guardar cédula del testigo
             tipo_eleccion_id=data['tipo_eleccion_id'],
             total_votantes_registrados=data['total_votantes_registrados'],
             total_votos=data['total_votos'],
@@ -463,3 +464,58 @@ class FormularioService:
             'coincide_total_tarjetas': coincide_total_tarjetas,
             'discrepancia_porcentaje': round(discrepancia_porcentaje, 2)
         }
+    
+    @staticmethod
+    def obtener_formularios_por_cedula(cedula, mesa_id=None):
+        """
+        Obtener formularios de un testigo por su cédula
+        
+        Args:
+            cedula: Cédula del testigo
+            mesa_id: ID de mesa específica (opcional)
+            
+        Returns:
+            list: Lista de formularios del testigo
+        """
+        query = FormularioE14.query.filter_by(testigo_cedula=cedula)
+        
+        if mesa_id:
+            query = query.filter_by(mesa_id=mesa_id)
+        
+        return query.order_by(FormularioE14.created_at.desc()).all()
+    
+    @staticmethod
+    def verificar_acceso_formulario_por_cedula(formulario_id, cedula):
+        """
+        Verificar si un testigo (por cédula) tiene acceso a un formulario
+        
+        Args:
+            formulario_id: ID del formulario
+            cedula: Cédula del testigo
+            
+        Returns:
+            FormularioE14: Formulario si tiene acceso, None si no
+        """
+        return FormularioE14.query.filter_by(
+            id=formulario_id,
+            testigo_cedula=cedula
+        ).first()
+    
+    @staticmethod
+    def contar_formularios_por_cedula(cedula, estado=None):
+        """
+        Contar formularios de un testigo por su cédula
+        
+        Args:
+            cedula: Cédula del testigo
+            estado: Estado específico (opcional)
+            
+        Returns:
+            int: Número de formularios
+        """
+        query = FormularioE14.query.filter_by(testigo_cedula=cedula)
+        
+        if estado:
+            query = query.filter_by(estado=estado)
+        
+        return query.count()

@@ -27,6 +27,7 @@ def login():
 
 @frontend_bp.route('/login-testigo')
 @frontend_bp.route('/auth/login-testigo')
+@frontend_bp.route('/testigo-login-cedula')
 def login_testigo():
     """Página de login para testigos por cédula"""
     return render_template('auth/login-testigo.html')
@@ -92,8 +93,22 @@ def gestion_usuarios():
     return render_template('admin/gestion-usuarios.html')
 
 
+@frontend_bp.route('/admin/cargar-testigos')
+def cargar_testigos():
+    """Cargar testigos por municipio"""
+    return render_template('admin/cargar-testigos.html')
+
+
 @frontend_bp.route('/monitoreo/dashboard')
 def monitoreo_dashboard():
     """Dashboard de monitoreo en tiempo real"""
     # Usar versión simplificada temporalmente
     return render_template('monitoreo/dashboard_simple.html')
+
+
+@frontend_bp.route('/test-login-testigo')
+def test_login_testigo():
+    """Página de prueba para login de testigos"""
+    from flask import send_from_directory
+    import os
+    return send_from_directory(os.getcwd(), 'test_login_frontend.html')

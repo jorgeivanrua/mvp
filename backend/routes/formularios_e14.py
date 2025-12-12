@@ -511,9 +511,15 @@ def obtener_mis_formularios():
         if estado:
             filtros['estado'] = estado
         
-        # Obtener formularios del testigo
+        # ⭐ MEJORADO: Usar cédula como identificador único consistente
         from backend.models.formulario_e14 import FormularioE14
-        query = FormularioE14.query.filter_by(testigo_id=int(user_id))
+        from backend.services.formulario_service import FormularioService
+        
+        # Si el testigo tiene cédula, usar cédula; si no, usar ID (fallback)
+        if user.cedula:
+            query = FormularioE14.query.filter_by(testigo_cedula=user.cedula)
+        else:
+            query = FormularioE14.query.filter_by(testigo_id=int(user_id))
         
         if mesa_id:
             query = query.filter_by(mesa_id=mesa_id)

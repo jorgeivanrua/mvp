@@ -3,7 +3,7 @@
 {% block title %}Login Testigo - Sistema Electoral{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard-universal-v2.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard-universal-v2.css') }}?v=20251212">
 <style>
 .login-container {
     min-height: 100vh;
@@ -260,10 +260,10 @@
             </div>
             
             <h1 style="color: #003893; font-weight: 700; margin-bottom: 0.5rem; font-size: 1.3rem;">
-                🗳️ Acceso por Cédula
+                🗳️ Login Testigos
             </h1>
             <p style="color: #666; margin: 0; font-size: 0.9rem;">
-                Ingrese solo su número de cédula para acceder
+                Ingrese su cédula, ubicación y contraseña
             </p>
         </div>
         
@@ -273,28 +273,168 @@
                 <i class="bi bi-info-circle"></i> Nuevo Proceso de Validación
             </h6>
             <ul style="margin: 0; padding-left: 1.2rem; font-size: 0.85rem; color: #555;">
-                <li>Los testigos se registran por <strong>municipio</strong>, no por mesa específica</li>
-                <li>Solo necesita su <strong>número de cédula</strong> para acceder</li>
-                <li>Una vez validado, podrá acceder a <strong>cualquier mesa del municipio</strong></li>
-                <li>El sistema verificará automáticamente su registro con los partidos</li>
+                <li>Los testigos se registran por <strong>puesto electoral</strong></li>
+                <li>Use su <strong>número de cédula</strong> como identificación única</li>
+                <li>Seleccione su <strong>ubicación</strong> (departamento, municipio, zona, puesto)</li>
+                <li>La contraseña es <strong>"test123"</strong> para todos los testigos</li>
             </ul>
         </div>
         
         <div id="alert-container"></div>
         
-        <form id="testigoLoginForm">
-            <!-- Cédula -->
-            <div class="form-group">
-                <label for="cedula" class="form-label">
-                    <i class="bi bi-card-text"></i> Número de Cédula
-                </label>
-                <input type="text" class="form-control cedula-input" id="cedula" name="cedula" 
-                       placeholder="Ej: 12345678" required maxlength="12" 
-                       pattern="[0-9]+" title="Solo números">
-                <small class="form-text text-muted">Ingrese solo números, sin puntos ni espacios</small>
-            </div>
-            
+        <!-- Mensaje destacado -->
+        <div class="alert alert-warning" style="border: 3px solid #ff6b35; background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); animation: pulse 2s infinite;">
+            <h5 style="color: #d63031; margin-bottom: 0.5rem; font-weight: bold; text-align: center;">
+                <i class="bi bi-exclamation-triangle-fill" style="font-size: 1.5rem;"></i> ¡ATENCIÓN!
+            </h5>
+            <h6 style="color: #d63031; margin-bottom: 0.5rem; font-weight: bold; text-align: center;">
+                DEBE INGRESAR SU NÚMERO DE CÉDULA PRIMERO
+            </h6>
+            <p style="margin: 0; color: #e17055; font-weight: 600; text-align: center;">
+                Luego seleccione su ubicación (departamento, municipio, zona, puesto)
+            </p>
+        </div>
 
+        <style>
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        </style>
+
+        <form id="testigoLoginForm">
+            <!-- ========== CAMPO DE CÉDULA - PRINCIPAL ========== -->
+            <div class="form-group" style="
+                background: linear-gradient(135deg, #ff6b35 0%, #f39c12 100%); 
+                padding: 2rem; 
+                border-radius: 15px; 
+                border: 4px solid #d63031; 
+                margin-bottom: 2rem;
+                box-shadow: 0 8px 25px rgba(214, 48, 49, 0.3);
+                position: relative;
+                overflow: hidden;
+            ">
+                <!-- Efecto de brillo -->
+                <div style="
+                    position: absolute;
+                    top: -50%;
+                    left: -50%;
+                    width: 200%;
+                    height: 200%;
+                    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+                    animation: shine 3s infinite;
+                "></div>
+                
+                <label for="cedula" class="form-label" style="
+                    color: white; 
+                    font-weight: 900; 
+                    font-size: 1.4rem; 
+                    margin-bottom: 1rem;
+                    text-align: center;
+                    display: block;
+                    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+                    position: relative;
+                    z-index: 1;
+                ">
+                    <i class="bi bi-person-vcard-fill" style="font-size: 2rem; margin-right: 0.5rem;"></i>
+                    <br>
+                    INGRESE SU NÚMERO DE CÉDULA
+                </label>
+                
+                <input type="text" class="form-control cedula-input" id="cedula" name="cedula" 
+                       placeholder="Ejemplo: 12345678" required maxlength="12" 
+                       pattern="[0-9]+" title="Solo números"
+                       style="
+                           font-size: 2rem; 
+                           font-weight: 900; 
+                           border: 4px solid #d63031; 
+                           padding: 1.5rem; 
+                           text-align: center; 
+                           background: white;
+                           border-radius: 10px;
+                           box-shadow: inset 0 4px 8px rgba(0,0,0,0.1);
+                           position: relative;
+                           z-index: 1;
+                           letter-spacing: 2px;
+                       ">
+                       
+                <small class="form-text" style="
+                    color: white; 
+                    font-weight: 700; 
+                    font-size: 1rem; 
+                    display: block; 
+                    text-align: center; 
+                    margin-top: 1rem;
+                    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+                    position: relative;
+                    z-index: 1;
+                ">
+                    <i class="bi bi-info-circle-fill"></i> Solo números - Sin puntos ni espacios
+                </small>
+            </div>
+
+            <style>
+            @keyframes shine {
+                0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+                100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+            }
+            </style>
+
+            <!-- Ubicación Jerárquica -->
+            <div class="info-section">
+                <h6 style="color: #003893; margin-bottom: 1rem; font-weight: 700;">
+                    <i class="bi bi-geo-alt"></i> Ubicación
+                </h6>
+                
+                <!-- Departamento -->
+                <div class="form-group">
+                    <label for="departamento" class="form-label">Departamento</label>
+                    <select class="form-control" id="departamento" name="departamento" required>
+                        <option value="">Cargando...</option>
+                    </select>
+                </div>
+                
+                <!-- Municipio -->
+                <div class="form-group">
+                    <label for="municipio" class="form-label">Municipio</label>
+                    <select class="form-control" id="municipio" name="municipio" required disabled>
+                        <option value="">Seleccione departamento primero</option>
+                    </select>
+                </div>
+                
+                <!-- Zona -->
+                <div class="form-group">
+                    <label for="zona" class="form-label">Zona</label>
+                    <select class="form-control" id="zona" name="zona" required disabled>
+                        <option value="">Seleccione municipio primero</option>
+                    </select>
+                </div>
+                
+                <!-- Puesto -->
+                <div class="form-group">
+                    <label for="puesto" class="form-label">Puesto Electoral</label>
+                    <select class="form-control" id="puesto" name="puesto" required disabled>
+                        <option value="">Seleccione zona primero</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Contraseña -->
+            <div class="form-group">
+                <label for="password" class="form-label">
+                    <i class="bi bi-lock"></i> Contraseña
+                </label>
+                <div class="input-group">
+                    <input type="password" class="form-control" id="password" name="password" 
+                           value="test123" required readonly>
+                    <button class="btn btn-outline-secondary" type="button" id="togglePassword" 
+                            aria-label="Mostrar/Ocultar contraseña">
+                        <i class="bi bi-eye" id="eyeIcon"></i>
+                    </button>
+                </div>
+                <small class="form-text text-muted">Contraseña fija para todos los testigos</small>
+            </div>
             
             <!-- Botón Login -->
             <button type="submit" class="btn btn-primary btn-login" id="loginBtn">
@@ -319,16 +459,210 @@
 <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Inicializando login de testigos por cédula...');
+    console.log('🚀 Inicializando login de testigos...');
+    
+    // Cargar departamentos
+    loadDepartamentos();
     
     // Setup form
     setupForm();
     
     // Formatear cédula mientras se escribe
     setupCedulaFormatting();
+    
+    // Setup ubicación
+    setupUbicacion();
 });
 
+async function loadDepartamentos() {
+    try {
+        console.log('📍 Cargando departamentos...');
+        
+        const response = await fetch('/api/locations/departamentos');
+        const data = await response.json();
+        
+        if (data.success) {
+            const select = document.getElementById('departamento');
+            select.innerHTML = '<option value="">Seleccione departamento</option>';
+            
+            data.data.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.departamento_codigo;
+                option.textContent = dept.departamento_nombre;
+                select.appendChild(option);
+            });
+            
+            console.log(`✅ ${data.data.length} departamentos cargados`);
+        } else {
+            throw new Error(data.error || 'Error cargando departamentos');
+        }
+    } catch (error) {
+        console.error('Error cargando departamentos:', error);
+        Utils.showError('Error cargando departamentos: ' + error.message);
+    }
+}
 
+async function loadMunicipios(departamentoCodigo) {
+    try {
+        console.log(`📍 Cargando municipios para departamento: ${departamentoCodigo}`);
+        
+        const response = await fetch(`/api/locations/municipios/${departamentoCodigo}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const select = document.getElementById('municipio');
+            select.innerHTML = '<option value="">Seleccione municipio</option>';
+            select.disabled = false;
+            
+            data.data.forEach(mun => {
+                const option = document.createElement('option');
+                option.value = mun.municipio_codigo;
+                option.textContent = mun.municipio_nombre;
+                select.appendChild(option);
+            });
+            
+            console.log(`✅ ${data.data.length} municipios cargados`);
+        } else {
+            throw new Error(data.error || 'Error cargando municipios');
+        }
+    } catch (error) {
+        console.error('Error cargando municipios:', error);
+        Utils.showError('Error cargando municipios: ' + error.message);
+    }
+}
+
+async function loadZonas(municipioCodigo) {
+    try {
+        console.log(`📍 Cargando zonas para municipio: ${municipioCodigo}`);
+        
+        const response = await fetch(`/api/locations/zonas/${municipioCodigo}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const select = document.getElementById('zona');
+            select.innerHTML = '<option value="">Seleccione zona</option>';
+            select.disabled = false;
+            
+            data.data.forEach(zona => {
+                const option = document.createElement('option');
+                option.value = zona.zona_codigo;
+                option.textContent = zona.zona_nombre;
+                select.appendChild(option);
+            });
+            
+            console.log(`✅ ${data.data.length} zonas cargadas`);
+        } else {
+            throw new Error(data.error || 'Error cargando zonas');
+        }
+    } catch (error) {
+        console.error('Error cargando zonas:', error);
+        Utils.showError('Error cargando zonas: ' + error.message);
+    }
+}
+
+async function loadPuestos(zonaCodigo) {
+    try {
+        console.log(`📍 Cargando puestos para zona: ${zonaCodigo}`);
+        
+        const response = await fetch(`/api/locations/puestos/${zonaCodigo}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const select = document.getElementById('puesto');
+            select.innerHTML = '<option value="">Seleccione puesto</option>';
+            select.disabled = false;
+            
+            data.data.forEach(puesto => {
+                const option = document.createElement('option');
+                option.value = puesto.puesto_codigo;
+                option.textContent = puesto.puesto_nombre;
+                select.appendChild(option);
+            });
+            
+            console.log(`✅ ${data.data.length} puestos cargados`);
+        } else {
+            throw new Error(data.error || 'Error cargando puestos');
+        }
+    } catch (error) {
+        console.error('Error cargando puestos:', error);
+        Utils.showError('Error cargando puestos: ' + error.message);
+    }
+}
+
+function setupUbicacion() {
+    // Departamento change
+    document.getElementById('departamento').addEventListener('change', function() {
+        const departamentoCodigo = this.value;
+        
+        // Reset municipio, zona, puesto
+        const municipioSelect = document.getElementById('municipio');
+        const zonaSelect = document.getElementById('zona');
+        const puestoSelect = document.getElementById('puesto');
+        
+        municipioSelect.innerHTML = '<option value="">Seleccione municipio</option>';
+        municipioSelect.disabled = !departamentoCodigo;
+        
+        zonaSelect.innerHTML = '<option value="">Seleccione zona</option>';
+        zonaSelect.disabled = true;
+        
+        puestoSelect.innerHTML = '<option value="">Seleccione puesto</option>';
+        puestoSelect.disabled = true;
+        
+        if (departamentoCodigo) {
+            loadMunicipios(departamentoCodigo);
+        }
+    });
+    
+    // Municipio change
+    document.getElementById('municipio').addEventListener('change', function() {
+        const municipioCodigo = this.value;
+        
+        // Reset zona, puesto
+        const zonaSelect = document.getElementById('zona');
+        const puestoSelect = document.getElementById('puesto');
+        
+        zonaSelect.innerHTML = '<option value="">Seleccione zona</option>';
+        zonaSelect.disabled = !municipioCodigo;
+        
+        puestoSelect.innerHTML = '<option value="">Seleccione puesto</option>';
+        puestoSelect.disabled = true;
+        
+        if (municipioCodigo) {
+            loadZonas(municipioCodigo);
+        }
+    });
+    
+    // Zona change
+    document.getElementById('zona').addEventListener('change', function() {
+        const zonaCodigo = this.value;
+        
+        // Reset puesto
+        const puestoSelect = document.getElementById('puesto');
+        
+        puestoSelect.innerHTML = '<option value="">Seleccione puesto</option>';
+        puestoSelect.disabled = !zonaCodigo;
+        
+        if (zonaCodigo) {
+            loadPuestos(zonaCodigo);
+        }
+    });
+    
+    // Setup password toggle
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+    const eyeIcon = document.getElementById('eyeIcon');
+    
+    togglePassword.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        
+        if (type === 'password') {
+            eyeIcon.className = 'bi bi-eye';
+        } else {
+            eyeIcon.className = 'bi bi-eye-slash';
+        }
+    });
+}
 
 function setupForm() {
     const form = document.getElementById('testigoLoginForm');
@@ -337,9 +671,25 @@ function setupForm() {
         e.preventDefault();
         
         const cedula = document.getElementById('cedula').value.trim();
+        const departamento = document.getElementById('departamento').value;
+        const municipio = document.getElementById('municipio').value;
+        const zona = document.getElementById('zona').value;
+        const puesto = document.getElementById('puesto').value;
+        const password = document.getElementById('password').value;
         
+        // Validar campos requeridos
         if (!cedula) {
             Utils.showError('El número de cédula es requerido');
+            return;
+        }
+        
+        if (!departamento || !municipio || !zona || !puesto) {
+            Utils.showError('Debe seleccionar su ubicación completa');
+            return;
+        }
+        
+        if (!password) {
+            Utils.showError('La contraseña es requerida');
             return;
         }
         
@@ -349,7 +699,7 @@ function setupForm() {
             return;
         }
         
-        await loginTestigo(cedula);
+        await loginTestigo(cedula, departamento, municipio, zona, puesto, password);
     });
 }
 
@@ -379,7 +729,7 @@ function setupCedulaFormatting() {
     });
 }
 
-async function loginTestigo(cedula) {
+async function loginTestigo(cedula, departamento, municipio, zona, puesto, password) {
     try {
         console.log('🔐 Iniciando login de testigo...');
         
@@ -392,14 +742,19 @@ async function loginTestigo(cedula) {
         loginText.textContent = 'Validando...';
         loginSpinner.classList.remove('d-none');
         
-        // Llamar al endpoint de login simplificado
-        const response = await fetch('/api/auth-testigo/login-cedula', {
+        // Llamar al endpoint de login con cédula y ubicación
+        const response = await fetch('/api/auth-testigo/login-cedula-ubicacion', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                cedula: cedula
+                cedula: cedula,
+                departamento_codigo: departamento,
+                municipio_codigo: municipio,
+                zona_codigo: zona,
+                puesto_codigo: puesto,
+                password: password
             })
         });
         

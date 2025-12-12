@@ -403,6 +403,84 @@
                     <option value="monitoreo">📊 Monitoreo</option>
                 </select>
             </div>
+
+            <!-- Campo de Cédula - Solo para Testigos -->
+            <div class="form-group" id="cedulaSection" style="display: none;">
+                <div style="
+                    background: linear-gradient(135deg, #ff6b35 0%, #f39c12 100%); 
+                    padding: 1.5rem; 
+                    border-radius: 12px; 
+                    border: 3px solid #d63031; 
+                    margin-bottom: 1rem;
+                    box-shadow: 0 6px 20px rgba(214, 48, 49, 0.3);
+                    position: relative;
+                    overflow: hidden;
+                ">
+                    <!-- Efecto de brillo -->
+                    <div style="
+                        position: absolute;
+                        top: -50%;
+                        left: -50%;
+                        width: 200%;
+                        height: 200%;
+                        background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+                        animation: shine 3s infinite;
+                    "></div>
+                    
+                    <label for="cedula" class="form-label" style="
+                        color: white; 
+                        font-weight: 900; 
+                        font-size: 1.2rem; 
+                        margin-bottom: 1rem;
+                        text-align: center;
+                        display: block;
+                        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+                        position: relative;
+                        z-index: 1;
+                    ">
+                        <i class="bi bi-person-vcard-fill" style="font-size: 1.5rem; margin-right: 0.5rem;"></i>
+                        NÚMERO DE CÉDULA
+                    </label>
+                    
+                    <input type="text" class="form-control" id="cedula" name="cedula" 
+                           placeholder="Ejemplo: 12345678" maxlength="12" 
+                           pattern="[0-9]+" title="Solo números"
+                           style="
+                               font-size: 1.5rem; 
+                               font-weight: 900; 
+                               border: 3px solid #d63031; 
+                               padding: 1rem; 
+                               text-align: center; 
+                               background: white;
+                               border-radius: 8px;
+                               box-shadow: inset 0 3px 6px rgba(0,0,0,0.1);
+                               position: relative;
+                               z-index: 1;
+                               letter-spacing: 1px;
+                           ">
+                           
+                    <small class="form-text" style="
+                        color: white; 
+                        font-weight: 700; 
+                        font-size: 0.9rem; 
+                        display: block; 
+                        text-align: center; 
+                        margin-top: 0.8rem;
+                        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+                        position: relative;
+                        z-index: 1;
+                    ">
+                        <i class="bi bi-info-circle-fill"></i> Solo números - Sin puntos ni espacios
+                    </small>
+                </div>
+            </div>
+
+            <style>
+            @keyframes shine {
+                0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+                100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+            }
+            </style>
             
             <!-- Ubicación Jerárquica -->
             <div class="location-section" id="locationSection" style="display: none;">

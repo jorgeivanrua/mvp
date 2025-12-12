@@ -17,6 +17,7 @@ class FormularioE14(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     mesa_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=False)
     testigo_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    testigo_cedula = db.Column(db.String(20), nullable=True, index=True)  # ⭐ NUEVO: Cédula del testigo como ID único
     tipo_eleccion_id = db.Column(db.Integer, db.ForeignKey('tipos_eleccion.id'), nullable=False)
     
     # Datos de votación
@@ -62,6 +63,7 @@ class FormularioE14(db.Model):
             'id': self.id,
             'mesa_id': self.mesa_id,
             'testigo_id': self.testigo_id,
+            'testigo_cedula': self.testigo_cedula,  # ⭐ AGREGADO: Cédula del testigo
             'tipo_eleccion_id': self.tipo_eleccion_id,
             'total_votantes_registrados': self.total_votantes_registrados,
             'total_votos': self.total_votos,

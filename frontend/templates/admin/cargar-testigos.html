@@ -1,0 +1,649 @@
+{% extends "base.html" %}
+
+{% block title %}Cargar Testigos - Administración{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard-universal-v2.css') }}">
+<style>
+.upload-area {
+    border: 2px dashed #007bff;
+    border-radius: 10px;
+    padding: 2rem;
+    text-align: center;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.upload-area:hover {
+    border-color: #0056b3;
+    background: #e3f2fd;
+}
+
+.upload-area.dragover {
+    border-color: #28a745;
+    background: #d4edda;
+}
+
+.testigo-row {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.testigo-row.error {
+    border-color: #dc3545;
+    background: #f8d7da;
+}
+
+.testigo-row.success {
+    border-color: #28a745;
+    background: #d1e7dd;
+}
+
+.cedula-input {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+}
+
+.progress-container {
+    display: none;
+    margin: 1rem 0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.stat-card.primary { border-left: 4px solid #007bff; }
+.stat-card.success { border-left: 4px solid #28a745; }
+.stat-card.warning { border-left: 4px solid #ffc107; }
+.stat-card.danger { border-left: 4px solid #dc3545; }
+
+.stat-card h3 {
+    font-size: 2rem;
+    margin: 0;
+    font-weight: 700;
+}
+
+.stat-card h6 {
+    margin: 0.5rem 0 0 0;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2><i class="bi bi-people-fill"></i> Cargar Testigos por Municipio</h2>
+                <p class="mb-0">Registre testigos electorales masivamente por municipio</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" onclick="descargarPlantilla()">
+                    <i class="bi bi-download"></i> Descargar Plantilla CSV
+                </button>
+                <button class="btn btn-outline-danger" onclick="window.history.back()">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="stats-grid" id="statsContainer" style="display: none;">
+        <div class="stat-card primary">
+            <h3 id="statTotal">0</h3>
+            <h6>Total a Procesar</h6>
+        </div>
+        <div class="stat-card success">
+            <h3 id="statExitosos">0</h3>
+            <h6>Exitosos</h6>
+        </div>
+        <div class="stat-card danger">
+            <h3 id="statErrores">0</h3>
+            <h6>Errores</h6>
+        </div>
+        <div class="stat-card warning">
+            <h3 id="statPendientes">0</h3>
+            <h6>Pendientes</h6>
+        </div>
+    </div>
+
+    <!-- Alertas -->
+    <div id="alert-container"></div>
+
+    <!-- Formulario Principal -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="bi bi-geo-alt"></i> Seleccionar Ubicación
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Departamento</label>
+                    <select class="form-select" id="departamento" required onchange="cargarMunicipios()">
+                        <option value="">Cargando departamentos...</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Municipio</label>
+                    <select class="form-select" id="municipio" required disabled>
+                        <option value="">Seleccione departamento primero</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Métodos de Carga -->
+    <div class="row mt-3">
+        <!-- Carga Manual -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-pencil-square"></i> Carga Manual
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Agregue testigos uno por uno</p>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Cédula (sin puntos)</label>
+                            <input type="text" class="form-control cedula-input" id="nuevaCedula" 
+                                   placeholder="12345678" maxlength="12" pattern="[0-9]+">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre Completo</label>
+                            <input type="text" class="form-control" id="nuevoNombre" 
+                                   placeholder="Juan Pérez García">
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary w-100" onclick="agregarTestigo()">
+                        <i class="bi bi-plus-circle"></i> Agregar Testigo
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Carga por CSV -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> Carga por CSV
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Suba un archivo CSV con los testigos</p>
+                    
+                    <div class="upload-area" onclick="document.getElementById('csvFile').click()">
+                        <i class="bi bi-cloud-upload" style="font-size: 3rem; color: #007bff;"></i>
+                        <h6 class="mt-2">Haga clic o arrastre un archivo CSV</h6>
+                        <small class="text-muted">Formato: cedula, nombre_completo</small>
+                    </div>
+                    
+                    <input type="file" id="csvFile" accept=".csv" style="display: none;" onchange="procesarCSV(this)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Testigos -->
+    <div class="card mt-3" id="testigosCard" style="display: none;">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="bi bi-list-ul"></i> Testigos a Cargar
+                <span class="badge bg-primary ms-2" id="contadorTestigos">0</span>
+            </h5>
+            <div>
+                <button class="btn btn-outline-danger btn-sm" onclick="limpiarLista()">
+                    <i class="bi bi-trash"></i> Limpiar Todo
+                </button>
+                <button class="btn btn-success btn-sm" onclick="procesarCarga()" id="btnProcesar" disabled>
+                    <i class="bi bi-upload"></i> Procesar Carga
+                </button>
+            </div>
+        </div>
+        <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+            <div id="listaTestigos"></div>
+        </div>
+    </div>
+
+    <!-- Progreso -->
+    <div class="progress-container" id="progressContainer">
+        <div class="card">
+            <div class="card-body">
+                <h6>Procesando carga...</h6>
+                <div class="progress">
+                    <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%"></div>
+                </div>
+                <small class="text-muted mt-2 d-block" id="progressText">Preparando...</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resultados -->
+    <div class="card mt-3" id="resultadosCard" style="display: none;">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="bi bi-check-circle"></i> Resultados de la Carga
+            </h5>
+        </div>
+        <div class="card-body">
+            <div id="resultadosContent"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
+<script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+<script>
+let testigos = [];
+let departamentoSeleccionado = null;
+let municipioSeleccionado = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    cargarDepartamentos();
+    setupDragAndDrop();
+    setupCedulaFormatting();
+});
+
+async function cargarDepartamentos() {
+    try {
+        const response = await fetch('/api/locations/departamentos');
+        const data = await response.json();
+        
+        const select = document.getElementById('departamento');
+        select.innerHTML = '<option value="">Seleccione departamento</option>';
+        
+        if (data.success) {
+            data.data.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.departamento_codigo;
+                option.textContent = dept.departamento_nombre;
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        Utils.showError('Error cargando departamentos: ' + error.message);
+    }
+}
+
+async function cargarMunicipios() {
+    const departamentoCodigo = document.getElementById('departamento').value;
+    const municipioSelect = document.getElementById('municipio');
+    
+    if (!departamentoCodigo) {
+        municipioSelect.innerHTML = '<option value="">Seleccione departamento primero</option>';
+        municipioSelect.disabled = true;
+        return;
+    }
+    
+    try {
+        departamentoSeleccionado = departamentoCodigo;
+        
+        const response = await fetch(`/api/locations/municipios/${departamentoCodigo}`);
+        const data = await response.json();
+        
+        municipioSelect.innerHTML = '<option value="">Seleccione municipio</option>';
+        municipioSelect.disabled = false;
+        
+        if (data.success) {
+            data.data.forEach(mun => {
+                const option = document.createElement('option');
+                option.value = mun.municipio_codigo;
+                option.textContent = mun.municipio_nombre;
+                municipioSelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        Utils.showError('Error cargando municipios: ' + error.message);
+    }
+}
+
+function setupCedulaFormatting() {
+    const cedulaInput = document.getElementById('nuevaCedula');
+    
+    cedulaInput.addEventListener('input', function(e) {
+        // Solo permitir números
+        let value = e.target.value.replace(/\D/g, '');
+        
+        // Limitar a 12 dígitos
+        if (value.length > 12) {
+            value = value.substring(0, 12);
+        }
+        
+        e.target.value = value;
+    });
+}
+
+function agregarTestigo() {
+    const cedula = document.getElementById('nuevaCedula').value.trim();
+    const nombre = document.getElementById('nuevoNombre').value.trim();
+    
+    if (!cedula || !nombre) {
+        Utils.showError('Cédula y nombre son requeridos');
+        return;
+    }
+    
+    if (cedula.length < 6) {
+        Utils.showError('La cédula debe tener al menos 6 dígitos');
+        return;
+    }
+    
+    // Verificar duplicados
+    if (testigos.find(t => t.cedula === cedula)) {
+        Utils.showError('Ya existe un testigo con esta cédula en la lista');
+        return;
+    }
+    
+    // Agregar testigo
+    testigos.push({
+        cedula: cedula,
+        nombre_completo: nombre
+    });
+    
+    // Limpiar campos
+    document.getElementById('nuevaCedula').value = '';
+    document.getElementById('nuevoNombre').value = '';
+    
+    actualizarListaTestigos();
+    Utils.showSuccess(`Testigo ${nombre} agregado`);
+}
+
+function actualizarListaTestigos() {
+    const container = document.getElementById('listaTestigos');
+    const card = document.getElementById('testigosCard');
+    const contador = document.getElementById('contadorTestigos');
+    const btnProcesar = document.getElementById('btnProcesar');
+    
+    if (testigos.length === 0) {
+        card.style.display = 'none';
+        return;
+    }
+    
+    card.style.display = 'block';
+    contador.textContent = testigos.length;
+    
+    container.innerHTML = testigos.map((testigo, index) => `
+        <div class="testigo-row" id="testigo-${index}">
+            <div class="flex-grow-1">
+                <strong>${testigo.nombre_completo}</strong>
+                <br><small class="text-muted">Cédula: ${testigo.cedula}</small>
+            </div>
+            <button class="btn btn-outline-danger btn-sm" onclick="eliminarTestigo(${index})">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    `).join('');
+    
+    // Habilitar botón procesar si hay ubicación seleccionada
+    const municipio = document.getElementById('municipio').value;
+    btnProcesar.disabled = !municipio || testigos.length === 0;
+}
+
+function eliminarTestigo(index) {
+    testigos.splice(index, 1);
+    actualizarListaTestigos();
+}
+
+function limpiarLista() {
+    testigos = [];
+    actualizarListaTestigos();
+    Utils.showInfo('Lista limpiada');
+}
+
+function setupDragAndDrop() {
+    const uploadArea = document.querySelector('.upload-area');
+    
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+    
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+    });
+    
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            procesarCSV({ files: files });
+        }
+    });
+}
+
+function procesarCSV(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+        Utils.showError('Por favor seleccione un archivo CSV');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const csv = e.target.result;
+            const lines = csv.split('\n');
+            
+            // Saltar header si existe
+            const startIndex = lines[0].toLowerCase().includes('cedula') ? 1 : 0;
+            
+            let agregados = 0;
+            let errores = 0;
+            
+            for (let i = startIndex; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                const parts = line.split(',');
+                if (parts.length < 2) continue;
+                
+                const cedula = parts[0].trim().replace(/\D/g, ''); // Solo números
+                const nombre = parts[1].trim();
+                
+                if (cedula && nombre && cedula.length >= 6) {
+                    // Verificar duplicados
+                    if (!testigos.find(t => t.cedula === cedula)) {
+                        testigos.push({
+                            cedula: cedula,
+                            nombre_completo: nombre
+                        });
+                        agregados++;
+                    }
+                } else {
+                    errores++;
+                }
+            }
+            
+            actualizarListaTestigos();
+            
+            if (agregados > 0) {
+                Utils.showSuccess(`${agregados} testigos agregados desde CSV`);
+            }
+            if (errores > 0) {
+                Utils.showWarning(`${errores} filas con errores fueron omitidas`);
+            }
+            
+        } catch (error) {
+            Utils.showError('Error procesando CSV: ' + error.message);
+        }
+    };
+    
+    reader.readAsText(file);
+}
+
+async function procesarCarga() {
+    const departamento = document.getElementById('departamento').value;
+    const municipio = document.getElementById('municipio').value;
+    
+    if (!departamento || !municipio) {
+        Utils.showError('Debe seleccionar departamento y municipio');
+        return;
+    }
+    
+    if (testigos.length === 0) {
+        Utils.showError('Debe agregar al menos un testigo');
+        return;
+    }
+    
+    try {
+        // Mostrar progreso
+        document.getElementById('progressContainer').style.display = 'block';
+        document.getElementById('btnProcesar').disabled = true;
+        
+        updateProgress(0, 'Enviando datos...');
+        
+        const response = await APIClient.post('/testigos-registrados/cargar-masivo', {
+            departamento_codigo: departamento,
+            municipio_codigo: municipio,
+            testigos: testigos
+        });
+        
+        updateProgress(100, 'Completado');
+        
+        // Mostrar resultados
+        mostrarResultados(response.data);
+        
+        // Limpiar lista
+        testigos = [];
+        actualizarListaTestigos();
+        
+    } catch (error) {
+        Utils.showError('Error en la carga: ' + error.message);
+        document.getElementById('btnProcesar').disabled = false;
+    } finally {
+        setTimeout(() => {
+            document.getElementById('progressContainer').style.display = 'none';
+        }, 2000);
+    }
+}
+
+function updateProgress(percent, text) {
+    document.getElementById('progressBar').style.width = percent + '%';
+    document.getElementById('progressText').textContent = text;
+}
+
+function mostrarResultados(resultado) {
+    const card = document.getElementById('resultadosCard');
+    const content = document.getElementById('resultadosContent');
+    
+    // Actualizar estadísticas
+    document.getElementById('statTotal').textContent = resultado.total_procesados;
+    document.getElementById('statExitosos').textContent = resultado.exitosos;
+    document.getElementById('statErrores').textContent = resultado.errores;
+    document.getElementById('statPendientes').textContent = '0';
+    document.getElementById('statsContainer').style.display = 'grid';
+    
+    let html = `
+        <div class="alert alert-success">
+            <h6><i class="bi bi-check-circle"></i> Carga Completada</h6>
+            <p class="mb-0">
+                <strong>${resultado.exitosos}</strong> testigos registrados exitosamente en <strong>${resultado.municipio}</strong>
+                ${resultado.errores > 0 ? `<br><strong>${resultado.errores}</strong> errores encontrados` : ''}
+            </p>
+        </div>
+    `;
+    
+    if (resultado.detalles_errores && resultado.detalles_errores.length > 0) {
+        html += `
+            <div class="alert alert-warning">
+                <h6><i class="bi bi-exclamation-triangle"></i> Errores Encontrados</h6>
+                <ul class="mb-0">
+        `;
+        
+        resultado.detalles_errores.forEach(error => {
+            html += `<li>Fila ${error.fila}: ${error.nombre} (${error.cedula}) - ${error.error}</li>`;
+        });
+        
+        html += `</ul></div>`;
+    }
+    
+    if (resultado.testigos_creados && resultado.testigos_creados.length > 0) {
+        html += `
+            <div class="alert alert-info">
+                <h6><i class="bi bi-info-circle"></i> Primeros Testigos Registrados</h6>
+                <ul class="mb-0">
+        `;
+        
+        resultado.testigos_creados.forEach(testigo => {
+            html += `<li>${testigo.nombre_completo} - Cédula: ${testigo.cedula}</li>`;
+        });
+        
+        html += `</ul></div>`;
+    }
+    
+    content.innerHTML = html;
+    card.style.display = 'block';
+    
+    // Scroll to results
+    card.scrollIntoView({ behavior: 'smooth' });
+}
+
+async function descargarPlantilla() {
+    try {
+        const response = await fetch('/api/testigos-registrados/plantilla-csv', {
+            headers: APIClient.getAuthHeaders()
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'plantilla_testigos.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            Utils.showSuccess('Plantilla CSV descargada');
+        } else {
+            throw new Error('Error descargando plantilla');
+        }
+    } catch (error) {
+        Utils.showError('Error descargando plantilla: ' + error.message);
+    }
+}
+
+// Actualizar municipio seleccionado
+document.getElementById('municipio').addEventListener('change', function() {
+    municipioSeleccionado = this.value;
+    actualizarListaTestigos(); // Para habilitar/deshabilitar botón procesar
+});
+</script>
+{% endblock %}
