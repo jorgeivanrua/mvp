@@ -561,26 +561,22 @@
                         </div>
                     </div>
 
-                    <!-- Foto del Formulario -->
+                    <!-- Fotos Múltiples del Formulario E-14 -->
                     <div class="form-section">
-                        <h6>📸 Foto del Formulario E-14</h6>
-                        <div class="row">
-                            <div class="col-12 mb-3">
-                                <input type="file" class="form-control d-none" id="imagen" name="imagen" accept="image/*">
-                                <button type="button" class="btn btn-primary w-100 mb-2" onclick="abrirCamara()">
-                                    <i class="bi bi-camera-fill"></i> Tomar Foto del Formulario
-                                </button>
-                                <button type="button" class="btn btn-outline-secondary w-100" onclick="document.getElementById('imagen').click()">
-                                    <i class="bi bi-image"></i> Seleccionar desde Galería
-                                </button>
-                                <small class="text-muted d-block mt-1">Tome una foto clara del formulario completo</small>
-                            </div>
-                            <div class="col-12">
-                                <div class="image-preview" id="imagePreview">
-                                    <p class="text-muted">Toque el botón para tomar una foto</p>
+                        <h6>📸 Fotos del Formulario E-14</h6>
+                        <div id="formulario-fotos-container">
+                            <!-- El componente de fotos múltiples se cargará aquí dinámicamente -->
+                            <div class="text-center py-3">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Cargando sistema de fotos...</span>
                                 </div>
+                                <p class="text-muted mt-2">Inicializando sistema de fotos múltiples...</p>
                             </div>
                         </div>
+                        <small class="text-muted d-block mt-2">
+                            <i class="bi bi-info-circle"></i>
+                            Puede tomar múltiples fotos del formulario E-14. La primera foto será marcada como principal automáticamente.
+                        </small>
                     </div>
 
                     <!-- Datos de Votación -->
@@ -736,21 +732,15 @@
                         <textarea class="form-control" name="descripcion" rows="4" required placeholder="Describa el incidente con el mayor detalle posible..."></textarea>
                     </div>
                     
-                    <!-- Evidencia Fotográfica -->
+                    <!-- Evidencias Fotográficas Múltiples -->
                     <div class="mb-3">
-                        <label class="form-label">📸 Evidencia Fotográfica (opcional)</label>
-                        <div class="input-group">
-                            <input type="file" class="form-control" id="fotoIncidente" name="foto" accept="image/*" capture="environment">
-                            <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('fotoIncidente').click()">
-                                <i class="bi bi-camera"></i> Tomar Foto
-                            </button>
-                        </div>
-                        <small class="text-muted">Puede adjuntar una foto como evidencia del incidente</small>
-                        <div id="previewIncidente" class="mt-2" style="display: none;">
-                            <img id="imgPreviewIncidente" src="" alt="Vista previa" class="img-fluid rounded" style="max-height: 200px;">
-                            <button type="button" class="btn btn-sm btn-danger mt-2" onclick="limpiarFotoIncidente()">
-                                <i class="bi bi-trash"></i> Eliminar foto
-                            </button>
+                        <label class="form-label">📸 Evidencias Fotográficas (opcional)</label>
+                        <div id="incidente-fotos-container">
+                            <!-- El componente de evidencias fotográficas se cargará aquí dinámicamente -->
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                <small>Puede adjuntar múltiples fotos como evidencia del incidente. El sistema de fotos se habilitará después de guardar el reporte inicial.</small>
+                            </div>
                         </div>
                     </div>
                     
@@ -823,21 +813,15 @@
                         <textarea class="form-control" name="descripcion" rows="5" required placeholder="Describa el delito con el mayor detalle posible: qué ocurrió, quiénes estuvieron involucrados, cuándo sucedió, etc."></textarea>
                     </div>
                     
-                    <!-- Evidencia Fotográfica -->
+                    <!-- Evidencias Fotográficas Múltiples -->
                     <div class="mb-3">
-                        <label class="form-label">📸 Evidencia Fotográfica (opcional pero recomendada)</label>
-                        <div class="input-group">
-                            <input type="file" class="form-control" id="fotoDelito" name="foto" accept="image/*" capture="environment">
-                            <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('fotoDelito').click()">
-                                <i class="bi bi-camera"></i> Tomar Foto
-                            </button>
-                        </div>
-                        <small class="text-muted">La evidencia fotográfica fortalece el reporte ante las autoridades</small>
-                        <div id="previewDelito" class="mt-2" style="display: none;">
-                            <img id="imgPreviewDelito" src="" alt="Vista previa" class="img-fluid rounded" style="max-height: 200px;">
-                            <button type="button" class="btn btn-sm btn-danger mt-2" onclick="limpiarFotoDelito()">
-                                <i class="bi bi-trash"></i> Eliminar foto
-                            </button>
+                        <label class="form-label">📸 Evidencias Fotográficas (opcional pero recomendada)</label>
+                        <div id="delito-fotos-container">
+                            <!-- El componente de evidencias fotográficas se cargará aquí dinámicamente -->
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <small>Puede adjuntar múltiples fotos como evidencia del delito electoral. El sistema de evidencias se habilitará después de guardar el reporte inicial. La evidencia fotográfica fortalece el reporte ante las autoridades.</small>
+                            </div>
                         </div>
                     </div>
                     
@@ -958,6 +942,15 @@
 
 <!-- Módulos independientes -->
 <script src="{{ url_for('static', filename='js/incidentes-delitos.js') }}"></script>
+
+<!-- Sistema de fotos múltiples para formularios E-14 -->
+<script src="{{ url_for('static', filename='js/formulario-fotos.js') }}"></script>
+
+<!-- Sistema de evidencias fotográficas para incidentes y delitos -->
+<script src="{{ url_for('static', filename='js/incidentes-delitos-fotos.js') }}"></script>
+
+<!-- Integración de sistemas de fotos múltiples -->
+<script src="{{ url_for('static', filename='js/testigo-fotos-integration.js') }}"></script>
 
 <!-- Dashboard principal (incluye toda la funcionalidad) -->
 <script src="{{ url_for('static', filename='js/testigo-dashboard-v2.js') }}"></script>

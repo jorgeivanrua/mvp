@@ -57,7 +57,7 @@ class FormularioE14(db.Model):
     votos_candidatos = db.relationship('VotoCandidato', back_populates='formulario', cascade='all, delete-orphan')
     historial = db.relationship('HistorialFormulario', back_populates='formulario', cascade='all, delete-orphan', order_by='HistorialFormulario.created_at.desc()')
     # Relación con fotos múltiples
-    fotos = db.relationship('FormularioFoto', backref='formulario', cascade='all, delete-orphan', order_by='FormularioFoto.orden')
+    fotos = db.relationship('FormularioFoto', back_populates='formulario', cascade='all, delete-orphan', order_by='FormularioFoto.orden')
     
     def to_dict(self, include_votos=False, include_historial=False, include_fotos=False):
         """Convertir a diccionario"""

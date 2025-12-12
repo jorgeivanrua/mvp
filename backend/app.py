@@ -140,6 +140,10 @@ def register_blueprints(app):
     from backend.routes.incidentes_delitos_fotos import incidentes_delitos_fotos_bp
     app.register_blueprint(incidentes_delitos_fotos_bp)
     
+    # Componentes HTML dinámicos
+    from backend.routes.components import components_bp
+    app.register_blueprint(components_bp)
+    
     app.register_blueprint(coordinador_municipal_bp)
     app.register_blueprint(coordinador_departamental_bp)
     app.register_blueprint(incidentes_delitos_bp)

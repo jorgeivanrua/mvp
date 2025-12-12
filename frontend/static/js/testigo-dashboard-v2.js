@@ -1609,6 +1609,17 @@ async function saveForm(accion = 'borrador') {
                     '✓ Formulario E-14 enviado exitosamente para revisión';
                 Utils.showSuccess(mensaje);
                 
+                // Inicializar sistema de fotos múltiples si el formulario fue creado exitosamente
+                if (response.data && response.data.id && window.testigoFotos) {
+                    console.log('[saveForm] Inicializando sistema de fotos múltiples para formulario ID:', response.data.id);
+                    try {
+                        await window.testigoFotos.inicializarFormularioFotos(response.data.id);
+                        Utils.showInfo('Sistema de fotos múltiples habilitado. Puede agregar más fotos del formulario.');
+                    } catch (error) {
+                        console.error('Error al inicializar fotos múltiples:', error);
+                    }
+                }
+                
                 // Limpiar formulario ANTES de cerrar modal
                 form.reset();
                 document.getElementById('imagePreview').innerHTML = '<p class="text-muted">Toque el botón para tomar una foto</p>';

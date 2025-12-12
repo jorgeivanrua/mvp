@@ -235,9 +235,9 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Obtener parámetros de la página
-    const tipoReporte = window.tipoReporte || '{{ tipo_reporte if tipo_reporte is defined else "" }}';
-    const reporteId = window.reporteId || {{ reporte_id if reporte_id is defined else 'null' }};
-    const esCoordinador = window.esCoordinador || {{ 'true' if es_coordinador is defined and es_coordinador else 'false' }};
+    const tipoReporte = window.tipoReporte || '{% if tipo_reporte is defined %}{{ tipo_reporte }}{% else %}{% endif %}';
+    const reporteId = window.reporteId || {% if reporte_id is defined %}{{ reporte_id }}{% else %}null{% endif %};
+    const esCoordinador = window.esCoordinador || {% if es_coordinador is defined and es_coordinador %}true{% else %}false{% endif %};
     
     if (tipoReporte && reporteId) {
         window.incidentesDelitosFotos = inicializarIncidentesDelitosFotos(tipoReporte, reporteId, esCoordinador);

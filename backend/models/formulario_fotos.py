@@ -36,7 +36,7 @@ class FormularioFoto(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relaciones
-    formulario = db.relationship('FormularioE14', backref='fotos')
+    formulario = db.relationship('FormularioE14', back_populates='fotos')
     subida_por = db.relationship('User', foreign_keys=[subida_por_id], backref='fotos_subidas')
     validada_por = db.relationship('User', foreign_keys=[validada_por_id], backref='fotos_validadas')
     

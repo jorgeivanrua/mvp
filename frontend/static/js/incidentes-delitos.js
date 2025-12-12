@@ -338,6 +338,17 @@ async function guardarIncidente() {
             
             Utils.showSuccess('✓ Incidente reportado exitosamente');
             
+            // Inicializar sistema de evidencias fotográficas múltiples
+            if (window.testigoFotos) {
+                console.log('[guardarIncidente] Inicializando sistema de evidencias múltiples para incidente ID:', incidenteId);
+                try {
+                    await window.testigoFotos.inicializarIncidenteFotos(incidenteId);
+                    Utils.showInfo('Sistema de evidencias fotográficas habilitado. Puede agregar más evidencias.');
+                } catch (error) {
+                    console.error('Error al inicializar evidencias múltiples:', error);
+                }
+            }
+            
             // Cerrar modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('incidenteModal'));
             if (modal) modal.hide();
@@ -506,6 +517,17 @@ async function guardarDelito() {
             }
             
             Utils.showSuccess('✓ Delito reportado exitosamente');
+            
+            // Inicializar sistema de evidencias fotográficas múltiples
+            if (window.testigoFotos) {
+                console.log('[guardarDelito] Inicializando sistema de evidencias múltiples para delito ID:', delitoId);
+                try {
+                    await window.testigoFotos.inicializarDelitoFotos(delitoId);
+                    Utils.showInfo('Sistema de evidencias fotográficas habilitado. Puede agregar más evidencias.');
+                } catch (error) {
+                    console.error('Error al inicializar evidencias múltiples:', error);
+                }
+            }
             
             // Cerrar modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('delitoModal'));
