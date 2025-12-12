@@ -121,7 +121,7 @@ def get_estadisticas():
         
         # Calcular formularios esperados: mesas × tipos de elección activos
         from backend.models.configuracion_electoral import TipoEleccion
-        total_mesas = Location.query.filter_by(tipo='mesa').count()
+        total_mesas = Location.query.filter_by(tipo='mesa', activo=True).count()
         tipos_eleccion_activos = TipoEleccion.query.filter_by(activo=True).count()
         formularios_esperados = total_mesas * tipos_eleccion_activos
         
@@ -361,7 +361,7 @@ def get_actividad_reciente():
         ).order_by(FormularioE14.created_at.desc()).limit(limite).all()
         
         for form in formularios:
-            usuario = User.query.get(form.usuario_id)
+            usuario = User.query.get(form.testigo_id)
             actividades.append({
                 'tipo': 'formulario',
                 'icono': 'file-earmark-text',

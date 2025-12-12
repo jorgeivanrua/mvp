@@ -1,0 +1,94 @@
+<!-- Botón para acceder a las evidencias fotográficas de incidentes y delitos -->
+<!-- Usar este componente en dashboards o listas de reportes -->
+
+{% if reporte_id and tipo_reporte %}
+<div class="mt-2">
+    <a href="/{{ tipo_reporte }}/{{ reporte_id }}/evidencias" 
+       class="btn btn-outline-{{ 'danger' if tipo_reporte == 'delito' else 'warning' }} btn-sm" 
+       target="_blank"
+       title="Ver y gestionar evidencias fotográficas">
+        <i class="fas fa-camera-retro"></i>
+        <span class="d-none d-sm-inline">Evidencias</span>
+        {% if total_evidencias %}
+        <span class="badge badge-light ml-1">{{ total_evidencias }}</span>
+        {% endif %}
+    </a>
+</div>
+{% else %}
+<!-- Botón deshabilitado si no hay reporte -->
+<div class="mt-2">
+    <button type="button" 
+            class="btn btn-outline-secondary btn-sm" 
+            disabled
+            title="Debe crear un reporte primero">
+        <i class="fas fa-camera-retro"></i>
+        <span class="d-none d-sm-inline">Evidencias</span>
+    </button>
+</div>
+{% endif %}
+
+<!-- Versión como card para mostrar más información -->
+{% if mostrar_como_card %}
+<div class="card mt-3 border-{{ 'danger' if tipo_reporte == 'delito' else 'warning' }}">
+    <div class="card-body p-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="card-title mb-1">
+                    <i class="fas fa-camera-retro text-{{ 'danger' if tipo_reporte == 'delito' else 'warning' }}"></i>
+                    Evidencias Fotográficas
+                </h6>
+                <p class="card-text small text-muted mb-0">
+                    {% if reporte_id and tipo_reporte %}
+                        {% if total_evidencias %}
+                            {{ total_evidencias }} evidencia{{ 's' if total_evidencias != 1 else '' }} subida{{ 's' if total_evidencias != 1 else '' }}
+                            {% if evidencias_validadas %}
+                            | {{ evidencias_validadas }} validada{{ 's' if evidencias_validadas != 1 else '' }}
+                            {% endif %}
+                        {% else %}
+                            Sin evidencias fotográficas
+                        {% endif %}
+                    {% else %}
+                        Debe crear un {{ tipo_reporte or 'reporte' }} primero
+                    {% endif %}
+                </p>
+            </div>
+            <div>
+                {% if reporte_id and tipo_reporte %}
+                <a href="/{{ tipo_reporte }}/{{ reporte_id }}/evidencias" 
+                   class="btn btn-{{ 'danger' if tipo_reporte == 'delito' else 'warning' }} btn-sm" 
+                   target="_blank">
+                    <i class="fas fa-external-link-alt"></i>
+                    Abrir
+                </a>
+                {% else %}
+                <button type="button" class="btn btn-secondary btn-sm" disabled>
+                    <i class="fas fa-lock"></i>
+                    Bloqueado
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Versión inline para listas -->
+{% if mostrar_inline %}
+<span class="ml-2">
+    {% if reporte_id and tipo_reporte %}
+    <a href="/{{ tipo_reporte }}/{{ reporte_id }}/evidencias" 
+       class="btn btn-outline-{{ 'danger' if tipo_reporte == 'delito' else 'warning' }} btn-xs" 
+       target="_blank"
+       title="Ver evidencias fotográficas">
+        <i class="fas fa-camera-retro"></i>
+        {% if total_evidencias %}
+        <span class="badge badge-light">{{ total_evidencias }}</span>
+        {% endif %}
+    </a>
+    {% else %}
+    <button type="button" class="btn btn-outline-secondary btn-xs" disabled>
+        <i class="fas fa-camera-retro"></i>
+    </button>
+    {% endif %}
+</span>
+{% endif %}

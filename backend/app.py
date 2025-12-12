@@ -131,6 +131,15 @@ def register_blueprints(app):
     app.register_blueprint(configuracion_bp, url_prefix='/api/configuracion')
     app.register_blueprint(configuracion_sistema_bp)  # Configuración del sistema
     app.register_blueprint(formularios_bp)
+    
+    # Fotos de formularios E-14
+    from backend.routes.formulario_fotos import formulario_fotos_bp
+    app.register_blueprint(formulario_fotos_bp)
+    
+    # Fotos de incidentes y delitos
+    from backend.routes.incidentes_delitos_fotos import incidentes_delitos_fotos_bp
+    app.register_blueprint(incidentes_delitos_fotos_bp)
+    
     app.register_blueprint(coordinador_municipal_bp)
     app.register_blueprint(coordinador_departamental_bp)
     app.register_blueprint(incidentes_delitos_bp)

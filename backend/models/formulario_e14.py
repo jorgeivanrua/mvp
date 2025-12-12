@@ -56,8 +56,10 @@ class FormularioE14(db.Model):
     votos_partidos = db.relationship('VotoPartido', back_populates='formulario', cascade='all, delete-orphan')
     votos_candidatos = db.relationship('VotoCandidato', back_populates='formulario', cascade='all, delete-orphan')
     historial = db.relationship('HistorialFormulario', back_populates='formulario', cascade='all, delete-orphan', order_by='HistorialFormulario.created_at.desc()')
+    # Relación con fotos múltiples
+    fotos = db.relationship('FormularioFoto', backref='formulario', cascade='all, delete-orphan', order_by='FormularioFoto.orden')
     
-    def to_dict(self, include_votos=False, include_historial=False):
+    def to_dict(self, include_votos=False, include_historial=False, include_fotos=False):
         """Convertir a diccionario"""
         data = {
             'id': self.id,
@@ -105,6 +107,16 @@ class FormularioE14(db.Model):
         # Incluir historial si se solicita
         if include_historial:
             data['historial'] = [h.to_dict() for h in self.historial]
+        
+        # Incluir fotos si se solicita
+        if include_fotos:
+            data['fotos'] = [f.to_dict() for f in self.fotos]
+            data['total_fotos'] = len(self.fotos)
+            data['fotos_validadas'] = len([f for f in self.fotos if f.validada])
+            # Foto principal para compatibilidad
+            foto_principal = next((f for f in self.fotos if f.es_principal), None)
+            if foto_principal:
+                data['foto_principal_url'] = foto_principal.url
         
         return data
 

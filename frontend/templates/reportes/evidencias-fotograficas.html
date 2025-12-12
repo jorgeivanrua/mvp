@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}Evidencias Fotográficas - {{ tipo_reporte.title() }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard-universal-v2.css') }}">
+<style>
+.miniatura-evidencia {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.miniatura-evidencia.activa {
+    border-color: #007bff;
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
+}
+
+.miniatura-evidencia:hover {
+    transform: scale(1.05);
+    border-color: #6c757d;
+}
+
+#imagen-evidencia-actual {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+}
+
+.btn-nav-evidencia {
+    background: rgba(0, 0, 0, 0.6);
+    border: none;
+    color: white;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-nav-evidencia:hover {
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+}
+
+.evidencia-info-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left: 4px solid #dc3545;
+}
+
+.evidencia-info-card.incidente {
+    border-left-color: #ffc107;
+}
+
+.categoria-badge {
+    font-size: 0.75em;
+    padding: 0.25em 0.5em;
+}
+
+@media (max-width: 768px) {
+    #imagen-evidencia-actual {
+        max-height: 300px;
+    }
+    
+    .btn-nav-evidencia {
+        width: 35px;
+        height: 35px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/incidentes-delitos-fotos.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="h4 mb-1">
+                        <i class="fas fa-camera-retro text-{{ 'danger' if tipo_reporte == 'delito' else 'warning' }}"></i>
+                        Evidencias Fotográficas - {{ tipo_reporte.title() }}
+                    </h2>
+                    <p class="text-muted mb-0" id="info-reporte">
+                        Cargando información del {{ tipo_reporte }}...
+                    </p>
+                </div>
+                <div>
+                    <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Componente de evidencias fotográficas -->
+    <div class="row">
+        <div class="col-12">
+            {% set es_coordinador = current_user.rol in ['coordinador_puesto', 'coordinador_municipal', 'coordinador_departamental', 'auditor_electoral'] if current_user else false %}
+            {% set es_solo_lectura = current_user.rol not in ['testigo_electoral', 'coordinador_puesto', 'coordinador_municipal', 'coordinador_departamental', 'auditor_electoral'] if current_user else true %}
+            
+            {% include 'components/incidentes-delitos-fotos.html' %}
+        </div>
+    </div>
+
+    <!-- Información adicional del reporte -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card evidencia-info-card {{ tipo_reporte }}">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-info-circle text-{{ 'danger' if tipo_reporte == 'delito' else 'warning' }}"></i>
+                        Información del {{ tipo_reporte.title() }}
+                    </h6>
+                    <div class="row" id="detalles-reporte">
+                        <div class="col-12 text-center text-muted">
+                            <i class="fas fa-spinner fa-spin"></i> Cargando información...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-camera text-info"></i>
+                        Consejos para Evidencias Fotográficas
+                    </h6>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i>
+                            Capture imágenes claras y bien iluminadas
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i>
+                            Incluya contexto y ubicación cuando sea relevante
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i>
+                            Tome múltiples ángulos si es necesario
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i>
+                            Use categorías apropiadas para organizar evidencias
+                        </li>
+                        <li class="mb-0">
+                            <i class="fas fa-check text-success"></i>
+                            Agregue descripciones detalladas a cada evidencia
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información legal (para delitos) -->
+    {% if tipo_reporte == 'delito' %}
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="alert alert-warning">
+                <h6 class="alert-heading">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Importante - Evidencia Legal
+                </h6>
+                <p class="mb-0">
+                    Las evidencias fotográficas de delitos electorales pueden ser utilizadas en procesos legales. 
+                    Asegúrese de que las imágenes sean auténticas, no manipuladas, y documenten fielmente los hechos observados.
+                    Mantenga la cadena de custodia y documente las circunstancias de captura de cada evidencia.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Script de inicialización específico -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configuración específica para esta página
+    const tipoReporte = '{{ tipo_reporte }}';
+    const reporteId = {{ reporte_id }};
+    
+    // Cargar información del reporte
+    cargarInfoReporte(tipoReporte, reporteId);
+    
+    // Determinar si es coordinador (se hará via API)
+    determinarRolUsuario().then(esCoordinador => {
+        // Configurar variables globales para el componente
+        window.tipoReporte = tipoReporte;
+        window.reporteId = reporteId;
+        window.esCoordinador = esCoordinador;
+        
+        // Inicializar el componente de evidencias
+        window.incidentesDelitosFotos = inicializarIncidentesDelitosFotos(tipoReporte, reporteId, esCoordinador);
+    });
+});
+
+async function cargarInfoReporte(tipoReporte, reporteId) {
+    try {
+        const response = await fetch(`/api/evidencias-fotos/info/${tipoReporte}/${reporteId}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const reporte = data.reporte;
+            
+            // Actualizar información en el header
+            document.getElementById('info-reporte').innerHTML = `
+                <strong>${reporte.titulo}</strong> | 
+                Estado: <span class="badge badge-${getEstadoBadgeColor(reporte.estado)}">${reporte.estado_label || reporte.estado}</span> |
+                ${reporte.estadisticas_fotos.total_fotos} evidencia(s) fotográfica(s)
+            `;
+            
+            // Actualizar detalles
+            const detallesHtml = `
+                <div class="col-6">
+                    <small class="text-muted">Título:</small>
+                    <p class="mb-1">${reporte.titulo}</p>
+                </div>
+                <div class="col-6">
+                    <small class="text-muted">Reportado por:</small>
+                    <p class="mb-1">${reporte.reportado_por_nombre || 'N/A'}</p>
+                </div>
+                <div class="col-6">
+                    <small class="text-muted">Estado:</small>
+                    <p class="mb-1">
+                        <span class="badge badge-${getEstadoBadgeColor(reporte.estado)}">
+                            ${reporte.estado_label || reporte.estado}
+                        </span>
+                    </p>
+                </div>
+                <div class="col-6">
+                    <small class="text-muted">Evidencias:</small>
+                    <p class="mb-1">
+                        ${reporte.estadisticas_fotos.total_fotos} total, 
+                        ${reporte.estadisticas_fotos.fotos_validadas} validadas
+                    </p>
+                </div>
+                <div class="col-12 mt-2">
+                    <small class="text-muted">Descripción:</small>
+                    <p class="mb-0">${reporte.descripcion}</p>
+                </div>
+            `;
+            
+            document.getElementById('detalles-reporte').innerHTML = detallesHtml;
+        } else {
+            console.error('Error al cargar información del reporte:', data.error);
+        }
+    } catch (error) {
+        console.error('Error de conexión:', error);
+    }
+}
+
+function getEstadoBadgeColor(estado) {
+    const colores = {
+        'reportado': 'warning',
+        'en_revision': 'info',
+        'en_investigacion': 'info',
+        'resuelto': 'success',
+        'investigado': 'success',
+        'escalado': 'danger',
+        'denunciado': 'danger',
+        'archivado': 'secondary'
+    };
+    return colores[estado] || 'secondary';
+}
+
+async function determinarRolUsuario() {
+    try {
+        const response = await fetch('/api/auth/profile', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const rol = data.user.rol;
+            return ['coordinador_puesto', 'coordinador_municipal', 'coordinador_departamental', 'auditor_electoral'].includes(rol);
+        }
+    } catch (error) {
+        console.error('Error al obtener perfil de usuario:', error);
+    }
+    
+    return false;
+}
+</script>
+{% endblock %}

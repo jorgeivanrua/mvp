@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Fotos del Formulario E-14{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard-universal-v2.css') }}">
+<style>
+.miniatura {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.miniatura.activa {
+    border-color: #007bff;
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
+}
+
+.miniatura:hover {
+    transform: scale(1.05);
+    border-color: #6c757d;
+}
+
+#imagen-actual {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.btn-nav-foto {
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    color: white;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-nav-foto:hover {
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+}
+
+.foto-info-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left: 4px solid #007bff;
+}
+
+@media (max-width: 768px) {
+    #imagen-actual {
+        max-height: 300px;
+    }
+    
+    .btn-nav-foto {
+        width: 35px;
+        height: 35px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/formulario-fotos.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="h4 mb-1">
+                        <i class="fas fa-camera text-primary"></i>
+                        Fotos del Formulario E-14
+                    </h2>
+                    <p class="text-muted mb-0" id="info-formulario">
+                        Cargando información del formulario...
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ url_for('frontend.testigo_dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Componente de fotos -->
+    <div class="row">
+        <div class="col-12">
+            {% set es_coordinador = current_user.rol in ['coordinador_puesto', 'coordinador_municipal', 'coordinador_departamental'] %}
+            {% set es_solo_lectura = current_user.rol not in ['testigo_electoral', 'coordinador_puesto', 'coordinador_municipal', 'coordinador_departamental'] %}
+            
+            {% include 'components/formulario-fotos.html' %}
+        </div>
+    </div>
+
+    <!-- Información adicional -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card foto-info-card">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-info-circle text-primary"></i>
+                        Información del Formulario
+                    </h6>
+                    <div class="row" id="detalles-formulario">
+                        <div class="col-12 text-center text-muted">
+                            <i class="fas fa-spinner fa-spin"></i> Cargando información...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-lightbulb text-warning"></i>
+                        Consejos para las Fotos
+                    </h6>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i>
+                            Asegúrese de que el formulario esté completamente visible
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i>
+                            Use buena iluminación para evitar sombras
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i>
+                            Tome fotos desde diferentes ángulos si es necesario
+                        </li>
+                        <li class="mb-0">
+                            <i class="fas fa-check text-success"></i>
+                            Verifique que los números sean legibles
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script de inicialización específico -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configuración específica para esta página
+    const formularioId = {{ formulario_id }};
+    
+    // Cargar información del formulario
+    cargarInfoFormulario(formularioId);
+    
+    // Determinar si es coordinador (se hará via API)
+    determinarRolUsuario().then(esCoordinador => {
+        // Configurar variables globales para el componente
+        window.formularioId = formularioId;
+        window.esCoordinador = esCoordinador;
+        
+        // Inicializar el componente de fotos
+        window.formularioFotos = inicializarFormularioFotos(formularioId, esCoordinador);
+    });
+});
+
+async function cargarInfoFormulario(formularioId) {
+    try {
+        const response = await fetch(`/api/formulario-fotos/info/${formularioId}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const formulario = data.formulario;
+            
+            // Actualizar información en el header
+            document.getElementById('info-formulario').innerHTML = `
+                Mesa: ${formulario.mesa_nombre || 'N/A'} | 
+                Estado: <span class="badge badge-${formulario.estado === 'validado' ? 'success' : 'warning'}">${formulario.estado}</span>
+            `;
+            
+            // Actualizar detalles
+            document.getElementById('detalles-formulario').innerHTML = `
+                <div class="col-6">
+                    <small class="text-muted">Mesa:</small>
+                    <p class="mb-1">${formulario.mesa_nombre || 'N/A'}</p>
+                </div>
+                <div class="col-6">
+                    <small class="text-muted">Testigo:</small>
+                    <p class="mb-1">${formulario.testigo_nombre || 'N/A'}</p>
+                </div>
+                <div class="col-6">
+                    <small class="text-muted">Estado:</small>
+                    <p class="mb-1">
+                        <span class="badge badge-${formulario.estado === 'validado' ? 'success' : 'warning'}">
+                            ${formulario.estado}
+                        </span>
+                    </p>
+                </div>
+                <div class="col-6">
+                    <small class="text-muted">Fotos:</small>
+                    <p class="mb-1">${formulario.total_fotos || 0} subidas</p>
+                </div>
+            `;
+        } else {
+            console.error('Error al cargar información del formulario:', data.error);
+        }
+    } catch (error) {
+        console.error('Error de conexión:', error);
+    }
+}
+
+async function determinarRolUsuario() {
+    try {
+        const response = await fetch('/api/auth/profile', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const rol = data.user.rol;
+            return ['coordinador_puesto', 'coordinador_municipal', 'coordinador_departamental'].includes(rol);
+        }
+    } catch (error) {
+        console.error('Error al obtener perfil de usuario:', error);
+    }
+    
+    return false;
+}
+</script>
+{% endblock %}

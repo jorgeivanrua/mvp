@@ -237,12 +237,12 @@ def check_locations():
         from backend.database import db
         from backend.models.location import Location
         
-        total = Location.query.count()
-        departamentos = Location.query.filter_by(tipo='departamento').count()
-        municipios = Location.query.filter_by(tipo='municipio').count()
-        zonas = Location.query.filter_by(tipo='zona').count()
-        puestos = Location.query.filter_by(tipo='puesto').count()
-        mesas = Location.query.filter_by(tipo='mesa').count()
+        total = Location.query.filter_by(activo=True).count()
+        departamentos = Location.query.filter_by(tipo='departamento', activo=True).count()
+        municipios = Location.query.filter_by(tipo='municipio', activo=True).count()
+        zonas = Location.query.filter_by(tipo='zona', activo=True).count()
+        puestos = Location.query.filter_by(tipo='puesto', activo=True).count()
+        mesas = Location.query.filter_by(tipo='mesa', activo=True).count()
         
         # Obtener el departamento de Caquetá
         caqueta = Location.query.filter_by(

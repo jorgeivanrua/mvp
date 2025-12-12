@@ -82,9 +82,9 @@ class IncidenteElectoral(db.Model):
         'escalado': 'Escalado'
     }
     
-    def to_dict(self):
+    def to_dict(self, include_fotos=False):
         """Convertir a diccionario"""
-        return {
+        data = {
             'id': self.id,
             'reportado_por_id': self.reportado_por_id,
             'reportado_por_nombre': self.reportado_por.nombre if self.reportado_por else None,
@@ -116,6 +116,18 @@ class IncidenteElectoral(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
+        
+        # Incluir fotos si se solicita
+        if include_fotos:
+            data['fotos_evidencia'] = [f.to_dict() for f in self.fotos_evidencia]
+            data['total_fotos'] = len(self.fotos_evidencia)
+            data['fotos_validadas'] = len([f for f in self.fotos_evidencia if f.validada])
+            # Foto principal para compatibilidad
+            foto_principal = next((f for f in self.fotos_evidencia if f.es_principal), None)
+            if foto_principal:
+                data['foto_principal_url'] = foto_principal.url
+        
+        return data
 
 
 class DelitoElectoral(db.Model):
@@ -203,9 +215,9 @@ class DelitoElectoral(db.Model):
         'archivado': 'Archivado'
     }
     
-    def to_dict(self):
+    def to_dict(self, include_fotos=False):
         """Convertir a diccionario"""
-        return {
+        data = {
             'id': self.id,
             'reportado_por_id': self.reportado_por_id,
             'reportado_por_nombre': self.reportado_por.nombre if self.reportado_por else None,
@@ -242,6 +254,18 @@ class DelitoElectoral(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
+        
+        # Incluir fotos si se solicita
+        if include_fotos:
+            data['fotos_evidencia'] = [f.to_dict() for f in self.fotos_evidencia]
+            data['total_fotos'] = len(self.fotos_evidencia)
+            data['fotos_validadas'] = len([f for f in self.fotos_evidencia if f.validada])
+            # Foto principal para compatibilidad
+            foto_principal = next((f for f in self.fotos_evidencia if f.es_principal), None)
+            if foto_principal:
+                data['foto_principal_url'] = foto_principal.url
+        
+        return data
 
 
 # NOTA: SeguimientoReporte ahora está definido en backend/models/seguimiento.py

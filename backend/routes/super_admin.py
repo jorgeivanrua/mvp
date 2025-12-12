@@ -25,9 +25,9 @@ def get_stats():
         # Contar usuarios activos
         total_usuarios = User.query.filter_by(activo=True).count()
         
-        # Contar puestos y mesas
-        total_puestos = Location.query.filter_by(tipo='puesto').count()
-        total_mesas = Location.query.filter_by(tipo='mesa').count()
+        # Contar puestos y mesas (solo activos)
+        total_puestos = Location.query.filter_by(tipo='puesto', activo=True).count()
+        total_mesas = Location.query.filter_by(tipo='mesa', activo=True).count()
         
         # Contar formularios
         total_formularios = FormularioE14.query.count()
@@ -2178,7 +2178,8 @@ def get_mesas(puesto_codigo):
         mesas = db.session.query(Location).filter(
             Location.tipo == 'mesa',
             Location.departamento_codigo == '44',
-            Location.puesto_codigo == puesto_codigo
+            Location.puesto_codigo == puesto_codigo,
+            Location.activo == True
         ).order_by(Location.mesa_codigo).all()
         
         return jsonify({

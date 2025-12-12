@@ -45,6 +45,37 @@ def testigo_dashboard():
     return render_template('testigo/dashboard.html')
 
 
+@frontend_bp.route('/formulario/<int:formulario_id>/fotos')
+def formulario_fotos(formulario_id):
+    """Página para manejo de fotos de formulario E-14"""
+    from flask_jwt_extended import jwt_required, get_jwt_identity
+    from backend.models.formulario_e14 import FormularioE14
+    from backend.models.user import User
+    
+    # Esta ruta requiere autenticación, pero se maneja en el frontend
+    # El componente JavaScript manejará la autenticación via token
+    
+    # Por ahora, renderizar la página sin datos del servidor
+    # Los datos se cargarán via AJAX
+    return render_template('testigo/formulario-fotos.html', 
+                         formulario_id=formulario_id)
+
+
+@frontend_bp.route('/<tipo_reporte>/<int:reporte_id>/evidencias')
+def evidencias_fotograficas(tipo_reporte, reporte_id):
+    """Página para manejo de evidencias fotográficas de incidentes y delitos"""
+    
+    # Validar tipo de reporte
+    if tipo_reporte not in ['incidente', 'delito']:
+        return "Tipo de reporte inválido", 400
+    
+    # Renderizar la página
+    # Los datos se cargarán via AJAX
+    return render_template('reportes/evidencias-fotograficas.html', 
+                         tipo_reporte=tipo_reporte,
+                         reporte_id=reporte_id)
+
+
 @frontend_bp.route('/coordinador/puesto')
 def coordinador_puesto():
     """Dashboard del coordinador de puesto"""

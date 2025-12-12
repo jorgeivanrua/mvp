@@ -82,7 +82,8 @@ def obtener_puestos():
                 departamento_codigo=puesto.departamento_codigo,
                 municipio_codigo=puesto.municipio_codigo,
                 zona_codigo=puesto.zona_codigo,
-                tipo='mesa'
+                tipo='mesa',
+                activo=True
             ).all()]
             
             # Contar formularios
@@ -224,7 +225,8 @@ def obtener_consolidado():
                 departamento_codigo=puesto.departamento_codigo,
                 municipio_codigo=puesto.municipio_codigo,
                 zona_codigo=puesto.zona_codigo,
-                tipo='mesa'
+                tipo='mesa',
+                activo=True
             ).all()
             mesa_ids.extend([m.id for m in mesas])
         
@@ -339,7 +341,8 @@ def obtener_puesto_detallado(puesto_id):
             departamento_codigo=puesto.departamento_codigo,
             municipio_codigo=puesto.municipio_codigo,
             zona_codigo=puesto.zona_codigo,
-            tipo='mesa'
+            tipo='mesa',
+            activo=True
         ).all()
         
         mesa_ids = [m.id for m in mesas]
@@ -531,7 +534,8 @@ def obtener_discrepancias():
                 departamento_codigo=puesto.departamento_codigo,
                 municipio_codigo=puesto.municipio_codigo,
                 zona_codigo=puesto.zona_codigo,
-                tipo='mesa'
+                tipo='mesa',
+                activo=True
             ).all()
             
             mesa_ids = [m.id for m in mesas]
@@ -738,7 +742,8 @@ def obtener_estadisticas():
                 departamento_codigo=puesto.departamento_codigo,
                 municipio_codigo=puesto.municipio_codigo,
                 zona_codigo=puesto.zona_codigo,
-                tipo='mesa'
+                tipo='mesa',
+                activo=True
             ).all()
             
             mesa_ids = [m.id for m in mesas]
@@ -1202,7 +1207,8 @@ def obtener_incidentes():
                 departamento_codigo=puesto.departamento_codigo,
                 municipio_codigo=puesto.municipio_codigo,
                 zona_codigo=puesto.zona_codigo,
-                tipo='mesa'
+                tipo='mesa',
+                activo=True
             ).all()
             mesa_ids.extend([m.id for m in mesas])
         
@@ -1321,7 +1327,8 @@ def obtener_delitos():
                 departamento_codigo=puesto.departamento_codigo,
                 municipio_codigo=puesto.municipio_codigo,
                 zona_codigo=puesto.zona_codigo,
-                tipo='mesa'
+                tipo='mesa',
+                activo=True
             ).all()
             mesa_ids.extend([m.id for m in mesas])
         
@@ -1459,7 +1466,8 @@ def obtener_coordinadores():
                 departamento_codigo=puesto.departamento_codigo,
                 municipio_codigo=puesto.municipio_codigo,
                 zona_codigo=puesto.zona_codigo,
-                tipo='mesa'
+                tipo='mesa',
+                activo=True
             ).all() if puesto else []
             
             mesa_ids = [m.id for m in mesas]
@@ -1566,7 +1574,8 @@ def obtener_geolocalizacion():
                 departamento_codigo=puesto.departamento_codigo,
                 municipio_codigo=puesto.municipio_codigo,
                 zona_codigo=puesto.zona_codigo,
-                tipo='mesa'
+                tipo='mesa',
+                activo=True
             ).all()
             
             mesa_ids = [m.id for m in mesas]

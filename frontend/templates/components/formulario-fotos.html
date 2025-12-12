@@ -1,0 +1,148 @@
+<!-- Componente para manejo de múltiples fotos de formularios E-14 -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-camera"></i> Fotos del Formulario E-14
+        </h5>
+        <div id="info-fotos" class="text-muted">
+            Cargando...
+        </div>
+    </div>
+    
+    <div class="card-body">
+        <!-- Alertas -->
+        <div id="alert-container-fotos"></div>
+        
+        <!-- Spinner de carga -->
+        <div id="spinner-fotos" class="text-center py-3" style="display: none;">
+            <div class="spinner-border" role="status">
+                <span class="sr-only">Cargando...</span>
+            </div>
+        </div>
+        
+        <!-- Controles de subida (solo para testigos y coordinadores) -->
+        {% if not es_solo_lectura %}
+        <div class="row mb-3">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <input type="text" id="descripcion-foto" class="form-control" placeholder="Descripción de la foto (opcional)">
+                    <div class="input-group-append">
+                        <button type="button" id="btn-subir-foto" class="btn btn-primary">
+                            <i class="fas fa-camera"></i> Subir Foto
+                        </button>
+                    </div>
+                </div>
+                <input type="file" id="input-foto" accept="image/*" style="display: none;">
+                <small class="form-text text-muted">
+                    Formatos permitidos: JPG, PNG, WebP. Tamaño máximo: 10MB
+                </small>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Visor principal de fotos -->
+        <div id="contenedor-fotos" class="text-center mb-3">
+            <div class="position-relative d-inline-block">
+                <img id="imagen-actual" src="" alt="Foto del formulario" 
+                     class="img-fluid border rounded" 
+                     style="max-height: 400px; max-width: 100%;">
+                
+                <!-- Controles de navegación -->
+                <button type="button" id="btn-foto-anterior" 
+                        class="btn btn-secondary btn-sm position-absolute" 
+                        style="left: 10px; top: 50%; transform: translateY(-50%);">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                
+                <button type="button" id="btn-foto-siguiente" 
+                        class="btn btn-secondary btn-sm position-absolute" 
+                        style="right: 10px; top: 50%; transform: translateY(-50%);">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Información de la foto actual -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <strong>Descripción:</strong>
+                <p id="descripcion-actual" class="text-muted mb-0">-</p>
+            </div>
+            <div class="col-md-6">
+                <div id="comentario-validacion" class="alert alert-info py-2" style="display: none;">
+                    <!-- Se llena dinámicamente -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Miniaturas -->
+        <div class="mb-3">
+            <strong>Todas las fotos:</strong>
+            <div id="miniaturas-fotos" class="mt-2">
+                <!-- Se llenan dinámicamente -->
+            </div>
+        </div>
+        
+        <!-- Controles de acción -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="btn-group" role="group">
+                    {% if not es_solo_lectura %}
+                    <button type="button" id="btn-foto-principal" class="btn btn-outline-warning btn-sm">
+                        <i class="fas fa-star"></i> Marcar Principal
+                    </button>
+                    <button type="button" id="btn-eliminar-foto" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if es_coordinador %}
+            <div class="col-md-6 text-right">
+                <div class="btn-group" role="group">
+                    <button type="button" id="btn-validar-foto" class="btn btn-success btn-sm">
+                        <i class="fas fa-check"></i> Validar
+                    </button>
+                    <button type="button" id="btn-rechazar-foto" class="btn btn-danger btn-sm">
+                        <i class="fas fa-times"></i> Rechazar
+                    </button>
+                    <button type="button" id="btn-validar-todas" class="btn btn-success btn-sm">
+                        <i class="fas fa-check-double"></i> Validar Todas
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Ayuda -->
+        <div class="mt-3">
+            <small class="text-muted">
+                <i class="fas fa-info-circle"></i>
+                <strong>Instrucciones:</strong>
+                {% if es_coordinador %}
+                Revise cada foto haciendo clic en las miniaturas o usando las flechas de navegación. 
+                Valide las fotos que estén correctas o rechace las que tengan problemas.
+                {% else %}
+                Puede subir múltiples fotos del formulario E-14. La primera foto será marcada como principal automáticamente.
+                Use las flechas para navegar entre las fotos.
+                {% endif %}
+            </small>
+        </div>
+    </div>
+</div>
+
+<!-- Script de inicialización -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Obtener parámetros de la página
+    const formularioId = window.formularioId || {{ formulario_id if formulario_id is defined else 'null' }};
+    const esCoordinador = window.esCoordinador || {{ 'true' if es_coordinador is defined and es_coordinador else 'false' }};
+    
+    if (formularioId) {
+        window.formularioFotos = inicializarFormularioFotos(formularioId, esCoordinador);
+    } else {
+        console.error('ID de formulario no definido');
+    }
+});
+</script>

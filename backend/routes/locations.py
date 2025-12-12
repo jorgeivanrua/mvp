@@ -890,13 +890,14 @@ def get_todos_puestos():
         
         puestos_data = []
         for puesto in puestos:
-            # Contar mesas del puesto
+            # Contar mesas del puesto (solo activas)
             total_mesas = Location.query.filter(
                 Location.tipo == 'mesa',
                 Location.departamento_codigo == puesto.departamento_codigo,
                 Location.municipio_codigo == puesto.municipio_codigo,
                 Location.zona_codigo == puesto.zona_codigo,
-                Location.puesto_codigo == puesto.puesto_codigo
+                Location.puesto_codigo == puesto.puesto_codigo,
+                Location.activo == True
             ).count()
             
             # Contar testigos del puesto
@@ -912,13 +913,14 @@ def get_todos_puestos():
                 User.presencia_verificada == False
             ).count()
             
-            # Obtener IDs de mesas del puesto
+            # Obtener IDs de mesas del puesto (solo activas)
             mesas_ids = [m.id for m in Location.query.filter(
                 Location.tipo == 'mesa',
                 Location.departamento_codigo == puesto.departamento_codigo,
                 Location.municipio_codigo == puesto.municipio_codigo,
                 Location.zona_codigo == puesto.zona_codigo,
-                Location.puesto_codigo == puesto.puesto_codigo
+                Location.puesto_codigo == puesto.puesto_codigo,
+                Location.activo == True
             ).all()]
             
             # Contar formularios E-14

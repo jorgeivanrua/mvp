@@ -1,0 +1,75 @@
+<!-- Botón para acceder a las fotos del formulario E-14 -->
+<!-- Usar este componente en el dashboard del testigo o coordinador -->
+
+{% if formulario_id %}
+<div class="mt-3">
+    <a href="/formulario/{{ formulario_id }}/fotos" 
+       class="btn btn-outline-primary btn-sm" 
+       target="_blank"
+       title="Ver y gestionar fotos del formulario">
+        <i class="fas fa-camera"></i>
+        <span class="d-none d-sm-inline">Gestionar Fotos</span>
+        <span class="d-sm-none">Fotos</span>
+        {% if total_fotos %}
+        <span class="badge badge-light ml-1">{{ total_fotos }}</span>
+        {% endif %}
+    </a>
+</div>
+{% else %}
+<!-- Botón deshabilitado si no hay formulario -->
+<div class="mt-3">
+    <button type="button" 
+            class="btn btn-outline-secondary btn-sm" 
+            disabled
+            title="Debe crear un formulario primero">
+        <i class="fas fa-camera"></i>
+        <span class="d-none d-sm-inline">Gestionar Fotos</span>
+        <span class="d-sm-none">Fotos</span>
+    </button>
+</div>
+{% endif %}
+
+<!-- Versión como card para mostrar más información -->
+{% if mostrar_como_card %}
+<div class="card mt-3">
+    <div class="card-body p-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="card-title mb-1">
+                    <i class="fas fa-camera text-primary"></i>
+                    Fotos del Formulario
+                </h6>
+                <p class="card-text small text-muted mb-0">
+                    {% if formulario_id %}
+                        {% if total_fotos %}
+                            {{ total_fotos }} foto{{ 's' if total_fotos != 1 else '' }} subida{{ 's' if total_fotos != 1 else '' }}
+                            {% if fotos_validadas %}
+                            | {{ fotos_validadas }} validada{{ 's' if fotos_validadas != 1 else '' }}
+                            {% endif %}
+                        {% else %}
+                            Sin fotos subidas
+                        {% endif %}
+                    {% else %}
+                        Debe crear un formulario primero
+                    {% endif %}
+                </p>
+            </div>
+            <div>
+                {% if formulario_id %}
+                <a href="/formulario/{{ formulario_id }}/fotos" 
+                   class="btn btn-primary btn-sm" 
+                   target="_blank">
+                    <i class="fas fa-external-link-alt"></i>
+                    Abrir
+                </a>
+                {% else %}
+                <button type="button" class="btn btn-secondary btn-sm" disabled>
+                    <i class="fas fa-lock"></i>
+                    Bloqueado
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

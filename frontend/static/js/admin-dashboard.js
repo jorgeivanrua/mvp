@@ -53,12 +53,27 @@ class AdminDashboard {
     }
     
     async loadStats() {
-        // Datos simulados por ahora
-        // TODO: Implementar endpoints reales
-        document.getElementById('totalUsuarios').textContent = '8';
-        document.getElementById('totalPuestos').textContent = '150';
-        document.getElementById('totalFormularios').textContent = '0';
-        document.getElementById('totalValidados').textContent = '0';
+        try {
+            // Cargar estadísticas reales desde la base de datos
+            const response = await APIClient.get('/admin/stats');
+            
+            if (response.success) {
+                const stats = response.data;
+                document.getElementById('totalUsuarios').textContent = stats.total_usuarios || 0;
+                document.getElementById('totalPuestos').textContent = stats.total_puestos || 0;
+                document.getElementById('totalFormularios').textContent = stats.total_formularios || 0;
+                document.getElementById('totalValidados').textContent = stats.formularios_completados || 0;
+            } else {
+                throw new Error(response.error || 'Error al cargar estadísticas');
+            }
+        } catch (error) {
+            console.error('Error loading admin stats:', error);
+            // Mostrar valores por defecto en caso de error
+            document.getElementById('totalUsuarios').textContent = '0';
+            document.getElementById('totalPuestos').textContent = '0';
+            document.getElementById('totalFormularios').textContent = '0';
+            document.getElementById('totalValidados').textContent = '0';
+        }
     }
     
     async loadResumenMunicipios() {

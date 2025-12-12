@@ -1,0 +1,248 @@
+<!-- Componente para manejo de múltiples fotos de incidentes y delitos -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-camera-retro"></i> 
+            Evidencias Fotográficas
+            {% if tipo_reporte %}
+            <span class="badge badge-{{ 'danger' if tipo_reporte == 'delito' else 'warning' }} ml-2">
+                {{ tipo_reporte.title() }}
+            </span>
+            {% endif %}
+        </h5>
+        <div id="info-evidencias" class="text-muted">
+            Cargando...
+        </div>
+    </div>
+    
+    <div class="card-body">
+        <!-- Alertas -->
+        <div id="alert-container-evidencias"></div>
+        
+        <!-- Spinner de carga -->
+        <div id="spinner-evidencias" class="text-center py-3" style="display: none;">
+            <div class="spinner-border" role="status">
+                <span class="sr-only">Cargando...</span>
+            </div>
+        </div>
+        
+        <!-- Estadísticas rápidas -->
+        <div id="estadisticas-evidencias" class="mb-3 p-3 bg-light rounded">
+            <!-- Se llena dinámicamente -->
+        </div>
+        
+        <!-- Controles de subida (solo para usuarios autorizados) -->
+        {% if not es_solo_lectura %}
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card border-primary">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-upload"></i> Subir Nueva Evidencia
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="descripcion-evidencia">Descripción de la evidencia:</label>
+                                    <textarea id="descripcion-evidencia" class="form-control" rows="2" 
+                                              placeholder="Describa qué muestra esta evidencia..."></textarea>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="form-group">
+                                            <label for="categoria-evidencia">Categoría:</label>
+                                            <select id="categoria-evidencia" class="form-control">
+                                                <option value="general">General</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="form-group">
+                                            <label for="tipo-evidencia">Tipo:</label>
+                                            <select id="tipo-evidencia" class="form-control">
+                                                <option value="directa">Directa</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="relevancia-evidencia">Relevancia:</label>
+                                    <select id="relevancia-evidencia" class="form-control">
+                                        <option value="media">Media</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <button type="button" id="btn-subir-evidencia" class="btn btn-primary">
+                                <i class="fas fa-camera"></i> Subir Evidencia Fotográfica
+                            </button>
+                            <input type="file" id="input-foto-evidencia" accept="image/*" style="display: none;">
+                        </div>
+                        <small class="form-text text-muted text-center mt-2">
+                            Formatos permitidos: JPG, PNG, WebP. Tamaño máximo: 15MB
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Visor principal de evidencias -->
+        <div id="contenedor-evidencias" class="text-center mb-3">
+            <div class="position-relative d-inline-block">
+                <img id="imagen-evidencia-actual" src="" alt="Evidencia fotográfica" 
+                     class="img-fluid border rounded shadow" 
+                     style="max-height: 500px; max-width: 100%;">
+                
+                <!-- Controles de navegación -->
+                <button type="button" id="btn-evidencia-anterior" 
+                        class="btn btn-dark btn-sm position-absolute" 
+                        style="left: 10px; top: 50%; transform: translateY(-50%); opacity: 0.8;">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                
+                <button type="button" id="btn-evidencia-siguiente" 
+                        class="btn btn-dark btn-sm position-absolute" 
+                        style="right: 10px; top: 50%; transform: translateY(-50%); opacity: 0.8;">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Información de la evidencia actual -->
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <div class="card border-info">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">Descripción</h6>
+                    </div>
+                    <div class="card-body">
+                        <p id="descripcion-evidencia-actual" class="mb-0">-</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-secondary">
+                    <div class="card-header bg-secondary text-white">
+                        <h6 class="mb-0">Tipo de Evidencia</h6>
+                    </div>
+                    <div class="card-body">
+                        <p id="tipo-evidencia-actual" class="mb-0">-</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0">Metadatos</h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="metadatos-adicionales" class="small">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Comentario de validación -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div id="comentario-validacion-evidencia" class="alert alert-info py-2" style="display: none;">
+                    <!-- Se llena dinámicamente -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Miniaturas -->
+        <div class="mb-3">
+            <strong>Todas las evidencias:</strong>
+            <div id="miniaturas-evidencias" class="mt-2 p-2 bg-light rounded">
+                <!-- Se llenan dinámicamente -->
+            </div>
+        </div>
+        
+        <!-- Controles de acción -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="btn-group" role="group">
+                    {% if not es_solo_lectura %}
+                    <button type="button" id="btn-evidencia-principal" class="btn btn-outline-warning btn-sm">
+                        <i class="fas fa-star"></i> Marcar Principal
+                    </button>
+                    <button type="button" id="btn-editar-metadatos" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <button type="button" id="btn-eliminar-evidencia" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if es_coordinador %}
+            <div class="col-md-6 text-right">
+                <div class="btn-group" role="group">
+                    <button type="button" id="btn-validar-evidencia" class="btn btn-success btn-sm">
+                        <i class="fas fa-check"></i> Validar
+                    </button>
+                    <button type="button" id="btn-rechazar-evidencia" class="btn btn-danger btn-sm">
+                        <i class="fas fa-times"></i> Rechazar
+                    </button>
+                    <button type="button" id="btn-validar-todas-evidencias" class="btn btn-success btn-sm">
+                        <i class="fas fa-check-double"></i> Validar Todas
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Ayuda contextual -->
+        <div class="mt-3">
+            <small class="text-muted">
+                <i class="fas fa-info-circle"></i>
+                <strong>Instrucciones:</strong>
+                {% if es_coordinador %}
+                Revise cada evidencia fotográfica haciendo clic en las miniaturas o usando las flechas de navegación. 
+                Valide las evidencias que sean claras y relevantes, o rechace las que tengan problemas de calidad o contenido.
+                {% else %}
+                Puede subir múltiples fotos como evidencia del {{ tipo_reporte or 'reporte' }}. 
+                Asegúrese de que las imágenes sean claras y muestren evidencia relevante del hecho reportado.
+                Use las categorías y niveles de relevancia para organizar mejor las evidencias.
+                {% endif %}
+            </small>
+        </div>
+        
+        <!-- Leyenda de categorías -->
+        <div class="mt-2">
+            <small class="text-muted">
+                <strong>Categorías:</strong>
+                <span class="badge badge-secondary">General</span>
+                <span class="badge badge-info">Personas</span>
+                <span class="badge badge-warning">Documentos</span>
+                <span class="badge badge-success">Ubicación</span>
+                <span class="badge badge-primary">Material Electoral</span>
+                <span class="badge badge-danger">Daños</span>
+            </small>
+        </div>
+    </div>
+</div>
+
+<!-- Script de inicialización -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Obtener parámetros de la página
+    const tipoReporte = window.tipoReporte || '{{ tipo_reporte if tipo_reporte is defined else "" }}';
+    const reporteId = window.reporteId || {{ reporte_id if reporte_id is defined else 'null' }};
+    const esCoordinador = window.esCoordinador || {{ 'true' if es_coordinador is defined and es_coordinador else 'false' }};
+    
+    if (tipoReporte && reporteId) {
+        window.incidentesDelitosFotos = inicializarIncidentesDelitosFotos(tipoReporte, reporteId, esCoordinador);
+    } else {
+        console.error('Parámetros de reporte no definidos');
+    }
+});
+</script>
