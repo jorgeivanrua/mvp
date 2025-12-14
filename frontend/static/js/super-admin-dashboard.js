@@ -3230,6 +3230,134 @@ async function resetDatabase() {
 
 
 /**
+ * Limpiar datos electorales (reportes y formularios)
+ * Mantiene usuarios, ubicaciones, partidos y candidatos
+ */
+function limpiarDatosElectorales() {
+    console.log('🧹 Iniciando limpieza de datos electorales...');
+    
+    try {
+        // Resetear estado del modal
+        const checkbox = document.getElementById('confirmarLimpieza');
+        const btnConfirmar = document.getElementById('btnConfirmarLimpieza');
+        
+        if (checkbox && btnConfirmar) {
+            checkbox.checked = false;
+            btnConfirmar.disabled = true;
+            
+            // Remover event listeners previos
+            checkbox.removeEventListener('change', handleCheckboxChange);
+            
+            // Agregar nuevo event listener
+            checkbox.addEventListener('change', handleCheckboxChange);
+        }
+        
+        // Mostrar modal de confirmación
+        const modalElement = document.getElementById('limpiarDatosModal');
+        console.log('🔍 Modal element:', modalElement);
+        
+        if (!modalElement) {
+            throw new Error('Modal limpiarDatosModal no encontrado');
+        }
+        
+        const modal = new bootstrap.Modal(modalElement);
+        console.log('✅ Modal creado, mostrando...');
+        modal.show();
+        
+    } catch (error) {
+        console.error('Error abriendo modal de limpieza:', error);
+        if (typeof Utils !== 'undefined' && Utils.showError) {
+            Utils.showError('Error al abrir modal de confirmación');
+        } else {
+            alert('Error al abrir modal de confirmación: ' + error.message);
+        }
+    }
+}
+
+/**
+ * Manejar cambio del checkbox de confirmación
+ */
+function handleCheckboxChange() {
+    const btnConfirmar = document.getElementById('btnConfirmarLimpieza');
+    if (btnConfirmar) {
+        btnConfirmar.disabled = !this.checked;
+    }
+}
+
+/**
+ * Confirmar limpieza de datos electorales
+ */
+async function confirmarLimpiezaDatos() {
+    console.log('✅ Confirmando limpieza de datos electorales...');
+    
+    try {
+        // Cerrar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('limpiarDatosModal'));
+        if (modal) {
+            modal.hide();
+        }
+        
+    } catch (error) {
+        console.error('Error cerrando modal:', error);
+    }
+    
+    try {
+        if (typeof Utils !== 'undefined' && Utils.showInfo) {
+            Utils.showInfo('Limpiando datos electorales...');
+        }
+        
+        const response = await APIClient.post('/admin/limpiar-datos-electorales', {});
+        
+        if (response.success) {
+            const data = response.data;
+            
+            let message = '✅ Datos electorales limpiados exitosamente!\n\n';
+            message += `REGISTROS ELIMINADOS:\n`;
+            message += `• Formularios E-14: ${data.registros_eliminados.formularios_e14}\n`;
+            message += `• Fotos de formularios: ${data.registros_eliminados.formulario_fotos}\n`;
+            message += `• Reportes de participación: ${data.registros_eliminados.reportes_participacion}\n`;
+            message += `• Incidentes electorales: ${data.registros_eliminados.incidentes_electorales}\n`;
+            message += `• Delitos electorales: ${data.registros_eliminados.delitos_electorales}\n`;
+            message += `• Evidencias fotográficas: ${data.registros_eliminados.incidentes_delitos_fotos}\n`;
+            message += `• Votos por candidato: ${data.registros_eliminados.votos_candidato}\n`;
+            message += `• Testigos reseteados: ${data.testigos_reseteados}\n\n`;
+            message += `TOTAL ELIMINADO: ${data.total_eliminados} registros\n\n`;
+            message += `La base de datos está lista para nuevos datos de los testigos.`;
+            
+            if (typeof Utils !== 'undefined' && Utils.showSuccess) {
+                Utils.showSuccess(message);
+            } else {
+                alert(message);
+            }
+            
+            // Recargar estadísticas
+            setTimeout(() => {
+                loadMainStats();
+                loadUsers();
+                loadRecentActivity();
+            }, 2000);
+            
+        } else {
+            const errorMsg = 'Error al limpiar datos electorales: ' + (response.error || 'Error desconocido');
+            if (typeof Utils !== 'undefined' && Utils.showError) {
+                Utils.showError(errorMsg);
+            } else {
+                alert(errorMsg);
+            }
+        }
+    } catch (error) {
+        console.error('Error limpiando datos electorales:', error);
+        const errorMsg = 'Error al limpiar datos electorales: ' + error.message;
+        if (typeof Utils !== 'undefined' && Utils.showError) {
+            Utils.showError(errorMsg);
+        } else {
+            alert(errorMsg);
+        }
+    }
+}
+
+
+/**
  * Corregir roles de usuarios
  */
 async function fixRoles() {

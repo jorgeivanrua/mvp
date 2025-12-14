@@ -206,6 +206,115 @@ def fix_roles():
         }), 500
 
 
+@admin_tools_bp.route('/limpiar-datos-electorales', methods=['POST'])
+@jwt_required()
+def limpiar_datos_electorales():
+    """
+    Limpiar todos los reportes y formularios, dejando la BD lista para nuevos datos
+    Solo super_admin puede ejecutar esto
+    """
+    try:
+        user_id = get_jwt_identity()
+        current_user = User.query.get(int(user_id))
+        
+        if not current_user or current_user.rol != 'super_admin':
+            return jsonify({
+                'success': False,
+                'error': 'Solo super_admin puede limpiar datos electorales'
+            }), 403
+        
+        # Importar todos los modelos que contienen datos electorales
+        from backend.models.formulario_e14 import FormularioE14, VotoCandidato
+        from backend.models.formulario_fotos import FormularioFoto
+        from backend.models.reporte_participacion import ReporteParticipacion
+        from backend.models.incidentes_delitos import IncidenteElectoral, DelitoElectoral
+        from backend.models.incidentes_delitos_fotos import IncidenteDelitoFoto
+        
+        # Contar registros antes de eliminar
+        stats_antes = {
+            'formularios_e14': FormularioE14.query.count(),
+            'formulario_fotos': FormularioFoto.query.count(),
+            'reportes_participacion': ReporteParticipacion.query.count(),
+            'incidentes_electorales': IncidenteElectoral.query.count(),
+            'delitos_electorales': DelitoElectoral.query.count(),
+            'incidentes_delitos_fotos': IncidenteDelitoFoto.query.count(),
+            'votos_candidato': VotoCandidato.query.count()
+        }
+        
+        # Eliminar todos los datos electorales (en orden para evitar problemas de FK)
+        eliminados = {}
+        
+        # 1. Eliminar fotos de incidentes/delitos
+        count = IncidenteDelitoFoto.query.count()
+        IncidenteDelitoFoto.query.delete()
+        eliminados['incidentes_delitos_fotos'] = count
+        
+        # 2. Eliminar delitos electorales
+        count = DelitoElectoral.query.count()
+        DelitoElectoral.query.delete()
+        eliminados['delitos_electorales'] = count
+        
+        # 3. Eliminar incidentes electorales
+        count = IncidenteElectoral.query.count()
+        IncidenteElectoral.query.delete()
+        eliminados['incidentes_electorales'] = count
+        
+        # 4. Eliminar votos por candidato
+        count = VotoCandidato.query.count()
+        VotoCandidato.query.delete()
+        eliminados['votos_candidato'] = count
+        
+        # 5. Eliminar fotos de formularios
+        count = FormularioFoto.query.count()
+        FormularioFoto.query.delete()
+        eliminados['formulario_fotos'] = count
+        
+        # 6. Eliminar formularios E-14
+        count = FormularioE14.query.count()
+        FormularioE14.query.delete()
+        eliminados['formularios_e14'] = count
+        
+        # 7. Eliminar reportes de participación
+        count = ReporteParticipacion.query.count()
+        ReporteParticipacion.query.delete()
+        eliminados['reportes_participacion'] = count
+        
+        # Resetear presencia verificada de testigos
+        testigos_reseteados = User.query.filter_by(rol='testigo_electoral').update({
+            'presencia_verificada': False,
+            'presencia_verificada_at': None
+        })
+        
+        # Commit todos los cambios
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Datos electorales limpiados exitosamente. La BD está lista para nuevos datos.',
+            'data': {
+                'estadisticas_antes': stats_antes,
+                'registros_eliminados': eliminados,
+                'testigos_reseteados': testigos_reseteados,
+                'total_eliminados': sum(eliminados.values()),
+                'conservado': [
+                    'Usuarios y contraseñas',
+                    'Ubicaciones (DIVIPOLA)',
+                    'Partidos políticos',
+                    'Candidatos',
+                    'Tipos de elección',
+                    'Configuración del sistema'
+                ]
+            }
+        }), 200
+            
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': f'Error limpiando datos electorales: {str(e)}'
+        }), 500
+
+
 @admin_tools_bp.route('/diagnostico', methods=['GET'])
 @jwt_required()
 def diagnostico():

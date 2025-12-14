@@ -530,6 +530,9 @@ th.sortable:hover .sort-icon {
                         <button class="btn btn-outline-warning quick-action-btn" onclick="fixPasswords()">
                             <i class="bi bi-key"></i> Arreglar Contraseñas
                         </button>
+                        <button class="btn btn-warning quick-action-btn" onclick="limpiarDatosElectorales()">
+                            <i class="bi bi-trash3"></i> Limpiar Datos Electorales
+                        </button>
                         <button class="btn btn-outline-danger quick-action-btn" onclick="resetDatabase()">
                             <i class="bi bi-arrow-clockwise"></i> Resetear Base de Datos
                         </button>
@@ -1512,6 +1515,73 @@ th.sortable:hover .sort-icon {
     </div>
 </div>
 
+<!-- 🆕 Modal de Confirmación para Limpiar Datos Electorales -->
+<div class="modal fade" id="limpiarDatosModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">
+                    <i class="bi bi-trash3"></i> Limpiar Datos Electorales
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>⚠️ ADVERTENCIA:</strong> Esta acción eliminará todos los datos electorales del sistema.
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-danger">SE ELIMINARÁN:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-x-circle text-danger"></i> Formularios E-14 y sus fotos</li>
+                            <li><i class="bi bi-x-circle text-danger"></i> Reportes de participación</li>
+                            <li><i class="bi bi-x-circle text-danger"></i> Incidentes reportados</li>
+                            <li><i class="bi bi-x-circle text-danger"></i> Delitos electorales</li>
+                            <li><i class="bi bi-x-circle text-danger"></i> Evidencias fotográficas</li>
+                            <li><i class="bi bi-x-circle text-danger"></i> Votos por candidato</li>
+                            <li><i class="bi bi-x-circle text-danger"></i> Verificaciones de presencia</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-success">SE CONSERVARÁN:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check-circle text-success"></i> Usuarios y contraseñas</li>
+                            <li><i class="bi bi-check-circle text-success"></i> Ubicaciones (DIVIPOLA)</li>
+                            <li><i class="bi bi-check-circle text-success"></i> Partidos políticos</li>
+                            <li><i class="bi bi-check-circle text-success"></i> Candidatos</li>
+                            <li><i class="bi bi-check-circle text-success"></i> Tipos de elección</li>
+                            <li><i class="bi bi-check-circle text-success"></i> Configuración del sistema</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Resultado:</strong> La base de datos quedará lista para recibir nuevos datos de los testigos electorales.
+                    Los testigos deberán verificar nuevamente su presencia en las mesas.
+                </div>
+                
+                <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" id="confirmarLimpieza">
+                    <label class="form-check-label" for="confirmarLimpieza">
+                        <strong>Confirmo que entiendo las consecuencias y deseo proceder con la limpieza</strong>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-warning" onclick="confirmarLimpiezaDatos()" id="btnConfirmarLimpieza" disabled>
+                    <i class="bi bi-trash3"></i> Limpiar Datos Electorales
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -1877,6 +1947,53 @@ async function confirmImportDatabase() {
 document.addEventListener('DOMContentLoaded', function() {
     loadDatabaseStats();
 });
+
+/**
+ * Confirmar limpieza de datos electorales desde el modal
+ */
+async function confirmarLimpiezaDatos() {
+    try {
+        // Cerrar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('limpiarDatosModal'));
+        modal.hide();
+        
+        Utils.showInfo('Limpiando datos electorales...');
+        
+        const response = await APIClient.post('/admin/limpiar-datos-electorales', {});
+        
+        if (response.success) {
+            const data = response.data;
+            
+            let message = '✅ Datos electorales limpiados exitosamente!\n\n';
+            message += `REGISTROS ELIMINADOS:\n`;
+            message += `• Formularios E-14: ${data.registros_eliminados.formularios_e14}\n`;
+            message += `• Fotos de formularios: ${data.registros_eliminados.formulario_fotos}\n`;
+            message += `• Reportes de participación: ${data.registros_eliminados.reportes_participacion}\n`;
+            message += `• Incidentes electorales: ${data.registros_eliminados.incidentes_electorales}\n`;
+            message += `• Delitos electorales: ${data.registros_eliminados.delitos_electorales}\n`;
+            message += `• Evidencias fotográficas: ${data.registros_eliminados.incidentes_delitos_fotos}\n`;
+            message += `• Votos por candidato: ${data.registros_eliminados.votos_candidato}\n`;
+            message += `• Testigos reseteados: ${data.testigos_reseteados}\n\n`;
+            message += `TOTAL ELIMINADO: ${data.total_eliminados} registros\n\n`;
+            message += `La base de datos está lista para nuevos datos de los testigos.`;
+            
+            Utils.showSuccess(message);
+            
+            // Recargar estadísticas
+            setTimeout(() => {
+                loadMainStats();
+                loadUsers();
+                loadRecentActivity();
+            }, 2000);
+            
+        } else {
+            Utils.showError('Error al limpiar datos electorales: ' + (response.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error limpiando datos electorales:', error);
+        Utils.showError('Error al limpiar datos electorales: ' + error.message);
+    }
+}
 </script>
 
 {% endblock %}
