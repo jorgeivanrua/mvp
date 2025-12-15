@@ -1527,6 +1527,396 @@ def obtener_coordinadores():
 
 
 # ============================================================================
+# ENDPOINTS DE VALIDACIÓN DE FORMULARIOS
+# ============================================================================
+
+@coordinador_municipal_bp.route('/formularios', methods=['GET'])
+@jwt_required()
+@role_required(['coordinador_municipal'])
+def obtener_formularios():
+    """
+    Obtener formularios del municipio para validación
+    
+    Query params:
+        estado: Filtrar por estado (pendiente, validado, rechazado)
+        puesto_id: Filtrar por puesto específico
+        mesa_id: Filtrar por mesa específica
+    """
+    try:
+        from backend.models.formulario_e14 import FormularioE14
+        
+        user_id = get_jwt_identity()
+        user = User.query.get(int(user_id))
+        
+        if not user or not user.ubicacion_id:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
+        
+        ubicacion = Location.query.get(user.ubicacion_id)
+        
+        if not ubicacion or ubicacion.tipo != 'municipio':
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no asignado a un municipio válido'
+            }), 400
+        
+        # Obtener todas las mesas del municipio
+        mesas = Location.query.filter_by(
+            municipio_codigo=ubicacion.municipio_codigo,
+            departamento_codigo=ubicacion.departamento_codigo,
+            tipo='mesa',
+            activo=True
+        ).all()
+        
+        mesa_ids = [m.id for m in mesas]
+        
+        # Query base
+        query = FormularioE14.query.filter(
+            FormularioE14.mesa_id.in_(mesa_ids)
+        )
+        
+        # Aplicar filtros
+        estado = request.args.get('estado')
+        if estado:
+            query = query.filter(FormularioE14.estado == estado)
+        
+        puesto_id = request.args.get('puesto_id', type=int)
+        if puesto_id:
+            # Obtener mesas del puesto específico
+            mesas_puesto = Location.query.filter_by(
+                puesto_id=puesto_id,
+                tipo='mesa',
+                activo=True
+            ).all()
+            mesa_ids_puesto = [m.id for m in mesas_puesto]
+            query = query.filter(FormularioE14.mesa_id.in_(mesa_ids_puesto))
+        
+        mesa_id = request.args.get('mesa_id', type=int)
+        if mesa_id:
+            query = query.filter(FormularioE14.mesa_id == mesa_id)
+        
+        # Ordenar por fecha de creación (más recientes primero)
+        formularios = query.order_by(FormularioE14.created_at.desc()).all()
+        
+        # Formatear respuesta
+        formularios_data = []
+        for formulario in formularios:
+            mesa = Location.query.get(formulario.mesa_id)
+            testigo = User.query.get(formulario.testigo_id) if formulario.testigo_id else None
+            
+            formularios_data.append({
+                'id': formulario.id,
+                'mesa_id': formulario.mesa_id,
+                'mesa': {
+                    'codigo': mesa.mesa_codigo if mesa else 'N/A',
+                    'nombre': mesa.nombre_completo if mesa else 'N/A',
+                    'puesto_nombre': mesa.puesto_nombre if mesa else 'N/A',
+                    'puesto_codigo': mesa.puesto_codigo if mesa else 'N/A'
+                },
+                'testigo': {
+                    'id': testigo.id,
+                    'nombre': testigo.nombre,
+                    'cedula': testigo.cedula
+                } if testigo else None,
+                'estado': formulario.estado,
+                'votantes_registrados': formulario.votantes_registrados,
+                'total_votos': formulario.total_votos,
+                'votos_validos': formulario.votos_validos,
+                'votos_nulos': formulario.votos_nulos,
+                'votos_blanco': formulario.votos_blanco,
+                'fecha_creacion': formulario.created_at.isoformat() if formulario.created_at else None,
+                'fecha_validacion': formulario.fecha_validacion.isoformat() if formulario.fecha_validacion else None,
+                'observaciones': formulario.observaciones,
+                'motivo_rechazo': formulario.motivo_rechazo
+            })
+        
+        # Calcular estadísticas
+        total_formularios = len(formularios)
+        pendientes = len([f for f in formularios if f.estado == 'pendiente'])
+        validados = len([f for f in formularios if f.estado == 'validado'])
+        rechazados = len([f for f in formularios if f.estado == 'rechazado'])
+        
+        estadisticas = {
+            'total': total_formularios,
+            'pendientes': pendientes,
+            'validados': validados,
+            'rechazados': rechazados,
+            'porcentaje_validados': (validados / total_formularios * 100) if total_formularios > 0 else 0
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'formularios': formularios_data,
+                'estadisticas': estadisticas
+            }
+        }), 200
+        
+    except Exception as e:
+        import traceback
+        print(f"Error en obtener_formularios: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@coordinador_municipal_bp.route('/formularios/<int:formulario_id>', methods=['GET'])
+@jwt_required()
+@role_required(['coordinador_municipal'])
+def obtener_formulario_detalle(formulario_id):
+    """
+    Obtener detalles completos de un formulario específico
+    """
+    try:
+        from backend.models.formulario_e14 import FormularioE14, VotoPartido
+        from backend.models.partido_politico import PartidoPolitico as Partido
+        
+        user_id = get_jwt_identity()
+        user = User.query.get(int(user_id))
+        
+        if not user or not user.ubicacion_id:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
+        
+        # Obtener formulario
+        formulario = FormularioE14.query.get(formulario_id)
+        
+        if not formulario:
+            return jsonify({
+                'success': False,
+                'error': 'Formulario no encontrado'
+            }), 404
+        
+        # Verificar que el formulario pertenece al municipio del coordinador
+        mesa = Location.query.get(formulario.mesa_id)
+        ubicacion = Location.query.get(user.ubicacion_id)
+        
+        if not mesa or mesa.municipio_codigo != ubicacion.municipio_codigo:
+            return jsonify({
+                'success': False,
+                'error': 'No tiene permisos para acceder a este formulario'
+            }), 403
+        
+        # Obtener información completa
+        testigo = User.query.get(formulario.testigo_id) if formulario.testigo_id else None
+        votos_partidos = VotoPartido.query.filter_by(formulario_id=formulario.id).all()
+        
+        # Formatear votos por partido
+        votos_data = []
+        for vp in votos_partidos:
+            partido = Partido.query.get(vp.partido_id)
+            votos_data.append({
+                'partido_id': vp.partido_id,
+                'partido_nombre': partido.nombre if partido else 'Desconocido',
+                'partido_sigla': partido.sigla if partido else 'N/A',
+                'votos': vp.votos
+            })
+        
+        formulario_detalle = {
+            'id': formulario.id,
+            'mesa': {
+                'id': mesa.id,
+                'codigo': mesa.mesa_codigo,
+                'nombre': mesa.nombre_completo,
+                'puesto_nombre': mesa.puesto_nombre,
+                'puesto_codigo': mesa.puesto_codigo,
+                'zona_codigo': mesa.zona_codigo
+            },
+            'testigo': {
+                'id': testigo.id,
+                'nombre': testigo.nombre,
+                'cedula': testigo.cedula,
+                'telefono': testigo.telefono
+            } if testigo else None,
+            'estado': formulario.estado,
+            'votantes_registrados': formulario.votantes_registrados,
+            'total_votos': formulario.total_votos,
+            'votos_validos': formulario.votos_validos,
+            'votos_nulos': formulario.votos_nulos,
+            'votos_blanco': formulario.votos_blanco,
+            'votos_partidos': votos_data,
+            'observaciones': formulario.observaciones,
+            'motivo_rechazo': formulario.motivo_rechazo,
+            'fecha_creacion': formulario.created_at.isoformat() if formulario.created_at else None,
+            'fecha_validacion': formulario.fecha_validacion.isoformat() if formulario.fecha_validacion else None,
+            'validado_por': formulario.validado_por
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': formulario_detalle
+        }), 200
+        
+    except Exception as e:
+        import traceback
+        print(f"Error en obtener_formulario_detalle: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@coordinador_municipal_bp.route('/formularios/<int:formulario_id>/validar', methods=['PUT'])
+@jwt_required()
+@role_required(['coordinador_municipal'])
+def validar_formulario(formulario_id):
+    """
+    Validar un formulario
+    """
+    try:
+        from backend.models.formulario_e14 import FormularioE14
+        from datetime import datetime
+        
+        user_id = get_jwt_identity()
+        user = User.query.get(int(user_id))
+        
+        if not user or not user.ubicacion_id:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
+        
+        # Obtener formulario
+        formulario = FormularioE14.query.get(formulario_id)
+        
+        if not formulario:
+            return jsonify({
+                'success': False,
+                'error': 'Formulario no encontrado'
+            }), 404
+        
+        if formulario.estado != 'pendiente':
+            return jsonify({
+                'success': False,
+                'error': 'Solo se pueden validar formularios pendientes'
+            }), 400
+        
+        # Verificar permisos
+        mesa = Location.query.get(formulario.mesa_id)
+        ubicacion = Location.query.get(user.ubicacion_id)
+        
+        if not mesa or mesa.municipio_codigo != ubicacion.municipio_codigo:
+            return jsonify({
+                'success': False,
+                'error': 'No tiene permisos para validar este formulario'
+            }), 403
+        
+        # Obtener observaciones del request
+        data = request.get_json() or {}
+        observaciones = data.get('observaciones', '').strip()
+        
+        # Validar formulario
+        formulario.estado = 'validado'
+        formulario.fecha_validacion = datetime.utcnow()
+        formulario.validado_por = int(user_id)
+        if observaciones:
+            formulario.observaciones = observaciones
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Formulario validado exitosamente'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        import traceback
+        print(f"Error en validar_formulario: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@coordinador_municipal_bp.route('/formularios/<int:formulario_id>/rechazar', methods=['PUT'])
+@jwt_required()
+@role_required(['coordinador_municipal'])
+def rechazar_formulario(formulario_id):
+    """
+    Rechazar un formulario
+    """
+    try:
+        from backend.models.formulario_e14 import FormularioE14
+        from datetime import datetime
+        
+        user_id = get_jwt_identity()
+        user = User.query.get(int(user_id))
+        
+        if not user or not user.ubicacion_id:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario sin ubicación asignada'
+            }), 400
+        
+        # Obtener formulario
+        formulario = FormularioE14.query.get(formulario_id)
+        
+        if not formulario:
+            return jsonify({
+                'success': False,
+                'error': 'Formulario no encontrado'
+            }), 404
+        
+        if formulario.estado != 'pendiente':
+            return jsonify({
+                'success': False,
+                'error': 'Solo se pueden rechazar formularios pendientes'
+            }), 400
+        
+        # Verificar permisos
+        mesa = Location.query.get(formulario.mesa_id)
+        ubicacion = Location.query.get(user.ubicacion_id)
+        
+        if not mesa or mesa.municipio_codigo != ubicacion.municipio_codigo:
+            return jsonify({
+                'success': False,
+                'error': 'No tiene permisos para rechazar este formulario'
+            }), 403
+        
+        # Obtener motivo del request
+        data = request.get_json() or {}
+        motivo = data.get('motivo', '').strip()
+        
+        if not motivo:
+            return jsonify({
+                'success': False,
+                'error': 'El motivo de rechazo es obligatorio'
+            }), 400
+        
+        # Rechazar formulario
+        formulario.estado = 'rechazado'
+        formulario.fecha_validacion = datetime.utcnow()
+        formulario.validado_por = int(user_id)
+        formulario.motivo_rechazo = motivo
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Formulario rechazado exitosamente'
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        import traceback
+        print(f"Error en rechazar_formulario: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+# ============================================================================
 # ENDPOINTS DE GEOLOCALIZACIÓN
 # ============================================================================
 

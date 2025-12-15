@@ -107,6 +107,11 @@
             </button>
         </li>
         <li class="nav-item" role="presentation">
+            <button class="nav-link" id="validacion-tab" data-bs-toggle="tab" data-bs-target="#validacion" type="button" role="tab">
+                <i class="bi bi-check-square"></i> Validación
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
             <button class="nav-link" id="mapa-tab" data-bs-toggle="tab" data-bs-target="#mapa" type="button" role="tab">
                 <i class="bi bi-map"></i> Mapa
             </button>
@@ -273,7 +278,29 @@
         </div>
         <!-- Fin Tab Reportes -->
 
-        <!-- Tab 4: Mapa -->
+        <!-- Tab 4: Validación -->
+        <div class="tab-pane fade" id="validacion" role="tabpanel">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-check-square"></i> Validación de Formularios</h5>
+                    <button class="btn btn-sm btn-outline-primary" onclick="loadFormulariosValidacion()">
+                        <i class="bi bi-arrow-clockwise"></i> Actualizar
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="formulariosValidacion">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Fin Tab Validación -->
+
+        <!-- Tab 5: Mapa -->
         <div class="tab-pane fade" id="mapa" role="tabpanel">
             <!-- Filtros del Mapa -->
             <div class="card mb-3">
@@ -411,6 +438,10 @@
         <i class="bi bi-bar-chart-fill"></i>
         <span>Reportes</span>
     </a>
+    <a href="#validacion" class="bottom-nav-item" data-bs-toggle="tab" data-tab="validacion">
+        <i class="bi bi-check-square-fill"></i>
+        <span>Validación</span>
+    </a>
     <a href="#mapa" class="bottom-nav-item" data-bs-toggle="tab" data-tab="mapa">
         <i class="bi bi-geo-alt-fill"></i>
         <span>Mapa</span>
@@ -524,6 +555,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Configurar event listeners de filtros
                 configurarFiltrosMapa();
             }
+        });
+    }
+    
+    // Cargar formularios cuando se abre el tab de validación
+    const validacionTab = document.getElementById('validacion-tab');
+    if (validacionTab) {
+        validacionTab.addEventListener('shown.bs.tab', function() {
+            loadFormulariosValidacion();
         });
     }
 });

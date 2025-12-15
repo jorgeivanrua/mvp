@@ -41,9 +41,12 @@ class SyncManager {
         // Iniciar sincronización periódica
         this.startPeriodicSync();
         
-        // Sincronizar al cargar la página si hay conexión
+        // Limpiar datos incorrectos y sincronizar al cargar la página si hay conexión
         if (this.isOnline) {
-            setTimeout(() => this.syncPendingData(), 2000);
+            setTimeout(async () => {
+                await this.limpiarDatosIncorrectos();
+                this.syncPendingData();
+            }, 2000);
         }
         
         console.log('SyncManager inicializado');
@@ -237,15 +240,24 @@ class SyncManager {
                     console.error('Error sincronizando reporte:', error);
                     errores++;
                     
-                    // Si es error de validación (422) o el reporte tiene demasiados intentos, eliminarlo
-                    const esErrorValidacion = error.message && error.message.includes('Errores de validación');
+                    // Verificar tipo de error para decidir acción
+                    const esErrorValidacion = error.message && (
+                        error.message.includes('Errores de validación') ||
+                        error.message.includes('NOT NULL constraint') ||
+                        error.message.includes('IntegrityError') ||
+                        error.message.includes('422')
+                    );
+                    const esErrorServidor = error.message && error.message.includes('500');
                     const demasiadosIntentos = reporte.intentos_sync >= 3;
                     
-                    if (esErrorValidacion || demasiadosIntentos) {
-                        console.warn(`Eliminando reporte ${reporte.id} - Error de validación o demasiados intentos`);
+                    if (esErrorValidacion || esErrorServidor || demasiadosIntentos) {
+                        const motivo = esErrorValidacion ? 'Error de validación' : 
+                                     esErrorServidor ? 'Error de servidor' : 
+                                     'Demasiados intentos';
+                        console.warn(`Eliminando reporte ${reporte.id} - ${motivo}`);
                         await window.indexedDBService.eliminarReporte(reporte.id);
                     } else {
-                        // Incrementar intentos solo si no es error de validación
+                        // Incrementar intentos solo para errores temporales
                         await this.incrementarIntentos(reporte.id);
                     }
                 }
@@ -487,6 +499,126 @@ class SyncManager {
             clearInterval(this.syncInterval);
             this.syncInterval = null;
         }
+    }
+
+    /**
+     * ⭐ NUEVA FUNCIÓN: Limpiar datos offline incorrectos
+     */
+    async limpiarDatosIncorrectos() {
+        try {
+            console.log('🧹 Limpiando datos offline incorrectos...');
+            
+            // Verificar que IndexedDB esté disponible
+            if (!window.indexedDBService || !window.indexedDBService.db) {
+                console.log('IndexedDB no disponible, saltando limpieza');
+                return;
+            }
+            
+            // Obtener usuario actual
+            const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+            const userRole = userData.rol;
+            
+            if (userRole === 'coordinador_puesto') {
+                // Los coordinadores de puesto no deberían tener formularios E-14 pendientes
+                const reportesIncorrectos = await window.indexedDBService.obtenerReportesPorTipo('formulario_e14');
+                
+                if (reportesIncorrectos && reportesIncorrectos.length > 0) {
+                    console.log(`🗑️ Eliminando ${reportesIncorrectos.length} formularios E-14 incorrectos para coordinador de puesto`);
+                    
+                    let eliminados = 0;
+                    for (const reporte of reportesIncorrectos) {
+                        try {
+                            await window.indexedDBService.eliminarReporte(reporte.id);
+                            eliminados++;
+                        } catch (error) {
+                            console.error(`Error eliminando reporte ${reporte.id}:`, error);
+                        }
+                    }
+                    
+                    if (eliminados > 0) {
+                        console.log(`✅ Se eliminaron ${eliminados} formularios incorrectos`);
+                        // Solo mostrar notificación si hay Utils disponible
+                        if (typeof Utils !== 'undefined') {
+                            Utils.showInfo(`Se limpiaron ${eliminados} formularios incorrectos del almacenamiento offline`);
+                        }
+                    }
+                }
+            }
+            
+            // También limpiar reportes con errores de validación persistentes
+            await this.limpiarReportesConErrores();
+            
+            console.log('✅ Limpieza de datos offline completada');
+            
+        } catch (error) {
+            console.error('Error limpiando datos offline:', error);
+        }
+    }
+
+    /**
+     * ⭐ NUEVA FUNCIÓN: Limpiar reportes con errores persistentes
+     */
+    async limpiarReportesConErrores() {
+        try {
+            // Obtener todos los reportes pendientes
+            const reportesPendientes = await window.indexedDBService.obtenerReportesPendientes();
+            
+            if (!reportesPendientes || reportesPendientes.length === 0) {
+                return;
+            }
+            
+            let eliminados = 0;
+            for (const reporte of reportesPendientes) {
+                // Eliminar reportes que tienen demasiados intentos o datos claramente inválidos
+                if (reporte.intentos_sync >= 3 || this.esReporteInvalido(reporte)) {
+                    try {
+                        await window.indexedDBService.eliminarReporte(reporte.id);
+                        eliminados++;
+                        console.log(`🗑️ Eliminado reporte inválido ${reporte.id}`);
+                    } catch (error) {
+                        console.error(`Error eliminando reporte inválido ${reporte.id}:`, error);
+                    }
+                }
+            }
+            
+            if (eliminados > 0) {
+                console.log(`✅ Se eliminaron ${eliminados} reportes con errores persistentes`);
+            }
+            
+        } catch (error) {
+            console.error('Error limpiando reportes con errores:', error);
+        }
+    }
+
+    /**
+     * ⭐ NUEVA FUNCIÓN: Verificar si un reporte es inválido
+     */
+    esReporteInvalido(reporte) {
+        if (!reporte || !reporte.datos) {
+            return true;
+        }
+        
+        // Para formularios E-14, verificar campos obligatorios
+        if (reporte.tipo === 'formulario_e14') {
+            const datos = reporte.datos;
+            
+            // Verificar campos obligatorios
+            if (!datos.mesa_id || !datos.tipo_eleccion_id) {
+                return true;
+            }
+            
+            // Verificar que los números sean válidos
+            if (datos.total_votos < 0 || datos.votos_validos < 0) {
+                return true;
+            }
+            
+            // Verificar consistencia matemática básica
+            if (datos.votos_validos + datos.votos_nulos + datos.votos_blanco > datos.total_votos) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     /**

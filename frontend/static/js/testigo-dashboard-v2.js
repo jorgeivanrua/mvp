@@ -1370,25 +1370,37 @@ function getMesaCodigoById(mesaId) {
 
 function updateFormsTable(forms) {
     const tbody = document.querySelector('#formsTable tbody');
+    const mobileContainer = document.getElementById('formsCardsMobile');
+    
     tbody.innerHTML = '';
+    if (mobileContainer) mobileContainer.innerHTML = '';
     
     if (forms.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="5" class="text-center py-4">
+                <td colspan="6" class="text-center py-4">
                     <p class="text-muted">No hay formularios registrados</p>
                 </td>
             </tr>
         `;
+        if (mobileContainer) {
+            mobileContainer.innerHTML = `
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-file-earmark-text" style="font-size: 3rem;"></i>
+                    <p class="mt-2">No hay formularios registrados</p>
+                </div>
+            `;
+        }
         return;
     }
     
     forms.forEach(form => {
         const row = document.createElement('tr');
         const estadoLabel = getEstadoLabel(form.estado);
-        // Solo se pueden editar borradores y formularios locales
-        const puedeEditar = form.estado === 'borrador' || form.estado === 'local';
+        // Se pueden editar borradores, formularios locales y rechazados
+        const puedeEditar = form.estado === 'borrador' || form.estado === 'local' || form.estado === 'rechazado';
         const esLocal = form.es_local || form.estado === 'local';
+        const esRechazado = form.estado === 'rechazado';
         
         // Hacer la fila clickeable si puede editar
         if (puedeEditar) {
@@ -1406,27 +1418,95 @@ function updateFormsTable(forms) {
         
         row.innerHTML = `
             <td>Mesa ${form.mesa_codigo || 'N/A'}</td>
+            <td><span class="badge bg-secondary">${form.tipo_eleccion_nombre || 'N/A'}</span></td>
             <td><span class="badge bg-${getStatusColor(form.estado)}">${estadoLabel}</span></td>
             <td>${Utils.formatNumber(form.total_votos)}</td>
             <td>${Utils.formatDate(form.created_at)}</td>
             <td>
-                ${puedeEditar ? 
-                    `<button class="btn btn-sm btn-outline-warning" onclick="event.stopPropagation(); ${esLocal ? `editarBorradorLocal('${form.id}')` : `editForm(${form.id})`}">
-                        <i class="bi bi-pencil"></i> Editar
-                    </button>
+                <div class="btn-group btn-group-sm" role="group">
+                    ${form.estado === 'borrador' || form.estado === 'local' ? 
+                        `<button class="btn btn-outline-warning" onclick="event.stopPropagation(); ${esLocal ? `editarBorradorLocal('${form.id}')` : `editForm(${form.id})`}" title="Editar formulario">
+                            <i class="bi bi-pencil"></i> Editar
+                        </button>` : ''
+                    }
+                    ${form.estado === 'rechazado' ? 
+                        `<button class="btn btn-outline-warning" onclick="event.stopPropagation(); editForm(${form.id})" title="Corregir y reenviar">
+                            <i class="bi bi-arrow-repeat"></i> Corregir
+                        </button>` : ''
+                    }
+                    ${form.estado === 'pendiente' || form.estado === 'validado' || form.estado === 'rechazado' ? 
+                        `<button class="btn btn-outline-primary" onclick="event.stopPropagation(); viewForm(${form.id})" title="Ver detalles">
+                            <i class="bi bi-eye"></i> Ver
+                        </button>` : ''
+                    }
                     ${esLocal ? 
-                        `<button class="btn btn-sm btn-outline-danger ms-1" onclick="event.stopPropagation(); eliminarBorradorLocalPorId('${form.id}')">
+                        `<button class="btn btn-outline-danger" onclick="event.stopPropagation(); eliminarBorradorLocalPorId('${form.id}')" title="Eliminar borrador">
                             <i class="bi bi-trash"></i>
                         </button>` : ''
-                    }` : 
-                    `<button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); viewForm(${form.id})">
-                        <i class="bi bi-eye"></i> Ver
-                    </button>`
-                }
+                    }
+                </div>
             </td>
         `;
         tbody.appendChild(row);
     });
+    
+    // Renderizar cards para móvil
+    if (mobileContainer) {
+        forms.forEach(form => {
+            const estadoLabel = getEstadoLabel(form.estado);
+            const puedeEditar = form.estado === 'borrador' || form.estado === 'local' || form.estado === 'rechazado';
+            const esLocal = form.es_local || form.estado === 'local';
+            const esRechazado = form.estado === 'rechazado';
+            
+            const card = document.createElement('div');
+            card.className = 'card mb-3';
+            card.innerHTML = `
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="card-title mb-0">Mesa ${form.mesa_codigo || 'N/A'}</h6>
+                        <span class="badge bg-${getStatusColor(form.estado)}">${estadoLabel}</span>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <small class="text-muted">Tipo Elección</small>
+                            <div class="fw-bold">${form.tipo_eleccion_nombre || 'N/A'}</div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Total Votos</small>
+                            <div class="fw-bold">${Utils.formatNumber(form.total_votos)}</div>
+                        </div>
+                        <div class="col-12">
+                            <small class="text-muted">Fecha</small>
+                            <div>${Utils.formatDate(form.created_at)}</div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        ${form.estado === 'borrador' || form.estado === 'local' ? 
+                            `<button class="btn btn-sm btn-outline-warning" onclick="${esLocal ? `editarBorradorLocal('${form.id}')` : `editForm(${form.id})`}">
+                                <i class="bi bi-pencil"></i> Editar
+                            </button>` : ''
+                        }
+                        ${form.estado === 'rechazado' ? 
+                            `<button class="btn btn-sm btn-outline-warning" onclick="editForm(${form.id})">
+                                <i class="bi bi-arrow-repeat"></i> Corregir
+                            </button>` : ''
+                        }
+                        ${form.estado === 'pendiente' || form.estado === 'validado' || form.estado === 'rechazado' ? 
+                            `<button class="btn btn-sm btn-outline-primary" onclick="viewForm(${form.id})">
+                                <i class="bi bi-eye"></i> Ver
+                            </button>` : ''
+                        }
+                        ${esLocal ? 
+                            `<button class="btn btn-sm btn-outline-danger" onclick="eliminarBorradorLocalPorId('${form.id}')">
+                                <i class="bi bi-trash"></i> Eliminar
+                            </button>` : ''
+                        }
+                    </div>
+                </div>
+            `;
+            mobileContainer.appendChild(card);
+        });
+    }
 }
 
 function getStatusColor(estado) {
@@ -1980,14 +2060,168 @@ function eliminarBorradorLocalPorId(localId) {
     }
 }
 
-function viewForm(formId) {
-    window.open(`/testigo/form/${formId}`, '_blank');
+async function viewForm(formId) {
+    try {
+        console.log('🔍 Cargando formulario para visualización:', formId);
+        
+        // Cargar datos del formulario usando endpoint específico para testigos
+        const response = await APIClient.getMiFormularioE14(formId);
+        
+        if (response.success) {
+            const formulario = response.data;
+            console.log('📋 Datos del formulario:', formulario);
+            
+            // Llenar información básica
+            document.getElementById('verMesa').textContent = `Mesa ${formulario.mesa_codigo || 'N/A'}`;
+            
+            // Estado con badge
+            const estadoElement = document.getElementById('verEstado');
+            const estadoLabel = getEstadoLabel(formulario.estado);
+            const estadoColor = getStatusColor(formulario.estado);
+            estadoElement.innerHTML = `<span class="badge bg-${estadoColor}">${estadoLabel}</span>`;
+            
+            // Datos de votación
+            document.getElementById('verVotantesRegistrados').textContent = Utils.formatNumber(formulario.total_votantes_registrados || 0);
+            document.getElementById('verTotalVotos').textContent = Utils.formatNumber(formulario.total_votos || 0);
+            document.getElementById('verVotosValidos').textContent = Utils.formatNumber(formulario.votos_validos || 0);
+            document.getElementById('verVotosNulos').textContent = Utils.formatNumber(formulario.votos_nulos || 0);
+            document.getElementById('verVotosBlanco').textContent = Utils.formatNumber(formulario.votos_blanco || 0);
+            document.getElementById('verTarjetasNoMarcadas').textContent = Utils.formatNumber(formulario.tarjetas_no_marcadas || 0);
+            
+            // Votos por partido
+            mostrarVotosPorPartidoVisualizacion(formulario.votos_partidos || []);
+            
+            // Observaciones
+            document.getElementById('verObservaciones').textContent = formulario.observaciones || 'Sin observaciones';
+            
+            // Imagen del formulario
+            mostrarImagenFormularioVisualizacion(formulario);
+            
+            // Estado detallado
+            mostrarEstadoDetalleVisualizacion(formulario);
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('verFormularioModal'));
+            modal.show();
+            
+        } else {
+            Utils.showError('Error al cargar formulario: ' + (response.error || 'Error desconocido'));
+        }
+        
+    } catch (error) {
+        console.error('❌ Error al cargar formulario:', error);
+        Utils.showError('Error al cargar formulario: ' + error.message);
+    }
+}
+
+function mostrarVotosPorPartidoVisualizacion(votosPartidos) {
+    const container = document.getElementById('verVotosPorPartido');
+    
+    if (!votosPartidos || votosPartidos.length === 0) {
+        container.innerHTML = '<p class="text-muted">No hay votos registrados</p>';
+        return;
+    }
+    
+    let html = '';
+    votosPartidos.forEach(vp => {
+        const porcentaje = votosPartidos.reduce((sum, v) => sum + (v.votos || 0), 0) > 0 
+            ? ((vp.votos || 0) / votosPartidos.reduce((sum, v) => sum + (v.votos || 0), 0) * 100).toFixed(1)
+            : 0;
+            
+        html += `
+            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                <div>
+                    <span class="badge me-2" style="background-color: ${vp.partido_color || '#6c757d'};">
+                        ${vp.partido_sigla || 'N/A'}
+                    </span>
+                    <strong>${vp.partido_nombre || 'Desconocido'}</strong>
+                </div>
+                <div class="text-end">
+                    <span class="fw-bold">${Utils.formatNumber(vp.votos || 0)}</span>
+                    <small class="text-muted d-block">${porcentaje}%</small>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+function mostrarImagenFormularioVisualizacion(formulario) {
+    const container = document.getElementById('verImagenFormulario');
+    
+    if (formulario.imagen_url) {
+        container.innerHTML = `
+            <img src="${formulario.imagen_url}" class="img-fluid border rounded" 
+                 style="max-height: 400px; cursor: pointer;" 
+                 onclick="window.open('${formulario.imagen_url}', '_blank')"
+                 alt="Formulario E-14">
+            <p class="text-muted mt-2"><small>Click para ver en tamaño completo</small></p>
+        `;
+    } else {
+        container.innerHTML = '<p class="text-muted">No hay imagen disponible</p>';
+    }
+}
+
+function mostrarEstadoDetalleVisualizacion(formulario) {
+    const container = document.getElementById('verEstadoDetalle');
+    let html = '';
+    
+    if (formulario.estado === 'pendiente') {
+        html = `
+            <div class="alert alert-info">
+                <i class="bi bi-clock"></i>
+                <strong>Formulario Enviado</strong><br>
+                Su formulario ha sido enviado y está pendiente de revisión por el coordinador de puesto.
+                <br><small>Enviado el: ${Utils.formatDate(formulario.created_at)}</small>
+            </div>
+        `;
+    } else if (formulario.estado === 'validado') {
+        html = `
+            <div class="alert alert-success">
+                <i class="bi bi-check-circle"></i>
+                <strong>Formulario Validado</strong><br>
+                Su formulario ha sido validado por el coordinador de puesto.
+                <br><small>Validado el: ${Utils.formatDate(formulario.validado_at)}</small>
+            </div>
+        `;
+    } else if (formulario.estado === 'rechazado') {
+        html = `
+            <div class="alert alert-danger">
+                <i class="bi bi-x-circle"></i>
+                <strong>Formulario Rechazado</strong><br>
+                Su formulario ha sido rechazado. Motivo: ${formulario.motivo_rechazo || 'No especificado'}
+                <br><small>Rechazado el: ${Utils.formatDate(formulario.validado_at)}</small>
+                <br><br>
+                <button class="btn btn-warning btn-sm" onclick="editarFormularioRechazado(${formulario.id})">
+                    <i class="bi bi-pencil"></i> Corregir y Reenviar
+                </button>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
+}
+
+async function editarFormularioRechazado(formId) {
+    try {
+        // Cerrar modal de visualización
+        const verModal = bootstrap.Modal.getInstance(document.getElementById('verFormularioModal'));
+        if (verModal) verModal.hide();
+        
+        // Cargar formulario para edición
+        await editForm(formId);
+        
+    } catch (error) {
+        console.error('Error al editar formulario rechazado:', error);
+        Utils.showError('Error al cargar formulario para edición: ' + error.message);
+    }
 }
 
 async function editForm(formId) {
     try {
-        // Cargar el formulario
-        const response = await APIClient.getFormularioE14(formId);
+        // Cargar el formulario usando endpoint específico para testigos
+        const response = await APIClient.getMiFormularioE14(formId);
         
         if (!response.success) {
             Utils.showError('Error al cargar formulario');

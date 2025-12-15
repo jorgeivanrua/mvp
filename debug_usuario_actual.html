@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Usuario Actual</title>
+</head>
+<body>
+    <h1>Verificación de Usuario</h1>
+    <div id="info"></div>
+    
+    <script>
+        const token = localStorage.getItem('access_token');
+        const userData = localStorage.getItem('user_data');
+        
+        document.getElementById('info').innerHTML = `
+            <h2>Token:</h2>
+            <p>${token ? 'Presente: ' + token.substring(0, 50) + '...' : 'NO HAY TOKEN'}</p>
+            
+            <h2>Datos del Usuario:</h2>
+            <pre>${userData || 'NO HAY DATOS DE USUARIO'}</pre>
+            
+            <h2>Parsed User Data:</h2>
+            <pre>${JSON.stringify(JSON.parse(userData || '{}'), null, 2)}</pre>
+        `;
+    </script>
+</body>
+</html>

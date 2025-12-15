@@ -557,9 +557,53 @@ def obtener_mis_formularios():
         }), 500
 
 
-@formularios_bp.route('', methods=['POST'])
+@formularios_bp.route('/mis-formularios/<int:formulario_id>', methods=['GET'])
 @jwt_required()
 @role_required(['testigo_electoral'])
+def obtener_mi_formulario(formulario_id):
+    """
+    Obtener un formulario específico del testigo actual
+    """
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(int(user_id))
+        
+        if not user:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no encontrado'
+            }), 404
+        
+        from backend.models.formulario_e14 import FormularioE14
+        
+        # Buscar el formulario del testigo
+        formulario = FormularioE14.query.filter_by(
+            id=formulario_id,
+            testigo_id=int(user_id)
+        ).first()
+        
+        if not formulario:
+            return jsonify({
+                'success': False,
+                'error': 'Formulario no encontrado o no tienes permisos para verlo'
+            }), 404
+        
+        # Retornar formulario completo con votos
+        return jsonify({
+            'success': True,
+            'data': formulario.to_dict(include_votos=True)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@formularios_bp.route('', methods=['POST'])
+@jwt_required()
+@role_required(['testigo_electoral', 'coordinador_puesto'])
 def crear_formulario():
     """
     Crear un nuevo formulario E-14

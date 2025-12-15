@@ -242,6 +242,96 @@ class IndexedDBService {
     }
 
     /**
+     * ⭐ NUEVA FUNCIÓN: Obtener reportes por tipo
+     */
+    async obtenerReportesPorTipo(tipo) {
+        if (!this.db) {
+            return [];
+        }
+
+        return new Promise((resolve, reject) => {
+            try {
+                // Verificar que el object store existe
+                if (!this.db.objectStoreNames.contains('reportes_offline')) {
+                    console.warn('Object store reportes_offline no existe');
+                    resolve([]);
+                    return;
+                }
+
+                const transaction = this.db.transaction(['reportes_offline'], 'readonly');
+                const store = transaction.objectStore('reportes_offline');
+                
+                // Verificar si existe el índice 'tipo'
+                let request;
+                if (store.indexNames.contains('tipo')) {
+                    const index = store.index('tipo');
+                    request = index.getAll(tipo);
+                } else {
+                    // Si no hay índice, obtener todos y filtrar
+                    request = store.getAll();
+                }
+
+                request.onsuccess = () => {
+                    let results = request.result || [];
+                    
+                    // Si no usamos índice, filtrar manualmente
+                    if (!store.indexNames.contains('tipo')) {
+                        results = results.filter(r => r.tipo === tipo);
+                    }
+                    
+                    resolve(results);
+                };
+
+                request.onerror = () => {
+                    console.error('Error obteniendo reportes por tipo:', request.error);
+                    resolve([]); // Resolver con array vacío en lugar de rechazar
+                };
+            } catch (error) {
+                console.error('Error en obtenerReportesPorTipo:', error);
+                resolve([]); // Resolver con array vacío en lugar de rechazar
+            }
+        });
+    }
+
+    /**
+     * ⭐ NUEVA FUNCIÓN: Obtener todos los reportes pendientes
+     */
+    async obtenerReportesPendientes() {
+        if (!this.db) {
+            return [];
+        }
+
+        return new Promise((resolve, reject) => {
+            try {
+                // Verificar que el object store existe
+                if (!this.db.objectStoreNames.contains('reportes_offline')) {
+                    resolve([]);
+                    return;
+                }
+
+                const transaction = this.db.transaction(['reportes_offline'], 'readonly');
+                const store = transaction.objectStore('reportes_offline');
+                const request = store.getAll();
+
+                request.onsuccess = () => {
+                    const results = request.result || [];
+                    // Filtrar solo los pendientes de sincronización
+                    const pendientes = results.filter(r => r.estado_sync === 'pendiente');
+                    resolve(pendientes);
+                };
+
+                request.onerror = () => {
+                    console.error('Error obteniendo reportes pendientes:', request.error);
+                    resolve([]);
+                };
+            } catch (error) {
+                console.error('Error en obtenerReportesPendientes:', error);
+                resolve([]);
+            }
+        });
+    }
+
+    /**
      * Obtener evidencia offline por reporte
      */
     async obtenerEvidenciaOffline(reporteTempId) {

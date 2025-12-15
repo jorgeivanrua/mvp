@@ -435,6 +435,329 @@ async function generarReporte() {
 }
 
 /**
+ * ⭐ NUEVA FUNCIONALIDAD: Cargar formularios para validación
+ */
+async function loadFormulariosValidacion() {
+    try {
+        const response = await APIClient.get('/coordinador-departamental/formularios', {
+            estado: 'pendiente'
+        });
+        
+        if (response.success) {
+            renderFormulariosValidacion(response.data.formularios);
+            updateEstadisticasValidacion(response.data.estadisticas);
+        } else {
+            throw new Error(response.error || 'Error al cargar formularios');
+        }
+    } catch (error) {
+        console.error('Error loading formularios:', error);
+        Utils.showError('Error al cargar formularios para validación: ' + error.message);
+    }
+}
+
+/**
+ * ⭐ NUEVA FUNCIONALIDAD: Renderizar formularios para validación
+ */
+function renderFormulariosValidacion(formularios) {
+    const container = document.getElementById('formulariosValidacion');
+    
+    if (!container) return;
+    
+    if (formularios.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                <p class="text-muted mt-2">No hay formularios pendientes de validación</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Mesa</th>
+                        <th>Municipio</th>
+                        <th>Testigo</th>
+                        <th>Votos</th>
+                        <th>Fecha</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    formularios.forEach(formulario => {
+        html += `
+            <tr>
+                <td>
+                    <strong>${formulario.mesa.codigo}</strong><br>
+                    <small class="text-muted">${formulario.mesa.puesto_nombre}</small>
+                </td>
+                <td>
+                    <strong>${formulario.mesa.municipio_nombre}</strong><br>
+                    <small class="text-muted">${formulario.mesa.municipio_codigo}</small>
+                </td>
+                <td>
+                    ${formulario.testigo ? formulario.testigo.nombre : 'N/A'}<br>
+                    <small class="text-muted">${formulario.testigo ? formulario.testigo.cedula : ''}</small>
+                </td>
+                <td>
+                    <strong>${formulario.total_votos || 0}</strong><br>
+                    <small class="text-muted">${formulario.votantes_registrados || 0} registrados</small>
+                </td>
+                <td>
+                    <small>${Utils.formatDate(formulario.fecha_creacion)}</small>
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" onclick="verFormularioDetalle(${formulario.id})">
+                            <i class="bi bi-eye"></i> Ver
+                        </button>
+                        <button class="btn btn-outline-success" onclick="validarFormulario(${formulario.id})">
+                            <i class="bi bi-check"></i> Validar
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="rechazarFormulario(${formulario.id})">
+                            <i class="bi bi-x"></i> Rechazar
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+}
+
+/**
+ * ⭐ NUEVA FUNCIONALIDAD: Ver detalle de formulario
+ */
+async function verFormularioDetalle(formularioId) {
+    try {
+        const response = await APIClient.get(`/coordinador-departamental/formularios/${formularioId}`);
+        
+        if (response.success) {
+            mostrarModalFormulario(response.data);
+        } else {
+            throw new Error(response.error || 'Error al cargar formulario');
+        }
+    } catch (error) {
+        console.error('Error loading formulario detail:', error);
+        Utils.showError('Error al cargar detalles del formulario: ' + error.message);
+    }
+}
+
+/**
+ * ⭐ NUEVA FUNCIONALIDAD: Mostrar modal con detalles del formulario
+ */
+function mostrarModalFormulario(formulario) {
+    const modalHtml = `
+        <div class="modal fade" id="formularioModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-file-earmark-text"></i> 
+                            Formulario E-14 - Mesa ${formulario.mesa.codigo}
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Información de Mesa</h6>
+                                <p><strong>Código:</strong> ${formulario.mesa.codigo}</p>
+                                <p><strong>Municipio:</strong> ${formulario.mesa.municipio_nombre}</p>
+                                <p><strong>Puesto:</strong> ${formulario.mesa.puesto_nombre}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Testigo</h6>
+                                <p><strong>Nombre:</strong> ${formulario.testigo ? formulario.testigo.nombre : 'N/A'}</p>
+                                <p><strong>Cédula:</strong> ${formulario.testigo ? formulario.testigo.cedula : 'N/A'}</p>
+                                <p><strong>Teléfono:</strong> ${formulario.testigo ? formulario.testigo.telefono || 'N/A' : 'N/A'}</p>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Resumen de Votación</h6>
+                                <p><strong>Votantes Registrados:</strong> ${formulario.votantes_registrados || 0}</p>
+                                <p><strong>Total Votos:</strong> ${formulario.total_votos || 0}</p>
+                                <p><strong>Votos Válidos:</strong> ${formulario.votos_validos || 0}</p>
+                                <p><strong>Votos Nulos:</strong> ${formulario.votos_nulos || 0}</p>
+                                <p><strong>Votos en Blanco:</strong> ${formulario.votos_blanco || 0}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Votos por Partido</h6>
+                                ${formulario.votos_partidos && formulario.votos_partidos.length > 0 ? 
+                                    formulario.votos_partidos.map(vp => 
+                                        `<p><strong>${vp.partido_sigla}:</strong> ${vp.votos} votos</p>`
+                                    ).join('') : 
+                                    '<p class="text-muted">No hay votos registrados</p>'
+                                }
+                            </div>
+                        </div>
+                        
+                        ${formulario.observaciones ? `
+                            <hr>
+                            <h6>Observaciones</h6>
+                            <p>${formulario.observaciones}</p>
+                        ` : ''}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="button" class="btn btn-success" onclick="validarFormulario(${formulario.id}); bootstrap.Modal.getInstance(document.getElementById('formularioModal')).hide();">
+                            <i class="bi bi-check"></i> Validar
+                        </button>
+                        <button type="button" class="btn btn-danger" onclick="rechazarFormulario(${formulario.id}); bootstrap.Modal.getInstance(document.getElementById('formularioModal')).hide();">
+                            <i class="bi bi-x"></i> Rechazar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar modal al DOM
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('formularioModal'));
+    modal.show();
+    
+    // Limpiar modal al cerrar
+    document.getElementById('formularioModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+/**
+ * ⭐ NUEVA FUNCIONALIDAD: Validar formulario
+ */
+async function validarFormulario(formularioId) {
+    try {
+        // Mostrar modal de confirmación con observaciones
+        const observaciones = await mostrarModalObservaciones('validar');
+        
+        if (observaciones === null) return; // Usuario canceló
+        
+        const response = await APIClient.put(`/coordinador-departamental/formularios/${formularioId}/validar`, {
+            observaciones: observaciones
+        });
+        
+        if (response.success) {
+            Utils.showSuccess('Formulario validado exitosamente');
+            loadFormulariosValidacion(); // Recargar lista
+            loadEstadisticas(); // Actualizar estadísticas
+        } else {
+            throw new Error(response.error || 'Error al validar formulario');
+        }
+    } catch (error) {
+        console.error('Error validating formulario:', error);
+        Utils.showError('Error al validar formulario: ' + error.message);
+    }
+}
+
+/**
+ * ⭐ NUEVA FUNCIONALIDAD: Rechazar formulario
+ */
+async function rechazarFormulario(formularioId) {
+    try {
+        // Mostrar modal de confirmación con motivo obligatorio
+        const motivo = await mostrarModalObservaciones('rechazar', true);
+        
+        if (motivo === null) return; // Usuario canceló
+        
+        const response = await APIClient.put(`/coordinador-departamental/formularios/${formularioId}/rechazar`, {
+            motivo: motivo
+        });
+        
+        if (response.success) {
+            Utils.showSuccess('Formulario rechazado exitosamente');
+            loadFormulariosValidacion(); // Recargar lista
+            loadEstadisticas(); // Actualizar estadísticas
+        } else {
+            throw new Error(response.error || 'Error al rechazar formulario');
+        }
+    } catch (error) {
+        console.error('Error rejecting formulario:', error);
+        Utils.showError('Error al rechazar formulario: ' + error.message);
+    }
+}
+
+/**
+ * ⭐ NUEVA FUNCIONALIDAD: Modal para observaciones/motivo
+ */
+function mostrarModalObservaciones(accion, obligatorio = false) {
+    return new Promise((resolve) => {
+        const titulo = accion === 'validar' ? 'Validar Formulario' : 'Rechazar Formulario';
+        const label = accion === 'validar' ? 'Observaciones (opcional)' : 'Motivo de rechazo (obligatorio)';
+        const placeholder = accion === 'validar' ? 'Ingrese observaciones...' : 'Ingrese el motivo del rechazo...';
+        
+        const modalHtml = `
+            <div class="modal fade" id="observacionesModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">${titulo}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="observacionesText" class="form-label">${label}</label>
+                                <textarea class="form-control" id="observacionesText" rows="4" 
+                                          placeholder="${placeholder}" ${obligatorio ? 'required' : ''}></textarea>
+                                ${obligatorio ? '<div class="form-text text-danger">Este campo es obligatorio</div>' : ''}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-${accion === 'validar' ? 'success' : 'danger'}" 
+                                    onclick="confirmarObservaciones()">
+                                <i class="bi bi-${accion === 'validar' ? 'check' : 'x'}"></i> 
+                                ${accion === 'validar' ? 'Validar' : 'Rechazar'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Agregar modal al DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Función para confirmar
+        window.confirmarObservaciones = function() {
+            const texto = document.getElementById('observacionesText').value.trim();
+            
+            if (obligatorio && !texto) {
+                Utils.showError('El motivo de rechazo es obligatorio');
+                return;
+            }
+            
+            bootstrap.Modal.getInstance(document.getElementById('observacionesModal')).hide();
+            resolve(texto);
+        };
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('observacionesModal'));
+        modal.show();
+        
+        // Limpiar modal al cerrar
+        document.getElementById('observacionesModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+            delete window.confirmarObservaciones;
+            resolve(null); // Usuario canceló
+        });
+    });
+}
+
+/**
  * Función global para logout
  */
 async function logout() {

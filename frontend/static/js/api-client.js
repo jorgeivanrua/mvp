@@ -248,6 +248,11 @@ class APIClient {
         return this.get(`/formularios/${id}`);
     }
     
+    static async getMiFormularioE14(id) {
+        // Endpoint específico para testigos
+        return this.get(`/formularios/mis-formularios/${id}`);
+    }
+    
     static async createFormularioE14(data) {
         return this.post('/formularios', data);
     }

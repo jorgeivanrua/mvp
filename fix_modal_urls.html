@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Fix Modal URLs</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container py-4">
+        <div class="text-center mb-4">
+            <h1 class="display-4">🔧 Solución Rápida</h1>
+            <p class="lead">Arreglar URLs duplicadas del modal</p>
+        </div>
+
+        <div class="alert alert-info">
+            <h5>📋 Problema Identificado</h5>
+            <p>Los endpoints funcionan correctamente, pero el frontend está construyendo URLs con <code>/api/api/</code> en lugar de <code>/api/</code></p>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h5>🚀 Solución Inmediata</h5>
+                <p>Ejecuta este código en la consola del navegador (F12) para arreglar temporalmente el problema:</p>
+                
+                <div class="bg-dark text-light p-3 rounded">
+                    <code id="fixCode">
+// Arreglar URLs duplicadas temporalmente<br>
+const originalGet = APIClient.get;<br>
+APIClient.get = function(endpoint, params = {}) {<br>
+&nbsp;&nbsp;// Corregir URLs duplicadas<br>
+&nbsp;&nbsp;if (endpoint.startsWith('/api/')) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;endpoint = endpoint.replace('/api/', '/');<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;return originalGet.call(this, endpoint, params);<br>
+};<br>
+<br>
+console.log('✅ URLs del modal arregladas temporalmente');<br>
+<br>
+// Recargar datos<br>
+if (typeof loadFormularios === 'function') loadFormularios();<br>
+if (typeof loadConsolidado === 'function') loadConsolidado();<br>
+if (typeof loadMesas === 'function') loadMesas();<br>
+if (typeof loadTestigos === 'function') loadTestigos();<br>
+                    </code>
+                </div>
+                
+                <button class="btn btn-primary mt-3" onclick="copyCode()">
+                    📋 Copiar Código
+                </button>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5>📋 Instrucciones</h5>
+                <ol>
+                    <li><strong>Abre la consola</strong> del navegador (F12)</li>
+                    <li><strong>Pega el código</strong> de arriba</li>
+                    <li><strong>Presiona Enter</strong></li>
+                    <li><strong>¡El modal funcionará perfectamente!</strong></li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="alert alert-success mt-4">
+            <h5>🎉 Resultado Esperado</h5>
+            <p>Después de ejecutar el código:</p>
+            <ul>
+                <li>✅ No más errores 404</li>
+                <li>✅ Consolidado cargará correctamente</li>
+                <li>✅ Mesas se mostrarán</li>
+                <li>✅ Testigos aparecerán</li>
+                <li>✅ Modal funcionará al 100%</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function copyCode() {
+            const code = `// Arreglar URLs duplicadas temporalmente
+const originalGet = APIClient.get;
+APIClient.get = function(endpoint, params = {}) {
+    // Corregir URLs duplicadas
+    if (endpoint.startsWith('/api/')) {
+        endpoint = endpoint.replace('/api/', '/');
+    }
+    return originalGet.call(this, endpoint, params);
+};
+
+console.log('✅ URLs del modal arregladas temporalmente');
+
+// Recargar datos
+if (typeof loadFormularios === 'function') loadFormularios();
+if (typeof loadConsolidado === 'function') loadConsolidado();
+if (typeof loadMesas === 'function') loadMesas();
+if (typeof loadTestigos === 'function') loadTestigos();`;
+
+            navigator.clipboard.writeText(code).then(() => {
+                alert('✅ Código copiado al portapapeles!\n\nAhora pégalo en la consola del navegador (F12)');
+            });
+        }
+    </script>
+</body>
+</html>

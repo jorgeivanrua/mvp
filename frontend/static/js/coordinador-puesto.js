@@ -38,14 +38,28 @@ window.addEventListener('beforeunload', function() {
  */
 async function loadUserProfile() {
     try {
+        console.log('🔐 Verificando token de autenticación...');
+        const token = localStorage.getItem('access_token');
+        console.log('🔐 Token presente:', !!token);
+        if (token) {
+            console.log('🔐 Token (primeros 20 chars):', token.substring(0, 20) + '...');
+        }
+        
         const response = await APIClient.getProfile();
         
         if (response.success) {
             currentUser = response.data.user;
             userLocation = response.data.ubicacion;
             
-            console.log('User profile loaded:', currentUser);
-            console.log('User location:', userLocation);
+            console.log('👤 User profile loaded:', currentUser);
+            console.log('📍 User location:', userLocation);
+            
+            // Verificar rol
+            if (currentUser.rol !== 'coordinador_puesto') {
+                console.warn('⚠️ Usuario no es coordinador de puesto:', currentUser.rol);
+                Utils.showError('Error: Usuario no tiene permisos de coordinador de puesto');
+                return;
+            }
             
             // Mostrar información del puesto
             if (userLocation) {
@@ -54,7 +68,7 @@ async function loadUserProfile() {
             }
         }
     } catch (error) {
-        console.error('Error loading profile:', error);
+        console.error('❌ Error loading profile:', error);
         Utils.showError('Error al cargar perfil: ' + error.message);
     }
 }
@@ -69,7 +83,7 @@ async function loadFormularios() {
             params.estado = estadoFiltro;
         }
         
-        const response = await APIClient.get('/formularios/puesto', params);
+        const response = await APIClient.get('/coordinador-puesto/formularios', params);
         
         if (response.success) {
             formularios = response.data.formularios || [];
@@ -213,100 +227,507 @@ function filtrarPorEstado(estado) {
  */
 async function abrirModalValidacion(formularioId) {
     try {
-        const response = await APIClient.get(`/formularios/${formularioId}`);
+        console.log('🔍 Cargando formulario ID:', formularioId);
+        console.log('👤 Usuario actual:', currentUser);
+        console.log('📍 Ubicación del usuario:', userLocation);
+        
+        const response = await APIClient.get(`/coordinador-puesto/formularios/${formularioId}`);
+        
+        console.log('📡 Respuesta del servidor:', response);
         
         if (response.success) {
             formularioActual = response.data;
+            console.log('📋 Datos completos del formulario:', formularioActual);
+            console.log('🗳️ Votos por partido:', formularioActual.votos_partidos);
+            console.log('👥 Votos por candidatos:', formularioActual.votos_candidatos);
+            console.log('📸 Imagen URL:', formularioActual.imagen_url);
+            
             mostrarDatosValidacion(formularioActual);
             
             const modal = new bootstrap.Modal(document.getElementById('validacionModal'));
             modal.show();
+        } else {
+            console.error('❌ Error en la respuesta:', response);
+            Utils.showError('Error al cargar formulario: ' + (response.error || 'Error desconocido'));
         }
     } catch (error) {
-        console.error('Error loading formulario:', error);
-        Utils.showError('Error al cargar formulario: ' + error.message);
+        console.error('❌ Error completo al cargar formulario:', error);
+        console.error('❌ Tipo de error:', typeof error);
+        console.error('❌ Stack trace:', error.stack);
+        
+        let errorMessage = 'Error desconocido';
+        if (error.message) {
+            errorMessage = error.message;
+        } else if (error.error) {
+            errorMessage = error.error;
+        } else if (typeof error === 'string') {
+            errorMessage = error;
+        }
+        
+        Utils.showError('Error al cargar formulario: ' + errorMessage);
     }
 }
 
 /**
- * Mostrar datos en modal de validación
+ * ⭐ MEJORADO: Mostrar datos completos en modal de validación
  */
 function mostrarDatosValidacion(formulario) {
+    console.log('📊 Mostrando datos de validación:', formulario);
+    
     // Información de la mesa
-    document.getElementById('valMesa').textContent = 
-        `${formulario.mesa.codigo} - ${formulario.mesa.nombre}`;
-    document.getElementById('valTestigo').textContent = 
-        formulario.testigo ? formulario.testigo.nombre : 'N/A';
+    const valMesa = document.getElementById('valMesa');
+    const valTestigo = document.getElementById('valTestigo');
     
-    // Datos de votación
-    document.getElementById('valVotantesRegistrados').textContent = 
-        Utils.formatNumber(formulario.total_votantes_registrados);
-    document.getElementById('valTotalVotos').textContent = 
-        Utils.formatNumber(formulario.total_votos);
-    document.getElementById('valVotosValidos').textContent = 
-        Utils.formatNumber(formulario.votos_validos);
-    document.getElementById('valVotosNulos').textContent = 
-        Utils.formatNumber(formulario.votos_nulos);
-    document.getElementById('valVotosBlanco').textContent = 
-        Utils.formatNumber(formulario.votos_blanco);
-    document.getElementById('valTarjetasNoMarcadas').textContent = 
-        Utils.formatNumber(formulario.tarjetas_no_marcadas);
+    if (valMesa) {
+        valMesa.textContent = `${formulario.mesa.codigo} - ${formulario.mesa.nombre}`;
+    }
     
-    // Imagen del formulario con controles de zoom
-    const imagenContainer = document.getElementById('imagenFormulario');
-    if (formulario.imagen_url) {
-        imagenContainer.innerHTML = `
-            <div class="image-viewer-container">
-                <div class="image-viewer-controls mb-2">
-                    <div class="btn-group btn-group-sm" role="group">
-                        <button type="button" class="btn btn-outline-secondary" onclick="zoomImagen('out')" title="Alejar">
-                            <i class="bi bi-zoom-out"></i>
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" onclick="zoomImagen('reset')" title="Tamaño original">
-                            <i class="bi bi-arrows-angle-contract"></i> 100%
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" onclick="zoomImagen('in')" title="Acercar">
-                            <i class="bi bi-zoom-in"></i>
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" onclick="rotarImagen()" title="Rotar">
-                            <i class="bi bi-arrow-clockwise"></i>
-                        </button>
-                        <button type="button" class="btn btn-outline-primary" onclick="abrirImagenNuevaVentana('${formulario.imagen_url}')" title="Abrir en nueva ventana">
-                            <i class="bi bi-box-arrow-up-right"></i>
+    if (valTestigo) {
+        valTestigo.textContent = formulario.testigo ? 
+            `${formulario.testigo.nombre} (${formulario.testigo.cedula || 'Sin cédula'})` : 'N/A';
+    }
+    
+    // Datos de votación básicos
+    const elementos = [
+        'valVotantesRegistrados', 'valTotalVotos', 'valVotosValidos', 
+        'valVotosNulos', 'valVotosBlanco', 'valTarjetasNoMarcadas'
+    ];
+    
+    const valores = [
+        formulario.total_votantes_registrados || 0,
+        formulario.total_votos || 0,
+        formulario.votos_validos || 0,
+        formulario.votos_nulos || 0,
+        formulario.votos_blanco || 0,
+        formulario.tarjetas_no_marcadas || 0
+    ];
+    
+    elementos.forEach((elementId, index) => {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.textContent = Utils.formatNumber(valores[index]);
+        }
+    });
+    
+    // ⭐ NUEVO: Mostrar votos por partido y candidatos
+    console.log('🗳️ Mostrando votos por partido...');
+    mostrarVotosPorPartido(formulario);
+    
+    // ⭐ NUEVO: Mostrar validaciones automáticas
+    console.log('🔍 Mostrando validaciones automáticas...');
+    mostrarValidacionesAutomaticas(formulario);
+    
+    // ⭐ MEJORADO: Mostrar todas las evidencias fotográficas
+    console.log('📸 Mostrando evidencias fotográficas...');
+    mostrarEvidenciasFotograficas(formulario);
+    
+    // Observaciones del testigo
+    const observacionesContainer = document.getElementById('observacionesTestigo');
+    if (observacionesContainer) {
+        observacionesContainer.textContent = formulario.observaciones || 'Sin observaciones';
+    }
+    
+    console.log('✅ Datos de validación mostrados completamente');
+}
+
+/**
+ * ⭐ MEJORADA: Mostrar votos agrupados por partido como lo ve el testigo
+ */
+function mostrarVotosPorPartido(formulario) {
+    const container = document.getElementById('votosPorPartido');
+    if (!container) {
+        console.error('❌ Container votosPorPartido no encontrado');
+        return;
+    }
+    
+    console.log('🗳️ Datos del formulario para votos:', {
+        votos_candidatos: formulario.votos_candidatos,
+        votos_partidos: formulario.votos_partidos
+    });
+    
+    // Verificar si hay datos de candidatos
+    const tieneCandidatos = formulario.votos_candidatos && formulario.votos_candidatos.length > 0;
+    const tienePartidos = formulario.votos_partidos && formulario.votos_partidos.length > 0;
+    
+    console.log('🗳️ Verificación de datos:', {
+        tieneCandidatos,
+        tienePartidos,
+        candidatos_count: formulario.votos_candidatos?.length || 0,
+        partidos_count: formulario.votos_partidos?.length || 0
+    });
+    
+    if (!tieneCandidatos) {
+        console.log('⚠️ No hay votos registrados');
+        container.innerHTML = '<p class="text-muted">No hay votos registrados</p>';
+        return;
+    }
+    
+    // ⭐ NUEVA ESTRUCTURA: Agrupado por partido como lo ve el testigo
+    let html = `
+        <div class="mb-4">
+            <h6 class="mb-3">
+                <i class="bi bi-ballot-check"></i> 
+                Votos por Partido y Candidatos
+                <small class="text-muted">(Igual que en el formulario E-14 fotográfico)</small>
+            </h6>
+    `;
+    
+    // Agrupar candidatos por partido
+    const candidatosPorPartido = {};
+    formulario.votos_candidatos.forEach(vc => {
+        if (!candidatosPorPartido[vc.partido_id]) {
+            candidatosPorPartido[vc.partido_id] = {
+                partido_id: vc.partido_id,
+                partido_nombre: vc.partido_nombre,
+                partido_sigla: vc.partido_sigla,
+                partido_color: vc.partido_color,
+                candidatos: [],
+                total_votos_candidatos: 0
+            };
+        }
+        candidatosPorPartido[vc.partido_id].candidatos.push(vc);
+        candidatosPorPartido[vc.partido_id].total_votos_candidatos += (vc.votos || 0);
+    });
+    
+    // Obtener total de votos por partido desde votos_partidos
+    const votosPorPartidoMap = {};
+    if (tienePartidos) {
+        formulario.votos_partidos.forEach(vp => {
+            votosPorPartidoMap[vp.partido_id] = vp.votos || 0;
+        });
+    }
+    
+    // Calcular total general
+    const totalVotosGeneral = formulario.votos_candidatos.reduce((sum, vc) => sum + (vc.votos || 0), 0);
+    
+    // Renderizar cada partido con sus candidatos
+    Object.values(candidatosPorPartido).forEach((partidoData, index) => {
+        const candidatos = partidoData.candidatos.sort((a, b) => (a.candidato_numero || 0) - (b.candidato_numero || 0));
+        const totalPartido = votosPorPartidoMap[partidoData.partido_id] || partidoData.total_votos_candidatos;
+        const porcentajePartido = totalVotosGeneral > 0 ? ((totalPartido / totalVotosGeneral) * 100).toFixed(1) : 0;
+        
+        html += `
+            <div class="card mb-3" style="border-left: 4px solid ${partidoData.partido_color || '#6c757d'};">
+                <div class="card-header" style="background-color: ${partidoData.partido_color || '#f8f9fa'}20;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <span style="display: inline-block; width: 16px; height: 16px; background-color: ${partidoData.partido_color || '#6c757d'}; border-radius: 3px; margin-right: 8px;"></span>
+                            <strong>${partidoData.partido_nombre}</strong> (${partidoData.partido_sigla})
+                        </h6>
+                        <div class="text-end">
+                            <span class="badge bg-primary fs-6">${Utils.formatNumber(totalPartido)} votos</span>
+                            <small class="text-muted d-block">${porcentajePartido}% del total</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body py-2">
+                    <div class="row g-2">
+        `;
+        
+        // Mostrar candidatos del partido
+        candidatos.forEach(candidato => {
+            const porcentajeCandidato = totalPartido > 0 ? ((candidato.votos || 0) / totalPartido * 100).toFixed(1) : 0;
+            html += `
+                <div class="col-md-6">
+                    <div class="d-flex justify-content-between align-items-center p-2 border rounded">
+                        <div>
+                            <span class="badge me-2" style="background-color: ${candidato.partido_color || '#6c757d'};">
+                                ${candidato.candidato_numero || '-'}
+                            </span>
+                            <strong>${candidato.candidato_nombre}</strong>
+                        </div>
+                        <div class="text-end">
+                            <span class="fw-bold text-primary">${Utils.formatNumber(candidato.votos || 0)}</span>
+                            <small class="text-muted d-block">${porcentajeCandidato}%</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        // Mostrar subtotal del partido
+        html += `
+                    </div>
+                    <hr class="my-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <strong>Subtotal ${partidoData.partido_sigla}:</strong>
+                        <span class="badge bg-success fs-6">${Utils.formatNumber(partidoData.total_votos_candidatos)} votos candidatos</span>
+                    </div>
+        `;
+        
+        // Verificar coherencia entre votos de partido y suma de candidatos
+        if (totalPartido !== partidoData.total_votos_candidatos) {
+            html += `
+                <div class="alert alert-warning py-1 mt-2 mb-0">
+                    <small>
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Diferencia: Partido ${Utils.formatNumber(totalPartido)} vs Candidatos ${Utils.formatNumber(partidoData.total_votos_candidatos)}
+                    </small>
+                </div>
+            `;
+        }
+        
+        html += `
+                </div>
+            </div>
+        `;
+    });
+    
+    // Mostrar total general
+    html += `
+            <div class="card border-primary">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0"><i class="bi bi-calculator"></i> TOTAL GENERAL</h6>
+                        <span class="badge bg-primary fs-5">${Utils.formatNumber(totalVotosGeneral)} votos</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+/**
+ * ⭐ NUEVA FUNCIÓN: Mostrar validaciones automáticas
+ */
+function mostrarValidacionesAutomaticas(formulario) {
+    const container = document.getElementById('validacionesAutomaticas');
+    if (!container) return;
+    
+    const validaciones = [];
+    
+    // Validación matemática básica
+    const totalCalculado = (formulario.votos_validos || 0) + (formulario.votos_nulos || 0) + (formulario.votos_blanco || 0);
+    const totalReportado = formulario.total_votos || 0;
+    
+    if (totalCalculado !== totalReportado) {
+        validaciones.push({
+            tipo: 'error',
+            mensaje: `Inconsistencia matemática: Suma de votos (${totalCalculado}) ≠ Total reportado (${totalReportado})`
+        });
+    } else {
+        validaciones.push({
+            tipo: 'success',
+            mensaje: 'Suma de votos coincide con el total reportado'
+        });
+    }
+    
+    // Validación de participación
+    const participacion = formulario.total_votantes_registrados > 0 ? 
+        (totalReportado / formulario.total_votantes_registrados * 100) : 0;
+    
+    if (participacion > 100) {
+        validaciones.push({
+            tipo: 'error',
+            mensaje: `Participación imposible: ${participacion.toFixed(1)}% (más del 100%)`
+        });
+    } else if (participacion > 90) {
+        validaciones.push({
+            tipo: 'warning',
+            mensaje: `Participación muy alta: ${participacion.toFixed(1)}% (revisar)`
+        });
+    } else {
+        validaciones.push({
+            tipo: 'info',
+            mensaje: `Participación: ${participacion.toFixed(1)}%`
+        });
+    }
+    
+    // Validación de votos por partido vs votos válidos
+    if (formulario.votos_partidos && formulario.votos_partidos.length > 0) {
+        const sumaPartidos = formulario.votos_partidos.reduce((sum, vp) => sum + (vp.votos || 0), 0);
+        if (sumaPartidos !== (formulario.votos_validos || 0)) {
+            validaciones.push({
+                tipo: 'error',
+                mensaje: `Suma votos partidos (${sumaPartidos}) ≠ Votos válidos (${formulario.votos_validos || 0})`
+            });
+        }
+    }
+    
+    // Renderizar validaciones
+    let html = '';
+    validaciones.forEach(val => {
+        const alertClass = val.tipo === 'error' ? 'alert-danger' : 
+                          val.tipo === 'warning' ? 'alert-warning' : 
+                          val.tipo === 'success' ? 'alert-success' : 'alert-info';
+        
+        const icon = val.tipo === 'error' ? 'bi-x-circle' : 
+                    val.tipo === 'warning' ? 'bi-exclamation-triangle' : 
+                    val.tipo === 'success' ? 'bi-check-circle' : 'bi-info-circle';
+        
+        html += `
+            <div class="alert ${alertClass} py-2 px-3 mb-2">
+                <i class="bi ${icon}"></i> ${val.mensaje}
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+/**
+ * ⭐ NUEVA FUNCIÓN: Mostrar evidencias fotográficas completas
+ */
+async function mostrarEvidenciasFotograficas(formulario) {
+    const container = document.getElementById('imagenFormulario');
+    if (!container) {
+        console.error('❌ Container imagenFormulario no encontrado');
+        return;
+    }
+    
+    console.log('📸 Cargando evidencias fotográficas para formulario:', formulario.id);
+    console.log('📸 Imagen URL del formulario:', formulario.imagen_url);
+    
+    try {
+        // Obtener todas las fotos del formulario
+        console.log('📸 Consultando fotos adicionales...');
+        const fotosResponse = await APIClient.get(`/formulario-fotos/formulario/${formulario.id}`);
+        console.log('📸 Respuesta de fotos adicionales:', fotosResponse);
+        
+        let fotos = [];
+        
+        // Agregar foto principal si existe
+        if (formulario.imagen_url) {
+            console.log('📸 Agregando foto principal:', formulario.imagen_url);
+            fotos.push({
+                id: 'principal',
+                url: formulario.imagen_url,
+                descripcion: 'Foto principal del formulario E-14',
+                tipo: 'principal'
+            });
+        } else {
+            console.log('⚠️ No hay foto principal (imagen_url)');
+        }
+        
+        // Agregar fotos adicionales si existen
+        if (fotosResponse.success && fotosResponse.fotos && fotosResponse.fotos.length > 0) {
+            console.log('📸 Agregando', fotosResponse.fotos.length, 'fotos adicionales');
+            fotos = fotos.concat(fotosResponse.fotos.map(foto => ({
+                id: foto.id,
+                url: foto.url,
+                descripcion: foto.descripcion || 'Evidencia fotográfica adicional',
+                tipo: 'adicional',
+                fecha: foto.created_at  // Corregido: usar created_at en lugar de fecha_subida
+            })));
+        } else {
+            console.log('⚠️ No hay fotos adicionales');
+        }
+        
+        console.log('📸 Total de fotos encontradas:', fotos.length);
+        
+        if (fotos.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="bi bi-image" style="font-size: 3rem; color: #6c757d;"></i>
+                    <p class="text-muted mt-2">No hay evidencias fotográficas disponibles</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Renderizar galería de fotos
+        let html = `
+            <div class="evidencias-fotograficas">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">
+                        <i class="bi bi-images"></i> 
+                        Evidencias Fotográficas (${fotos.length})
+                    </h6>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" onclick="verTodasLasFotos()">
+                            <i class="bi bi-grid-3x3"></i> Ver Todas
                         </button>
                     </div>
                 </div>
-                <div class="image-viewer-wrapper" id="imageViewerWrapper" style="overflow: auto; max-height: 500px; border: 1px solid #dee2e6; border-radius: 8px; background: #f8f9fa; position: relative;">
-                    <img id="formularioImagen" 
-                         src="${formulario.imagen_url}" 
-                         alt="Formulario E-14" 
-                         style="max-width: 100%; height: auto; display: block; margin: 0 auto; cursor: move; transition: transform 0.2s;"
-                         draggable="false">
+                
+                <div class="fotos-carousel">
+                    <div id="fotosCarousel" class="carousel slide" data-bs-ride="false">
+                        <div class="carousel-indicators">
+        `;
+        
+        // Indicadores del carousel
+        fotos.forEach((foto, index) => {
+            html += `
+                <button type="button" data-bs-target="#fotosCarousel" data-bs-slide-to="${index}" 
+                        ${index === 0 ? 'class="active"' : ''} aria-label="Foto ${index + 1}"></button>
+            `;
+        });
+        
+        html += `
+                        </div>
+                        <div class="carousel-inner">
+        `;
+        
+        // Slides del carousel
+        fotos.forEach((foto, index) => {
+            html += `
+                <div class="carousel-item ${index === 0 ? 'active' : ''}">
+                    <div class="foto-container text-center">
+                        <img src="${foto.url}" class="d-block mx-auto img-fluid" 
+                             style="max-height: 400px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"
+                             alt="${foto.descripcion}" onclick="abrirImagenNuevaVentana('${foto.url}')">
+                        <div class="foto-info mt-2">
+                            <small class="text-muted">
+                                <i class="bi bi-${foto.tipo === 'principal' ? 'star-fill text-warning' : 'image'}"></i>
+                                ${foto.descripcion}
+                                ${foto.fecha ? `<br>Subida: ${Utils.formatDate(foto.fecha)}` : ''}
+                            </small>
+                        </div>
+                    </div>
                 </div>
-                <div class="text-center mt-2">
-                    <small class="text-muted">
-                        <i class="bi bi-info-circle"></i> 
-                        Usa los controles para hacer zoom, rotar o arrastrar la imagen para mejor visualización
-                    </small>
+            `;
+        });
+        
+        html += `
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#fotosCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Anterior</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#fotosCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Siguiente</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Controles de zoom y herramientas -->
+                <div class="foto-controles mt-3 text-center">
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary" onclick="zoomFoto('out')" title="Alejar">
+                            <i class="bi bi-zoom-out"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="zoomFoto('reset')" title="Tamaño original">
+                            <i class="bi bi-arrows-angle-contract"></i> 100%
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="zoomFoto('in')" title="Acercar">
+                            <i class="bi bi-zoom-in"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="rotarFotoActual()" title="Rotar">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
         
-        // Inicializar funcionalidad de arrastre
-        inicializarArrastreImagen();
-    } else {
-        imagenContainer.innerHTML = '<p class="text-muted">No hay imagen disponible</p>';
+        container.innerHTML = html;
+        
+        // Guardar referencia a las fotos para otras funciones
+        window.fotosFormulario = fotos;
+        
+    } catch (error) {
+        console.error('Error cargando evidencias fotográficas:', error);
+        container.innerHTML = `
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+                Error al cargar evidencias fotográficas. 
+                ${formulario.imagen_url ? `<br><a href="${formulario.imagen_url}" target="_blank">Ver foto principal</a>` : ''}
+            </div>
+        `;
     }
-    
-    // Validaciones automáticas
-    mostrarValidaciones(formulario.validaciones);
-    
-    // Votos por partido
-    mostrarVotosPartidos(formulario.votos_partidos);
-    
-    // Observaciones
-    document.getElementById('valObservaciones').textContent = 
-        formulario.observaciones || 'Sin observaciones';
 }
 
 /**
@@ -400,7 +821,7 @@ async function validarFormulario() {
     }
     
     try {
-        const response = await APIClient.put(`/formularios/${formularioActual.id}/validar`, {
+        const response = await APIClient.put(`/coordinador-puesto/formularios/${formularioActual.id}/validar`, {
             comentario: 'Formulario validado por coordinador'
         });
         
@@ -456,7 +877,7 @@ async function confirmarRechazo() {
     }
     
     try {
-        const response = await APIClient.put(`/formularios/${formularioActual.id}/rechazar`, {
+        const response = await APIClient.put(`/coordinador-puesto/formularios/${formularioActual.id}/rechazar`, {
             motivo: motivo
         });
         
@@ -492,7 +913,7 @@ async function verDetalles(formularioId) {
  */
 async function loadConsolidado() {
     try {
-        const response = await APIClient.get('/formularios/consolidado');
+        const response = await APIClient.get('/coordinador-puesto/consolidado');
         
         if (response.success) {
             renderConsolidado(response.data);
@@ -566,7 +987,7 @@ function renderConsolidado(data) {
  */
 async function loadMesas() {
     try {
-        const response = await APIClient.get('/formularios/mesas');
+        const response = await APIClient.get('/coordinador-puesto/mesas-detalle');
         
         if (response.success) {
             renderMesas(response.data || []);
@@ -841,8 +1262,8 @@ async function loadE24Data() {
     try {
         // Cargar mesas y consolidado
         const [mesasResponse, consolidadoResponse] = await Promise.all([
-            APIClient.get('/formularios/mesas'),
-            APIClient.get('/formularios/consolidado')
+            APIClient.get('/coordinador-puesto/mesas-detalle'),
+            APIClient.get('/coordinador-puesto/consolidado')
         ]);
         
         if (mesasResponse.success && consolidadoResponse.success) {
@@ -989,7 +1410,7 @@ async function generarPDFE24() {
         Utils.showInfo('Generando formulario E-24...');
         
         // Llamar al endpoint de generación de E-24
-        const response = await fetch('/api/formularios/puesto/generar-e24', {
+        const response = await fetch('/api/coordinador-puesto/generar-e24', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
@@ -1043,6 +1464,132 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /**
+ * ⭐ NUEVA FUNCIÓN: Ver todas las fotos en modal expandido
+ */
+function verTodasLasFotos() {
+    if (!window.fotosFormulario || window.fotosFormulario.length === 0) {
+        Utils.showInfo('No hay fotos disponibles');
+        return;
+    }
+    
+    const modalHtml = `
+        <div class="modal fade" id="fotosExpandidasModal" tabindex="-1">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-images"></i> 
+                            Evidencias Fotográficas (${window.fotosFormulario.length})
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            ${window.fotosFormulario.map((foto, index) => `
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="card">
+                                        <img src="${foto.url}" class="card-img-top" 
+                                             style="height: 200px; object-fit: cover; cursor: pointer;"
+                                             onclick="abrirImagenNuevaVentana('${foto.url}')"
+                                             alt="${foto.descripcion}">
+                                        <div class="card-body p-2">
+                                            <small class="text-muted">
+                                                <i class="bi bi-${foto.tipo === 'principal' ? 'star-fill text-warning' : 'image'}"></i>
+                                                ${foto.descripcion}
+                                                ${foto.fecha ? `<br>Subida: ${Utils.formatDate(foto.fecha)}` : ''}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar modal al DOM
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('fotosExpandidasModal'));
+    modal.show();
+    
+    // Limpiar modal al cerrar
+    document.getElementById('fotosExpandidasModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+/**
+ * ⭐ NUEVA FUNCIÓN: Controles de zoom para fotos
+ */
+function zoomFoto(accion) {
+    const fotoActiva = document.querySelector('#fotosCarousel .carousel-item.active img');
+    if (!fotoActiva) return;
+    
+    let escala = parseFloat(fotoActiva.dataset.escala || '1');
+    
+    switch (accion) {
+        case 'in':
+            escala = Math.min(escala * 1.2, 3);
+            break;
+        case 'out':
+            escala = Math.max(escala / 1.2, 0.5);
+            break;
+        case 'reset':
+            escala = 1;
+            break;
+    }
+    
+    fotoActiva.style.transform = `scale(${escala})`;
+    fotoActiva.dataset.escala = escala;
+}
+
+/**
+ * ⭐ NUEVA FUNCIÓN: Rotar foto actual
+ */
+function rotarFotoActual() {
+    const fotoActiva = document.querySelector('#fotosCarousel .carousel-item.active img');
+    if (!fotoActiva) return;
+    
+    let rotacion = parseInt(fotoActiva.dataset.rotacion || '0');
+    rotacion = (rotacion + 90) % 360;
+    
+    const escala = parseFloat(fotoActiva.dataset.escala || '1');
+    fotoActiva.style.transform = `scale(${escala}) rotate(${rotacion}deg)`;
+    fotoActiva.dataset.rotacion = rotacion;
+}
+
+/**
+ * ⭐ NUEVA FUNCIÓN: Limpiar datos offline incorrectos
+ */
+async function limpiarDatosOffline() {
+    try {
+        const confirmacion = await Utils.showConfirm(
+            '¿Limpiar datos offline?',
+            'Esto eliminará formularios E-14 incorrectos del almacenamiento offline. ¿Continuar?'
+        );
+        
+        if (!confirmacion) return;
+        
+        if (window.syncManager) {
+            await window.syncManager.limpiarDatosIncorrectos();
+            Utils.showSuccess('Datos offline limpiados exitosamente');
+        } else {
+            Utils.showError('Sistema de sincronización no disponible');
+        }
+    } catch (error) {
+        console.error('Error limpiando datos offline:', error);
+        Utils.showError('Error al limpiar datos offline: ' + error.message);
+    }
+}
+
+/**
  * Función global para logout
  */
 async function logout() {
@@ -1064,7 +1611,7 @@ async function logout() {
  */
 async function loadTestigos() {
     try {
-        const response = await APIClient.get('/formularios/testigos-puesto');
+        const response = await APIClient.get('/coordinador-puesto/testigos-puesto');
         
         if (response.success) {
             renderTestigos(response.data || []);
