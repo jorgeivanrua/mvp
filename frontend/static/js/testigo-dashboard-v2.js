@@ -1,6 +1,9 @@
 /**
- * Dashboard del Testigo Electoral - Versión Completa
+ * Dashboard del Testigo Electoral - Versión Refactorizada
+ * Utiliza clases modulares para mejor organización del código
  */
+
+// Variables globales principales
 let currentUser = null;
 let userLocation = null;
 let selectedMesa = null;
@@ -12,8 +15,15 @@ let candidatosData = [];
 let votosData = {};
 let autoRefreshInterval = null;
 
+// Instancias de clases modulares
+let formulariosManager = null;
+let modalVisualizacion = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Inicializando dashboard de testigo...');
+    
+    // Inicializar clases modulares
+    initializeModules();
     
     // Cargar datos esenciales
     loadUserProfile();
@@ -24,9 +34,6 @@ document.addEventListener('DOMContentLoaded', function() {
     loadTiposIncidentes().catch(err => console.warn('No se pudieron cargar tipos de incidentes:', err));
     loadTiposDelitos().catch(err => console.warn('No se pudieron cargar tipos de delitos:', err));
     
-    // Los botones ya están deshabilitados por defecto en el HTML
-    // No es necesario llamar a habilitarBotonNuevoFormulario() aquí
-    
     // Inicializar SyncManager para sincronización automática
     if (window.syncManager) {
         window.syncManager.init();
@@ -34,15 +41,48 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('✅ Dashboard inicializado');
     
-    // ⭐ MEJORA: Auto-refresh cada 30 segundos
+    // Auto-refresh cada 30 segundos
+    setupAutoRefresh();
+    
+    // Sincronización automática cada 5 minutos
+    setupAutoSync();
+});
+
+/**
+ * Inicializar módulos y clases
+ */
+function initializeModules() {
+    // Inicializar gestor de formularios
+    if (window.FormulariosManager) {
+        formulariosManager = new FormulariosManager();
+        window.formulariosManager = formulariosManager;
+    }
+    
+    // Inicializar modal de visualización
+    if (window.ModalVisualizacion) {
+        modalVisualizacion = new ModalVisualizacion();
+        modalVisualizacion.init();
+        window.modalVisualizacion = modalVisualizacion;
+    }
+}
+
+/**
+ * Configurar auto-refresh
+ */
+function setupAutoRefresh() {
     autoRefreshInterval = setInterval(() => {
         loadForms();  // Actualizar formularios
         if (presenciaVerificada && mesaSeleccionadaDashboard) {
             actualizarPanelMesas();  // Actualizar estado de mesas
         }
     }, 30000);
-    
-    // ⭐ SINCRONIZACIÓN AUTOMÁTICA cada 5 minutos
+}
+
+/**
+ * Configurar sincronización automática
+ */
+function setupAutoSync() {
+    // Sincronización automática cada 5 minutos
     setInterval(() => {
         sincronizarTodosDatosLocales(true);  // Sincronizar silenciosamente
     }, 300000);  // 5 minutos
@@ -51,9 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         sincronizarTodosDatosLocales(true);
     }, 10000);
-    
-    // setupImagePreview se llama cuando se abre el modal
-});
+}
 
 // Limpiar interval al salir
 window.addEventListener('beforeunload', function() {
