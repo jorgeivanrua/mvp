@@ -412,6 +412,11 @@ th.sortable:hover .sort-icon {
             </button>
         </li>
         <li class="nav-item" role="presentation">
+            <button class="nav-link" id="departamentos-tab" data-bs-toggle="tab" data-bs-target="#departamentos" type="button">
+                <i class="bi bi-map"></i> Departamentos
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
             <button class="nav-link" id="config-tab" data-bs-toggle="tab" data-bs-target="#config" type="button">
                 <i class="bi bi-gear"></i> Configuración
             </button>
@@ -552,6 +557,121 @@ th.sortable:hover .sort-icon {
         <!-- Tab: Usuarios -->
         <div class="tab-pane fade" id="users" role="tabpanel">
             {% include 'admin/usuarios-tab.html' %}
+        </div>
+
+        <!-- Tab: Departamentos -->
+        <div class="tab-pane fade" id="departamentos" role="tabpanel">
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <h5 class="mb-3"><i class="bi bi-map"></i> Gestión de Departamentos</h5>
+                    <p class="text-muted">Configure qué departamentos están habilitados en el sistema electoral. Solo un departamento puede ser principal a la vez.</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <button class="btn btn-primary" id="btnRefrescarDepartamentos">
+                        <i class="bi bi-arrow-clockwise"></i> Actualizar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Estadísticas de Departamentos -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon text-primary"><i class="bi bi-check-circle"></i></div>
+                        <h3 id="statDepartamentosHabilitados" class="mb-1">0</h3>
+                        <p class="text-muted mb-0">Habilitados</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon text-warning"><i class="bi bi-star"></i></div>
+                        <h6 id="statDepartamentoPrincipal" class="mb-1">Ninguno</h6>
+                        <p class="text-muted mb-0">Principal</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon text-info"><i class="bi bi-geo-alt"></i></div>
+                        <h3 id="statTotalPuestos" class="mb-1">0</h3>
+                        <p class="text-muted mb-0">Puestos</p>
+                        <small class="text-muted"><span id="statTotalMesas">0</span> mesas</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon text-success"><i class="bi bi-people"></i></div>
+                        <h3 id="statTotalUsuarios" class="mb-1">0</h3>
+                        <p class="text-muted mb-0">Usuarios</p>
+                        <small class="text-muted"><span id="statTotalMunicipios">0</span> municipios</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Departamentos Disponibles -->
+            <div class="chart-card mb-4">
+                <h5 class="mb-3"><i class="bi bi-list"></i> Departamentos Disponibles</h5>
+                <p class="text-muted">Departamentos disponibles en el archivo DIVIPOLA para habilitar en el sistema.</p>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Departamento</th>
+                                <th>Municipios</th>
+                                <th>Registros</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaDisponiblesTBody">
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                    <p class="text-muted mt-2">Cargando departamentos disponibles...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Departamentos Configurados -->
+            <div class="chart-card">
+                <h5 class="mb-3"><i class="bi bi-gear"></i> Departamentos Configurados</h5>
+                <p class="text-muted">Departamentos actualmente habilitados en el sistema con sus estadísticas.</p>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Departamento</th>
+                                <th>Municipios</th>
+                                <th>Puestos</th>
+                                <th>Mesas</th>
+                                <th>Usuarios</th>
+                                <th>Última Carga</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaConfiguradosTBody">
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                    <p class="text-muted mt-2">Cargando departamentos configurados...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Contenedor para el JavaScript -->
+            <div id="departamentosAdminContainer" style="display: none;"></div>
         </div>
 
         <!-- Tab: Configuración -->
@@ -1603,6 +1723,8 @@ th.sortable:hover .sort-icon {
 <!-- Scripts de gestión de partidos y candidatos -->
 <script src="{{ url_for('static', filename='js/partidos-manager.js') }}?v=20251202"></script>
 <script src="{{ url_for('static', filename='js/candidatos-manager.js') }}?v=20251202"></script>
+<!-- Script de gestión de departamentos -->
+<script src="{{ url_for('static', filename='js/departamentos-admin.js') }}?v=20251216"></script>
 <!-- Script de debugging -->
 <script src="{{ url_for('static', filename='js/super-admin-dashboard-debug.js') }}?v=20251201"></script>
 <script src="{{ url_for('static', filename='js/force-usuarios-render.js') }}?v=20251205"></script>
@@ -1631,6 +1753,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Inicializar gestión de departamentos cuando se abre la pestaña
+    const departamentosTab = document.getElementById('departamentos-tab');
+    if (departamentosTab) {
+        departamentosTab.addEventListener('shown.bs.tab', function() {
+            if (!window.departamentosAdmin) {
+                console.log('Inicializando gestión de departamentos...');
+                // El script departamentos-admin.js se inicializa automáticamente
+                // cuando detecta el contenedor departamentosAdminContainer
+            }
+        });
+    }
+
     // Inicializar mapa de geolocalización cuando se abre la pestaña de monitoreo
     const monitoringTab = document.getElementById('monitoring-tab');
     if (monitoringTab) {

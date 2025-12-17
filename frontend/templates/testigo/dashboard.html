@@ -126,6 +126,9 @@
                 <button class="btn btn-outline-primary btn-sm d-none d-md-inline-flex" onclick="window.syncManager && window.syncManager.syncAll()" title="Sincronizar datos">
                     <i class="bi bi-arrow-repeat"></i> Sincronizar
                 </button>
+                <button class="btn btn-outline-warning btn-sm d-none d-md-inline-flex" onclick="window.limpiarDatosUbicacionMejorado && window.limpiarDatosUbicacionMejorado()" title="Actualizar datos de ubicación desde el servidor">
+                    <i class="bi bi-geo-alt"></i> Actualizar Ubicación
+                </button>
                 <button class="btn btn-outline-danger btn-sm" onclick="logout()" title="Cerrar sesión">
                     <i class="bi bi-box-arrow-right"></i>
                     <span class="d-none d-md-inline"> Cerrar Sesión</span>
@@ -1016,6 +1019,12 @@
 
 {% block extra_js %}
 <!-- API Client ya está cargado en base.html -->
+
+<!-- Script de limpieza de cache (DEBE IR PRIMERO) -->
+<script src="{{ url_for('static', filename='js/cache-cleaner.js') }}"></script>
+
+<!-- Script para actualización de ubicación -->
+<script src="{{ url_for('static', filename='js/testigo-location-refresh.js') }}"></script>
 
 <!-- Script para habilitar/deshabilitar funciones según verificación -->
 <script src="{{ url_for('static', filename='js/testigo-habilitar-funciones.js') }}"></script>

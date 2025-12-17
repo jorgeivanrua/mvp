@@ -10,14 +10,13 @@ from backend.models.location import Location
 
 locations_bp = Blueprint('locations', __name__)
 
-# Constante para el código de Caquetá (DIVIPOLA)
-CAQUETA_CODE = '44'
-
-def validate_caqueta_code(code):
-    """Validar que el código pertenece a Caquetá"""
-    if not code:
-        return False
-    return code.startswith(CAQUETA_CODE)
+# Función para obtener departamentos habilitados
+def get_departamentos_habilitados():
+    """Obtener códigos de departamentos habilitados"""
+    from backend.models.departamento_config import DepartamentoConfig
+    
+    configs = DepartamentoConfig.query.filter_by(habilitado=True).all()
+    return [config.departamento_codigo for config in configs]
 
 
 def _auto_load_divipola():
@@ -63,9 +62,9 @@ def _auto_load_divipola():
             for row in reader:
                 dd = row['dd'].strip().zfill(2)
                 
-                # SOLO CAQUETÁ
-                if dd != '44':
-                    continue
+                # Cargar todos los departamentos (no solo Caquetá)
+                # if dd != '44':
+                #     continue
                 
                 mm = row['mm'].strip().zfill(2)
                 zz = row['zz'].strip().zfill(2)
@@ -218,28 +217,28 @@ def _auto_create_users():
         
         print("[AUTO-USERS] No hay usuarios, creando usuarios de prueba...")
         
-        # Obtener ubicaciones necesarias
-        caqueta = Location.query.filter_by(
-            tipo='departamento',
-            departamento_codigo='44'
+        # Obtener ubicaciones necesarias (cualquier departamento disponible)
+        departamento = Location.query.filter_by(tipo='departamento').first()
+        
+        if not departamento:
+            print("[AUTO-USERS] ERROR: No se encontró ningún departamento")
+            return False
+        
+        municipio = Location.query.filter_by(
+            tipo='municipio',
+            departamento_codigo=departamento.departamento_codigo
         ).first()
         
-        florencia = Location.query.filter_by(
-            tipo='municipio',
-            departamento_codigo='44',
-            municipio_codigo='4401'
-        ).first()
+        if not municipio:
+            print("[AUTO-USERS] ERROR: No se encontró ningún municipio")
+            return False
         
         # Obtener algunos puestos para testigos y coordinadores
         puestos = Location.query.filter_by(
             tipo='puesto',
-            departamento_codigo='44',
-            municipio_codigo='4401'
+            departamento_codigo=departamento.departamento_codigo,
+            municipio_codigo=municipio.municipio_codigo
         ).limit(3).all()
-        
-        if not caqueta or not florencia:
-            print("[AUTO-USERS] ERROR: No se encontraron ubicaciones necesarias")
-            return False
         
         # Crear usuarios de prueba
         usuarios = [
@@ -252,35 +251,35 @@ def _auto_create_users():
             },
             # Administradores
             {
-                'nombre': 'admin_caqueta',
+                'nombre': f'admin_{departamento.departamento_nombre.lower()}',
                 'rol': 'admin_departamental',
-                'ubicacion_id': caqueta.id,
+                'ubicacion_id': departamento.id,
                 'password': 'test123'
             },
             {
-                'nombre': 'admin_florencia',
+                'nombre': f'admin_{municipio.municipio_nombre.lower()}',
                 'rol': 'admin_municipal',
-                'ubicacion_id': florencia.id,
+                'ubicacion_id': municipio.id,
                 'password': 'test123'
             },
             # Coordinadores
             {
                 'nombre': 'coord_dpto',
                 'rol': 'coordinador_departamental',
-                'ubicacion_id': caqueta.id,
+                'ubicacion_id': departamento.id,
                 'password': 'test123'
             },
             {
                 'nombre': 'coord_muni',
                 'rol': 'coordinador_municipal',
-                'ubicacion_id': florencia.id,
+                'ubicacion_id': municipio.id,
                 'password': 'test123'
             },
             # Auditor
             {
                 'nombre': 'auditor',
                 'rol': 'auditor_electoral',
-                'ubicacion_id': caqueta.id,
+                'ubicacion_id': departamento.id,
                 'password': 'test123'
             },
             # Monitoreo
@@ -459,11 +458,11 @@ def _auto_load_partidos_candidatos():
 @locations_bp.route('/departamentos', methods=['GET'])
 def get_departamentos():
     """
-    Obtener departamento de Caquetá únicamente
+    Obtener departamentos habilitados
     Endpoint público (necesario para login)
     
     Returns:
-        JSON con lista de departamentos (solo Caquetá)
+        JSON con lista de departamentos habilitados
     """
     try:
         # Verificar si hay datos, si no, cargar automáticamente
@@ -476,18 +475,30 @@ def get_departamentos():
             # Cargar partidos y candidatos
             _auto_load_partidos_candidatos()
         
-        # Buscar departamento de Caquetá
-        departamentos = Location.query.filter_by(
-            tipo='departamento',
-            departamento_codigo=CAQUETA_CODE,
-            activo=True
-        ).all()
+        # Obtener departamentos habilitados
+        departamentos_habilitados = get_departamentos_habilitados()
+        
+        if not departamentos_habilitados:
+            # Si no hay departamentos habilitados, devolver todos los disponibles
+            departamentos = Location.query.filter_by(
+                tipo='departamento',
+                activo=True
+            ).all()
+        else:
+            # Devolver solo los departamentos habilitados
+            departamentos = Location.query.filter(
+                Location.tipo == 'departamento',
+                Location.departamento_codigo.in_(departamentos_habilitados),
+                Location.activo == True
+            ).all()
         
         if departamentos:
             data = [{
                 'departamento_codigo': dept.departamento_codigo,
                 'departamento_nombre': dept.departamento_nombre
             } for dept in departamentos]
+            
+            print(f"[DEPARTAMENTOS] Devolviendo {len(data)} departamentos: {[d['departamento_nombre'] for d in data]}")
             
             return jsonify({
                 'success': True,
@@ -499,12 +510,12 @@ def get_departamentos():
             
             return jsonify({
                 'success': False,
-                'error': 'No se encontró el departamento de Caquetá. La base de datos puede estar vacía o el archivo divipola.csv no está disponible.',
+                'error': 'No se encontraron departamentos habilitados. Verifique la configuración del sistema.',
                 'data': [],
                 'debug': {
                     'total_departamentos': total_deptos,
                     'total_locations': Location.query.count(),
-                    'buscando_codigo': CAQUETA_CODE
+                    'departamentos_habilitados': departamentos_habilitados
                 }
             }), 404
             

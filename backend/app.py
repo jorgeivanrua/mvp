@@ -119,6 +119,7 @@ def register_blueprints(app):
     from backend.routes.partidos import partidos_bp
     from backend.routes.candidatos import candidatos_bp
     from backend.routes.database_backup import database_backup_bp
+    from backend.routes.departamentos_admin import departamentos_admin_bp
     
     # API routes
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -148,6 +149,7 @@ def register_blueprints(app):
     app.register_blueprint(coordinador_departamental_bp)
     app.register_blueprint(incidentes_delitos_bp)
     app.register_blueprint(super_admin_bp)
+    app.register_blueprint(departamentos_admin_bp, url_prefix='/api/super-admin')
     app.register_blueprint(testigo_bp, url_prefix='/api/testigo')
     app.register_blueprint(coordinador_puesto_bp, url_prefix='/api/coordinador-puesto')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
