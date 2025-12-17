@@ -1,0 +1,53 @@
+===============================================
+    TESTIGOS ELECTORALES - QUINDÍO
+    CON CÉDULAS ASIGNADAS
+===============================================
+
+📊 RESUMEN:
+- Total testigos: 213
+- Contraseña para todos: test123
+- ✅ Todos tienen cédulas válidas
+- Distribuidos en 212 mesas de Quindío
+
+🔐 FORMATO DE LOGIN:
+- Usuario: Número de cédula
+- Contraseña: test123
+
+📋 EJEMPLOS DE TESTIGOS CON CÉDULAS:
+
+🏛️ ARMENIA (Capital):
+- testigo_12345678 → Cédula: 12345678
+- testigo_2601010101001 → Cédula: 2601010101001
+- testigo_2601010102001 → Cédula: 2601010102001
+- testigo_2601010201001 → Cédula: 2601010201001
+- testigo_2601010202001 → Cédula: 2601010202001
+- testigo_2601010203001 → Cédula: 2601010203001
+- testigo_2601010301001 → Cédula: 2601010301001
+- testigo_2601010401001 → Cédula: 2601010401001
+- testigo_2601010501001 → Cédula: 2601010501001
+- testigo_2601010502001 → Cédula: 2601010502001
+
+🏘️ OTROS MUNICIPIOS:
+- Cada municipio tiene sus testigos con cédulas únicas
+- Formato similar: testigo_[código_mesa] → Cédula: [código_mesa]
+
+===============================================
+INSTRUCCIONES DE LOGIN PARA TESTIGOS:
+===============================================
+
+1. Ir a: http://localhost:5000
+2. Seleccionar departamento: QUINDÍO
+3. Ingresar:
+   - Usuario: Su número de cédula
+   - Contraseña: test123
+
+Ejemplo:
+- Usuario: 12345678
+- Contraseña: test123
+
+===============================================
+ARCHIVO COMPLETO:
+usuarios_quindio_20251217_154149.csv
+===============================================
+
+✅ SISTEMA LISTO PARA TESTIGOS CON CÉDULAS

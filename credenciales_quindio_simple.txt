@@ -1,0 +1,69 @@
+===============================================
+    CREDENCIALES DE ACCESO - QUINDÍO
+===============================================
+
+🔑 SUPER ADMINISTRADORES (2)
+-----------------------------
+Usuario: Super Admin
+Contraseña: admin123
+
+Usuario: super_admin  
+Contraseña: admin123
+
+🏛️ COORDINADOR DEPARTAMENTAL (1)
+--------------------------------
+Usuario: QUINDIO
+Contraseña: test123
+
+🏘️ COORDINADORES MUNICIPALES (12)
+---------------------------------
+Contraseña para todos: test123
+
+Usuarios:
+- ARMENIA
+- BUENAVISTA  
+- CALARCA
+- CIRCASIA
+- CORDOBA
+- FILANDIA
+- GENOVA
+- LA_TEBAIDA
+- MONTENEGRO
+- PIJAO
+- QUIMBAYA
+- SALENTO
+
+🏢 COORDINADORES DE PUESTO (129)
+-------------------------------
+Contraseña para todos: test123
+Usuarios: ARMENIA_P01, ARMENIA_P02, etc.
+(Ver archivo CSV completo para lista detallada)
+
+🗳️ TESTIGOS ELECTORALES (213)
+-----------------------------
+Contraseña para todos: test123
+✅ TODOS TIENEN CÉDULAS ASIGNADAS
+
+Ejemplos:
+- testigo_12345678 | Cédula: 12345678
+- testigo_2601010101001 | Cédula: 2601010101001
+- testigo_2601010102001 | Cédula: 2601010102001
+(Ver archivo CSV completo para lista detallada)
+
+===============================================
+TOTAL USUARIOS: 357
+DEPARTAMENTO: Quindío (Código: 26)
+FECHA: 17 de diciembre de 2025
+===============================================
+
+📁 ARCHIVOS GENERADOS:
+- usuarios_quindio_20251217_152525.csv (Lista completa)
+- RESUMEN_USUARIOS_QUINDIO.md (Documentación detallada)
+- credenciales_quindio_simple.txt (Este archivo)
+
+🌐 ACCESO AL SISTEMA:
+URL: http://localhost:5000 (desarrollo)
+Seleccionar departamento: QUINDÍO
+Ingresar credenciales según rol
+
+✅ SISTEMA LISTO PARA USO
