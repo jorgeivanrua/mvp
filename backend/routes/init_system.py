@@ -15,47 +15,56 @@ def init_system():
     Carga Quindío automáticamente si no hay datos
     """
     try:
-        # Verificar si ya hay datos
-        config = DepartamentoConfig.query.filter_by(
-            departamento_codigo='26'
-        ).first()
+        # Verificar si ya hay datos básicos
+        from backend.models.user import User
+        from backend.models.location import Location
         
-        if config and config.total_usuarios_creados > 0:
+        usuarios_count = 0
+        ubicaciones_quindio = 0
+        
+        try:
+            usuarios_count = User.query.count()
+            ubicaciones_quindio = Location.query.filter_by(
+                departamento_codigo='26'
+            ).count()
+        except:
+            pass
+        
+        # Si ya hay datos de Quindío, no reinicializar
+        if usuarios_count > 2 and ubicaciones_quindio > 0:
             return jsonify({
                 'success': True,
-                'message': f'Sistema ya inicializado con {config.total_usuarios_creados} usuarios',
-                'departamento': config.departamento_nombre
+                'message': f'Sistema ya inicializado con {usuarios_count} usuarios y {ubicaciones_quindio} ubicaciones de Quindío',
+                'already_initialized': True
             })
         
-        # Solo permitir en producción (Render)
-        if not os.environ.get('RENDER'):
-            return jsonify({
-                'success': False,
-                'message': 'Inicialización solo disponible en producción'
-            }), 403
+        # Ejecutar script de inicialización simple
+        import subprocess
+        import sys
         
-        # Cargar Quindío
-        from scripts.cargar_departamento_completo import CargadorDepartamentoCompleto
+        # Ejecutar el script de inicialización simple
+        result = subprocess.run([
+            sys.executable, 'init_render_simple.py'
+        ], capture_output=True, text=True, timeout=120)
         
-        cargador = CargadorDepartamentoCompleto()
-        resultado = cargador.cargar_departamento_completo(
-            departamento_codigo='26',
-            es_principal=True,
-            forzar=True
-        )
-        
-        if resultado.get('exitoso'):
+        if result.returncode == 0:
             return jsonify({
                 'success': True,
                 'message': 'Sistema inicializado exitosamente',
-                'estadisticas': resultado['estadisticas']
+                'output': result.stdout
             })
         else:
             return jsonify({
                 'success': False,
-                'message': f'Error inicializando: {resultado.get("motivo")}'
+                'message': f'Error en inicialización: {result.stderr}',
+                'output': result.stdout
             }), 500
             
+    except subprocess.TimeoutExpired:
+        return jsonify({
+            'success': False,
+            'message': 'Timeout en inicialización - proceso tomó más de 5 minutos'
+        }), 500
     except Exception as e:
         return jsonify({
             'success': False,
@@ -66,32 +75,64 @@ def init_system():
 def system_status():
     """Verificar estado del sistema"""
     try:
-        # Contar departamentos configurados
-        departamentos = DepartamentoConfig.query.count()
+        # Verificar si las tablas existen
+        from backend.models.user import User
+        from backend.models.location import Location
         
-        # Verificar Quindío específicamente
-        quindio = DepartamentoConfig.query.filter_by(
-            departamento_codigo='26'
-        ).first()
+        # Contar usuarios y ubicaciones básicos
+        try:
+            usuarios_count = User.query.count()
+            ubicaciones_count = Location.query.count()
+        except:
+            usuarios_count = 0
+            ubicaciones_count = 0
+        
+        # Intentar verificar departamentos configurados
+        departamentos_count = 0
+        quindio_users = 0
+        quindio_locations = 0
+        quindio_loaded = False
+        
+        try:
+            departamentos_count = DepartamentoConfig.query.count()
+            quindio = DepartamentoConfig.query.filter_by(
+                departamento_codigo='26'
+            ).first()
+            
+            if quindio:
+                quindio_loaded = True
+                quindio_users = quindio.total_usuarios_creados
+                quindio_locations = quindio.total_ubicaciones
+        except:
+            # Si no existe la tabla, verificar por ubicaciones de Quindío
+            try:
+                quindio_locations = Location.query.filter_by(
+                    departamento_codigo='26'
+                ).count()
+                quindio_loaded = quindio_locations > 0
+            except:
+                pass
         
         status = {
-            'initialized': departamentos > 0,
-            'departamentos_count': departamentos,
-            'quindio_loaded': quindio is not None,
+            'initialized': usuarios_count > 2,  # Más que solo super admin
+            'departamentos_count': departamentos_count,
+            'quindio_loaded': quindio_loaded,
+            'usuarios_count': usuarios_count,
+            'ubicaciones_count': ubicaciones_count,
+            'quindio_users': quindio_users,
+            'quindio_locations': quindio_locations,
             'environment': 'production' if os.environ.get('RENDER') else 'development'
         }
-        
-        if quindio:
-            status['quindio_users'] = quindio.total_usuarios_creados
-            status['quindio_locations'] = quindio.total_ubicaciones
         
         return jsonify(status)
         
     except Exception as e:
         return jsonify({
             'error': str(e),
-            'initialized': False
-        }), 500
+            'initialized': False,
+            'usuarios_count': 0,
+            'ubicaciones_count': 0
+        }), 200  # Cambiar a 200 para evitar errores en frontend
 
 @init_bp.route('/init', methods=['GET'])
 def init_page():
