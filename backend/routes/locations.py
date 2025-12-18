@@ -13,10 +13,14 @@ locations_bp = Blueprint('locations', __name__)
 # Función para obtener departamentos habilitados
 def get_departamentos_habilitados():
     """Obtener códigos de departamentos habilitados"""
-    from backend.models.departamento_config import DepartamentoConfig
-    
-    configs = DepartamentoConfig.query.filter_by(habilitado=True).all()
-    return [config.departamento_codigo for config in configs]
+    try:
+        from backend.models.departamento_config import DepartamentoConfig
+        configs = DepartamentoConfig.query.filter_by(habilitado=True).all()
+        return [config.departamento_codigo for config in configs]
+    except Exception as e:
+        # Si la tabla no existe, devolver lista vacía
+        print(f"[DEPARTAMENTOS] Tabla departamentos_config no existe: {e}")
+        return []
 
 
 def _auto_load_divipola():

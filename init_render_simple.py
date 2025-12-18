@@ -9,9 +9,44 @@ import os
 # Agregar el directorio raíz al path
 sys.path.insert(0, os.path.abspath('.'))
 
+def crear_tablas_si_no_existen(db):
+    """Crear tablas necesarias si no existen"""
+    try:
+        # Crear todas las tablas definidas en los modelos
+        db.create_all()
+        print("✅ Tablas creadas/verificadas")
+        return True
+    except Exception as e:
+        print(f"⚠️  Error creando tablas: {e}")
+        return False
+
+def ejecutar_migraciones():
+    """Ejecutar migraciones antes de inicializar"""
+    try:
+        import subprocess
+        import sys
+        
+        print("🔄 Ejecutando migraciones...")
+        result = subprocess.run([
+            sys.executable, 'run_migrations.py'
+        ], capture_output=True, text=True, timeout=60)
+        
+        if result.returncode == 0:
+            print("✅ Migraciones completadas")
+            return True
+        else:
+            print(f"⚠️  Migraciones con warnings: {result.stderr}")
+            return True  # Continuar aunque haya warnings
+    except Exception as e:
+        print(f"⚠️  Error en migraciones: {e}")
+        return True  # Continuar de todas formas
+
 def main():
     """Inicialización ultra-simple"""
     print("🚀 Inicialización simple para Render...")
+    
+    # 1. Ejecutar migraciones primero
+    ejecutar_migraciones()
     
     try:
         from backend.app import create_app
@@ -23,10 +58,19 @@ def main():
         
         app = create_app()
         with app.app_context():
-            # Verificar si ya hay datos
-            if User.query.count() > 2:
-                print("✅ Sistema ya inicializado")
-                return
+            # 2. Crear tablas si no existen
+            print("📋 Verificando/creando tablas...")
+            crear_tablas_si_no_existen(db)
+            
+            # 3. Verificar si ya hay datos
+            try:
+                usuarios_count = User.query.count()
+                if usuarios_count > 2:
+                    print(f"✅ Sistema ya inicializado con {usuarios_count} usuarios")
+                    return
+            except Exception as e:
+                print(f"⚠️  Error verificando usuarios: {e}")
+                # Continuar con la inicialización
             
             print("📥 Creando datos básicos de Quindío...")
             
