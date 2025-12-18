@@ -40,7 +40,7 @@ def _auto_load_divipola():
         print("[AUTO-LOAD] BD vacía, cargando DIVIPOLA automáticamente...")
         
         # Buscar archivo CSV
-        csv_paths = ['divipola.csv', 'todos los datos/divipola.csv', 'data/divipola.csv']
+        csv_paths = ['data/divipola.csv', 'divipola.csv', 'todos los datos/divipola.csv']
         csv_path = None
         for path in csv_paths:
             if os.path.exists(path):

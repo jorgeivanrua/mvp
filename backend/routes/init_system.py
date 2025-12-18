@@ -42,10 +42,10 @@ def init_system():
         import subprocess
         import sys
         
-        # Ejecutar el script de inicialización simple
+        # Ejecutar el script de inicialización con backup
         result = subprocess.run([
-            sys.executable, 'init_render_simple.py'
-        ], capture_output=True, text=True, timeout=120)
+            sys.executable, 'init_render_backup.py'
+        ], capture_output=True, text=True, timeout=180)
         
         if result.returncode == 0:
             return jsonify({
