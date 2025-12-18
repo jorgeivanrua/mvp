@@ -120,9 +120,11 @@ def register_blueprints(app):
     from backend.routes.candidatos import candidatos_bp
     from backend.routes.database_backup import database_backup_bp
     from backend.routes.departamentos_admin import departamentos_admin_bp
+    from backend.routes.init_system import init_bp
     
     # API routes
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(init_bp, url_prefix='/api')
     
     # Autenticación de testigos por cédula
     from backend.routes.auth_testigo import auth_testigo_bp

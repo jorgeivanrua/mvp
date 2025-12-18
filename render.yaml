@@ -5,7 +5,8 @@ services:
     plan: free
     buildCommand: |
       pip install -r requirements.txt &&
-      python render_setup.py
+      python render_setup.py &&
+      python scripts/migrate_and_init.py
     startCommand: "gunicorn run:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
     envVars:
       - key: FLASK_ENV

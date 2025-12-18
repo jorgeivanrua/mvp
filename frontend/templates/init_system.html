@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicializar Sistema Electoral</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="bi bi-gear-fill me-2"></i>
+                            Inicialización del Sistema Electoral
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div id="status-container">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Verificando...</span>
+                                </div>
+                                <p class="mt-2">Verificando estado del sistema...</p>
+                            </div>
+                        </div>
+                        
+                        <div id="init-container" class="d-none">
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <strong>Sistema no inicializado</strong><br>
+                                El sistema necesita cargar los datos iniciales del departamento de Quindío.
+                            </div>
+                            
+                            <button id="init-btn" class="btn btn-primary btn-lg w-100">
+                                <i class="bi bi-download me-2"></i>
+                                Inicializar Sistema con Quindío
+                            </button>
+                        </div>
+                        
+                        <div id="success-container" class="d-none">
+                            <div class="alert alert-success">
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                                <strong>Sistema inicializado correctamente</strong>
+                            </div>
+                            
+                            <div id="system-info"></div>
+                            
+                            <a href="/" class="btn btn-success btn-lg w-100 mt-3">
+                                <i class="bi bi-house-fill me-2"></i>
+                                Ir al Sistema Electoral
+                            </a>
+                        </div>
+                        
+                        <div id="error-container" class="d-none">
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-circle-fill me-2"></i>
+                                <strong>Error de inicialización</strong>
+                                <div id="error-message" class="mt-2"></div>
+                            </div>
+                            
+                            <button id="retry-btn" class="btn btn-warning w-100">
+                                <i class="bi bi-arrow-clockwise me-2"></i>
+                                Reintentar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        class SystemInitializer {
+            constructor() {
+                this.statusContainer = document.getElementById('status-container');
+                this.initContainer = document.getElementById('init-container');
+                this.successContainer = document.getElementById('success-container');
+                this.errorContainer = document.getElementById('error-container');
+                this.initBtn = document.getElementById('init-btn');
+                this.retryBtn = document.getElementById('retry-btn');
+                
+                this.initBtn.addEventListener('click', () => this.initializeSystem());
+                this.retryBtn.addEventListener('click', () => this.checkStatus());
+                
+                this.checkStatus();
+            }
+            
+            hideAllContainers() {
+                this.statusContainer.classList.add('d-none');
+                this.initContainer.classList.add('d-none');
+                this.successContainer.classList.add('d-none');
+                this.errorContainer.classList.add('d-none');
+            }
+            
+            async checkStatus() {
+                this.hideAllContainers();
+                this.statusContainer.classList.remove('d-none');
+                
+                try {
+                    const response = await fetch('/api/system-status');
+                    const data = await response.json();
+                    
+                    if (data.initialized && data.quindio_loaded) {
+                        this.showSuccess(data);
+                    } else {
+                        this.showInitRequired();
+                    }
+                } catch (error) {
+                    this.showError('Error verificando estado del sistema: ' + error.message);
+                }
+            }
+            
+            showInitRequired() {
+                this.hideAllContainers();
+                this.initContainer.classList.remove('d-none');
+            }
+            
+            showSuccess(data) {
+                this.hideAllContainers();
+                this.successContainer.classList.remove('d-none');
+                
+                const info = document.getElementById('system-info');
+                info.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Departamentos</h5>
+                                    <h3 class="text-primary">${data.departamentos_count}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Usuarios Quindío</h5>
+                                    <h3 class="text-success">${data.quindio_users || 0}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            showError(message) {
+                this.hideAllContainers();
+                this.errorContainer.classList.remove('d-none');
+                document.getElementById('error-message').textContent = message;
+            }
+            
+            async initializeSystem() {
+                this.initBtn.disabled = true;
+                this.initBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Inicializando...';
+                
+                try {
+                    const response = await fetch('/api/init-system', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // Esperar un momento y verificar estado
+                        setTimeout(() => this.checkStatus(), 2000);
+                    } else {
+                        this.showError(data.message);
+                    }
+                } catch (error) {
+                    this.showError('Error durante la inicialización: ' + error.message);
+                } finally {
+                    this.initBtn.disabled = false;
+                    this.initBtn.innerHTML = '<i class="bi bi-download me-2"></i>Inicializar Sistema con Quindío';
+                }
+            }
+        }
+        
+        // Inicializar cuando se carga la página
+        document.addEventListener('DOMContentLoaded', () => {
+            new SystemInitializer();
+        });
+    </script>
+</body>
+</html>
