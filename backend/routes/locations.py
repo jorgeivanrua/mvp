@@ -479,8 +479,13 @@ def get_departamentos():
             # Cargar partidos y candidatos
             _auto_load_partidos_candidatos()
         
-        # Obtener departamentos habilitados
-        departamentos_habilitados = get_departamentos_habilitados()
+        # Obtener departamentos habilitados (con manejo de errores)
+        departamentos_habilitados = []
+        try:
+            departamentos_habilitados = get_departamentos_habilitados()
+        except Exception as e:
+            print(f"[DEPARTAMENTOS] Error obteniendo departamentos habilitados: {e}")
+            departamentos_habilitados = []
         
         if not departamentos_habilitados:
             # Si no hay departamentos habilitados, devolver todos los disponibles
