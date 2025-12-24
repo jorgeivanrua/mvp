@@ -1,311 +1,497 @@
-# Design Document - Sistema de Monitoreo en Tiempo Real
+# Sistema de Monitoreo - Design
 
-## Overview
+## Información del Spec
+- **Nombre**: Sistema de Monitoreo en Tiempo Real
+- **Versión**: 1.0
+- **Estado**: Implementado (100%)
+- **Fecha**: Diciembre 2025
 
-El Sistema de Monitoreo en Tiempo Real es un módulo de supervisión global del sistema electoral que permite a usuarios con rol 'monitoreo' visualizar y analizar toda la actividad del sistema sin restricciones de jurisdicción. El sistema está implementado con un dashboard centralizado que integra mapas de geolocalización, estadísticas en tiempo real, feeds de actividad reciente, y alertas automáticas. A diferencia de los coordinadores que tienen visibilidad limitada a su jurisdicción, el rol de monitoreo tiene acceso completo a todos los datos para supervisión y análisis.
+## Arquitectura General
 
-## Architecture
-
-### High-Level Architecture
+### Componentes Principales
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│              Monitoring Dashboard (Frontend)                 │
-│  - Mapa global de usuarios geolocalizados                   │
-│  - Panel de estadísticas globales                           │
-│  - Feed de actividad reciente                               │
-│  - Panel de alertas                                         │
-│  - Herramientas de filtrado y búsqueda                      │
-│  - Auto-refresh cada 30 segundos                            │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    API REST Layer                            │
-│  Blueprint: monitoreo_bp                                    │
-│  Prefix: /monitoreo                                         │
-│  - GET /dashboard (render dashboard)                        │
-│  - GET /api/usuarios-activos (todos los usuarios con GPS)  │
-│  - GET /api/estadisticas (estadísticas globales)           │
-│  - GET /api/actividad-reciente (últimos eventos)           │
-│  - GET /api/alertas (alertas críticas)                     │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Data Layer                                │
-│  - User (todos los usuarios)                                │
-│  - FormularioE14 (todos los formularios)                    │
-│  - IncidenteElectoral (todos los incidentes)                │
-│  - DelitoElectoral (todos los delitos)                      │
-│  - Location (todas las ubicaciones)                         │
-│  - PostgreSQL Database                                      │
+│                    SISTEMA DE MONITOREO                     │
+├─────────────────────────────────────────────────────────────┤
+│  Frontend (Dashboard)          │  Backend (APIs)            │
+│  ┌─────────────────────────┐   │  ┌─────────────────────┐   │
+│  │ Dashboard Principal     │   │  │ /monitoreo/         │   │
+│  │ - Estadísticas RT       │◄──┤  │ estadisticas        │   │
+│  │ - Mapa Geolocalización  │   │  │ datos-mapa          │   │
+│  │ - Tabla E-24           │   │  │ mapa-calor          │   │
+│  │ - Filtros Interactivos │   │  │ tendencias          │   │
+│  └─────────────────────────┘   │  │ comparativa-dept    │   │
+│                                │  │ predicciones        │   │
+│  ┌─────────────────────────┐   │  └─────────────────────┘   │
+│  │ Componentes JS          │   │                            │
+│  │ - MapaGeolocalizacion   │   │  ┌─────────────────────┐   │
+│  │ - APIClient             │   │  │ Modelos de Datos    │   │
+│  │ - Utils                 │   │  │ - User              │   │
+│  │ - Auto-refresh          │   │  │ - FormularioE14     │   │
+│  └─────────────────────────┘   │  │ - IncidenteElectoral│   │
+│                                │  │ - DelitoElectoral   │   │
+│                                │  │ - Location          │   │
+│                                │  └─────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Technology Stack
+### Flujo de Datos
 
-- **Backend**: Flask (Python)
-- **Database**: PostgreSQL with SQLAlchemy ORM
-- **Authentication**: Flask-JWT-Extended
-- **Authorization**: @role_required('monitoreo') decorator
-- **Maps**: Leaflet.js for global user visualization
-- **Charts**: Chart.js for statistics
-- **Real-time**: Polling every 30 seconds
-- **Frontend**: HTML, JavaScript, Bootstrap
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│   Usuario   │───▶│  Dashboard  │───▶│  API REST   │───▶│ Base Datos  │
+│ (Monitoreo) │    │   (HTML/JS) │    │  (Flask)    │    │(PostgreSQL) │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+       ▲                   │                   │                   │
+       │                   ▼                   ▼                   ▼
+       │            ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+       │            │Auto-refresh │    │Cálculos RT  │    │Consultas SQL│
+       │            │(30 seg)     │    │Estadísticas │    │Optimizadas  │
+       │            └─────────────┘    └─────────────┘    └─────────────┘
+       │                   │                   │                   │
+       └───────────────────┴───────────────────┴───────────────────┘
+                           Actualización en Tiempo Real
+```
 
-## Components and Interfaces
+## Diseño de APIs
 
-### 1. API Endpoints
-
-#### GET /monitoreo/dashboard
-- **Description**: Render monitoring dashboard
-- **Authentication**: JWT Required
-- **Authorization**: monitoreo role only
-- **Response**: HTML template
-
-#### GET /monitoreo/api/usuarios-activos
-- **Description**: Get all active users with geolocation
-- **Authentication**: JWT Required
-- **Authorization**: monitoreo role only
-- **Response**: 
-  ```json
-  {
-    "success": true,
-    "data": [
-      {
-        "id": 123,
-        "nombre": "Juan Pérez",
-        "rol": "testigo_electoral",
-        "latitud": 4.6097,
-        "longitud": -74.0817,
-        "precision": 10.5,
-        "ultima_actualizacion": "2025-11-25T10:30:00",
-        "ubicacion": { /* location object */ },
-        "presencia_verificada": true
-      }
-    ],
-    "total": 150
-  }
-  ```
-
-#### GET /monitoreo/api/estadisticas
-- **Description**: Get global system statistics
-- **Authentication**: JWT Required
-- **Authorization**: monitoreo role only
-- **Response**: 
-  ```json
-  {
-    "success": true,
-    "data": {
-      "testigos": {
-        "total": 500,
-        "con_geolocalizacion": 450,
-        "con_presencia_verificada": 480,
-        "porcentaje_geo": 90.0
-      },
-      "coordinadores": {
-        "total": 100,
-        "con_geolocalizacion": 85,
-        "porcentaje_geo": 85.0
-      },
-      "formularios": {
-        "total": 450,
-        "validados": 380,
-        "pendientes": 70
-      }
-    }
-  }
-  ```
-
-### 2. Frontend Components
-
-#### Global Map Component
-- **Purpose**: Display all geolocated users on a map
-- **Features**:
-  - Markers for all users with GPS
-  - Color-coded by role
-  - Popup with user details
-  - Filter by role
-  - Auto-refresh every 30 seconds
-
-#### Statistics Panel
-- **Purpose**: Display global statistics
-- **Features**:
-  - Testigos statistics (total, with GPS, with presence)
-  - Coordinadores statistics (total, with GPS)
-  - Formularios statistics (total, validated, pending)
-  - Progress bars and percentages
-  - Auto-refresh every 30 seconds
-
-#### Recent Activity Feed
-- **Purpose**: Show latest system events
-- **Features**:
-  - Last 50 events
-  - Event types: formularios, incidentes, delitos, presencias
-  - Timestamp and user info
-  - Click to view details
-  - Auto-refresh every 30 seconds
-
-#### Alerts Panel
-- **Purpose**: Display critical alerts
-- **Features**:
-  - Critical incidents
-  - Crimes reported
-  - Testigos without presence for 2+ hours
-  - Alert status (new, viewed, resolved)
-  - Click to view details
-
-## Data Models
-
-### No New Models Required
-
-The monitoring system uses existing models:
-- **User**: For user data and geolocation
-- **FormularioE14**: For form statistics
-- **IncidenteElectoral**: For incident data
-- **DelitoElectoral**: For crime data
-- **Location**: For geographic data
-
-### Role Configuration
-
+### 1. API de Estadísticas Generales
 ```python
-# In User model
-ROLES = [
-    'super_admin',
-    'admin_departamental',
-    'admin_municipal',
-    'coordinador_departamental',
-    'coordinador_municipal',
-    'coordinador_puesto',
-    'testigo_electoral',
-    'auditor_electoral',
-    'monitoreo'  # Special role with global visibility
-]
+@monitoreo_bp.route('/estadisticas', methods=['GET'])
+@jwt_required()
+@role_required('monitoreo')
+def get_estadisticas():
+    """
+    Retorna estadísticas generales del sistema electoral
+    
+    Response:
+    {
+        "success": true,
+        "data": {
+            "testigos": {
+                "total": 150,
+                "con_geolocalizacion": 120,
+                "con_presencia_verificada": 100,
+                "porcentaje_geo": 80.0,
+                "porcentaje_presencia": 66.7
+            },
+            "coordinadores": {
+                "total": 25,
+                "con_geolocalizacion": 20,
+                "puesto": 15,
+                "municipal": 8,
+                "departamental": 2,
+                "porcentaje_geo": 80.0
+            },
+            "formularios": {
+                "total": 450,
+                "esperados": 600,
+                "validados": 300,
+                "pendientes": 150,
+                "porcentaje_recibidos": 75.0,
+                "porcentaje_validados": 66.7,
+                "total_mesas": 200,
+                "tipos_eleccion": 3
+            }
+        }
+    }
+    """
+```
+
+### 2. API de Datos de Mapa
+```python
+@monitoreo_bp.route('/datos-mapa', methods=['GET'])
+@jwt_required()
+@role_required('monitoreo')
+def get_datos_mapa():
+    """
+    Retorna datos para renderizar el mapa de geolocalización
+    
+    Response:
+    {
+        "success": true,
+        "usuarios": [
+            {
+                "id": 1,
+                "nombre": "Juan Pérez",
+                "rol": "testigo_electoral",
+                "latitud": 1.6144,
+                "longitud": -75.6062,
+                "presencia_verificada": true,
+                "ultima_actualizacion": "2025-12-24T10:30:00Z",
+                "mesa_asignada": "Mesa 001",
+                "puesto": "Puesto Central"
+            }
+        ],
+        "puestos": [...],
+        "incidentes": [...],
+        "delitos": [...]
+    }
+    """
+```
+
+### 3. API de Mapa de Calor
+```python
+@monitoreo_bp.route('/mapa-calor', methods=['GET'])
+@jwt_required()
+@role_required('monitoreo')
+def get_mapa_calor():
+    """
+    Calcula índice de actividad por departamento
+    
+    Fórmula del índice:
+    actividad_total = usuarios + formularios + (incidentes * 2) + (delitos * 3)
+    
+    Response:
+    {
+        "success": true,
+        "mapa_calor": [
+            {
+                "departamento_codigo": "18",
+                "departamento_nombre": "Caquetá",
+                "usuarios": 45,
+                "formularios": 120,
+                "incidentes": 5,
+                "delitos": 2,
+                "indice_actividad": 181
+            }
+        ]
+    }
+    """
+```
+
+## Diseño de Frontend
+
+### 1. Dashboard Principal
+```html
+<!-- Estructura del Dashboard -->
+<div class="container-fluid">
+    <!-- Header con título y logout -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1>Monitoreo en Tiempo Real</h1>
+            <button onclick="logout()">Cerrar Sesión</button>
+        </div>
+    </div>
+    
+    <!-- Tarjetas de estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <h3 id="stat-testigos-geo">-</h3>
+                <p>Testigos con Geolocalización</p>
+            </div>
+        </div>
+        <!-- Más tarjetas... -->
+    </div>
+    
+    <!-- Mapa de geolocalización -->
+    <div class="row">
+        <div class="col-12">
+            <div id="mapa-monitoreo"></div>
+        </div>
+    </div>
+    
+    <!-- Tabla consolidado E-24 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <table id="tabla-e24">
+                <!-- Contenido dinámico -->
+            </table>
+        </div>
+    </div>
+</div>
+```
+
+### 2. Componente MapaGeolocalizacion
+```javascript
+class MapaGeolocalizacion {
+    constructor(containerId, options) {
+        this.containerId = containerId;
+        this.options = options;
+        this.map = null;
+        this.markers = {
+            testigos: [],
+            coordinadores: [],
+            puestos: [],
+            incidentes: [],
+            delitos: []
+        };
+        this.filtros = {
+            testigos: true,
+            coordinadores: true,
+            incidentes: false,
+            delitos: false,
+            pendientes: false,
+            completados: false
+        };
+    }
+    
+    async init() {
+        // Inicializar mapa Leaflet
+        this.map = L.map(this.containerId).setView(
+            this.options.center, 
+            this.options.zoom
+        );
+        
+        // Cargar datos iniciales
+        await this.cargarDatos();
+        
+        // Configurar auto-actualización
+        if (this.options.autoUpdate) {
+            setInterval(() => this.actualizarDatos(), this.options.updateInterval);
+        }
+    }
+    
+    async cargarDatos() {
+        const response = await APIClient.get('/monitoreo/datos-mapa');
+        if (response.success) {
+            this.renderizarUsuarios(response.usuarios);
+            this.renderizarPuestos(response.puestos);
+            this.renderizarIncidentes(response.incidentes);
+            this.renderizarDelitos(response.delitos);
+        }
+    }
+    
+    setFiltro(tipo, activo) {
+        this.filtros[tipo] = activo;
+        this.aplicarFiltros();
+    }
+    
+    async buscarPuesto(termino) {
+        // Implementar búsqueda de puestos
+    }
+}
+```
+
+### 3. Sistema de Auto-actualización
+```javascript
+// Auto-refresh cada 30 segundos
+setInterval(async () => {
+    console.log('[Monitoreo] Auto-refresh...');
+    await cargarEstadisticas();
+    await cargarEstadisticasUsuarios();
+    await cargarFormulariosE24();
+    
+    // Actualizar mapa si existe
+    if (window.mapaGeolocalizacion) {
+        await window.mapaGeolocalizacion.actualizarDatos();
+    }
+}, 30000);
+```
+
+## Diseño de Base de Datos
+
+### Consultas Optimizadas
+
+#### 1. Estadísticas de Testigos
+```sql
+-- Testigos con geolocalización
+SELECT COUNT(*) as con_geolocalizacion
+FROM users u 
+JOIN locations l ON u.ubicacion_id = l.id 
+WHERE u.rol = 'testigo_electoral' 
+  AND u.activo = true 
+  AND u.latitud IS NOT NULL 
+  AND u.longitud IS NOT NULL;
+
+-- Testigos con presencia verificada
+SELECT COUNT(*) as con_presencia
+FROM users 
+WHERE rol = 'testigo_electoral' 
+  AND activo = true 
+  AND presencia_verificada = true;
+```
+
+#### 2. Datos para Mapa
+```sql
+-- Usuarios activos con geolocalización
+SELECT u.id, u.nombre, u.rol, u.latitud, u.longitud, 
+       u.presencia_verificada, u.ultima_geolocalizacion_at,
+       m.mesa_nombre, p.puesto_nombre
+FROM users u
+LEFT JOIN mesas m ON u.mesa_asignada_id = m.id
+LEFT JOIN puestos p ON m.puesto_id = p.id
+WHERE u.activo = true 
+  AND u.latitud IS NOT NULL 
+  AND u.longitud IS NOT NULL
+  AND u.ultima_geolocalizacion_at >= NOW() - INTERVAL '1 hour';
+```
+
+#### 3. Mapa de Calor por Departamento
+```sql
+-- Índice de actividad por departamento
+SELECT 
+    l.departamento_codigo,
+    l.departamento_nombre,
+    COUNT(DISTINCT u.id) as usuarios,
+    COUNT(DISTINCT f.id) as formularios,
+    COUNT(DISTINCT i.id) as incidentes,
+    COUNT(DISTINCT d.id) as delitos,
+    (COUNT(DISTINCT u.id) + COUNT(DISTINCT f.id) + 
+     COUNT(DISTINCT i.id) * 2 + COUNT(DISTINCT d.id) * 3) as indice_actividad
+FROM locations l
+LEFT JOIN users u ON l.departamento_codigo = (
+    SELECT l2.departamento_codigo 
+    FROM locations l2 
+    WHERE l2.id = u.ubicacion_id
+)
+LEFT JOIN formularios_e14 f ON f.testigo_id = u.id
+LEFT JOIN incidentes_electorales i ON i.reportado_por_id = u.id
+LEFT JOIN delitos_electorales d ON d.reportado_por_id = u.id
+WHERE l.tipo = 'departamento'
+GROUP BY l.departamento_codigo, l.departamento_nombre
+ORDER BY indice_actividad DESC;
 ```
 
 ## Correctness Properties
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system-essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+### Property 1: Consistencia de Estadísticas
+```python
+def test_estadisticas_consistency():
+    """
+    PROPERTY: La suma de testigos con presencia + sin presencia debe igual total
+    """
+    stats = get_estadisticas()
+    testigos = stats['data']['testigos']
+    
+    assert testigos['con_presencia_verificada'] + \
+           (testigos['total'] - testigos['con_presencia_verificada']) == \
+           testigos['total']
+```
 
-### Property 1: Global Visibility
-*For any* monitoreo user querying data, no jurisdiction filters should be applied
-**Validates: Requirements 1.3, 1.4, 1.5**
+### Property 2: Integridad de Geolocalización
+```python
+def test_geolocalizacion_integrity():
+    """
+    PROPERTY: Usuarios con geolocalización deben tener lat/lng válidas
+    """
+    datos_mapa = get_datos_mapa()
+    
+    for usuario in datos_mapa['usuarios']:
+        assert -90 <= usuario['latitud'] <= 90
+        assert -180 <= usuario['longitud'] <= 180
+        assert usuario['ultima_actualizacion'] is not None
+```
 
-### Property 2: Role Authorization
-*For any* non-monitoreo user attempting to access monitoring endpoints, the system should return 403 Forbidden
-**Validates: Requirements 15.1**
+### Property 3: Validez de Índice de Actividad
+```python
+def test_indice_actividad_validity():
+    """
+    PROPERTY: Índice de actividad debe ser >= suma de componentes individuales
+    """
+    mapa_calor = get_mapa_calor()
+    
+    for dept in mapa_calor['mapa_calor']:
+        componentes = dept['usuarios'] + dept['formularios'] + \
+                     dept['incidentes'] + dept['delitos']
+        assert dept['indice_actividad'] >= componentes
+```
 
-### Property 3: Statistics Accuracy
-*For any* statistics query, the sum of (validados + pendientes + rechazados) should equal total formularios
-**Validates: Requirements 6.1, 6.2, 6.3, 6.5**
+### Property 4: Consistencia Temporal
+```python
+def test_temporal_consistency():
+    """
+    PROPERTY: Datos de tendencias deben ser coherentes temporalmente
+    """
+    tendencias = get_tendencias()
+    
+    for i in range(len(tendencias['tendencias']) - 1):
+        hora_actual = tendencias['tendencias'][i]['hora']
+        hora_siguiente = tendencias['tendencias'][i + 1]['hora']
+        assert (hora_siguiente - hora_actual) % 24 == 1
+```
 
-### Property 4: Geolocation Filtering
-*For any* usuarios-activos query, all returned users should have non-null ultima_latitud and ultima_longitud
-**Validates: Requirements 3.1**
+### Property 5: Integridad de Formularios
+```python
+def test_formularios_integrity():
+    """
+    PROPERTY: Total votos = votos válidos + nulos + blanco
+    """
+    formularios = get_formularios_e24()
+    
+    for form in formularios:
+        if form['total_votos'] > 0:
+            suma_componentes = (form['votos_validos'] + 
+                              form['votos_nulos'] + 
+                              form['votos_blanco'])
+            assert form['total_votos'] == suma_componentes
+```
 
-### Property 5: Auto-Refresh Consistency
-*For any* dashboard session, data should be refreshed every 30 seconds while the dashboard is active
-**Validates: Requirements 2.4**
+### Property 6: Validez de Porcentajes
+```python
+def test_porcentajes_validity():
+    """
+    PROPERTY: Todos los porcentajes deben estar entre 0 y 100
+    """
+    stats = get_estadisticas()
+    
+    for categoria in stats['data'].values():
+        for key, value in categoria.items():
+            if 'porcentaje' in key:
+                assert 0 <= value <= 100
+```
 
-## Error Handling
+### Property 7: Consistencia de Comparativa
+```python
+def test_comparativa_consistency():
+    """
+    PROPERTY: Score de rendimiento debe reflejar métricas reales
+    """
+    comparativa = get_comparativa_departamentos()
+    
+    for dept in comparativa['comparativa']:
+        # Score alto debe correlacionar con buenos indicadores
+        if dept['score_rendimiento'] > 80:
+            assert dept['testigos']['porcentaje_presencia'] > 70
+            assert dept['formularios']['porcentaje_validados'] > 70
+```
 
-### Error Categories
+### Property 8: Validez de Predicciones
+```python
+def test_predicciones_validity():
+    """
+    PROPERTY: Predicciones deben ser numéricamente válidas
+    """
+    predicciones = get_predicciones()
+    pred = predicciones['predicciones']
+    
+    assert pred['formularios']['prediccion_proximas_24h'] >= 0
+    assert pred['incidentes']['prediccion_proximas_24h'] >= 0
+    assert pred['formularios']['horas_estimadas_completar'] >= 0
+```
 
-1. **Authorization Errors** (403 Forbidden)
-   - Non-monitoreo user attempting to access monitoring dashboard
-   - Deactivated monitoreo user attempting access
+## Consideraciones de Rendimiento
 
-2. **Not Found Errors** (404 Not Found)
-   - Monitoring dashboard route not found
-   - API endpoint not found
+### 1. Optimizaciones de Base de Datos
+- Índices en columnas de filtrado frecuente
+- Consultas con LIMIT para paginación
+- JOINs optimizados para estadísticas
 
-3. **Server Errors** (500 Internal Server Error)
-   - Database connection failures
-   - Query timeout
-   - Unexpected exceptions
+### 2. Optimizaciones de Frontend
+- Paginación en tabla E-24 (20 registros por página)
+- Filtros aplicados en cliente para mejor UX
+- Auto-refresh inteligente (solo datos cambiados)
 
-## Testing Strategy
+### 3. Caching
+- Cache de estadísticas por 30 segundos
+- Cache de datos de mapa por 1 minuto
+- Cache de filtros en localStorage
 
-### Unit Testing
+## Seguridad
 
-1. **Authorization Tests**
-   - Test monitoreo user can access dashboard
-   - Test non-monitoreo user receives 403
-   - Test deactivated monitoreo user receives 403
+### 1. Autenticación y Autorización
+- JWT requerido en todas las APIs
+- Verificación de rol 'monitoreo'
+- Timeout de sesión automático
 
-2. **Data Tests**
-   - Test usuarios-activos returns all users with GPS
-   - Test estadisticas calculates correct totals
-   - Test no jurisdiction filters are applied
+### 2. Validación de Datos
+- Sanitización de parámetros de entrada
+- Validación de coordenadas geográficas
+- Escape de contenido HTML
 
-3. **Statistics Tests**
-   - Test testigos statistics calculation
-   - Test coordinadores statistics calculation
-   - Test formularios statistics calculation
-
-### Property-Based Testing
-
-Property-based tests will use **Hypothesis** library for Python:
-
-1. **Property Test: Global Visibility**
-   - Generate random users across different jurisdictions
-   - Query as monitoreo user
-   - Verify all users are returned
-
-2. **Property Test: Statistics Accuracy**
-   - Generate random formularios with different estados
-   - Calculate statistics
-   - Verify totals match
-
-3. **Property Test: Geolocation Filtering**
-   - Generate random users with and without GPS
-   - Query usuarios-activos
-   - Verify only users with GPS are returned
-
-### Integration Testing
-
-1. Monitoreo user logs in → Accesses dashboard → Sees all data
-2. Non-monitoreo user attempts access → Receives 403
-3. Dashboard loads → Auto-refreshes every 30 seconds → Data updates
-4. Filter by role → Only users with that role shown
-5. Export data → File downloaded with all data
-
-## Security Considerations
-
-- All endpoints require JWT authentication
-- Only monitoreo role can access monitoring endpoints
-- Access logging for audit purposes
-- Sensitive data masking (partial phone numbers, etc.)
-- Super admin required to create monitoreo users
-- Immediate access revocation on user deactivation
-
-## Performance Considerations
-
-- Indexes on User.ultima_latitud, User.ultima_longitud for fast geolocation queries
-- Caching of statistics (updated every 30 seconds)
-- Pagination for large datasets
-- Efficient queries without jurisdiction filters
-- Auto-refresh interval optimized (30 seconds)
-
-## Deployment Considerations
-
-- Monitoring dashboard accessible at /monitoreo/dashboard
-- API endpoints under /monitoreo/api/*
-- Requires monitoreo role to be added to database
-- Super admin can create monitoreo users
-- Dashboard optimized for large screens (desktop/tablet)
-
-## Future Enhancements
-
-1. **Real-time Updates**: WebSockets instead of polling
-2. **Advanced Analytics**: Machine learning for pattern detection
-3. **Custom Dashboards**: User-configurable dashboard layouts
-4. **Mobile App**: Dedicated monitoring mobile application
-5. **Alert Rules**: Configurable alert thresholds
-6. **Historical Analysis**: Time-series data visualization
-7. **Predictive Analytics**: Forecast based on historical data
-8. **Integration**: Export to external BI tools
-9. **Multi-language**: Support for multiple languages
-10. **Voice Alerts**: Audio notifications for critical events
-
+### 3. Rate Limiting
+- Límite de requests por minuto
+- Protección contra ataques DDoS
+- Logging de accesos sospechosos

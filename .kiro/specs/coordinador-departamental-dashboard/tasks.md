@@ -2,7 +2,7 @@
 
 ## Overview
 
-Este plan implementa el Dashboard del Coordinador Departamental reutilizando al máximo el código del Dashboard Municipal. Estado actual: 15% completado (3/20 tareas). Los modelos de datos están implementados, pero falta la consolidación automática, detección de discrepancias, y reportes departamentales.
+Este plan implementa el Dashboard del Coordinador Departamental reutilizando al máximo el código del Dashboard Municipal. Estado actual: 15% completado (3/20 tareas). Los modelos de datos están implementados, pero falta la consolidación automática, detección de discrepancias, y reportes departamentales. El backend del coordinador municipal puede servir como base para acelerar el desarrollo.
 
 ## Tasks
 

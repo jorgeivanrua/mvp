@@ -1,1150 +1,805 @@
 /**
- * Dashboard del Coordinador Municipal
+ * Dashboard Coordinador Municipal
+ * Gestión de puestos, consolidación municipal y generación de E-24
  */
 
-// Estado global
-let currentUser = null;
-let userLocation = null;
-let puestos = [];
-let puestosOriginales = [];
+// Variables globales
+let puestosData = [];
 let puestoSeleccionado = null;
-let filtroEstado = '';
-let autoRefreshInterval = null;
 let chartConsolidado = null;
+let puestosSeleccionadosComparacion = [];
 
-// Inicialización
+// ============================================================================
+// INICIALIZACIÓN
+// ============================================================================
+
 document.addEventListener('DOMContentLoaded', async function() {
+    console.log('[Municipal] Iniciando dashboard...');
+    
     try {
-        console.log('[Coordinador Municipal] Inicializando dashboard...');
-        
+        // 1. Cargar perfil del usuario
         await loadUserProfile();
-        await loadPuestos();
-        await loadEstadisticas();
-        await loadConsolidadoMunicipal();
-        await loadDiscrepancias();
         
-        console.log('[Coordinador Municipal] Dashboard inicializado correctamente');
+        // 2. Cargar datos iniciales
+        await Promise.all([
+            loadEstadisticas(),
+            loadPuestos(),
+            loadConsolidadoMunicipal(),
+            loadDiscrepancias(),
+            loadTiposEleccion()
+        ]);
         
-        // Auto-refresh cada 60 segundos
-        autoRefreshInterval = setInterval(() => {
-            loadPuestos();
-            loadEstadisticas();
-            loadConsolidadoMunicipal();
-            loadDiscrepancias();
+        // 3. Configurar auto-refresh cada 60 segundos
+        setInterval(async () => {
+            console.log('[Municipal] Auto-refresh...');
+            await Promise.all([
+                loadEstadisticas(),
+                loadPuestos(),
+                loadDiscrepancias()
+            ]);
         }, 60000);
+        
+        console.log('[Municipal] Dashboard inicializado correctamente');
+        
     } catch (error) {
-        console.error('[Coordinador Municipal] Error inicializando dashboard:', error);
-        Utils.showError('Error al inicializar el dashboard. Por favor, recarga la página.');
+        console.error('[Municipal] Error inicializando dashboard:', error);
+        Utils.showError('Error al cargar el dashboard. Por favor, recargue la página.');
     }
 });
 
-// Limpiar interval al salir
-window.addEventListener('beforeunload', function() {
-    if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
-    }
-});
+// ============================================================================
+// CARGA DE DATOS
+// ============================================================================
 
-/**
- * Cargar perfil del coordinador
- */
 async function loadUserProfile() {
     try {
-        console.log('[Coordinador Municipal] Cargando perfil...');
         const response = await APIClient.get('/auth/profile');
         
-        if (response && response.success) {
-            currentUser = response.data.user;
-            userLocation = response.data.ubicacion;
+        if (response && response.success && response.data) {
+            const user = response.data;
+            const ubicacion = user.ubicacion;
             
-            console.log('[Coordinador Municipal] Perfil cargado:', currentUser);
-            console.log('[Coordinador Municipal] Ubicación:', userLocation);
-            
-            // Mostrar información del municipio
-            const municipioInfo = document.getElementById('municipioInfo');
-            if (municipioInfo && userLocation) {
-                municipioInfo.textContent = 
-                    `${userLocation.municipio_nombre || userLocation.nombre_completo} - Código: ${userLocation.municipio_codigo || 'N/A'}`;
+            if (ubicacion && ubicacion.tipo === 'municipio') {
+                document.getElementById('municipio-info').textContent = 
+                    `${ubicacion.municipio_nombre || ubicacion.nombre_completo} - ${ubicacion.departamento_nombre}`;
+            } else {
+                document.getElementById('municipio-info').textContent = 'Municipio no asignado';
             }
-        } else {
-            throw new Error(response?.error || 'Error al cargar perfil');
         }
     } catch (error) {
-        console.error('[Coordinador Municipal] Error loading profile:', error);
-        const municipioInfo = document.getElementById('municipioInfo');
-        if (municipioInfo) {
-            municipioInfo.textContent = 'Error al cargar información del municipio';
-        }
-        // No mostrar error al usuario en este caso, solo log
+        console.error('[Municipal] Error cargando perfil:', error);
     }
 }
 
-/**
- * Cargar estadísticas detalladas del municipio
- */
 async function loadEstadisticas() {
     try {
         const response = await APIClient.get('/coordinador-municipal/estadisticas');
         
-        if (response.success) {
-            const stats = response.data;
-            renderEstadisticasDetalladas(stats);
-        } else {
-            throw new Error(response.error || 'Error al cargar estadísticas');
+        if (response && response.success && response.data) {
+            const stats = response.data.resumen_general;
+            
+            document.getElementById('stat-total-puestos').textContent = stats.total_puestos || 0;
+            document.getElementById('stat-puestos-completos').textContent = stats.puestos_completos || 0;
+            document.getElementById('stat-cobertura').textContent = `${Math.round(stats.porcentaje_avance || 0)}%`;
+            document.getElementById('stat-discrepancias').textContent = stats.puestos_con_discrepancias || 0;
         }
     } catch (error) {
-        console.error('Error loading estadisticas:', error);
-        Utils.showError('Error al cargar estadísticas detalladas');
+        console.error('[Municipal] Error cargando estadísticas:', error);
     }
 }
 
-/**
- * Renderizar estadísticas detalladas
- */
-function renderEstadisticasDetalladas(stats) {
-    const container = document.getElementById('estadisticasDetalladas');
-    
-    if (!container) return;
-    
-    const resumen = stats.resumen_general || {};
-    const consolidado = stats.consolidado || {};
-    
-    let html = `
-        <div class="row g-3">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-title">Resumen General</h6>
-                        <p><strong>Total Puestos:</strong> ${resumen.total_puestos || 0}</p>
-                        <p><strong>Puestos Completos:</strong> ${resumen.puestos_completos || 0}</p>
-                        <p><strong>Formularios Validados:</strong> ${resumen.formularios_validados || 0}</p>
-                        <p><strong>Avance:</strong> ${(resumen.porcentaje_avance || 0).toFixed(1)}%</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-title">Participación</h6>
-                        <p><strong>Total Votos:</strong> ${Utils.formatNumber(consolidado.total_votos || 0)}</p>
-                        <p><strong>Votantes Registrados:</strong> ${Utils.formatNumber(consolidado.total_votantes_registrados || 0)}</p>
-                        <p><strong>Participación:</strong> ${(consolidado.participacion_porcentaje || 0).toFixed(2)}%</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Agregar tasa de rechazo si existe
-    if (stats.tasa_rechazo_por_puesto && stats.tasa_rechazo_por_puesto.length > 0) {
-        html += `
-            <div class="card mt-3">
-                <div class="card-body">
-                    <h6 class="card-title">Puestos con Mayor Tasa de Rechazo</h6>
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Puesto</th>
-                                    <th>Rechazados</th>
-                                    <th>Total</th>
-                                    <th>Tasa</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${stats.tasa_rechazo_por_puesto.slice(0, 5).map(p => `
-                                    <tr>
-                                        <td>${p.puesto_nombre}</td>
-                                        <td>${p.rechazados}</td>
-                                        <td>${p.total}</td>
-                                        <td><span class="badge bg-${p.tasa_rechazo > 20 ? 'danger' : 'warning'}">${p.tasa_rechazo.toFixed(1)}%</span></td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-    
-    container.innerHTML = html;
-}
-
-/**
- * Cargar lista de puestos
- */
 async function loadPuestos() {
     try {
-        const params = {};
-        if (filtroEstado) {
-            params.estado = filtroEstado;
-        }
+        const response = await APIClient.get('/coordinador-municipal/puestos');
         
-        const response = await APIClient.get('/coordinador-municipal/puestos', params);
-        
-        if (response.success) {
-            puestosOriginales = response.data.puestos || [];
-            puestos = [...puestosOriginales];
-            const stats = response.data.estadisticas || {};
-            
-            // Actualizar estadísticas
-            updateEstadisticas(stats);
-            
-            // Renderizar tabla
-            renderPuestosTable(puestos);
-        } else {
-            throw new Error(response.error || 'Error desconocido');
+        if (response && response.success && response.data) {
+            puestosData = response.data.puestos;
+            renderPuestosTable();
+            updateFiltroZonas();
         }
     } catch (error) {
-        console.error('Error loading puestos:', error);
-        const tbody = document.querySelector('#puestosTable tbody');
-        const errorMsg = error.message || 'Error al cargar puestos';
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="4" class="text-center py-4">
-                    <p class="text-danger">❌ ${errorMsg}</p>
-                    <button class="btn btn-sm btn-outline-primary mt-2" onclick="loadPuestos()">
-                        <i class="bi bi-arrow-clockwise"></i> Reintentar
-                    </button>
-                </td>
-            </tr>
+        console.error('[Municipal] Error cargando puestos:', error);
+        document.getElementById('lista-puestos').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle"></i> Error al cargar puestos
+            </div>
         `;
     }
 }
 
-/**
- * Actualizar estadísticas generales
- */
-function updateEstadisticas(stats) {
-    const container = document.getElementById('estadisticasGenerales');
-    
-    const totalPuestos = stats.total_puestos || 0;
-    const puestosCompletos = stats.puestos_completos || 0;
-    const puestosIncompletos = stats.puestos_incompletos || 0;
-    const puestosConDiscrepancias = stats.puestos_con_discrepancias || 0;
-    const cobertura = stats.cobertura_porcentaje || 0;
-    
-    container.innerHTML = `
-        <div class="stat-card card p-2 success">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <small class="text-muted">Completos</small>
-                    <h4 class="mb-0">${puestosCompletos}</h4>
-                </div>
-                <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
-            </div>
-        </div>
-        
-        <div class="stat-card card p-2 warning">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <small class="text-muted">Incompletos</small>
-                    <h4 class="mb-0">${puestosIncompletos}</h4>
-                </div>
-                <i class="bi bi-hourglass-split text-warning" style="font-size: 2rem;"></i>
-            </div>
-        </div>
-        
-        <div class="stat-card card p-2 danger">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <small class="text-muted">Con Discrepancias</small>
-                    <h4 class="mb-0">${puestosConDiscrepancias}</h4>
-                </div>
-                <i class="bi bi-exclamation-triangle text-danger" style="font-size: 2rem;"></i>
-            </div>
-        </div>
-        
-        <div class="card p-2 bg-light">
-            <div class="text-center">
-                <small class="text-muted">Cobertura</small>
-                <h3 class="mb-0">${cobertura.toFixed(1)}%</h3>
-                <div class="progress mt-2" style="height: 8px;">
-                    <div class="progress-bar ${cobertura >= 80 ? 'bg-success' : 'bg-warning'}" 
-                         style="width: ${cobertura}%"></div>
-                </div>
-                <small class="text-muted">${puestosCompletos} de ${totalPuestos} puestos</small>
-            </div>
-        </div>
-    `;
-}
-
-/**
- * Renderizar tabla de puestos
- */
-function renderPuestosTable(puestos) {
-    const tbody = document.querySelector('#puestosTable tbody');
-    
-    if (puestos.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="4" class="text-center py-4">
-                    <p class="text-muted">No hay puestos ${filtroEstado ? 'en estado ' + filtroEstado : ''}</p>
-                </td>
-            </tr>
-        `;
-        return;
-    }
-    
-    tbody.innerHTML = puestos.map(puesto => {
-        const estadoBadge = getEstadoBadge(puesto.estado);
-        const discrepanciaBadge = puesto.tiene_discrepancias ? 
-            '<span class="badge bg-danger discrepancia-badge ms-1">!</span>' : '';
-        const porcentaje = puesto.porcentaje_avance || 0;
-        const coordinadorNombre = puesto.coordinador?.nombre || 'Sin asignar';
-        
-        return `
-            <tr class="puesto-row ${puestoSeleccionado?.id === puesto.id ? 'selected' : ''}" 
-                onclick="seleccionarPuesto(${puesto.id})">
-                <td>
-                    <strong>${puesto.codigo}</strong>${discrepanciaBadge}<br>
-                    <small class="text-muted">${puesto.nombre}</small>
-                </td>
-                <td>
-                    <small>${coordinadorNombre}</small>
-                </td>
-                <td class="text-center">
-                    <div class="progress" style="height: 20px;">
-                        <div class="progress-bar ${porcentaje >= 100 ? 'bg-success' : 'bg-primary'}" 
-                             style="width: ${porcentaje}%">
-                            ${porcentaje.toFixed(0)}%
-                        </div>
-                    </div>
-                    <small class="text-muted">${puesto.mesas_reportadas}/${puesto.total_mesas}</small>
-                </td>
-                <td class="text-center">${estadoBadge}</td>
-            </tr>
-        `;
-    }).join('');
-}
-
-/**
- * Obtener badge de estado
- */
-function getEstadoBadge(estado) {
-    const badges = {
-        'completo': '<span class="badge badge-status bg-success">Completo</span>',
-        'incompleto': '<span class="badge badge-status bg-warning text-dark">Incompleto</span>',
-        'con_discrepancias': '<span class="badge badge-status bg-danger">Con Discrepancias</span>'
-    };
-    return badges[estado] || `<span class="badge badge-status bg-secondary">${estado}</span>`;
-}
-
-/**
- * Filtrar puestos por estado
- */
-function filtrarPuestos(estado) {
-    filtroEstado = estado;
-    
-    // Actualizar botones activos
-    document.querySelectorAll('#filterButtons button').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    event.target.classList.add('active');
-    
-    // Recargar puestos
-    loadPuestos();
-}
-
-/**
- * Buscar puesto
- */
-function buscarPuesto() {
-    const query = document.getElementById('searchPuesto').value.toLowerCase().trim();
-    
-    if (!query) {
-        puestos = [...puestosOriginales];
-    } else {
-        puestos = puestosOriginales.filter(p => 
-            p.codigo.toLowerCase().includes(query) || 
-            p.nombre.toLowerCase().includes(query)
-        );
-    }
-    
-    renderPuestosTable(puestos);
-}
-
-/**
- * Seleccionar puesto para ver detalles
- */
-async function seleccionarPuesto(puestoId) {
-    try {
-        puestoSeleccionado = puestos.find(p => p.id === puestoId);
-        
-        // Actualizar tabla para resaltar selección
-        renderPuestosTable(puestos);
-        
-        // Cargar detalles del puesto
-        const response = await APIClient.get(`/coordinador-municipal/puesto/${puestoId}`);
-        
-        if (response.success) {
-            renderDetallePuesto(response.data);
-        }
-    } catch (error) {
-        console.error('Error loading puesto details:', error);
-        Utils.showError('Error al cargar detalles del puesto: ' + error.message);
-    }
-}
-
-/**
- * Renderizar detalles del puesto
- */
-function renderDetallePuesto(data) {
-    const container = document.getElementById('detallePuesto');
-    
-    const puesto = data.puesto || {};
-    const coordinador = data.coordinador || {};
-    const estadisticas = data.estadisticas || {};
-    
-    container.innerHTML = `
-        <h6 class="border-bottom pb-2">${puesto.nombre}</h6>
-        
-        <div class="mb-3">
-            <small class="text-muted">Código:</small>
-            <div><strong>${puesto.codigo}</strong></div>
-        </div>
-        
-        <div class="mb-3">
-            <small class="text-muted">Total Mesas:</small>
-            <div><strong>${puesto.total_mesas}</strong></div>
-        </div>
-        
-        <div class="mb-3">
-            <small class="text-muted">Coordinador:</small>
-            <div>${coordinador.nombre}</div>
-            ${coordinador.telefono ? `<small class="text-muted">${coordinador.telefono}</small>` : ''}
-        </div>
-        
-        ${coordinador.ultimo_acceso ? `
-            <div class="mb-3">
-                <small class="text-muted">Último acceso:</small>
-                <div><small>${Utils.formatDate(coordinador.ultimo_acceso)}</small></div>
-            </div>
-        ` : ''}
-        
-        <div class="mb-3">
-            <small class="text-muted">Avance:</small>
-            <div class="progress mt-1">
-                <div class="progress-bar" style="width: ${estadisticas.porcentaje_avance || 0}%">
-                    ${(estadisticas.porcentaje_avance || 0).toFixed(0)}%
-                </div>
-            </div>
-        </div>
-        
-        <button class="btn btn-sm btn-outline-primary w-100" onclick="verPuestoCompleto(${puesto.id})">
-            <i class="bi bi-eye"></i> Ver Detalles Completos
-        </button>
-    `;
-}
-
-/**
- * Ver puesto completo (placeholder)
- */
-function verPuestoCompleto(puestoId) {
-    Utils.showInfo('Funcionalidad de vista completa en desarrollo');
-}
-
-
-/**
- * Cargar consolidado municipal
- */
 async function loadConsolidadoMunicipal() {
     try {
         const response = await APIClient.get('/coordinador-municipal/consolidado');
         
-        if (response.success) {
-            renderConsolidado(response.data);
-        } else {
-            throw new Error(response.error || 'Error al cargar consolidado');
+        if (response && response.success && response.data) {
+            renderChartConsolidado(response.data);
         }
     } catch (error) {
-        console.error('Error loading consolidado:', error);
-        const errorMsg = error.message || 'Error al cargar consolidado';
-        document.getElementById('consolidadoMunicipal').innerHTML = `
-            <div class="text-center py-3">
-                <p class="text-danger mb-2">❌ ${errorMsg}</p>
-                <button class="btn btn-sm btn-outline-primary" onclick="loadConsolidadoMunicipal()">
-                    <i class="bi bi-arrow-clockwise"></i> Reintentar
-                </button>
-            </div>
-        `;
+        console.error('[Municipal] Error cargando consolidado:', error);
     }
 }
 
-/**
- * Renderizar consolidado
- */
-function renderConsolidado(data) {
-    const container = document.getElementById('consolidadoMunicipal');
-    
-    if (!data || !data.votos_por_partido || data.votos_por_partido.length === 0) {
-        container.innerHTML = '<p class="text-muted">No hay datos consolidados aún</p>';
-        return;
-    }
-    
-    const resumen = data.resumen;
-    const participacion = resumen.participacion_porcentaje || 0;
-    
-    let html = `
-        <div class="mb-3">
-            <small class="text-muted">Total Votos</small>
-            <h4>${Utils.formatNumber(resumen.total_votos)}</h4>
-            <small class="text-muted">Participación: ${participacion.toFixed(2)}%</small>
-        </div>
-        <hr>
-        <h6 class="mb-2">Votos por Partido</h6>
-    `;
-    
-    data.votos_por_partido.forEach(partido => {
-        html += `
-            <div class="mb-2">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                    <small>
-                        <span style="display: inline-block; width: 10px; height: 10px; background-color: ${partido.partido_color}; border-radius: 2px; margin-right: 4px;"></span>
-                        ${partido.partido_nombre_corto}
-                    </small>
-                    <strong>${Utils.formatNumber(partido.total_votos)}</strong>
-                </div>
-                <div class="progress" style="height: 8px;">
-                    <div class="progress-bar" role="progressbar" 
-                         style="width: ${partido.porcentaje}%; background-color: ${partido.partido_color};"
-                         aria-valuenow="${partido.porcentaje}" aria-valuemin="0" aria-valuemax="100">
-                    </div>
-                </div>
-                <small class="text-muted">${partido.porcentaje.toFixed(2)}%</small>
-            </div>
-        `;
-    });
-    
-    container.innerHTML = html;
-}
-
-/**
- * Cargar discrepancias
- */
 async function loadDiscrepancias() {
     try {
         const response = await APIClient.get('/coordinador-municipal/discrepancias');
         
-        if (response.success) {
-            renderDiscrepancias(response.data);
-        } else {
-            throw new Error(response.error || 'Error al cargar discrepancias');
+        if (response && response.success && response.data) {
+            renderAlertas(response.data);
         }
     } catch (error) {
-        console.error('Error loading discrepancias:', error);
-        document.getElementById('discrepanciasPanel').innerHTML = `
-            <div class="text-center py-3">
-                <p class="text-danger mb-2">❌ Error al cargar alertas</p>
-                <button class="btn btn-sm btn-outline-primary" onclick="loadDiscrepancias()">
-                    <i class="bi bi-arrow-clockwise"></i> Reintentar
-                </button>
-            </div>
-        `;
+        console.error('[Municipal] Error cargando discrepancias:', error);
     }
 }
 
-/**
- * Renderizar discrepancias
- */
-function renderDiscrepancias(discrepancias) {
-    const container = document.getElementById('discrepanciasPanel');
+async function loadTiposEleccion() {
+    try {
+        const response = await APIClient.get('/configuracion/tipos-eleccion');
+        
+        if (response && response.success && response.data) {
+            const select = document.getElementById('tipo-eleccion-e24');
+            select.innerHTML = '<option value="">Seleccione tipo de elección</option>';
+            
+            response.data.forEach(tipo => {
+                select.innerHTML += `<option value="${tipo.id}">${tipo.nombre}</option>`;
+            });
+        }
+    } catch (error) {
+        console.error('[Municipal] Error cargando tipos de elección:', error);
+    }
+}
+
+// ============================================================================
+// RENDERIZADO DE DATOS
+// ============================================================================
+
+function renderPuestosTable() {
+    const container = document.getElementById('lista-puestos');
     
-    if (!discrepancias || discrepancias.length === 0) {
+    if (!puestosData || puestosData.length === 0) {
         container.innerHTML = `
-            <div class="text-center py-3">
-                <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
-                <p class="text-muted mb-0">No hay discrepancias detectadas</p>
+            <div class="text-center py-4">
+                <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                <p class="text-muted mt-3">No hay puestos registrados</p>
             </div>
         `;
         return;
     }
-    
-    // Agrupar por severidad
-    const criticas = discrepancias.filter(d => d.severidad === 'critica');
-    const altas = discrepancias.filter(d => d.severidad === 'alta');
-    const medias = discrepancias.filter(d => d.severidad === 'media');
-    const bajas = discrepancias.filter(d => d.severidad === 'baja');
     
     let html = '';
     
-    // Mostrar críticas primero
-    if (criticas.length > 0) {
-        html += '<h6 class="text-danger mb-2"><i class="bi bi-exclamation-octagon"></i> Críticas</h6>';
-        criticas.slice(0, 3).forEach(d => {
-            html += renderDiscrepanciaItem(d);
-        });
-    }
-    
-    // Mostrar altas
-    if (altas.length > 0) {
-        html += '<h6 class="text-warning mb-2 mt-3"><i class="bi bi-exclamation-triangle"></i> Altas</h6>';
-        altas.slice(0, 2).forEach(d => {
-            html += renderDiscrepanciaItem(d);
-        });
-    }
-    
-    // Mostrar total
-    html += `
-        <div class="mt-3 text-center">
-            <small class="text-muted">
-                Total: ${discrepancias.length} discrepancia(s) detectada(s)
-            </small>
-        </div>
-    `;
+    puestosData.forEach(puesto => {
+        const estadoBadge = getEstadoBadge(puesto.estado);
+        const porcentaje = puesto.porcentaje_avance || 0;
+        
+        html += `
+            <div class="puesto-item ${puestoSeleccionado?.id === puesto.id ? 'selected' : ''}" 
+                 onclick="seleccionarPuesto(${puesto.id})">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <h6 class="mb-1">${puesto.nombre}</h6>
+                        <small class="text-muted">Código: ${puesto.codigo} | Zona: ${puesto.zona_codigo}</small>
+                    </div>
+                    <span class="badge ${estadoBadge.class}">${estadoBadge.text}</span>
+                </div>
+                
+                <div class="row text-center mb-2">
+                    <div class="col-3">
+                        <small class="text-muted d-block">Mesas</small>
+                        <strong>${puesto.total_mesas}</strong>
+                    </div>
+                    <div class="col-3">
+                        <small class="text-muted d-block">Validados</small>
+                        <strong class="text-success">${puesto.formularios_validados}</strong>
+                    </div>
+                    <div class="col-3">
+                        <small class="text-muted d-block">Pendientes</small>
+                        <strong class="text-warning">${puesto.formularios_pendientes}</strong>
+                    </div>
+                    <div class="col-3">
+                        <small class="text-muted d-block">Rechazados</small>
+                        <strong class="text-danger">${puesto.formularios_rechazados}</strong>
+                    </div>
+                </div>
+                
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${porcentaje}%"></div>
+                </div>
+                <small class="text-muted">${porcentaje.toFixed(1)}% completado</small>
+                
+                ${puesto.coordinador ? `
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            <i class="bi bi-person"></i> ${puesto.coordinador.nombre}
+                            ${puesto.coordinador.ultimo_acceso ? 
+                                `<span class="text-success">● Online</span>` : 
+                                `<span class="text-secondary">● Offline</span>`
+                            }
+                        </small>
+                    </div>
+                ` : `
+                    <div class="mt-2">
+                        <small class="text-warning">
+                            <i class="bi bi-exclamation-triangle"></i> Sin coordinador asignado
+                        </small>
+                    </div>
+                `}
+            </div>
+        `;
+    });
     
     container.innerHTML = html;
 }
 
-/**
- * Renderizar item de discrepancia
- */
-function renderDiscrepanciaItem(discrepancia) {
-    const severidadClass = {
-        'critica': 'danger',
-        'alta': 'warning',
-        'media': 'info',
-        'baja': 'secondary'
-    };
+function renderChartConsolidado(data) {
+    const ctx = document.getElementById('chart-consolidado');
     
-    const badgeClass = severidadClass[discrepancia.severidad] || 'secondary';
+    if (chartConsolidado) {
+        chartConsolidado.destroy();
+    }
     
-    return `
-        <div class="alert alert-${badgeClass} py-2 px-2 mb-2" role="alert" 
-             style="cursor: pointer;" onclick="irAPuesto(${discrepancia.puesto_id})">
-            <small>
-                <strong>${discrepancia.puesto_nombre}</strong><br>
-                ${discrepancia.descripcion}
-            </small>
-        </div>
-    `;
-}
-
-/**
- * Ir a puesto desde discrepancia
- */
-function irAPuesto(puestoId) {
-    seleccionarPuesto(puestoId);
-    
-    // Scroll a la tabla de puestos
-    document.querySelector('#puestosTable').scrollIntoView({ behavior: 'smooth' });
-}
-
-/**
- * Generar E-24 Municipal
- */
-async function generarE24Municipal() {
-    try {
-        // Mostrar modal de confirmación
-        const modal = new bootstrap.Modal(document.getElementById('e24Modal'));
-        
-        // Validar requisitos primero
-        const response = await APIClient.get('/coordinador-municipal/puestos');
-        
-        if (response.success) {
-            const stats = response.data.estadisticas || {};
-            const cobertura = stats.cobertura_porcentaje || 0;
-            
-            let validacionesHtml = '';
-            
-            if (cobertura >= 80) {
-                validacionesHtml = `
-                    <div class="alert alert-success">
-                        <i class="bi bi-check-circle"></i> Se cumplen los requisitos mínimos
-                        <ul class="mb-0 mt-2">
-                            <li>Cobertura: ${cobertura.toFixed(1)}% (mínimo 80%)</li>
-                            <li>Puestos completos: ${stats.puestos_completos} de ${stats.total_puestos}</li>
-                        </ul>
-                    </div>
-                `;
-            } else {
-                validacionesHtml = `
-                    <div class="alert alert-danger">
-                        <i class="bi bi-x-circle"></i> No se cumplen los requisitos mínimos
-                        <ul class="mb-0 mt-2">
-                            <li>Cobertura: ${cobertura.toFixed(1)}% (se requiere mínimo 80%)</li>
-                            <li>Puestos completos: ${stats.puestos_completos} de ${stats.total_puestos}</li>
-                        </ul>
-                    </div>
-                `;
-                
-                // Deshabilitar botón de generar
-                document.querySelector('#e24Modal .btn-primary').disabled = true;
-            }
-            
-            document.getElementById('e24Validaciones').innerHTML = validacionesHtml;
-        }
-        
-        modal.show();
-    } catch (error) {
-        console.error('Error:', error);
-        Utils.showError('Error al validar requisitos: ' + error.message);
-    }
-}
-
-/**
- * Confirmar generación de E-24
- */
-async function confirmarGenerarE24() {
-    try {
-        // Tipo de elección por defecto (debería venir de configuración)
-        const tipo_eleccion_id = 1;
-        
-        const response = await APIClient.post('/coordinador-municipal/e24-municipal', {
-            tipo_eleccion_id: tipo_eleccion_id
-        });
-        
-        if (response.success) {
-            Utils.showSuccess('Formulario E-24 Municipal generado exitosamente');
-            
-            // Cerrar modal
-            bootstrap.Modal.getInstance(document.getElementById('e24Modal')).hide();
-            
-            // Descargar PDF
-            if (response.data.pdf_url) {
-                window.open(response.data.pdf_url, '_blank');
-            }
-        } else {
-            throw new Error(response.error || 'Error al generar E-24');
-        }
-    } catch (error) {
-        console.error('Error generating E-24:', error);
-        Utils.showError('Error al generar E-24: ' + error.message);
-    }
-}
-
-/**
- * ⭐ MEJORADO: Exportar datos con opciones de formato
- */
-async function exportarDatos() {
-    try {
-        // Mostrar modal de opciones de exportación
-        const modalHtml = `
-            <div class="modal fade" id="exportarModalMunicipal" tabindex="-1">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">
-                                <i class="bi bi-download"></i> Exportar Datos Municipales
-                            </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <p>Seleccione el formato de exportación:</p>
-                            <div class="d-grid gap-2">
-                                <button class="btn btn-outline-success" onclick="exportarFormatoMunicipal('csv')">
-                                    <i class="bi bi-filetype-csv"></i> Exportar como CSV
-                                </button>
-                                <button class="btn btn-outline-primary" onclick="exportarFormatoMunicipal('excel')">
-                                    <i class="bi bi-file-earmark-excel"></i> Exportar como Excel
-                                </button>
-                                <button class="btn btn-outline-danger" onclick="exportarFormatoMunicipal('pdf')">
-                                    <i class="bi bi-filetype-pdf"></i> Exportar como PDF
-                                </button>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Agregar modal al DOM
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-        
-        // Mostrar modal
-        const modal = new bootstrap.Modal(document.getElementById('exportarModalMunicipal'));
-        modal.show();
-        
-        // Limpiar modal al cerrar
-        document.getElementById('exportarModalMunicipal').addEventListener('hidden.bs.modal', function() {
-            this.remove();
-        });
-        
-    } catch (error) {
-        console.error('Error mostrando opciones de exportación:', error);
-        Utils.showError('Error al mostrar opciones de exportación');
-    }
-}
-
-/**
- * ⭐ NUEVA FUNCIÓN: Exportar en formato específico
- */
-async function exportarFormatoMunicipal(formato) {
-    try {
-        Utils.showInfo(`Generando archivo ${formato.toUpperCase()}...`);
-        
-        // Cerrar modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('exportarModalMunicipal'));
-        if (modal) modal.hide();
-        
-        const url = `/api/coordinador-municipal/exportar?formato=${formato}`;
-        const token = localStorage.getItem('token');
-        
-        // Descargar archivo
-        const response = await fetch(url, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (response.ok) {
-            const blob = await response.blob();
-            const downloadUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = downloadUrl;
-            
-            const fecha = new Date().toISOString().split('T')[0];
-            const extension = formato === 'excel' ? 'xlsx' : formato;
-            a.download = `consolidado_municipal_${fecha}.${extension}`;
-            
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            
-            Utils.showSuccess(`✅ Archivo ${formato.toUpperCase()} descargado exitosamente`);
-        } else {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Error al exportar datos');
-        }
-    } catch (error) {
-        console.error('Error exporting data:', error);
-        Utils.showError('Error al exportar datos: ' + error.message);
-    }
-}
-
-/**
- * Abrir modal de comparación
- */
-function abrirComparacion() {
-    Utils.showInfo('Funcionalidad de comparación en desarrollo');
-}
-
-/**
- * ⭐ NUEVA FUNCIONALIDAD: Cargar formularios para validación
- */
-async function loadFormulariosValidacion() {
-    try {
-        const response = await APIClient.get('/coordinador-municipal/formularios', {
-            estado: 'pendiente'
-        });
-        
-        if (response.success) {
-            renderFormulariosValidacion(response.data.formularios);
-            updateEstadisticasValidacion(response.data.estadisticas);
-        } else {
-            throw new Error(response.error || 'Error al cargar formularios');
-        }
-    } catch (error) {
-        console.error('Error loading formularios:', error);
-        Utils.showError('Error al cargar formularios para validación: ' + error.message);
-    }
-}
-
-/**
- * ⭐ NUEVA FUNCIONALIDAD: Renderizar formularios para validación
- */
-function renderFormulariosValidacion(formularios) {
-    const container = document.getElementById('formulariosValidacion');
-    
-    if (!container) return;
-    
-    if (formularios.length === 0) {
-        container.innerHTML = `
+    if (!data.votos_por_partido || data.votos_por_partido.length === 0) {
+        ctx.parentElement.innerHTML = `
             <div class="text-center py-4">
-                <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
-                <p class="text-muted mt-2">No hay formularios pendientes de validación</p>
+                <i class="bi bi-pie-chart text-muted" style="font-size: 2rem;"></i>
+                <p class="text-muted mt-2">No hay datos de consolidado</p>
             </div>
         `;
         return;
     }
     
-    let html = `
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Mesa</th>
-                        <th>Testigo</th>
-                        <th>Votos</th>
-                        <th>Fecha</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
+    const labels = data.votos_por_partido.map(vp => vp.partido_nombre_corto || vp.partido_nombre);
+    const votos = data.votos_por_partido.map(vp => vp.total_votos);
+    const colores = data.votos_por_partido.map(vp => vp.partido_color || '#6c757d');
     
-    formularios.forEach(formulario => {
+    chartConsolidado = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: votos,
+                backgroundColor: colores,
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        usePointStyle: true,
+                        font: {
+                            size: 11
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const partido = data.votos_por_partido[context.dataIndex];
+                            return `${partido.partido_nombre}: ${partido.total_votos.toLocaleString()} votos (${partido.porcentaje.toFixed(1)}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderAlertas(discrepancias) {
+    const container = document.getElementById('lista-alertas');
+    const contador = document.getElementById('contador-alertas');
+    
+    contador.textContent = discrepancias.length;
+    
+    if (discrepancias.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center">No hay alertas</p>';
+        return;
+    }
+    
+    let html = '';
+    
+    discrepancias.forEach(disc => {
+        const severidadClass = disc.severidad === 'critica' ? 'critica' : '';
+        
         html += `
-            <tr>
-                <td>
-                    <strong>${formulario.mesa.codigo}</strong><br>
-                    <small class="text-muted">${formulario.mesa.puesto_nombre}</small>
-                </td>
-                <td>
-                    ${formulario.testigo ? formulario.testigo.nombre : 'N/A'}<br>
-                    <small class="text-muted">${formulario.testigo ? formulario.testigo.cedula : ''}</small>
-                </td>
-                <td>
-                    <strong>${formulario.total_votos || 0}</strong><br>
-                    <small class="text-muted">${formulario.votantes_registrados || 0} registrados</small>
-                </td>
-                <td>
-                    <small>${Utils.formatDate(formulario.fecha_creacion)}</small>
-                </td>
-                <td>
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary" onclick="verFormularioDetalle(${formulario.id})">
-                            <i class="bi bi-eye"></i> Ver
-                        </button>
-                        <button class="btn btn-outline-success" onclick="validarFormulario(${formulario.id})">
-                            <i class="bi bi-check"></i> Validar
-                        </button>
-                        <button class="btn btn-outline-danger" onclick="rechazarFormulario(${formulario.id})">
-                            <i class="bi bi-x"></i> Rechazar
-                        </button>
+            <div class="alert-item ${severidadClass}" onclick="seleccionarPuestoPorId(${disc.puesto_id})">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <strong>${disc.puesto_nombre}</strong>
+                        <p class="mb-1 small">${disc.descripcion}</p>
+                        <small class="text-muted">Severidad: ${disc.severidad}</small>
                     </div>
-                </td>
-            </tr>
+                    <span class="badge bg-${disc.severidad === 'critica' ? 'danger' : 'warning'}">
+                        ${disc.severidad}
+                    </span>
+                </div>
+            </div>
         `;
     });
     
-    html += '</tbody></table></div>';
     container.innerHTML = html;
 }
 
-/**
- * ⭐ NUEVA FUNCIONALIDAD: Ver detalle de formulario
- */
-async function verFormularioDetalle(formularioId) {
+// ============================================================================
+// INTERACCIONES
+// ============================================================================
+
+async function seleccionarPuesto(puestoId) {
     try {
-        const response = await APIClient.get(`/coordinador-municipal/formularios/${formularioId}`);
+        // Actualizar selección visual
+        document.querySelectorAll('.puesto-item').forEach(item => {
+            item.classList.remove('selected');
+        });
         
-        if (response.success) {
-            mostrarModalFormulario(response.data);
-        } else {
-            throw new Error(response.error || 'Error al cargar formulario');
+        event.currentTarget.classList.add('selected');
+        
+        // Cargar detalles del puesto
+        const response = await APIClient.get(`/coordinador-municipal/puesto/${puestoId}`);
+        
+        if (response && response.success && response.data) {
+            puestoSeleccionado = response.data;
+            renderDetallePuesto(response.data);
+            document.getElementById('btn-comparar').disabled = false;
         }
     } catch (error) {
-        console.error('Error loading formulario detail:', error);
-        Utils.showError('Error al cargar detalles del formulario: ' + error.message);
+        console.error('[Municipal] Error cargando detalle de puesto:', error);
+        Utils.showError('Error al cargar detalles del puesto');
     }
 }
 
-/**
- * ⭐ NUEVA FUNCIONALIDAD: Mostrar modal con detalles del formulario
- */
-function mostrarModalFormulario(formulario) {
-    const modalHtml = `
-        <div class="modal fade" id="formularioModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <i class="bi bi-file-earmark-text"></i> 
-                            Formulario E-14 - Mesa ${formulario.mesa.codigo}
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6>Información de Mesa</h6>
-                                <p><strong>Código:</strong> ${formulario.mesa.codigo}</p>
-                                <p><strong>Puesto:</strong> ${formulario.mesa.puesto_nombre}</p>
-                                <p><strong>Zona:</strong> ${formulario.mesa.zona_codigo || 'N/A'}</p>
-                            </div>
-                            <div class="col-md-6">
-                                <h6>Testigo</h6>
-                                <p><strong>Nombre:</strong> ${formulario.testigo ? formulario.testigo.nombre : 'N/A'}</p>
-                                <p><strong>Cédula:</strong> ${formulario.testigo ? formulario.testigo.cedula : 'N/A'}</p>
-                                <p><strong>Teléfono:</strong> ${formulario.testigo ? formulario.testigo.telefono || 'N/A' : 'N/A'}</p>
-                            </div>
-                        </div>
-                        
-                        <hr>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6>Resumen de Votación</h6>
-                                <p><strong>Votantes Registrados:</strong> ${formulario.votantes_registrados || 0}</p>
-                                <p><strong>Total Votos:</strong> ${formulario.total_votos || 0}</p>
-                                <p><strong>Votos Válidos:</strong> ${formulario.votos_validos || 0}</p>
-                                <p><strong>Votos Nulos:</strong> ${formulario.votos_nulos || 0}</p>
-                                <p><strong>Votos en Blanco:</strong> ${formulario.votos_blanco || 0}</p>
-                            </div>
-                            <div class="col-md-6">
-                                <h6>Votos por Partido</h6>
-                                ${formulario.votos_partidos && formulario.votos_partidos.length > 0 ? 
-                                    formulario.votos_partidos.map(vp => 
-                                        `<p><strong>${vp.partido_sigla}:</strong> ${vp.votos} votos</p>`
-                                    ).join('') : 
-                                    '<p class="text-muted">No hay votos registrados</p>'
-                                }
-                            </div>
-                        </div>
-                        
-                        ${formulario.observaciones ? `
-                            <hr>
-                            <h6>Observaciones</h6>
-                            <p>${formulario.observaciones}</p>
-                        ` : ''}
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="button" class="btn btn-success" onclick="validarFormulario(${formulario.id}); bootstrap.Modal.getInstance(document.getElementById('formularioModal')).hide();">
-                            <i class="bi bi-check"></i> Validar
-                        </button>
-                        <button type="button" class="btn btn-danger" onclick="rechazarFormulario(${formulario.id}); bootstrap.Modal.getInstance(document.getElementById('formularioModal')).hide();">
-                            <i class="bi bi-x"></i> Rechazar
-                        </button>
-                    </div>
-                </div>
+function seleccionarPuestoPorId(puestoId) {
+    const puestoElement = document.querySelector(`[onclick="seleccionarPuesto(${puestoId})"]`);
+    if (puestoElement) {
+        puestoElement.click();
+        puestoElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+function renderDetallePuesto(puesto) {
+    const container = document.getElementById('detalle-puesto');
+    
+    const coordinadorInfo = puesto.coordinador ? `
+        <div class="mb-3">
+            <h6 class="text-muted mb-2">
+                <i class="bi bi-person"></i> Coordinador
+            </h6>
+            <p class="mb-1"><strong>${puesto.coordinador.nombre}</strong></p>
+            <small class="text-muted">
+                Último acceso: ${puesto.coordinador.ultimo_acceso ? 
+                    new Date(puesto.coordinador.ultimo_acceso).toLocaleString('es-CO') : 
+                    'Nunca'
+                }
+            </small>
+        </div>
+    ` : `
+        <div class="mb-3">
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i> Sin coordinador asignado
             </div>
         </div>
     `;
     
-    // Agregar modal al DOM
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
-    // Mostrar modal
-    const modal = new bootstrap.Modal(document.getElementById('formularioModal'));
-    modal.show();
-    
-    // Limpiar modal al cerrar
-    document.getElementById('formularioModal').addEventListener('hidden.bs.modal', function() {
-        this.remove();
-    });
-}
-
-/**
- * ⭐ NUEVA FUNCIONALIDAD: Validar formulario
- */
-async function validarFormulario(formularioId) {
-    try {
-        // Mostrar modal de confirmación con observaciones
-        const observaciones = await mostrarModalObservaciones('validar');
+    container.innerHTML = `
+        <div class="mb-3">
+            <h6 class="text-primary">${puesto.puesto.nombre}</h6>
+            <p class="text-muted mb-1">Código: ${puesto.puesto.codigo}</p>
+            <p class="text-muted mb-1">Zona: ${puesto.puesto.zona_codigo}</p>
+            <p class="text-muted">Total Mesas: ${puesto.puesto.total_mesas}</p>
+        </div>
         
-        if (observaciones === null) return; // Usuario canceló
+        ${coordinadorInfo}
         
-        const response = await APIClient.put(`/coordinador-municipal/formularios/${formularioId}/validar`, {
-            observaciones: observaciones
-        });
+        <div class="mb-3">
+            <h6 class="text-muted mb-2">
+                <i class="bi bi-bar-chart"></i> Estadísticas
+            </h6>
+            <div class="row text-center">
+                <div class="col-6 mb-2">
+                    <div class="border rounded p-2">
+                        <strong class="text-success d-block">${puesto.estadisticas.formularios_validados}</strong>
+                        <small class="text-muted">Validados</small>
+                    </div>
+                </div>
+                <div class="col-6 mb-2">
+                    <div class="border rounded p-2">
+                        <strong class="text-warning d-block">${puesto.estadisticas.formularios_pendientes}</strong>
+                        <small class="text-muted">Pendientes</small>
+                    </div>
+                </div>
+                <div class="col-6 mb-2">
+                    <div class="border rounded p-2">
+                        <strong class="text-danger d-block">${puesto.estadisticas.formularios_rechazados}</strong>
+                        <small class="text-muted">Rechazados</small>
+                    </div>
+                </div>
+                <div class="col-6 mb-2">
+                    <div class="border rounded p-2">
+                        <strong class="text-primary d-block">${puesto.estadisticas.porcentaje_avance.toFixed(1)}%</strong>
+                        <small class="text-muted">Avance</small>
+                    </div>
+                </div>
+            </div>
+        </div>
         
-        if (response.success) {
-            Utils.showSuccess('Formulario validado exitosamente');
-            loadFormulariosValidacion(); // Recargar lista
-            loadPuestos(); // Actualizar estadísticas
-        } else {
-            throw new Error(response.error || 'Error al validar formulario');
-        }
-    } catch (error) {
-        console.error('Error validating formulario:', error);
-        Utils.showError('Error al validar formulario: ' + error.message);
-    }
-}
-
-/**
- * ⭐ NUEVA FUNCIONALIDAD: Rechazar formulario
- */
-async function rechazarFormulario(formularioId) {
-    try {
-        // Mostrar modal de confirmación con motivo obligatorio
-        const motivo = await mostrarModalObservaciones('rechazar', true);
-        
-        if (motivo === null) return; // Usuario canceló
-        
-        const response = await APIClient.put(`/coordinador-municipal/formularios/${formularioId}/rechazar`, {
-            motivo: motivo
-        });
-        
-        if (response.success) {
-            Utils.showSuccess('Formulario rechazado exitosamente');
-            loadFormulariosValidacion(); // Recargar lista
-            loadPuestos(); // Actualizar estadísticas
-        } else {
-            throw new Error(response.error || 'Error al rechazar formulario');
-        }
-    } catch (error) {
-        console.error('Error rejecting formulario:', error);
-        Utils.showError('Error al rechazar formulario: ' + error.message);
-    }
-}
-
-/**
- * ⭐ NUEVA FUNCIONALIDAD: Modal para observaciones/motivo
- */
-function mostrarModalObservaciones(accion, obligatorio = false) {
-    return new Promise((resolve) => {
-        const titulo = accion === 'validar' ? 'Validar Formulario' : 'Rechazar Formulario';
-        const label = accion === 'validar' ? 'Observaciones (opcional)' : 'Motivo de rechazo (obligatorio)';
-        const placeholder = accion === 'validar' ? 'Ingrese observaciones...' : 'Ingrese el motivo del rechazo...';
-        
-        const modalHtml = `
-            <div class="modal fade" id="observacionesModal" tabindex="-1">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">${titulo}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        ${puesto.estadisticas.incidentes > 0 || puesto.estadisticas.delitos > 0 ? `
+            <div class="mb-3">
+                <h6 class="text-muted mb-2">
+                    <i class="bi bi-exclamation-triangle"></i> Reportes
+                </h6>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border rounded p-2">
+                            <strong class="text-info d-block">${puesto.estadisticas.incidentes}</strong>
+                            <small class="text-muted">Incidentes</small>
                         </div>
-                        <div class="modal-body">
-                            <div class="mb-3">
-                                <label for="observacionesText" class="form-label">${label}</label>
-                                <textarea class="form-control" id="observacionesText" rows="4" 
-                                          placeholder="${placeholder}" ${obligatorio ? 'required' : ''}></textarea>
-                                ${obligatorio ? '<div class="form-text text-danger">Este campo es obligatorio</div>' : ''}
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="button" class="btn btn-${accion === 'validar' ? 'success' : 'danger'}" 
-                                    onclick="confirmarObservaciones()">
-                                <i class="bi bi-${accion === 'validar' ? 'check' : 'x'}"></i> 
-                                ${accion === 'validar' ? 'Validar' : 'Rechazar'}
-                            </button>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-2">
+                            <strong class="text-danger d-block">${puesto.estadisticas.delitos}</strong>
+                            <small class="text-muted">Delitos</small>
                         </div>
                     </div>
                 </div>
             </div>
-        `;
+        ` : ''}
         
-        // Agregar modal al DOM
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        <div class="mb-3">
+            <h6 class="text-muted mb-2">
+                <i class="bi bi-list"></i> Mesas (Muestra)
+            </h6>
+            <div style="max-height: 200px; overflow-y: auto;">
+                ${puesto.mesas.map(mesa => `
+                    <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+                        <div>
+                            <small><strong>${mesa.codigo}</strong></small>
+                            <br>
+                            <small class="text-muted">${mesa.votantes} votantes</small>
+                        </div>
+                        <span class="badge ${getEstadoBadge(mesa.estado).class}">
+                            ${getEstadoBadge(mesa.estado).text}
+                        </span>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
         
-        // Función para confirmar
-        window.confirmarObservaciones = function() {
-            const texto = document.getElementById('observacionesText').value.trim();
-            
-            if (obligatorio && !texto) {
-                Utils.showError('El motivo de rechazo es obligatorio');
-                return;
-            }
-            
-            bootstrap.Modal.getInstance(document.getElementById('observacionesModal')).hide();
-            resolve(texto);
-        };
-        
-        // Mostrar modal
-        const modal = new bootstrap.Modal(document.getElementById('observacionesModal'));
-        modal.show();
-        
-        // Limpiar modal al cerrar
-        document.getElementById('observacionesModal').addEventListener('hidden.bs.modal', function() {
-            this.remove();
-            delete window.confirmarObservaciones;
-            resolve(null); // Usuario canceló
-        });
+        <div class="d-grid gap-2">
+            <button class="btn btn-outline-primary btn-sm" onclick="enviarNotificacionPuesto(${puesto.puesto.id})">
+                <i class="bi bi-bell"></i> Notificar Coordinador
+            </button>
+            <button class="btn btn-outline-info btn-sm" onclick="verDetalleCompleto(${puesto.puesto.id})">
+                <i class="bi bi-eye"></i> Ver Detalle Completo
+            </button>
+        </div>
+    `;
+}
+
+// ============================================================================
+// FILTROS Y BÚSQUEDA
+// ============================================================================
+
+function filtrarPuestos() {
+    const filtroEstado = document.getElementById('filtro-estado').value;
+    const filtroZona = document.getElementById('filtro-zona').value;
+    
+    let puestosFiltrados = [...puestosData];
+    
+    if (filtroEstado) {
+        puestosFiltrados = puestosFiltrados.filter(p => p.estado === filtroEstado);
+    }
+    
+    if (filtroZona) {
+        puestosFiltrados = puestosFiltrados.filter(p => p.zona_codigo === filtroZona);
+    }
+    
+    // Actualizar datos temporalmente para renderizado
+    const puestosOriginal = [...puestosData];
+    puestosData = puestosFiltrados;
+    renderPuestosTable();
+    puestosData = puestosOriginal;
+}
+
+function buscarPuesto() {
+    const termino = document.getElementById('buscar-puesto').value.toLowerCase();
+    
+    if (!termino) {
+        renderPuestosTable();
+        return;
+    }
+    
+    const puestosFiltrados = puestosData.filter(p => 
+        p.nombre.toLowerCase().includes(termino) ||
+        p.codigo.toLowerCase().includes(termino) ||
+        p.zona_codigo.toLowerCase().includes(termino)
+    );
+    
+    // Actualizar datos temporalmente para renderizado
+    const puestosOriginal = [...puestosData];
+    puestosData = puestosFiltrados;
+    renderPuestosTable();
+    puestosData = puestosOriginal;
+}
+
+function updateFiltroZonas() {
+    const select = document.getElementById('filtro-zona');
+    const zonas = [...new Set(puestosData.map(p => p.zona_codigo))].sort();
+    
+    select.innerHTML = '<option value="">Todas las zonas</option>';
+    zonas.forEach(zona => {
+        select.innerHTML += `<option value="${zona}">Zona ${zona}</option>`;
     });
 }
 
-/**
- * Logout
- */
-function logout() {
-    localStorage.removeItem('token');
-    window.location.href = '/auth/login';
+// ============================================================================
+// GENERACIÓN DE E-24 MUNICIPAL
+// ============================================================================
+
+async function generarE24Municipal() {
+    const modal = new bootstrap.Modal(document.getElementById('modalE24Municipal'));
+    modal.show();
+    
+    // Validar requisitos
+    await validarRequisitosE24();
+}
+
+async function validarRequisitosE24() {
+    const container = document.getElementById('validacion-requisitos');
+    
+    try {
+        const response = await APIClient.get('/coordinador-municipal/estadisticas');
+        
+        if (response && response.success && response.data) {
+            const stats = response.data.resumen_general;
+            const porcentajeCompletos = (stats.puestos_completos / stats.total_puestos * 100) || 0;
+            
+            const cumpleRequisitos = porcentajeCompletos >= 80 && stats.puestos_con_discrepancias === 0;
+            
+            container.innerHTML = `
+                <div class="alert ${cumpleRequisitos ? 'alert-success' : 'alert-warning'}">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-${cumpleRequisitos ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                        <strong>${cumpleRequisitos ? 'Requisitos Cumplidos' : 'Requisitos Pendientes'}</strong>
+                    </div>
+                    <ul class="mb-0">
+                        <li class="${porcentajeCompletos >= 80 ? 'text-success' : 'text-warning'}">
+                            Puestos completos: ${porcentajeCompletos.toFixed(1)}% (mín. 80%)
+                        </li>
+                        <li class="${stats.puestos_con_discrepancias === 0 ? 'text-success' : 'text-warning'}">
+                            Discrepancias críticas: ${stats.puestos_con_discrepancias} (máx. 0)
+                        </li>
+                    </ul>
+                </div>
+            `;
+            
+            document.getElementById('btn-generar-e24').disabled = !cumpleRequisitos;
+        }
+    } catch (error) {
+        console.error('[Municipal] Error validando requisitos:', error);
+        container.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle"></i> Error al validar requisitos
+            </div>
+        `;
+    }
+}
+
+async function confirmarGenerarE24() {
+    const tipoEleccionId = document.getElementById('tipo-eleccion-e24').value;
+    
+    if (!tipoEleccionId) {
+        Utils.showError('Debe seleccionar un tipo de elección');
+        return;
+    }
+    
+    try {
+        Utils.showLoading('Generando E-24 Municipal...');
+        
+        const response = await APIClient.post('/coordinador-municipal/e24-municipal', {
+            tipo_eleccion_id: parseInt(tipoEleccionId)
+        });
+        
+        Utils.hideLoading();
+        
+        if (response && response.success) {
+            Utils.showSuccess('E-24 Municipal generado exitosamente');
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalE24Municipal'));
+            modal.hide();
+            
+            // Actualizar datos
+            await loadEstadisticas();
+        } else {
+            Utils.showError(response?.error || 'Error al generar E-24 Municipal');
+        }
+    } catch (error) {
+        Utils.hideLoading();
+        console.error('[Municipal] Error generando E-24:', error);
+        Utils.showError('Error al generar E-24 Municipal');
+    }
+}
+
+// ============================================================================
+// COMPARACIÓN DE PUESTOS
+// ============================================================================
+
+async function abrirComparacion() {
+    const modal = new bootstrap.Modal(document.getElementById('modalComparacion'));
+    modal.show();
+    
+    // Cargar lista de puestos para comparación
+    renderListaPuestosComparacion();
+}
+
+function renderListaPuestosComparacion() {
+    const container = document.getElementById('lista-puestos-comparacion');
+    
+    let html = '';
+    
+    puestosData.forEach(puesto => {
+        const isSelected = puestosSeleccionadosComparacion.includes(puesto.id);
+        
+        html += `
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" value="${puesto.id}" 
+                       id="comp-${puesto.id}" ${isSelected ? 'checked' : ''}
+                       onchange="togglePuestoComparacion(${puesto.id})">
+                <label class="form-check-label" for="comp-${puesto.id}">
+                    <strong>${puesto.nombre}</strong><br>
+                    <small class="text-muted">
+                        ${puesto.formularios_validados}/${puesto.total_mesas} mesas 
+                        (${puesto.porcentaje_avance.toFixed(1)}%)
+                    </small>
+                </label>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+function togglePuestoComparacion(puestoId) {
+    const index = puestosSeleccionadosComparacion.indexOf(puestoId);
+    
+    if (index > -1) {
+        puestosSeleccionadosComparacion.splice(index, 1);
+    } else {
+        if (puestosSeleccionadosComparacion.length >= 5) {
+            Utils.showWarning('Máximo 5 puestos para comparar');
+            document.getElementById(`comp-${puestoId}`).checked = false;
+            return;
+        }
+        puestosSeleccionadosComparacion.push(puestoId);
+    }
+    
+    document.getElementById('btn-ejecutar-comparacion').disabled = 
+        puestosSeleccionadosComparacion.length < 2;
+}
+
+async function ejecutarComparacion() {
+    if (puestosSeleccionadosComparacion.length < 2) {
+        Utils.showError('Seleccione al menos 2 puestos para comparar');
+        return;
+    }
+    
+    try {
+        const response = await APIClient.get('/coordinador-municipal/comparacion', {
+            puesto_ids: puestosSeleccionadosComparacion.join(',')
+        });
+        
+        if (response && response.success && response.data) {
+            renderResultadoComparacion(response.data);
+        }
+    } catch (error) {
+        console.error('[Municipal] Error en comparación:', error);
+        Utils.showError('Error al comparar puestos');
+    }
+}
+
+function renderResultadoComparacion(data) {
+    const container = document.getElementById('resultado-comparacion');
+    
+    // Aquí se implementaría la visualización de la comparación
+    // Por ahora, mostrar datos básicos
+    container.innerHTML = `
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i>
+            Comparación de ${data.puestos?.length || 0} puestos completada.
+            <br>
+            <small>Funcionalidad de visualización en desarrollo.</small>
+        </div>
+    `;
+}
+
+// ============================================================================
+// NOTIFICACIONES
+// ============================================================================
+
+async function enviarNotificacionPuesto(puestoId) {
+    // Implementar modal de notificación específica para un puesto
+    Utils.showInfo('Funcionalidad de notificaciones en desarrollo');
+}
+
+// ============================================================================
+// EXPORTACIÓN
+// ============================================================================
+
+async function exportarDatos() {
+    try {
+        Utils.showLoading('Generando exportación...');
+        
+        const response = await fetch('/api/coordinador-municipal/exportar?formato=csv', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            }
+        });
+        
+        Utils.hideLoading();
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `consolidado_municipal_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            Utils.showSuccess('Datos exportados correctamente');
+        } else {
+            Utils.showError('Error al exportar datos');
+        }
+    } catch (error) {
+        Utils.hideLoading();
+        console.error('[Municipal] Error exportando:', error);
+        Utils.showError('Error al exportar datos');
+    }
+}
+
+// ============================================================================
+// UTILIDADES
+// ============================================================================
+
+function getEstadoBadge(estado) {
+    switch (estado) {
+        case 'completo':
+            return { class: 'bg-success', text: 'Completo' };
+        case 'con_discrepancias':
+            return { class: 'bg-danger', text: 'Con Discrepancias' };
+        case 'incompleto':
+            return { class: 'bg-warning', text: 'Incompleto' };
+        case 'validado':
+            return { class: 'bg-success', text: 'Validado' };
+        case 'pendiente':
+            return { class: 'bg-warning', text: 'Pendiente' };
+        case 'rechazado':
+            return { class: 'bg-danger', text: 'Rechazado' };
+        case 'sin_reporte':
+            return { class: 'bg-secondary', text: 'Sin Reporte' };
+        default:
+            return { class: 'bg-secondary', text: estado };
+    }
+}
+
+function verDetalleCompleto(puestoId) {
+    // Redirigir a vista detallada del puesto
+    window.open(`/coordinador/puesto?puesto_id=${puestoId}`, '_blank');
+}
+
+async function logout() {
+    try {
+        await APIClient.logout();
+    } catch (error) {
+        console.error('Error al cerrar sesión:', error);
+    } finally {
+        localStorage.clear();
+        window.location.href = '/auth/login';
+    }
 }
