@@ -191,23 +191,67 @@ python scripts/init_system.py --reset-passwords
 
 ⚠️ **IMPORTANTE**: Si actualizas desde una versión anterior, lee `CAMBIOS_SEGURIDAD_2024.md`
 
-## 📁 Estructura del Proyecto
+## 📁 Estructura del Proyecto (Organizada)
 
 ```
-mvp/
-├── backend/
-│   ├── models/          # Modelos de datos
-│   ├── routes/          # Endpoints API
-│   ├── services/        # Lógica de negocio
-│   └── utils/           # Utilidades
-├── frontend/
+electoral-system/
+├── backend/             # Flask backend application
+│   ├── models/          # Database models
+│   ├── routes/          # API endpoints
+│   ├── services/        # Business logic
+│   └── utils/           # Utility functions
+├── frontend/            # Frontend application
 │   ├── static/
-│   │   ├── css/        # Estilos
-│   │   └── js/         # JavaScript
+│   │   ├── css/        # Stylesheets
+│   │   └── js/         # JavaScript modules
 │   └── templates/       # HTML templates
-├── scripts/             # Scripts de inicialización
-├── instance/            # Base de datos SQLite
-└── requirements.txt     # Dependencias Python
+├── tools/               # Organized utility tools
+│   ├── admin/          # Administrative tools
+│   ├── verification/   # System verification scripts
+│   ├── correction/     # Data correction tools
+│   ├── data_loading/   # Data import utilities
+│   ├── analysis/       # Data analysis tools
+│   └── server/         # Server management scripts
+├── config/              # Configuration files
+│   └── deployment/     # Deployment configurations
+├── archive/             # Historical files and exports
+├── data/                # Active data files
+├── docs/                # Documentation
+├── tests/               # Test files
+├── migrations/          # Database migrations
+└── instance/            # Instance-specific files
+```
+
+### 🛠️ Quick Tool Usage
+
+**System Verification:**
+```bash
+# Quick system check
+python tools/verification/verificacion_rapida_sistema.py
+
+# Complete verification
+python tools/verification/verificacion_completa_todos_roles.py
+
+# Check credentials
+python tools/verification/verificar_credenciales_simple.py
+```
+
+**Data Corrections:**
+```bash
+# Fix coordinator locations
+python tools/correction/corregir_coordinadores_municipales.py
+
+# Fix electoral witnesses
+python tools/correction/corregir_testigos_electorales.py
+```
+
+**Server Management:**
+```bash
+# Start development server
+python tools/server/start_server.py
+
+# Start production server
+python tools/server/start_production_server.py
 ```
 
 ## 🔑 Funcionalidades por Rol

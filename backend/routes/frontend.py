@@ -12,6 +12,12 @@ def index():
     return render_template('index.html')
 
 
+@frontend_bp.route('/system-status')
+def system_status():
+    """Página de estado del sistema"""
+    return render_template('system_status.html')
+
+
 @frontend_bp.route('/health')
 def health():
     """Health check endpoint para Render"""

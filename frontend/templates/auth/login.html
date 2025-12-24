@@ -331,6 +331,14 @@
     .alert {
         font-size: 0.8rem;
     }
+    
+    /* Campo de cédula más ancho en móviles */
+    #cedula {
+        font-size: 1.2rem !important;
+        min-width: 100% !important;
+        width: 100% !important;
+        padding: 1.2rem 1rem !important;
+    }
 }
 
 /* Efecto de pulso en el logo */
@@ -443,13 +451,13 @@
                     </label>
                     
                     <input type="text" class="form-control" id="cedula" name="cedula" 
-                           placeholder="Ejemplo: 12345678" maxlength="12" 
+                           placeholder="Ejemplo: 2601010101001" maxlength="15" 
                            pattern="[0-9]+" title="Solo números"
                            style="
-                               font-size: 1.5rem; 
+                               font-size: 1.3rem; 
                                font-weight: 900; 
                                border: 3px solid #d63031; 
-                               padding: 1rem; 
+                               padding: 1rem 1.5rem; 
                                text-align: center; 
                                background: white;
                                border-radius: 8px;
@@ -457,6 +465,8 @@
                                position: relative;
                                z-index: 1;
                                letter-spacing: 1px;
+                               width: 100%;
+                               min-width: 280px;
                            ">
                            
                     <small class="form-text" style="
@@ -470,7 +480,7 @@
                         position: relative;
                         z-index: 1;
                     ">
-                        <i class="bi bi-info-circle-fill"></i> Solo números - Sin puntos ni espacios
+                        <i class="bi bi-info-circle-fill"></i> Solo números - Ejemplo: 2601010101001
                     </small>
                 </div>
             </div>

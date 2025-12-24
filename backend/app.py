@@ -47,6 +47,8 @@ def create_app(config_name='default'):
     configure_jwt_callbacks(jwt)
     CORS(app, resources={r"/*": {"origins": "*"}})
     compress.init_app(app)  # Compresión GZIP para respuestas
+
+
     
     # Configurar SocketIO (comentado temporalmente)
     if socketio:
@@ -61,13 +63,16 @@ def create_app(config_name='default'):
     
     # Registrar blueprints
     register_blueprints(app)
+
     
     # Registrar manejadores de errores
     register_error_handlers(app)
+
     
     # Registrar event handlers de SocketIO
     with app.app_context():
         from backend.services import websocket_service  # Importar para registrar handlers
+
     
     # Configurar WhiteNoise para servir archivos estáticos en producción
     if not app.debug:
@@ -85,6 +90,7 @@ def create_app(config_name='default'):
             init_usuarios_basicos()
         except Exception as e:
             app.logger.warning(f'No se pudieron inicializar usuarios básicos: {str(e)}')
+
     
     return app
 
@@ -193,6 +199,10 @@ def register_blueprints(app):
     # Health check routes
     from backend.routes.health import health_bp
     app.register_blueprint(health_bp)
+    
+    # System metrics routes
+    from backend.routes.system_metrics import metrics_bp
+    app.register_blueprint(metrics_bp)
     
     # Frontend routes
     app.register_blueprint(frontend_bp)

@@ -66,9 +66,9 @@ def _auto_load_divipola():
             for row in reader:
                 dd = row['dd'].strip().zfill(2)
                 
-                # Cargar todos los departamentos (no solo Caquetá)
-                # if dd != '44':
-                #     continue
+                # Cargar solo Quindío (código 26)
+                if dd != '26':
+                    continue
                 
                 mm = row['mm'].strip().zfill(2)
                 zz = row['zz'].strip().zfill(2)
@@ -831,7 +831,10 @@ def get_mesas(puesto_codigo):
                 'mesa_codigo': mesa.mesa_codigo,
                 'mesa_nombre': mesa.mesa_nombre,
                 'puesto_codigo': mesa.puesto_codigo,
-                'puesto_nombre': mesa.puesto_nombre
+                'puesto_nombre': mesa.puesto_nombre,
+                'total_votantes_registrados': mesa.total_votantes_registrados or 0,
+                'mujeres': mesa.mujeres or 0,
+                'hombres': mesa.hombres or 0
             } for mesa in mesas]
         }), 200
         

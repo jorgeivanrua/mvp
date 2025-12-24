@@ -11,7 +11,7 @@ from backend.models.coordinador_municipal import (
     NotificacionCoordinador, AuditLog
 )
 from backend.models.coordinador_departamental import ReporteDepartamental, VotoPartidoReporteDepartamental
-from backend.models.incidentes_delitos import IncidenteElectoral, DelitoElectoral, NotificacionReporte
+from backend.models.incidentes_delitos import IncidenteElectoral, DelitoElectoral, NotificacionReporte, EvidenciaFotografica
 from backend.models.seguimiento import SeguimientoReporte
 from backend.models.configuracion_sistema import ConfiguracionSistema, FondoLogin
 from backend.models.reporte_participacion import ReporteParticipacion
@@ -39,6 +39,7 @@ __all__ = [
     'VotoPartidoReporteDepartamental',
     'IncidenteElectoral',
     'DelitoElectoral',
+    'EvidenciaFotografica',
     'SeguimientoReporte',
     'NotificacionReporte',
     'ConfiguracionSistema',

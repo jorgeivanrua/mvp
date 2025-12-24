@@ -26,7 +26,7 @@ class AuthService:
         
         Args:
             rol: Rol del usuario
-            ubicacion_data: Dict con datos de ubicación jerárquica
+            ubicacion_data: Dict con datos de ubicación jerárquica o cédula para testigos
             password: Contraseña
             
         Returns:
@@ -41,6 +41,18 @@ class AuthService:
                 activo=True
             ).first()
             logger.info(f"Usuario sin ubicación encontrado: {user.id if user else None}")
+        elif rol == 'testigo_electoral':
+            # Testigos se autentican por cédula, no por ubicación
+            cedula = ubicacion_data.get('cedula')
+            if not cedula:
+                raise AuthenticationException("Cédula requerida para testigos")
+            
+            user = User.query.filter_by(
+                rol='testigo_electoral',
+                cedula=cedula,
+                activo=True
+            ).first()
+            logger.info(f"Testigo encontrado por cédula {cedula}: {user.id if user else None}")
         else:
             # Buscar ubicación según jerarquía
             location = AuthService._find_location_by_hierarchy(rol, ubicacion_data)

@@ -54,26 +54,20 @@ if config_name == 'production':
 if __name__ == '__main__':
     # Obtener puerto del entorno o usar 5000 por defecto
     port = int(os.getenv('PORT', 5000))
+    host = '0.0.0.0'
     
     # Ejecutar en modo desarrollo
     print(f">> Iniciando aplicacion en modo {config_name}")
-    print(f">> Servidor corriendo en http://0.0.0.0:{port}")
+    print(f">> Servidor corriendo en http://localhost:{port}")
     print(f">> Base de datos: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    print(f">> Accede a: http://localhost:{port}")
     
-    # Usar socketio.run si está disponible, sino app.run
-    if socketio:
-        print(f">> SocketIO habilitado para notificaciones en tiempo real")
-        socketio.run(
-            app,
-            host='0.0.0.0',
+    try:
+        app.run(
+            host=host,
             port=port,
             debug=app.config['DEBUG'],
-            allow_unsafe_werkzeug=True  # Solo para desarrollo
+            use_reloader=False
         )
-    else:
-        print(f">> SocketIO deshabilitado - instalar flask-socketio para habilitar")
-        app.run(
-            host='0.0.0.0',
-            port=port,
-            debug=app.config['DEBUG']
-        )
+    except Exception as e:
+        print(f"Error al iniciar servidor: {e}")

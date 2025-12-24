@@ -16,10 +16,11 @@ auth_bp = Blueprint('auth', __name__)
 @auth_bp.route('/login', methods=['POST'])
 def login():
     """
-    Login basado en ubicación jerárquica
+    Login basado en ubicación jerárquica o cédula para testigos
     
     Body:
         rol: Rol del usuario
+        cedula: Cédula del testigo (requerida para rol testigo_electoral)
         departamento_codigo: Código de departamento (opcional según rol)
         municipio_codigo: Código de municipio (opcional según rol)
         zona_codigo: Código de zona (opcional según rol)
@@ -44,16 +45,28 @@ def login():
                 'error': 'Rol y contraseña son requeridos'
             }), 400
         
-        # Construir datos de ubicación
+        # Construir datos de ubicación o cédula
         ubicacion_data = {}
-        if 'departamento_codigo' in data:
-            ubicacion_data['departamento_codigo'] = data['departamento_codigo']
-        if 'municipio_codigo' in data:
-            ubicacion_data['municipio_codigo'] = data['municipio_codigo']
-        if 'zona_codigo' in data:
-            ubicacion_data['zona_codigo'] = data['zona_codigo']
-        if 'puesto_codigo' in data:
-            ubicacion_data['puesto_codigo'] = data['puesto_codigo']
+        
+        # Para testigos, usar cédula
+        if rol == 'testigo_electoral':
+            cedula = data.get('cedula')
+            if not cedula:
+                return jsonify({
+                    'success': False,
+                    'error': 'Cédula requerida para testigos'
+                }), 400
+            ubicacion_data['cedula'] = cedula
+        else:
+            # Para otros roles, usar datos de ubicación jerárquica
+            if 'departamento_codigo' in data:
+                ubicacion_data['departamento_codigo'] = data['departamento_codigo']
+            if 'municipio_codigo' in data:
+                ubicacion_data['municipio_codigo'] = data['municipio_codigo']
+            if 'zona_codigo' in data:
+                ubicacion_data['zona_codigo'] = data['zona_codigo']
+            if 'puesto_codigo' in data:
+                ubicacion_data['puesto_codigo'] = data['puesto_codigo']
         
         # Autenticar
         user, access_token, refresh_token = AuthService.authenticate_location_based(

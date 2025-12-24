@@ -82,6 +82,18 @@ class IncidenteElectoral(db.Model):
         'escalado': 'Escalado'
     }
     
+    def get_tipo_incidente_label(self):
+        """Obtener etiqueta del tipo de incidente"""
+        return self.TIPOS_INCIDENTE.get(self.tipo_incidente, self.tipo_incidente)
+    
+    def get_severidad_label(self):
+        """Obtener etiqueta de la severidad"""
+        return self.SEVERIDADES.get(self.severidad, self.severidad)
+    
+    def get_estado_label(self):
+        """Obtener etiqueta del estado"""
+        return self.ESTADOS.get(self.estado, self.estado)
+    
     def to_dict(self, include_fotos=False):
         """Convertir a diccionario"""
         data = {
@@ -214,6 +226,18 @@ class DelitoElectoral(db.Model):
         'denunciado': 'Denunciado formalmente',
         'archivado': 'Archivado'
     }
+    
+    def get_tipo_delito_label(self):
+        """Obtener etiqueta del tipo de delito"""
+        return self.TIPOS_DELITO.get(self.tipo_delito, self.tipo_delito)
+    
+    def get_gravedad_label(self):
+        """Obtener etiqueta de la gravedad"""
+        return self.GRAVEDADES.get(self.gravedad, self.gravedad)
+    
+    def get_estado_label(self):
+        """Obtener etiqueta del estado"""
+        return self.ESTADOS.get(self.estado, self.estado)
     
     def to_dict(self, include_fotos=False):
         """Convertir a diccionario"""

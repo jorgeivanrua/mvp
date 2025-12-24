@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba Manual de Login - Testigos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border-left: 5px solid #4CAF50;
+        }
+        .credentials {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        .button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px 5px;
+            transition: background 0.3s;
+        }
+        .button:hover {
+            background: #45a049;
+        }
+        .button.secondary {
+            background: #2196F3;
+        }
+        .button.secondary:hover {
+            background: #1976D2;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: rgba(76, 175, 80, 0.3);
+            border-left: 4px solid #4CAF50;
+        }
+        .status.error {
+            background: rgba(244, 67, 54, 0.3);
+            border-left: 4px solid #f44336;
+        }
+        .status.info {
+            background: rgba(33, 150, 243, 0.3);
+            border-left: 4px solid #2196F3;
+        }
+        .cedula-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .cedula-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px;
+            border-radius: 5px;
+            text-align: center;
+            font-family: monospace;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .cedula-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .instructions {
+            background: rgba(255, 193, 7, 0.2);
+            border-left: 4px solid #FFC107;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗳️ Prueba Manual de Login - Testigos</h1>
+            <p>Sistema Electoral - Cédulas de 10 Cifras</p>
+        </div>
+
+        <div class="instructions">
+            <h3>📋 Instrucciones para la Prueba</h3>
+            <ol>
+                <li>Haz clic en "Abrir Página de Login" para ir al sistema</li>
+                <li>Selecciona el rol: <strong>testigo_electoral</strong></li>
+                <li>Usa cualquiera de las cédulas de 10 cifras de abajo</li>
+                <li>Contraseña: <strong>test123</strong></li>
+                <li>Haz clic en "Iniciar Sesión"</li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <h3>🔐 Credenciales de Prueba</h3>
+            
+            <div class="credentials">
+                <strong>URL del Sistema:</strong> http://localhost:5000/login<br>
+                <strong>Rol:</strong> testigo_electoral<br>
+                <strong>Contraseña:</strong> test123 (para todas las cédulas)<br>
+                <strong>Total Testigos:</strong> 212 disponibles
+            </div>
+
+            <a href="http://localhost:5000/login" target="_blank" class="button">
+                🌐 Abrir Página de Login
+            </a>
+            
+            <button onclick="testAPI()" class="button secondary">
+                🧪 Probar API Directamente
+            </button>
+        </div>
+
+        <div class="test-section">
+            <h3>📱 Cédulas de 10 Cifras Disponibles</h3>
+            <p>Haz clic en cualquier cédula para copiarla:</p>
+            
+            <div class="cedula-list">
+                <div class="cedula-item" onclick="copyCedula('1000000001')">1000000001</div>
+                <div class="cedula-item" onclick="copyCedula('1000000002')">1000000002</div>
+                <div class="cedula-item" onclick="copyCedula('1000000003')">1000000003</div>
+                <div class="cedula-item" onclick="copyCedula('1000000004')">1000000004</div>
+                <div class="cedula-item" onclick="copyCedula('1000000005')">1000000005</div>
+                <div class="cedula-item" onclick="copyCedula('1000000006')">1000000006</div>
+                <div class="cedula-item" onclick="copyCedula('1000000007')">1000000007</div>
+                <div class="cedula-item" onclick="copyCedula('1000000008')">1000000008</div>
+                <div class="cedula-item" onclick="copyCedula('1000000009')">1000000009</div>
+                <div class="cedula-item" onclick="copyCedula('1000000010')">1000000010</div>
+            </div>
+            
+            <p><em>... y 202 cédulas más hasta 1000000212</em></p>
+        </div>
+
+        <div class="test-section">
+            <h3>✅ Ventajas de las Cédulas de 10 Cifras</h3>
+            <ul>
+                <li>🚀 <strong>Más fáciles de recordar</strong> - Formato simple y corto</li>
+                <li>⌨️ <strong>Más rápidas de escribir</strong> - Menos caracteres</li>
+                <li>📱 <strong>Mejor en móviles</strong> - Campo más cómodo</li>
+                <li>👀 <strong>Más legibles</strong> - Menos errores visuales</li>
+                <li>🎯 <strong>Menos errores</strong> - Formato consistente</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 Resultados de Pruebas</h3>
+            <div id="testResults">
+                <div class="status info">
+                    ⏳ Haz clic en "Probar API" para ver los resultados
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Comparación: Antes vs Ahora</h3>
+            <div class="credentials">
+                <strong>ANTES (13 cifras):</strong><br>
+                Cédula: 2601010101001<br>
+                Campo: Muy ancho, difícil de escribir<br>
+                Errores: Frecuentes por longitud<br><br>
+                
+                <strong>AHORA (10 cifras):</strong><br>
+                Cédula: 1000000001<br>
+                Campo: Tamaño perfecto<br>
+                Errores: Mínimos, fácil de usar
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function copyCedula(cedula) {
+            navigator.clipboard.writeText(cedula).then(function() {
+                alert('Cédula ' + cedula + ' copiada al portapapeles!');
+            }).catch(function() {
+                // Fallback para navegadores que no soportan clipboard API
+                const textArea = document.createElement('textarea');
+                textArea.value = cedula;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('Cédula ' + cedula + ' copiada al portapapeles!');
+            });
+        }
+
+        async function testAPI() {
+            const resultsDiv = document.getElementById('testResults');
+            resultsDiv.innerHTML = '<div class="status info">🔄 Probando API...</div>';
+
+            const testCedulas = ['1000000001', '1000000002', '1000000003'];
+            let results = [];
+
+            for (let i = 0; i < testCedulas.length; i++) {
+                const cedula = testCedulas[i];
+                
+                try {
+                    const response = await fetch('http://localhost:5000/api/auth/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            rol: 'testigo_electoral',
+                            cedula: cedula,
+                            password: 'test123'
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        results.push({
+                            cedula: cedula,
+                            success: true,
+                            user: data.data.user.nombre,
+                            token: data.data.access_token ? 'Generado' : 'No generado'
+                        });
+                    } else {
+                        results.push({
+                            cedula: cedula,
+                            success: false,
+                            error: `Error ${response.status}`
+                        });
+                    }
+                } catch (error) {
+                    results.push({
+                        cedula: cedula,
+                        success: false,
+                        error: error.message
+                    });
+                }
+            }
+
+            // Mostrar resultados
+            let html = '<h4>📊 Resultados de las Pruebas:</h4>';
+            
+            results.forEach((result, index) => {
+                if (result.success) {
+                    html += `
+                        <div class="status success">
+                            ✅ <strong>Cédula ${result.cedula}:</strong> Login exitoso<br>
+                            👤 Usuario: ${result.user}<br>
+                            🔑 Token: ${result.token}
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="status error">
+                            ❌ <strong>Cédula ${result.cedula}:</strong> ${result.error}
+                        </div>
+                    `;
+                }
+            });
+
+            const successCount = results.filter(r => r.success).length;
+            const totalCount = results.length;
+            
+            html += `
+                <div class="status ${successCount === totalCount ? 'success' : 'error'}">
+                    📈 <strong>Resumen:</strong> ${successCount}/${totalCount} pruebas exitosas (${Math.round(successCount/totalCount*100)}%)
+                </div>
+            `;
+
+            resultsDiv.innerHTML = html;
+        }
+
+        // Mostrar información del sistema al cargar
+        window.onload = function() {
+            console.log('🗳️ Sistema Electoral - Prueba de Login');
+            console.log('📱 Cédulas de 10 cifras implementadas');
+            console.log('🔐 Contraseña universal: test123');
+            console.log('👥 212 testigos disponibles');
+        };
+    </script>
+</body>
+</html>

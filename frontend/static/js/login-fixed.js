@@ -308,35 +308,22 @@ async function handleLogin() {
         
         let response;
         
-        // Para testigos, usar endpoint específico con cédula
+        // Para testigos, usar endpoint estándar con cédula
         if (rol === 'testigo_electoral') {
-            const testigoLoginData = {
+            console.log('[LOGIN] Usando login estándar con cédula:', formData.cedula);
+            
+            // Usar el endpoint estándar de autenticación
+            const loginData = {
+                rol: 'testigo_electoral',
                 cedula: formData.cedula,
+                password: formData.password,
                 departamento_codigo: formData.departamento,
                 municipio_codigo: formData.municipio,
                 zona_codigo: formData.zona,
-                puesto_codigo: formData.puesto,
-                password: formData.password
+                puesto_codigo: formData.puesto
             };
             
-            console.log('[LOGIN] Usando login de testigo con cédula:', testigoLoginData.cedula);
-            
-            // Llamar al endpoint específico de testigos registrados
-            response = await fetch('/api/testigos-registrados/login-cedula-simple', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ cedula: testigoLoginData.cedula })
-            });
-            
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.error || 'Error en la validación de testigo');
-            }
-            
-            response = data; // Usar la respuesta parseada
+            response = await APIClient.login(loginData);
         } else {
             // Para otros roles, usar login tradicional
             const loginData = {

@@ -8,7 +8,7 @@ Flask-Compress==1.14
 
 # Base de datos
 SQLAlchemy==2.0.35
-psycopg2-binary==2.9.9
+# psycopg2==2.9.9  # Solo necesario si usas PostgreSQL en producción
 
 # Seguridad
 bcrypt==4.1.2
@@ -19,12 +19,12 @@ email-validator==2.1.0
 
 # Utilidades
 python-dateutil==2.8.2
-Pillow==10.4.0
-pandas==2.1.4
-openpyxl==3.1.2
-psutil==5.9.6
-requests==2.32.3
-reportlab==4.0.7
+Pillow>=10.0.0
+pandas>=2.0.0
+openpyxl>=3.0.0
+psutil>=5.9.0
+requests>=2.31.0
+reportlab>=4.0.0
 
 # Testing
 pytest==7.4.3

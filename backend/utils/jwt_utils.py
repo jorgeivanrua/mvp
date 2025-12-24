@@ -19,7 +19,8 @@ def generate_tokens(user):
     additional_claims = {
         'rol': user.rol,
         'ubicacion_id': user.ubicacion_id,
-        'nombre': user.nombre
+        'nombre': user.nombre,
+        'cedula': user.cedula  # Agregar cédula para testigos
     }
     
     # Generar tokens (identity debe ser string)
@@ -76,6 +77,7 @@ def create_token_response(user, access_token, refresh_token):
             'user': {
                 'id': user.id,
                 'nombre': user.nombre,
+                'cedula': user.cedula,  # Agregar cédula para testigos
                 'rol': user.rol,
                 'ubicacion_id': user.ubicacion_id,
                 'activo': user.activo

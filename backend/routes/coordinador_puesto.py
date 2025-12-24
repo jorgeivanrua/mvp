@@ -215,8 +215,7 @@ def get_incidentes():
         puesto = Location.query.get(user.ubicacion_id)
         
         # Importar modelos de incidentes y delitos
-        from backend.models.incidente_electoral import IncidenteElectoral
-        from backend.models.evidencia_fotografica import EvidenciaFotografica
+        from backend.models.incidentes_delitos import IncidenteElectoral, EvidenciaFotografica
         
         # Obtener incidentes del puesto
         incidentes = IncidenteElectoral.query.join(
@@ -299,8 +298,7 @@ def get_delitos():
         puesto = Location.query.get(user.ubicacion_id)
         
         # Importar modelos de delitos
-        from backend.models.delito_electoral import DelitoElectoral
-        from backend.models.evidencia_fotografica import EvidenciaFotografica
+        from backend.models.incidentes_delitos import DelitoElectoral, EvidenciaFotografica
         
         # Obtener delitos del puesto
         delitos = DelitoElectoral.query.join(

@@ -2,6 +2,10 @@
 """
 Script para eliminar completamente los datos de Caquetá
 """
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
+
 from backend.database import db
 from backend.app import create_app
 

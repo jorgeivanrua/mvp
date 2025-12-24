@@ -2,6 +2,10 @@
 """
 Corregir ubicación de testigos: mover de mesas a puestos de votación
 """
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
+
 from backend.database import db
 from backend.models.user import User
 from backend.models.location import Location

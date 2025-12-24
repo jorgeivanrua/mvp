@@ -542,16 +542,10 @@ function mostrarContextoTestigo(contexto) {
 
 async function loadMesas() {
     try {
-        const params = {
-            puesto_codigo: userLocation.puesto_codigo,
-            zona_codigo: userLocation.zona_codigo,
-            municipio_codigo: userLocation.municipio_codigo,
-            departamento_codigo: userLocation.departamento_codigo
-        };
+        console.log('Loading mesas for puesto:', userLocation.puesto_codigo);
         
-        console.log('Loading mesas with params:', params);
-        
-        const response = await APIClient.get('/locations/mesas', params);
+        // Usar el método getMesas del APIClient que usa path parameters
+        const response = await APIClient.getMesas(userLocation.puesto_codigo);
         const mesas = response.data;
         
         console.log('Mesas loaded:', mesas);
