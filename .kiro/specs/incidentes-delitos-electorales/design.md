@@ -2,510 +2,611 @@
 
 ## Overview
 
-El Sistema de Incidentes y Delitos Electorales es un módulo crítico del sistema electoral que permite reportar, dar seguimiento y resolver irregularidades operacionales (incidentes) y violaciones legales (delitos) durante el proceso electoral. El sistema está implementado con una arquitectura de servicios que separa la lógica de negocio de las rutas API, utilizando 4 modelos de datos principales (IncidenteElectoral, DelitoElectoral, SeguimientoReporte, NotificacionReporte) y un servicio centralizado (IncidentesDelitosService) que maneja toda la lógica de creación, actualización, notificaciones y estadísticas.
+El Sistema de Incidentes y Delitos Electorales es un componente crítico que garantiza la transparencia y trazabilidad del proceso electoral mediante el reporte, gestión y seguimiento de irregularidades y violaciones. Utiliza un enfoque de escalamiento automático basado en severidad, notificaciones en tiempo real, y un sistema completo de auditoría para mantener la integridad del proceso electoral.
 
 ## Architecture
 
 ### High-Level Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Frontend (Dashboards)                     │
-│  - Formulario de reporte de incidentes                      │
-│  - Formulario de reporte de delitos                         │
-│  - Lista de reportes con filtros                            │
-│  - Detalle de reporte con seguimiento                       │
-│  - Notificaciones en tiempo real                            │
-│  - Estadísticas y gráficos                                  │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    Frontend (Browser)                           │
+│                                                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │              Incidentes y Delitos UI                     │   │
+│  │  - Formularios de reporte                                │   │
+│  │  - Dashboard de seguimiento                              │   │
+│  │  - Gestión de evidencias fotográficas                    │   │
+│  │  - Notificaciones en tiempo real                         │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                              │                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │           Incidentes-Delitos JS Module                   │   │
+│  │  - reportarIncidente()                                   │   │
+│  │  - reportarDelito()                                      │   │
+│  │  - subirEvidencia()                                      │   │
+│  │  - actualizarEstado()                                    │   │
+│  │  - cargarNotificaciones()                                │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                              │                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │              Sync Manager (Universal)                    │   │
+│  │  - Sincronización offline de reportes                   │   │
+│  │  - Upload de evidencias en background                    │   │
+│  │  - Notificaciones push                                   │   │
+│  └──────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼ HTTPS/REST API
+┌─────────────────────────────────────────────────────────────────┐
+│                      Backend (Flask)                            │
+│                                                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │         Incidentes y Delitos Routes                      │   │
+│  │  - POST /api/incidentes                                  │   │
+│  │  - GET /api/incidentes                                   │   │
+│  │  - PUT /api/incidentes/{id}/estado                       │   │
+│  │  - POST /api/delitos                                     │   │
+│  │  - GET /api/delitos                                      │   │
+│  │  - PUT /api/delitos/{id}/estado                          │   │
+│  │  - POST /api/delitos/{id}/denunciar                      │   │
+│  │  - POST /api/evidencia/upload                            │   │
+│  │  - GET /api/evidencia/{filename}                         │   │
+│  │  - GET /api/notificaciones                               │   │
+│  │  - GET /api/reportes/estadisticas                        │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                              │                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │           Incidentes Delitos Service                     │   │
+│  │  - crear_incidente()                                     │   │
+│  │  - crear_delito()                                        │   │
+│  │  - actualizar_estado()                                   │   │
+│  │  - generar_notificaciones()                              │   │
+│  │  - calcular_escalamiento()                               │   │
+│  │  - obtener_estadisticas()                                │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                              │                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │              Database Models                             │   │
+│  │  - IncidenteElectoral                                    │   │
+│  │  - DelitoElectoral                                       │   │
+│  │  - EvidenciaFotografica                                  │   │
+│  │  - NotificacionReporte                                   │   │
+│  │  - SeguimientoReporte                                    │   │
+│  └──────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    API REST Layer                            │
-│  - POST /api/incidentes (crear incidente)                   │
-│  - GET /api/incidentes (listar incidentes)                  │
-│  - PUT /api/incidentes/:id (actualizar incidente)           │
-│  - POST /api/delitos (crear delito)                         │
-│  - GET /api/delitos (listar delitos)                        │
-│  - PUT /api/delitos/:id (actualizar delito)                 │
-│  - POST /api/delitos/:id/denunciar (denuncia formal)        │
-│  - GET /api/reportes/estadisticas (estadísticas)            │
-│  - GET /api/reportes/notificaciones (notificaciones)        │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Service Layer                             │
-│  IncidentesDelitosService                                   │
-│  - crear_incidente()                                        │
-│  - crear_delito()                                           │
-│  - obtener_incidentes()                                     │
-│  - obtener_delitos()                                        │
-│  - actualizar_estado_incidente()                            │
-│  - actualizar_estado_delito()                               │
-│  - denunciar_formalmente()                                  │
-│  - obtener_estadisticas()                                   │
-│  - _registrar_seguimiento()                                 │
-│  - _crear_notificaciones_incidente()                        │
-│  - _crear_notificaciones_delito()                           │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Data Layer                                │
-│  - IncidenteElectoral (incidentes)                          │
-│  - DelitoElectoral (delitos)                                │
-│  - SeguimientoReporte (historial)                           │
-│  - NotificacionReporte (notificaciones)                     │
-│  - PostgreSQL Database                                      │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    Database (PostgreSQL)                        │
+│                                                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │                  Tables                                  │   │
+│  │  - incidentes_electorales                                │   │
+│  │  - delitos_electorales                                   │   │
+│  │  - evidencias_fotograficas                               │   │
+│  │  - notificaciones_reportes                               │   │
+│  │  - seguimiento_reportes                                  │   │
+│  │  - users (relación con reportantes)                      │   │
+│  │  - locations (relación con ubicaciones)                  │   │
+│  └──────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### Technology Stack
+### Component Architecture
 
-- **Backend**: Flask (Python)
-- **Database**: PostgreSQL with SQLAlchemy ORM
-- **Authentication**: Flask-JWT-Extended
-- **Service Layer**: IncidentesDelitosService (business logic)
-- **File Upload**: For evidence attachments
-- **Frontend**: HTML, JavaScript, Bootstrap
-- **Notifications**: Database-driven notifications
+```
+incidentes-delitos.js
+├── Inicialización
+│   ├── initIncidentesDelitos()
+│   ├── cargarTiposIncidentesDelitos()
+│   └── poblarSelectores()
+│
+├── Reporte de Incidentes
+│   ├── mostrarFormularioIncidente()
+│   ├── reportarIncidente()
+│   ├── validarDatosIncidente()
+│   └── confirmarEnvioIncidente()
+│
+├── Reporte de Delitos
+│   ├── mostrarFormularioDelito()
+│   ├── reportarDelito()
+│   ├── validarDatosDelito()
+│   └── confirmarEnvioDelito()
+│
+├── Gestión de Evidencias
+│   ├── subirEvidencia()
+│   ├── previsualizarImagen()
+│   ├── validarArchivo()
+│   └── eliminarEvidencia()
+│
+├── Dashboard de Seguimiento
+│   ├── cargarReportes()
+│   ├── filtrarReportes()
+│   ├── actualizarEstado()
+│   └── verDetalleReporte()
+│
+├── Notificaciones
+│   ├── cargarNotificaciones()
+│   ├── marcarComoLeida()
+│   ├── mostrarNotificacionPush()
+│   └── actualizarContadorNotificaciones()
+│
+└── Sincronización Offline
+    ├── guardarReporteOffline()
+    ├── sincronizarReportesOffline()
+    ├── subirEvidenciasOffline()
+    └── manejarConflictosSincronizacion()
+```
 
 ## Components and Interfaces
 
-### 1. Data Models
+### 1. Formulario de Reporte de Incidentes
 
-#### IncidenteElectoral Model
+**Componente:** `mostrarFormularioIncidente()`
+
+**Campos del Formulario:**
+- **Tipo de Incidente:** Select con 15 tipos predefinidos
+- **Título:** Input text (máximo 200 caracteres)
+- **Descripción:** Textarea (mínimo 20 caracteres, máximo 2000)
+- **Mesa Afectada:** Select con mesas asignadas al testigo
+- **Fecha y Hora:** DateTime picker (default: ahora)
+- **Severidad:** Select (Baja, Media, Alta) - default: Media
+- **Evidencias:** Upload de hasta 3 fotografías
+- **Ubicación GPS:** Captura automática si disponible
+
+**Validaciones:**
+- Tipo de incidente obligatorio
+- Título obligatorio (mínimo 10 caracteres)
+- Descripción obligatoria (mínimo 20 caracteres)
+- Validación de archivos de imagen (JPG, PNG, WEBP, máximo 5MB)
+- Detección de reportes duplicados (mismo tipo, ubicación, tiempo < 30 min)
+
+**Flujo de Envío:**
+1. Validar datos del formulario
+2. Mostrar confirmación con resumen
+3. Guardar localmente si offline
+4. Enviar a servidor si online
+5. Mostrar resultado y limpiar formulario
+
+### 2. Formulario de Reporte de Delitos
+
+**Componente:** `mostrarFormularioDelito()`
+
+**Campos del Formulario:**
+- **Tipo de Delito:** Select con 10 tipos predefinidos
+- **Título:** Input text (máximo 200 caracteres)
+- **Descripción:** Textarea (mínimo 50 caracteres, máximo 3000)
+- **Mesa Afectada:** Select con mesas asignadas
+- **Fecha y Hora:** DateTime picker (default: ahora)
+- **Gravedad:** Select automático según tipo de delito
+- **Testigos Adicionales:** Textarea opcional
+- **Evidencias:** Upload de hasta 5 fotografías
+- **Ubicación GPS:** Captura automática
+
+**Validaciones Especiales:**
+- Descripción mínimo 50 caracteres (más detallada que incidentes)
+- Confirmación adicional antes de envío
+- Validación de gravedad según tipo de delito
+- Alertas sobre consecuencias legales
+
+**Escalamiento Automático:**
+- Delitos "Críticos" → Notificar a coordinador puesto, municipal y departamental
+- Delitos "Altos" → Notificar a coordinador puesto y municipal
+- Generación automática de alertas de seguimiento
+
+### 3. Sistema de Evidencias Fotográficas
+
+**Componente:** `subirEvidencia()`
+
+**Funcionalidades:**
+- **Captura desde Cámara:** Usar `navigator.mediaDevices.getUserMedia()`
+- **Selección de Archivos:** Input file con múltiple selección
+- **Preview de Imágenes:** Mostrar thumbnails antes de envío
+- **Compresión Automática:** Reducir tamaño si > 2MB manteniendo calidad
+- **Upload Progresivo:** Barra de progreso para cada imagen
+- **Validación de Metadatos:** Extraer EXIF (fecha, ubicación, dispositivo)
+
+**Formatos Soportados:**
+```javascript
+const formatosPermitidos = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+const tamañoMaximo = 5 * 1024 * 1024; // 5MB
+const dimensionesMaximas = { width: 4000, height: 4000 };
+```
+
+**Almacenamiento:**
+- Directorio: `frontend/static/uploads/evidencias/`
+- Nomenclatura: `{UUID}_{timestamp}.{extension}`
+- Thumbnails: `thumbnails/{UUID}_thumb.jpg` (150x150px)
+
+### 4. Dashboard de Seguimiento para Coordinadores
+
+**Componente:** `cargarReportes()`
+
+**Vista de Tabla:**
+- **Columnas:** Número, Tipo, Título, Severidad/Gravedad, Estado, Fecha, Testigo, Acciones
+- **Filtros:** Estado, Tipo, Severidad, Fecha, Mesa, Testigo
+- **Ordenamiento:** Por fecha (desc), severidad, estado
+- **Paginación:** 20 reportes por página
+- **Búsqueda:** Por número de reporte, título, descripción
+
+**Estados de Reportes:**
+```javascript
+const estadosIncidentes = {
+    'reportado': { label: 'Reportado', color: 'warning', icon: 'exclamation-triangle' },
+    'en_revision': { label: 'En Revisión', color: 'info', icon: 'eye' },
+    'resuelto': { label: 'Resuelto', color: 'success', icon: 'check-circle' },
+    'escalado': { label: 'Escalado', color: 'danger', icon: 'arrow-up' }
+};
+
+const estadosDelitos = {
+    'reportado': { label: 'Reportado', color: 'warning', icon: 'exclamation-triangle' },
+    'en_investigacion': { label: 'En Investigación', color: 'info', icon: 'search' },
+    'investigado': { label: 'Investigado', color: 'primary', icon: 'clipboard-check' },
+    'denunciado': { label: 'Denunciado', color: 'success', icon: 'gavel' },
+    'archivado': { label: 'Archivado', color: 'secondary', icon: 'archive' }
+};
+```
+
+**Acciones por Reporte:**
+- **Ver Detalles:** Modal con información completa
+- **Cambiar Estado:** Select con comentario obligatorio
+- **Ver Evidencias:** Galería de imágenes
+- **Agregar Comentario:** Sistema de seguimiento
+- **Exportar:** PDF individual o CSV masivo
+
+### 5. Sistema de Notificaciones
+
+**Componente:** `cargarNotificaciones()`
+
+**Tipos de Notificaciones:**
+```javascript
+const tiposNotificacion = {
+    'nuevo_incidente': {
+        titulo: 'Nuevo Incidente Reportado',
+        icono: 'exclamation-triangle',
+        color: 'warning'
+    },
+    'nuevo_delito': {
+        titulo: 'Nuevo Delito Reportado',
+        icono: 'shield-exclamation',
+        color: 'danger'
+    },
+    'cambio_estado': {
+        titulo: 'Estado de Reporte Actualizado',
+        icono: 'sync',
+        color: 'info'
+    },
+    'comentario_agregado': {
+        titulo: 'Nuevo Comentario',
+        icono: 'comment',
+        color: 'primary'
+    }
+};
+```
+
+**Canales de Notificación:**
+- **Dashboard:** Badge numérico en header
+- **Push Notifications:** Para delitos críticos
+- **Email:** Para coordinadores (configurable)
+- **Sonido:** Alerta audible para delitos
+
+**Gestión de Notificaciones:**
+- Auto-refresh cada 30 segundos
+- Marcar como leída al hacer clic
+- Agrupar notificaciones similares
+- Retención por 30 días
+
+## Data Models
+
+### 1. IncidenteElectoral
 
 ```python
 class IncidenteElectoral(db.Model):
     __tablename__ = 'incidentes_electorales'
     
     # Identificación
-    id: Integer (Primary Key)
-    reportado_por_id: Integer (Foreign Key: users.id)
+    id = db.Column(db.Integer, primary_key=True)
+    reportado_por_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     
-    # Ubicación
-    mesa_id: Integer (Foreign Key: locations.id, Nullable)
-    puesto_id: Integer (Foreign Key: locations.id, Nullable)
-    municipio_id: Integer (Foreign Key: locations.id, Nullable)
-    departamento_id: Integer (Foreign Key: locations.id, Nullable)
+    # Ubicación jerárquica
+    mesa_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
+    puesto_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
+    municipio_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
+    departamento_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
     
     # Información del incidente
-    tipo_incidente: String(50) (Not Null)
-    titulo: String(200) (Not Null)
-    descripcion: Text (Not Null)
-    severidad: String(20) (Default: 'media')  # baja, media, alta, critica
-    estado: String(20) (Default: 'reportado')  # reportado, en_revision, resuelto, escalado
+    tipo_incidente = db.Column(db.String(50), nullable=False)
+    titulo = db.Column(db.String(200), nullable=False)
+    descripcion = db.Column(db.Text, nullable=False)
+    severidad = db.Column(db.String(20), default='media')  # baja, media, alta, critica
+    estado = db.Column(db.String(20), default='reportado')  # reportado, en_revision, resuelto, escalado
     
-    # Evidencia y ubicación
-    evidencia_url: String(500) (Nullable)
-    ubicacion_gps: String(100) (Nullable)
+    # Evidencias y ubicación
+    evidencia_url = db.Column(db.String(500), nullable=True)  # Deprecated - usar EvidenciaFotografica
+    ubicacion_gps = db.Column(db.String(100), nullable=True)
+    latitud_reporte = db.Column(db.Float, nullable=True)
+    longitud_reporte = db.Column(db.Float, nullable=True)
+    precision_gps = db.Column(db.Float, nullable=True)
     
     # Fechas
-    fecha_incidente: DateTime (Nullable)
-    fecha_reporte: DateTime (Default: utcnow)
+    fecha_incidente = db.Column(db.DateTime, nullable=True)
+    fecha_reporte = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Resolución
-    resuelto_por_id: Integer (Foreign Key: users.id, Nullable)
-    fecha_resolucion: DateTime (Nullable)
-    notas_resolucion: Text (Nullable)
-    escalado_a: String(50) (Nullable)
+    resuelto_por_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    fecha_resolucion = db.Column(db.DateTime, nullable=True)
+    notas_resolucion = db.Column(db.Text, nullable=True)
+    escalado_a = db.Column(db.String(50), nullable=True)
     
-    created_at: DateTime (Default: utcnow)
-    updated_at: DateTime (Default: utcnow, OnUpdate: utcnow)
+    # Sincronización offline
+    sincronizado = db.Column(db.Boolean, default=True)
+    fecha_sincronizacion = db.Column(db.DateTime, nullable=True)
+    dispositivo_id = db.Column(db.String(100), nullable=True)
     
-    # Tipos de incidentes
-    TIPOS_INCIDENTE = {
-        'retraso_apertura', 'falta_material', 'problemas_tecnicos',
-        'irregularidades_proceso', 'ausencia_funcionarios',
-        'problemas_acceso', 'disturbios', 'otros'
-    }
-    
-    # Niveles de severidad
-    SEVERIDADES = {'baja', 'media', 'alta', 'critica'}
-    
-    # Estados
-    ESTADOS = {'reportado', 'en_revision', 'resuelto', 'escalado'}
+    # Auditoría
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 ```
 
-#### DelitoElectoral Model
+**Tipos de Incidentes:**
+```python
+TIPOS_INCIDENTE = {
+    'retraso_apertura': 'Retraso en apertura de mesa',
+    'falta_material': 'Falta de material electoral',
+    'problemas_tecnicos': 'Problemas técnicos',
+    'irregularidades_proceso': 'Irregularidades en el proceso',
+    'ausencia_funcionarios': 'Ausencia de funcionarios',
+    'problemas_acceso': 'Problemas de acceso al puesto',
+    'disturbios': 'Disturbios o alteración del orden',
+    'otros': 'Otros incidentes'
+}
+```
+
+### 2. DelitoElectoral
 
 ```python
 class DelitoElectoral(db.Model):
     __tablename__ = 'delitos_electorales'
     
-    # Identificación
-    id: Integer (Primary Key)
-    reportado_por_id: Integer (Foreign Key: users.id)
+    # Identificación (similar a IncidenteElectoral)
+    id = db.Column(db.Integer, primary_key=True)
+    reportado_por_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     
-    # Ubicación
-    mesa_id: Integer (Foreign Key: locations.id, Nullable)
-    puesto_id: Integer (Foreign Key: locations.id, Nullable)
-    municipio_id: Integer (Foreign Key: locations.id, Nullable)
-    departamento_id: Integer (Foreign Key: locations.id, Nullable)
+    # Ubicación jerárquica
+    mesa_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
+    puesto_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
+    municipio_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
+    departamento_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
     
     # Información del delito
-    tipo_delito: String(50) (Not Null)
-    titulo: String(200) (Not Null)
-    descripcion: Text (Not Null)
-    gravedad: String(20) (Default: 'media')  # leve, media, grave, muy_grave
-    estado: String(30) (Default: 'reportado')  # reportado, en_investigacion, investigado, denunciado, archivado
+    tipo_delito = db.Column(db.String(50), nullable=False)
+    titulo = db.Column(db.String(200), nullable=False)
+    descripcion = db.Column(db.Text, nullable=False)
+    gravedad = db.Column(db.String(20), default='media')  # leve, media, grave, muy_grave
+    estado = db.Column(db.String(30), default='reportado')  # reportado, en_investigacion, investigado, denunciado, archivado
     
-    # Evidencia y testigos
-    evidencia_url: String(500) (Nullable)
-    testigos_adicionales: Text (Nullable)
-    ubicacion_gps: String(100) (Nullable)
-    
-    # Fechas
-    fecha_delito: DateTime (Nullable)
-    fecha_reporte: DateTime (Default: utcnow)
+    # Información adicional para delitos
+    testigos_adicionales = db.Column(db.Text, nullable=True)
     
     # Investigación
-    investigado_por_id: Integer (Foreign Key: users.id, Nullable)
-    fecha_investigacion: DateTime (Nullable)
-    resultado_investigacion: Text (Nullable)
+    investigado_por_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    fecha_investigacion = db.Column(db.DateTime, nullable=True)
+    resultado_investigacion = db.Column(db.Text, nullable=True)
     
     # Denuncia formal
-    denunciado_formalmente: Boolean (Default: False)
-    numero_denuncia: String(100) (Nullable)
-    autoridad_competente: String(200) (Nullable)
-    fecha_denuncia: DateTime (Nullable)
-    seguimiento: Text (Nullable)
-    
-    created_at: DateTime (Default: utcnow)
-    updated_at: DateTime (Default: utcnow, OnUpdate: utcnow)
-    
-    # Tipos de delitos
-    TIPOS_DELITO = {
-        'compra_votos', 'coaccion_votante', 'fraude_electoral',
-        'suplantacion_identidad', 'alteracion_resultados',
-        'violencia_electoral', 'propaganda_ilegal',
-        'financiacion_ilegal', 'otros_delitos'
-    }
-    
-    # Niveles de gravedad
-    GRAVEDADES = {'leve', 'media', 'grave', 'muy_grave'}
-    
-    # Estados
-    ESTADOS = {'reportado', 'en_investigacion', 'investigado', 'denunciado', 'archivado'}
+    denunciado_formalmente = db.Column(db.Boolean, default=False)
+    numero_denuncia = db.Column(db.String(100), nullable=True)
+    autoridad_competente = db.Column(db.String(200), nullable=True)
+    fecha_denuncia = db.Column(db.DateTime, nullable=True)
+    seguimiento = db.Column(db.Text, nullable=True)
 ```
 
-#### SeguimientoReporte Model
+**Tipos de Delitos:**
+```python
+TIPOS_DELITO = {
+    'compra_votos': 'Compra de votos',
+    'coaccion_votante': 'Coacción al votante',
+    'fraude_electoral': 'Fraude electoral',
+    'suplantacion_identidad': 'Suplantación de identidad',
+    'alteracion_resultados': 'Alteración de resultados',
+    'violencia_electoral': 'Violencia electoral',
+    'propaganda_ilegal': 'Propaganda ilegal',
+    'financiacion_ilegal': 'Financiación ilegal de campaña',
+    'otros_delitos': 'Otros delitos electorales'
+}
+```
+
+### 3. EvidenciaFotografica
 
 ```python
-class SeguimientoReporte(db.Model):
-    __tablename__ = 'seguimiento_reportes'
+class EvidenciaFotografica(db.Model):
+    __tablename__ = 'evidencias_fotograficas'
     
-    id: Integer (Primary Key)
-    tipo_reporte: String(20) (Not Null)  # 'incidente' o 'delito'
-    reporte_id: Integer (Not Null)
-    usuario_id: Integer (Foreign Key: users.id)
-    accion: String(50) (Not Null)
-    comentario: Text (Nullable)
-    estado_anterior: String(30) (Nullable)
-    estado_nuevo: String(30) (Nullable)
-    created_at: DateTime (Default: utcnow)
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Relación con reporte
+    incidente_id = db.Column(db.Integer, db.ForeignKey('incidentes_electorales.id'), nullable=True)
+    delito_id = db.Column(db.Integer, db.ForeignKey('delitos_electorales.id'), nullable=True)
+    
+    # Información del archivo
+    filename = db.Column(db.String(255), nullable=False, unique=True)
+    filename_original = db.Column(db.String(255), nullable=False)
+    url = db.Column(db.String(500), nullable=False)
+    mime_type = db.Column(db.String(50), nullable=False)
+    size_bytes = db.Column(db.Integer, nullable=False)
+    
+    # Metadatos de imagen
+    width = db.Column(db.Integer, nullable=True)
+    height = db.Column(db.Integer, nullable=True)
+    latitud = db.Column(db.Float, nullable=True)
+    longitud = db.Column(db.Float, nullable=True)
+    fecha_captura = db.Column(db.DateTime, nullable=True)
+    dispositivo = db.Column(db.String(200), nullable=True)
+    
+    # Auditoría
+    subido_por_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    fecha_subida = db.Column(db.DateTime, default=datetime.utcnow)
 ```
 
-#### NotificacionReporte Model
+### 4. NotificacionReporte
 
 ```python
 class NotificacionReporte(db.Model):
     __tablename__ = 'notificaciones_reportes'
     
-    id: Integer (Primary Key)
-    usuario_id: Integer (Foreign Key: users.id)
-    tipo_reporte: String(20) (Not Null)  # 'incidente' o 'delito'
-    reporte_id: Integer (Not Null)
-    tipo_notificacion: String(50) (Not Null)
-    titulo: String(200) (Not Null)
-    mensaje: Text (Not Null)
-    leida: Boolean (Default: False)
-    fecha_lectura: DateTime (Nullable)
-    created_at: DateTime (Default: utcnow)
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    tipo_reporte = db.Column(db.String(20), nullable=False)  # 'incidente' o 'delito'
+    reporte_id = db.Column(db.Integer, nullable=False)
+    tipo_notificacion = db.Column(db.String(50), nullable=False)
+    titulo = db.Column(db.String(200), nullable=False)
+    mensaje = db.Column(db.Text, nullable=False)
+    leida = db.Column(db.Boolean, default=False)
+    fecha_lectura = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 ```
 
-### 2. Service Layer
+### 5. SeguimientoReporte
 
-#### IncidentesDelitosService
-
-**Métodos principales:**
-
-- `crear_incidente(data, usuario_id)` - Crea un nuevo incidente
-- `crear_delito(data, usuario_id)` - Crea un nuevo delito
-- `obtener_incidentes(filtros, usuario_id, rol_usuario)` - Lista incidentes con filtros y permisos
-- `obtener_delitos(filtros, usuario_id, rol_usuario)` - Lista delitos con filtros y permisos
-- `actualizar_estado_incidente(incidente_id, nuevo_estado, usuario_id, comentario)` - Actualiza estado de incidente
-- `actualizar_estado_delito(delito_id, nuevo_estado, usuario_id, comentario)` - Actualiza estado de delito
-- `denunciar_formalmente(delito_id, usuario_id, numero_denuncia, autoridad_competente)` - Registra denuncia formal
-- `obtener_estadisticas(usuario_id, rol_usuario)` - Calcula estadísticas de reportes
-- `obtener_seguimiento(tipo_reporte, reporte_id)` - Obtiene historial de seguimiento
-- `obtener_notificaciones(usuario_id, solo_no_leidas)` - Obtiene notificaciones del usuario
-- `marcar_notificacion_leida(notificacion_id)` - Marca notificación como leída
-
-**Métodos privados:**
-
-- `_registrar_seguimiento()` - Registra acción en historial
-- `_crear_notificaciones_incidente()` - Crea notificaciones para incidente
-- `_crear_notificaciones_delito()` - Crea notificaciones para delito
-
-## Data Models
-
-### Database Schema
-
-```sql
--- Tabla de incidentes electorales
-CREATE TABLE incidentes_electorales (
-    id SERIAL PRIMARY KEY,
-    reportado_por_id INTEGER REFERENCES users(id) NOT NULL,
-    mesa_id INTEGER REFERENCES locations(id),
-    puesto_id INTEGER REFERENCES locations(id),
-    municipio_id INTEGER REFERENCES locations(id),
-    departamento_id INTEGER REFERENCES locations(id),
-    tipo_incidente VARCHAR(50) NOT NULL,
-    titulo VARCHAR(200) NOT NULL,
-    descripcion TEXT NOT NULL,
-    severidad VARCHAR(20) DEFAULT 'media',
-    estado VARCHAR(20) DEFAULT 'reportado',
-    evidencia_url VARCHAR(500),
-    ubicacion_gps VARCHAR(100),
-    fecha_incidente TIMESTAMP,
-    fecha_reporte TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    resuelto_por_id INTEGER REFERENCES users(id),
-    fecha_resolucion TIMESTAMP,
-    notas_resolucion TEXT,
-    escalado_a VARCHAR(50),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Tabla de delitos electorales
-CREATE TABLE delitos_electorales (
-    id SERIAL PRIMARY KEY,
-    reportado_por_id INTEGER REFERENCES users(id) NOT NULL,
-    mesa_id INTEGER REFERENCES locations(id),
-    puesto_id INTEGER REFERENCES locations(id),
-    municipio_id INTEGER REFERENCES locations(id),
-    departamento_id INTEGER REFERENCES locations(id),
-    tipo_delito VARCHAR(50) NOT NULL,
-    titulo VARCHAR(200) NOT NULL,
-    descripcion TEXT NOT NULL,
-    gravedad VARCHAR(20) DEFAULT 'media',
-    estado VARCHAR(30) DEFAULT 'reportado',
-    evidencia_url VARCHAR(500),
-    testigos_adicionales TEXT,
-    ubicacion_gps VARCHAR(100),
-    fecha_delito TIMESTAMP,
-    fecha_reporte TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    investigado_por_id INTEGER REFERENCES users(id),
-    fecha_investigacion TIMESTAMP,
-    resultado_investigacion TEXT,
-    denunciado_formalmente BOOLEAN DEFAULT FALSE,
-    numero_denuncia VARCHAR(100),
-    autoridad_competente VARCHAR(200),
-    fecha_denuncia TIMESTAMP,
-    seguimiento TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Tabla de seguimiento de reportes
-CREATE TABLE seguimiento_reportes (
-    id SERIAL PRIMARY KEY,
-    tipo_reporte VARCHAR(20) NOT NULL,
-    reporte_id INTEGER NOT NULL,
-    usuario_id INTEGER REFERENCES users(id) NOT NULL,
-    accion VARCHAR(50) NOT NULL,
-    comentario TEXT,
-    estado_anterior VARCHAR(30),
-    estado_nuevo VARCHAR(30),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Tabla de notificaciones de reportes
-CREATE TABLE notificaciones_reportes (
-    id SERIAL PRIMARY KEY,
-    usuario_id INTEGER REFERENCES users(id) NOT NULL,
-    tipo_reporte VARCHAR(20) NOT NULL,
-    reporte_id INTEGER NOT NULL,
-    tipo_notificacion VARCHAR(50) NOT NULL,
-    titulo VARCHAR(200) NOT NULL,
-    mensaje TEXT NOT NULL,
-    leida BOOLEAN DEFAULT FALSE,
-    fecha_lectura TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Índices
-CREATE INDEX idx_incidentes_estado ON incidentes_electorales(estado);
-CREATE INDEX idx_incidentes_severidad ON incidentes_electorales(severidad);
-CREATE INDEX idx_incidentes_puesto ON incidentes_electorales(puesto_id);
-CREATE INDEX idx_incidentes_municipio ON incidentes_electorales(municipio_id);
-CREATE INDEX idx_delitos_estado ON delitos_electorales(estado);
-CREATE INDEX idx_delitos_gravedad ON delitos_electorales(gravedad);
-CREATE INDEX idx_delitos_puesto ON delitos_electorales(puesto_id);
-CREATE INDEX idx_delitos_municipio ON delitos_electorales(municipio_id);
-CREATE INDEX idx_seguimiento_reporte ON seguimiento_reportes(tipo_reporte, reporte_id);
-CREATE INDEX idx_notificaciones_usuario ON notificaciones_reportes(usuario_id, leida);
+```python
+class SeguimientoReporte(db.Model):
+    __tablename__ = 'seguimiento_reportes'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    tipo_reporte = db.Column(db.String(20), nullable=False)  # 'incidente' o 'delito'
+    reporte_id = db.Column(db.Integer, nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    accion = db.Column(db.String(50), nullable=False)
+    descripcion = db.Column(db.Text, nullable=False)
+    estado_anterior = db.Column(db.String(30), nullable=True)
+    estado_nuevo = db.Column(db.String(30), nullable=True)
+    visible_testigo = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 ```
 
 ## Correctness Properties
 
 *A property is a characteristic or behavior that should hold true across all valid executions of a system-essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
-### Property 1: Report Creation Timestamps
-*For any* created report (incident or crime), the fecha_reporte should be set to the current timestamp
-**Validates: Requirements 1.5, 4.5**
+### Property 1: Escalamiento Automático Consistente
+*For any* delito reportado, el sistema debe generar notificaciones a los coordinadores apropiados según el nivel de gravedad configurado, sin duplicados ni omisiones
+**Validates: Requirements 5.2, 5.3, 5.4, 8.1, 8.2**
 
-### Property 2: Automatic Location Hierarchy
-*For any* report with mesa_id, the system should automatically populate puesto_id, municipio_id, and departamento_id based on the mesa's location hierarchy
-**Validates: Requirements 1.2, 4.2**
+### Property 2: Integridad de Estados de Reportes
+*For any* cambio de estado de reporte, debe existir un registro de seguimiento correspondiente con usuario responsable, timestamp, y descripción válida
+**Validates: Requirements 6.2, 6.4, 10.2, 15.2**
 
-### Property 3: Default Estado Values
-*For any* newly created incident, estado should be 'reportado'; for any newly created crime, estado should be 'reportado'
-**Validates: Requirements 1.3, 4.3**
+### Property 3: Validación de Evidencias Fotográficas
+*For any* evidencia fotográfica subida, debe tener un formato válido, tamaño dentro de límites, y estar asociada a exactamente un reporte existente
+**Validates: Requirements 7.2, 7.3, 7.4, 7.5**
 
-### Property 4: Seguimiento Creation on Actions
-*For any* action performed on a report (create, update estado, resolve), a seguimiento record should be created
-**Validates: Requirements 11.1**
+### Property 4: Prevención de Duplicados
+*For any* reporte creado, si existe otro reporte del mismo tipo, ubicación y dentro de 30 minutos, debe activarse la detección de duplicados
+**Validates: Requirements 14.1, 14.2, 14.3**
 
-### Property 5: Critical Incident Notifications
-*For any* incident with severidad 'critica', notifications should be sent to both coordinador_puesto and coordinador_municipal
-**Validates: Requirements 3.3, 12.2**
+### Property 5: Permisos de Acceso Jerárquicos
+*For any* usuario accediendo a reportes, solo debe ver reportes de su jurisdicción según su rol (testigo ve sus reportes, coordinadores ven su área)
+**Validates: Requirements 19.2, 19.3**
 
-### Property 6: Crime Notifications to Multiple Roles
-*For any* created crime, notifications should be sent to coordinador_municipal, coordinador_departamental, and all auditor_electoral users
-**Validates: Requirements 12.3**
+### Property 6: Sincronización Offline Correcta
+*For any* reporte creado offline, cuando se restaure la conexión, debe sincronizarse exactamente una vez sin pérdida de datos
+**Validates: Requirements 1.7, 13.6, 18.6**
 
-### Property 7: Resolution Timestamp Consistency
-*For any* incident marked as 'resuelto', the fecha_resolucion should be set and resuelto_por_id should be populated
-**Validates: Requirements 13.2, 13.3**
+### Property 7: Auditoría Completa de Acciones
+*For any* acción realizada en el sistema (crear, modificar, acceder), debe existir un registro de auditoría correspondiente con todos los metadatos requeridos
+**Validates: Requirements 15.1, 15.2, 15.3, 15.5, 19.3**
 
-### Property 8: Investigation Timestamp Consistency
-*For any* crime with estado 'en_investigacion', the fecha_investigacion should be set and investigado_por_id should be populated
-**Validates: Requirements 14.2**
-
-### Property 9: Formal Complaint Fields
-*For any* crime with denunciado_formalmente=True, the fields numero_denuncia, autoridad_competente, and fecha_denuncia should all be non-null
-**Validates: Requirements 15.1, 15.2, 15.3, 15.4**
-
-### Property 10: Permission-Based Filtering
-*For any* testigo_electoral viewing reports, only reports where reportado_por_id equals the testigo's ID should be returned
-**Validates: Requirements 19.1**
+### Property 8: Notificaciones Apropiadas
+*For any* evento que requiera notificación (nuevo reporte, cambio de estado), debe generarse exactamente una notificación por usuario destinatario
+**Validates: Requirements 8.1, 8.2, 8.7, 10.5**
 
 ## Error Handling
 
-### Error Categories
+### 1. Errores de Validación de Datos
 
-1. **Validation Errors** (400 Bad Request)
-   - Invalid tipo_incidente or tipo_delito
-   - Missing required fields
-   - Invalid estado transition
-   - Invalid severidad or gravedad
+**Tipos de Error:**
+- Campos obligatorios faltantes
+- Formatos de datos inválidos
+- Archivos de evidencia corruptos o muy grandes
+- Tipos de incidente/delito no válidos
 
-2. **Authorization Errors** (403 Forbidden)
-   - User attempting to view reports outside their jurisdiction
-   - Non-coordinator attempting to resolve incidents
-   - Non-auditor attempting to investigate crimes
+**Estrategias de Manejo:**
+- Validación en frontend antes de envío
+- Validación en backend con mensajes específicos
+- Mostrar errores campo por campo
+- Permitir corrección sin perder datos ingresados
 
-3. **Not Found Errors** (404 Not Found)
-   - Report ID does not exist
-   - User ID does not exist
-   - Location ID does not exist
+### 2. Errores de Permisos y Acceso
 
-4. **Business Logic Errors** (400 Bad Request)
-   - Attempting to resolve already resolved incident
-   - Attempting to formally report crime without investigation
-   - Invalid estado transition
+**Escenarios:**
+- Usuario sin permisos para ver reporte
+- Intento de modificar reporte de otro usuario
+- Acceso a evidencias sin autorización
+- Cambio de estado sin permisos de coordinador
 
-5. **Server Errors** (500 Internal Server Error)
-   - Database connection failures
-   - File upload failures
-   - Unexpected exceptions
+**Estrategias:**
+- Verificación de permisos en cada endpoint
+- Mensajes de error claros sobre restricciones
+- Logging de intentos de acceso no autorizado
+- Redirección a página apropiada según rol
+
+### 3. Errores de Conectividad y Sincronización
+
+**Problemas:**
+- Pérdida de conexión durante envío de reporte
+- Falla en upload de evidencias
+- Conflictos de sincronización offline
+- Timeout en requests largos
+
+**Estrategias:**
+- Almacenamiento local automático
+- Reintento automático con backoff exponencial
+- Indicadores de estado de sincronización
+- Resolución de conflictos con timestamp
+
+### 4. Errores de Almacenamiento de Archivos
+
+**Tipos:**
+- Espacio insuficiente en servidor
+- Permisos de escritura en directorio
+- Archivos corruptos durante upload
+- Formatos de imagen no soportados
+
+**Estrategias:**
+- Validación de espacio disponible
+- Compresión automática de imágenes grandes
+- Verificación de integridad de archivos
+- Fallback a formatos alternativos
 
 ## Testing Strategy
 
-### Unit Testing
+### Unit Tests
+- Validar lógica de escalamiento por severidad/gravedad
+- Probar cálculos de permisos jerárquicos
+- Verificar validaciones de datos de entrada
+- Testear generación de notificaciones
 
-1. **Model Tests**
-   - Test IncidenteElectoral.to_dict() serialization
-   - Test DelitoElectoral.to_dict() serialization
-   - Test SeguimientoReporte.to_dict() serialization
-   - Test NotificacionReporte.marcar_como_leida()
+### Property-Based Tests
+- Generar reportes aleatorios y verificar escalamiento correcto
+- Probar integridad de estados con transiciones aleatorias
+- Validar permisos con combinaciones de roles y ubicaciones
+- Verificar sincronización offline con datos aleatorios
 
-2. **Service Tests**
-   - Test crear_incidente() creates incident with correct fields
-   - Test crear_delito() creates crime with correct fields
-   - Test obtener_incidentes() filters by role correctly
-   - Test obtener_delitos() filters by role correctly
-   - Test actualizar_estado_incidente() updates estado and creates seguimiento
-   - Test denunciar_formalmente() sets all required fields
-   - Test obtener_estadisticas() calculates counts correctly
-   - Test _crear_notificaciones_incidente() creates correct notifications
-   - Test _crear_notificaciones_delito() notifies all required roles
+### Integration Tests
+- Probar flujo completo de reporte de incidente
+- Verificar upload y acceso a evidencias fotográficas
+- Testear notificaciones en tiempo real
+- Probar exportación de reportes
 
-3. **Permission Tests**
-   - Test testigo only sees their own reports
-   - Test coordinador_puesto only sees reports from their puesto
-   - Test coordinador_municipal only sees reports from their municipio
-   - Test super_admin sees all reports
+### Manual Tests
+- Verificar interfaz de usuario en dispositivos móviles
+- Probar funcionalidad offline en condiciones reales
+- Validar flujo de escalamiento con múltiples coordinadores
+- Verificar generación de reportes estadísticos
 
-### Property-Based Testing
-
-Property-based tests will use **Hypothesis** library for Python:
-
-1. **Property Test: Report Creation Timestamps**
-   - Generate random reports
-   - Verify fecha_reporte is set
-
-2. **Property Test: Automatic Location Hierarchy**
-   - Generate random mesas
-   - Create reports with mesa_id
-   - Verify puesto_id, municipio_id, departamento_id are populated
-
-3. **Property Test: Seguimiento Creation**
-   - Perform random actions on reports
-   - Verify seguimiento records are created
-
-4. **Property Test: Statistics Calculation**
-   - Generate random reports
-   - Calculate statistics
-   - Verify counts match actual data
-
-### Integration Testing
-
-1. Create incident → Verify notifications sent → Resolve incident → Verify seguimiento
-2. Create crime → Investigate → Formally report → Verify all fields set
-3. Create critical incident → Verify both coordinador_puesto and coordinador_municipal notified
-4. Filter reports by role → Verify only authorized reports returned
-
-## Security Considerations
-
-- All endpoints require JWT authentication
-- Reports filtered by user role and jurisdiction
-- Only coordinators can resolve incidents
-- Only auditores can investigate crimes
-- Evidence files validated for type and size
-- SQL injection prevention via SQLAlchemy ORM
-
-## Performance Considerations
-
-- Indexes on estado, severidad/gravedad, puesto_id, municipio_id
-- Efficient filtering in database queries
-- Pagination for large result sets
-- Caching of statistics (updated on report creation)
-
-## Future Enhancements
-
-1. Real-time notifications via WebSockets
-2. Mobile app for field reporting
-3. Photo/video evidence upload
-4. Automatic escalation based on severity/gravity
-5. Integration with external authorities
-6. Advanced analytics and pattern detection
-7. Geofencing alerts
-8. Multi-language support
-9. Voice-to-text for descriptions
-10. Blockchain for evidence integrity
-
+**Configuración de Property Tests:**
+- Mínimo 100 iteraciones por propiedad
+- Generadores de datos que respeten restricciones del dominio
+- Simulación de condiciones de red variables
+- Validación de invariantes del sistema en cada ejecución
