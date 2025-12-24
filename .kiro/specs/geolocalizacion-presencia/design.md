@@ -2,755 +2,565 @@
 
 ## Overview
 
-El Sistema de Geolocalización y Verificación de Presencia es un módulo crítico del sistema electoral que permite el tracking en tiempo real de usuarios (testigos, coordinadores, auditores) mediante captura de coordenadas GPS. El sistema está implementado con una arquitectura RESTful que integra la API de Geolocalización del navegador con el backend Flask/PostgreSQL. Proporciona funcionalidades de verificación manual de presencia, ping automático cada 5 minutos, visualización de estado del equipo con clasificación por actividad (activo/inactivo/ausente), y mapas interactivos con marcadores de usuarios geolocalizados.
+El Sistema de Geolocalización y Verificación de Presencia es un componente crítico que garantiza la integridad del proceso electoral mediante la verificación física de la ubicación de los testigos electorales. Utiliza tecnología GPS para capturar coordenadas precisas, tracking automático para monitoreo continuo, y mapas interactivos para visualización geográfica en tiempo real.
 
 ## Architecture
 
 ### High-Level Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Frontend (Browser)                        │
-│  - Geolocation API (navigator.geolocation)                  │
-│  - Botón "Verificar Presencia"                              │
-│  - Ping automático cada 5 minutos                           │
-│  - Mapa interactivo (Leaflet/Google Maps)                   │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    Frontend (Browser)                           │
+│                                                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │              Geolocation API (HTML5)                     │   │
+│  │  - navigator.geolocation.getCurrentPosition()            │   │
+│  │  - navigator.geolocation.watchPosition()                 │   │
+│  │  - High accuracy GPS capture                             │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                              │                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │           Verificación de Presencia JS                   │   │
+│  │  - verificarPresencia()                                  │   │
+│  │  - trackingAutomatico()                                  │   │
+│  │  - calcularDistancia()                                   │   │
+│  │  - mostrarEstadoPresencia()                              │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                              │                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │              Mapa Interactivo                            │   │
+│  │  - OpenStreetMap / Leaflet                               │   │
+│  │  - Marcadores de puestos y testigos                      │   │
+│  │  - Clusters y popups informativos                        │   │
+│  │  - Actualización en tiempo real                          │   │
+│  └──────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼ HTTPS/REST API
+┌─────────────────────────────────────────────────────────────────┐
+│                      Backend (Flask)                            │
+│                                                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │         Verificación de Presencia Routes                 │   │
+│  │  - POST /api/verificacion-presencia/verificar            │   │
+│  │  - GET /api/verificacion-presencia/estado                │   │
+│  │  - GET /api/verificacion-presencia/historial             │   │
+│  │  - POST /api/verificacion-presencia/ping-automatico      │   │
+│  │  - GET /api/verificacion-presencia/mapa-datos            │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                              │                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │           Geolocation Service                            │   │
+│  │  - calcular_distancia_haversine()                       │   │
+│  │  - validar_coordenadas()                                 │   │
+│  │  - determinar_estado_presencia()                         │   │
+│  │  - generar_alertas_presencia()                           │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                              │                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │              Database Models                             │   │
+│  │  - VerificacionPresencia                                 │   │
+│  │  - UbicacionTestigo                                      │   │
+│  │  - ConfiguracionGeolocalizacion                          │   │
+│  │  - AlertaPresencia                                       │   │
+│  └──────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    API REST Layer                            │
-│  Blueprint: verificacion_bp                                 │
-│  Prefix: /api/verificacion                                  │
-│  - POST /presencia (verificar presencia)                    │
-│  - POST /ping (ping automático)                             │
-│  - GET /estado-equipo (estado del equipo)                   │
-│  - GET /usuarios-geolocalizados (mapa)                      │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Business Logic                            │
-│  - calcular_minutos_inactivo()                              │
-│  - determinar_estado_usuario()                              │
-│  - Filtrado por rol y jurisdicción                          │
-│  - Validación de coordenadas                                │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Data Layer                                │
-│  - User Model (campos de geolocalización)                   │
-│  - Location Model (ubicaciones asignadas)                   │
-│  - PostgreSQL Database                                      │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    Database (PostgreSQL)                        │
+│                                                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │                  Tables                                  │   │
+│  │  - verificaciones_presencia                              │   │
+│  │  - ubicaciones_testigos                                  │   │
+│  │  - puestos_electorales (con coordenadas)                 │   │
+│  │  - configuracion_geolocalizacion                         │   │
+│  │  - alertas_presencia                                     │   │
+│  └──────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### Component Interaction Flow
+### Component Architecture
 
 ```
-Usuario hace clic en "Verificar Presencia"
-    │
-    ▼
-Frontend solicita permiso de geolocalización
-    │
-    ▼
-Browser Geolocation API captura coordenadas
-    │
-    ▼
-Frontend envía POST /api/verificacion/presencia
-    │
-    ▼
-Backend actualiza User.ultima_latitud, ultima_longitud
-Backend actualiza User.presencia_verificada = True
-Backend actualiza User.presencia_verificada_at = now()
-Backend actualiza User.ultimo_acceso = now()
-    │
-    ▼
-Backend retorna success con datos de ubicación
-    │
-    ▼
-Frontend muestra mensaje de éxito
-Frontend inicia ping automático cada 5 minutos
+verificacion-presencia.js
+├── Captura de GPS
+│   ├── capturarUbicacionGPS()
+│   ├── manejarErrorGPS()
+│   └── validarPrecisionGPS()
+│
+├── Verificación Manual
+│   ├── verificarPresencia()
+│   ├── mostrarResultadoVerificacion()
+│   └── actualizarEstadoPresencia()
+│
+├── Tracking Automático
+│   ├── iniciarTrackingAutomatico()
+│   ├── pingAutomatico()
+│   ├── detenerTracking()
+│   └── manejarTrackingOffline()
+│
+├── Cálculos Geográficos
+│   ├── calcularDistancia()
+│   ├── determinarEstadoPresencia()
+│   └── validarCoordenadasValidas()
+│
+└── Integración con Dashboard
+    ├── actualizarIndicadorPresencia()
+    ├── mostrarNotificacionesGPS()
+    └── sincronizarDatosOffline()
+
+mapa-geolocalizacion.js
+├── Inicialización del Mapa
+│   ├── inicializarMapa()
+│   ├── configurarCapasBase()
+│   └── establecerVistaPorDefecto()
+│
+├── Marcadores y Clusters
+│   ├── crearMarcadorPuesto()
+│   ├── crearMarcadorTestigo()
+│   ├── actualizarMarcadores()
+│   └── configurarClusters()
+│
+├── Interacciones
+│   ├── manejarClickMarcador()
+│   ├── mostrarPopupInformativo()
+│   └── centrarMapaEnUbicacion()
+│
+└── Actualización en Tiempo Real
+    ├── actualizarMapaAutomatico()
+    ├── cargarDatosMapaDesdeAPI()
+    └── manejarErroresCargaMapa()
 ```
-
-### Technology Stack
-
-- **Backend**: Flask (Python)
-- **Database**: PostgreSQL with SQLAlchemy ORM
-- **Authentication**: Flask-JWT-Extended
-- **Geolocation**: Browser Geolocation API
-- **Maps**: Leaflet.js or Google Maps API
-- **Frontend**: HTML, JavaScript, Bootstrap
-- **Real-time Updates**: Polling (every 5 minutes)
 
 ## Components and Interfaces
 
-### 1. Data Models
+### 1. Captura de Coordenadas GPS
 
-#### User Model (Extended)
+**Componente:** `capturarUbicacionGPS()`
 
-```python
-class User(db.Model):
-    """Modelo de usuario con campos de geolocalización"""
-    __tablename__ = 'users'
-    
-    # Campos existentes
-    id: Integer (Primary Key)
-    nombre: String(100) (Not Null)
-    password_hash: String(255) (Not Null)
-    rol: String(50) (Not Null)
-    ubicacion_id: Integer (Foreign Key: locations.id)
-    activo: Boolean (Default: True)
-    ultimo_acceso: DateTime (Nullable)
-    
-    # Verificación de presencia
-    presencia_verificada: Boolean (Default: False)
-    presencia_verificada_at: DateTime (Nullable)
-    
-    # Geolocalización
-    ultima_latitud: Float (Nullable)
-    ultima_longitud: Float (Nullable)
-    ultima_geolocalizacion_at: DateTime (Nullable)
-    precision_geolocalizacion: Float (Nullable)
-    
-    created_at: DateTime (Default: utcnow)
-    updated_at: DateTime (Default: utcnow, OnUpdate: utcnow)
-    
-    # Relationships
-    ubicacion: Location
-    
-    # Methods
-    verificar_presencia() -> None
-    to_dict(include_sensitive=False) -> dict
+**Funcionalidad:**
+- Utiliza `navigator.geolocation.getCurrentPosition()` con opciones de alta precisión
+- Maneja permisos de geolocalización del navegador
+- Valida calidad de coordenadas capturadas
+- Proporciona feedback visual durante captura
+
+**Opciones de Geolocalización:**
+```javascript
+{
+    enableHighAccuracy: true,
+    timeout: 10000,
+    maximumAge: 60000
+}
 ```
 
-### 2. API Endpoints
+**Estados de Respuesta:**
+- **Éxito:** Coordenadas válidas con precisión aceptable
+- **Error de Permisos:** Usuario denegó acceso a ubicación
+- **Error de Timeout:** Tiempo de espera agotado
+- **Error de Precisión:** Coordenadas con precisión insuficiente
 
-#### POST /api/verificacion/presencia
-- **Description**: Verificar presencia del usuario en su ubicación asignada
-- **Authentication**: JWT Required
-- **Authorization**: All authenticated users
-- **Request**: 
-  ```json
-  {
-    "latitud": 4.6097,
-    "longitud": -74.0817,
-    "precision": 10.5
-  }
-  ```
-- **Response**: 
-  ```json
-  {
-    "success": true,
-    "message": "Presencia verificada exitosamente para testigo_electoral",
-    "data": {
-      "presencia_verificada": true,
-      "presencia_verificada_at": "2025-11-25T10:30:00",
-      "rol": "testigo_electoral",
-      "ubicacion": {
-        "id": 123,
-        "nombre": "Mesa 001 - Puesto 01 - Bogotá",
-        "tipo": "mesa"
-      }
+### 2. Verificación Manual de Presencia
+
+**Componente:** `verificarPresencia()`
+
+**Flujo de Verificación:**
+1. Capturar coordenadas GPS actuales
+2. Obtener coordenadas del puesto asignado
+3. Calcular distancia usando fórmula de Haversine
+4. Determinar estado de presencia según radio de tolerancia
+5. Registrar verificación en base de datos
+6. Mostrar resultado al usuario
+
+**Cálculo de Distancia (Haversine):**
+```javascript
+function calcularDistancia(lat1, lon1, lat2, lon2) {
+    const R = 6371000; // Radio de la Tierra en metros
+    const φ1 = lat1 * Math.PI/180;
+    const φ2 = lat2 * Math.PI/180;
+    const Δφ = (lat2-lat1) * Math.PI/180;
+    const Δλ = (lon2-lon1) * Math.PI/180;
+    
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    
+    return R * c; // Distancia en metros
+}
+```
+
+**Estados de Presencia:**
+- **Presente:** Distancia ≤ 500 metros (configurable)
+- **Fuera de Rango:** Distancia > 500 metros
+- **Desconocido:** Sin ubicación reciente o error en captura
+
+### 3. Tracking Automático
+
+**Componente:** `trackingAutomatico()`
+
+**Configuración:**
+- Intervalo: 15 minutos (configurable)
+- Método: `setInterval()` con `navigator.geolocation.getCurrentPosition()`
+- Persistencia: Almacenamiento local para modo offline
+- Sincronización: Envío automático cuando hay conexión
+
+**Flujo de Tracking:**
+1. Verificar si dashboard está activo
+2. Capturar coordenadas GPS
+3. Calcular estado de presencia
+4. Almacenar localmente si offline
+5. Enviar a servidor si online
+6. Actualizar indicadores visuales
+7. Programar próximo ping
+
+**Manejo de Errores:**
+- Continuar tracking aunque falle captura individual
+- Registrar errores para diagnóstico
+- Reintentar captura después de error temporal
+- Notificar al usuario solo en errores persistentes
+
+### 4. Mapa Interactivo
+
+**Componente:** `mapa-geolocalizacion.js`
+
+**Tecnología:** OpenStreetMap con Leaflet.js
+
+**Capas del Mapa:**
+- **Capa Base:** Mapa de calles de OpenStreetMap
+- **Marcadores de Puestos:** Íconos azules con información del puesto
+- **Marcadores de Testigos:** Íconos de colores según estado de presencia
+- **Clusters:** Agrupación automática de marcadores cercanos
+
+**Tipos de Marcadores:**
+```javascript
+const iconos = {
+    puesto: L.icon({
+        iconUrl: '/static/images/marcador-puesto.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34]
+    }),
+    testigoPresente: L.icon({
+        iconUrl: '/static/images/marcador-testigo-verde.png',
+        iconSize: [25, 41]
+    }),
+    testigoAusente: L.icon({
+        iconUrl: '/static/images/marcador-testigo-rojo.png',
+        iconSize: [25, 41]
+    }),
+    testigoDesconocido: L.icon({
+        iconUrl: '/static/images/marcador-testigo-gris.png',
+        iconSize: [25, 41]
+    })
+};
+```
+
+**Popups Informativos:**
+- **Puesto:** Nombre, código, dirección, testigos asignados
+- **Testigo:** Nombre, estado, última ubicación, precisión GPS
+
+### 5. Backend - Verificación de Presencia Routes
+
+**Archivo:** `backend/routes/verificacion_presencia.py`
+
+**Endpoints:**
+
+#### POST /api/verificacion-presencia/verificar
+```python
+{
+    "latitud": -4.5339,
+    "longitud": -75.6811,
+    "precision": 15.5,
+    "timestamp": "2025-12-24T10:30:00Z"
+}
+```
+
+**Respuesta:**
+```python
+{
+    "success": True,
+    "estado_presencia": "presente",
+    "distancia_metros": 245.8,
+    "puesto_asignado": {
+        "nombre": "Puesto Electoral Central",
+        "coordenadas": [-4.5341, -75.6815]
     }
-  }
-  ```
+}
+```
 
-#### POST /api/verificacion/ping
-- **Description**: Ping automático para mantener presencia activa
-- **Authentication**: JWT Required
-- **Authorization**: All authenticated users
-- **Request**: None (empty body)
-- **Response**: 
-  ```json
-  {
-    "success": true,
-    "data": {
-      "ultimo_acceso": "2025-11-25T10:35:00",
-      "presencia_verificada": true
-    }
-  }
-  ```
+#### GET /api/verificacion-presencia/estado
+**Respuesta:**
+```python
+{
+    "success": True,
+    "estado_actual": "presente",
+    "ultima_verificacion": "2025-12-24T10:30:00Z",
+    "distancia_actual": 245.8,
+    "tracking_activo": True
+}
+```
 
-#### GET /api/verificacion/estado-equipo
-- **Description**: Obtener estado de presencia del equipo bajo supervisión
-- **Authentication**: JWT Required
-- **Authorization**: coordinador_puesto, coordinador_municipal, coordinador_departamental, super_admin
-- **Request**: None
-- **Response**: 
-  ```json
-  {
-    "success": true,
-    "data": {
-      "equipo": [
+#### POST /api/verificacion-presencia/ping-automatico
+```python
+{
+    "latitud": -4.5339,
+    "longitud": -75.6811,
+    "precision": 12.3,
+    "timestamp": "2025-12-24T10:45:00Z",
+    "es_automatico": True
+}
+```
+
+#### GET /api/verificacion-presencia/mapa-datos
+**Respuesta:**
+```python
+{
+    "success": True,
+    "puestos": [
         {
-          "id": 45,
-          "nombre": "Juan Pérez",
-          "rol": "Testigo Electoral",
-          "ubicacion": "Mesa 001",
-          "presencia_verificada": true,
-          "presencia_verificada_at": "2025-11-25T10:00:00",
-          "ultimo_acceso": "2025-11-25T10:30:00",
-          "minutos_inactivo": 5,
-          "estado": "activo"
+            "id": 1,
+            "nombre": "Puesto Central",
+            "latitud": -4.5341,
+            "longitud": -75.6815,
+            "testigos_asignados": 3
         }
-      ],
-      "estadisticas": {
-        "total": 10,
-        "presentes": 8,
-        "inactivos": 1,
-        "ausentes": 1,
-        "porcentaje_presencia": 80.0
-      }
-    }
-  }
-  ```
-
-#### GET /api/verificacion/usuarios-geolocalizados
-- **Description**: Obtener usuarios con geolocalización activa para mostrar en mapa
-- **Authentication**: JWT Required
-- **Authorization**: coordinador_puesto, coordinador_municipal, coordinador_departamental, super_admin, auditor_electoral
-- **Request**: None
-- **Response**: 
-  ```json
-  {
-    "success": true,
-    "data": [
-      {
-        "id": 45,
-        "nombre": "Juan Pérez",
-        "rol": "testigo_electoral",
-        "latitud": 4.6097,
-        "longitud": -74.0817,
-        "ultima_geolocalizacion_at": "2025-11-25T10:30:00",
-        "ultimo_acceso": "2025-11-25T10:30:00",
-        "minutos_inactivo": 5,
-        "estado": "activo",
-        "ubicacion_nombre": "Mesa 001 - Puesto 01 - Bogotá",
-        "ubicacion_tipo": "mesa"
-      }
+    ],
+    "testigos": [
+        {
+            "id": 1,
+            "nombre": "Juan Pérez",
+            "estado_presencia": "presente",
+            "latitud": -4.5339,
+            "longitud": -75.6811,
+            "ultima_actualizacion": "2025-12-24T10:45:00Z",
+            "precision": 12.3
+        }
     ]
-  }
-  ```
-
-### 3. Business Logic Functions
-
-#### calcular_minutos_inactivo(ultimo_acceso)
-```python
-def calcular_minutos_inactivo(ultimo_acceso):
-    """
-    Calcular minutos desde el último acceso
-    
-    Args:
-        ultimo_acceso: DateTime del último acceso
-        
-    Returns:
-        int: Minutos de inactividad, None si nunca accedió
-    """
-    if not ultimo_acceso:
-        return None
-    
-    delta = datetime.now() - ultimo_acceso
-    return int(delta.total_seconds() / 60)
-```
-
-#### determinar_estado_usuario(usuario)
-```python
-def determinar_estado_usuario(usuario):
-    """
-    Determinar estado del usuario basado en último acceso
-    
-    Estados:
-    - activo: menos de 15 minutos
-    - inactivo: entre 15 y 60 minutos
-    - ausente: más de 60 minutos o nunca conectado
-    
-    Args:
-        usuario: User object
-        
-    Returns:
-        str: 'activo', 'inactivo', o 'ausente'
-    """
-    if not usuario.ultimo_acceso:
-        return 'ausente'
-    
-    minutos = calcular_minutos_inactivo(usuario.ultimo_acceso)
-    
-    if minutos < 15:
-        return 'activo'
-    elif minutos < 60:
-        return 'inactivo'
-    else:
-        return 'ausente'
-```
-
-### 4. Frontend Components
-
-#### Botón de Verificación de Presencia
-```javascript
-async function verificarPresencia() {
-    try {
-        // Solicitar geolocalización
-        const position = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0
-            });
-        });
-        
-        // Enviar al backend
-        const response = await fetch('/api/verificacion/presencia', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                latitud: position.coords.latitude,
-                longitud: position.coords.longitude,
-                precision: position.coords.accuracy
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            mostrarMensajeExito('Presencia verificada exitosamente');
-            iniciarPingAutomatico();
-        }
-    } catch (error) {
-        manejarErrorGPS(error);
-    }
-}
-```
-
-#### Ping Automático
-```javascript
-let pingInterval = null;
-
-function iniciarPingAutomatico() {
-    // Limpiar intervalo anterior si existe
-    if (pingInterval) {
-        clearInterval(pingInterval);
-    }
-    
-    // Enviar ping cada 5 minutos
-    pingInterval = setInterval(async () => {
-        try {
-            const response = await fetch('/api/verificacion/ping', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            const data = await response.json();
-            
-            if (!data.success) {
-                console.error('Error en ping:', data.error);
-            }
-        } catch (error) {
-            console.error('Error enviando ping:', error);
-        }
-    }, 5 * 60 * 1000); // 5 minutos
-}
-
-// Detener ping al cerrar ventana
-window.addEventListener('beforeunload', () => {
-    if (pingInterval) {
-        clearInterval(pingInterval);
-    }
-});
-```
-
-#### Mapa de Usuarios Geolocalizados
-```javascript
-let map = null;
-let markers = [];
-
-async function cargarMapaUsuarios() {
-    // Inicializar mapa
-    map = L.map('map').setView([4.6097, -74.0817], 6);
-    
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-    
-    // Cargar usuarios
-    const response = await fetch('/api/verificacion/usuarios-geolocalizados', {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
-    
-    const data = await response.json();
-    
-    if (data.success) {
-        data.data.forEach(usuario => {
-            agregarMarcadorUsuario(usuario);
-        });
-    }
-}
-
-function agregarMarcadorUsuario(usuario) {
-    // Color según estado
-    const color = {
-        'activo': 'green',
-        'inactivo': 'yellow',
-        'ausente': 'red'
-    }[usuario.estado];
-    
-    // Crear marcador
-    const marker = L.circleMarker([usuario.latitud, usuario.longitud], {
-        radius: 8,
-        fillColor: color,
-        color: '#000',
-        weight: 1,
-        opacity: 1,
-        fillOpacity: 0.8
-    }).addTo(map);
-    
-    // Popup con información
-    marker.bindPopup(`
-        <strong>${usuario.nombre}</strong><br>
-        Rol: ${usuario.rol}<br>
-        Ubicación: ${usuario.ubicacion_nombre}<br>
-        Último acceso: hace ${usuario.minutos_inactivo} minutos<br>
-        Estado: ${usuario.estado}<br>
-        Coordenadas: ${usuario.latitud.toFixed(6)}, ${usuario.longitud.toFixed(6)}
-    `);
-    
-    markers.push(marker);
 }
 ```
 
 ## Data Models
 
-### Database Schema
+### 1. VerificacionPresencia
 
-```sql
--- Extensión de tabla users con campos de geolocalización
-ALTER TABLE users ADD COLUMN presencia_verificada BOOLEAN DEFAULT FALSE NOT NULL;
-ALTER TABLE users ADD COLUMN presencia_verificada_at TIMESTAMP;
-ALTER TABLE users ADD COLUMN ultima_latitud FLOAT;
-ALTER TABLE users ADD COLUMN ultima_longitud FLOAT;
-ALTER TABLE users ADD COLUMN ultima_geolocalizacion_at TIMESTAMP;
-ALTER TABLE users ADD COLUMN precision_geolocalizacion FLOAT;
-
--- Índices para optimizar queries
-CREATE INDEX idx_users_presencia_verificada ON users(presencia_verificada);
-CREATE INDEX idx_users_ultimo_acceso ON users(ultimo_acceso);
-CREATE INDEX idx_users_geolocalizacion ON users(ultima_latitud, ultima_longitud) 
-    WHERE ultima_latitud IS NOT NULL AND ultima_longitud IS NOT NULL;
+```python
+class VerificacionPresencia(db.Model):
+    __tablename__ = 'verificaciones_presencia'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    testigo_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    puesto_id = db.Column(db.Integer, db.ForeignKey('puestos_electorales.id'), nullable=False)
+    
+    # Coordenadas capturadas
+    latitud = db.Column(db.Float, nullable=False)
+    longitud = db.Column(db.Float, nullable=False)
+    precision_gps = db.Column(db.Float, nullable=True)  # En metros
+    
+    # Resultado de verificación
+    estado_presencia = db.Column(db.String(20), nullable=False)  # presente, ausente, desconocido
+    distancia_metros = db.Column(db.Float, nullable=True)
+    
+    # Metadatos
+    es_automatico = db.Column(db.Boolean, default=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    user_agent = db.Column(db.String(500), nullable=True)
+    
+    # Relaciones
+    testigo = db.relationship('User', foreign_keys=[testigo_id])
+    puesto = db.relationship('PuestoElectoral', foreign_keys=[puesto_id])
 ```
 
-### Data Relationships
+### 2. UbicacionTestigo
 
+```python
+class UbicacionTestigo(db.Model):
+    __tablename__ = 'ubicaciones_testigos'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    testigo_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # Última ubicación conocida
+    ultima_latitud = db.Column(db.Float, nullable=True)
+    ultima_longitud = db.Column(db.Float, nullable=True)
+    ultima_precision = db.Column(db.Float, nullable=True)
+    ultima_actualizacion = db.Column(db.DateTime, nullable=True)
+    
+    # Estado actual
+    estado_presencia_actual = db.Column(db.String(20), default='desconocido')
+    tracking_activo = db.Column(db.Boolean, default=False)
+    
+    # Estadísticas del día
+    total_verificaciones_hoy = db.Column(db.Integer, default=0)
+    tiempo_presente_hoy = db.Column(db.Integer, default=0)  # En minutos
+    tiempo_ausente_hoy = db.Column(db.Integer, default=0)   # En minutos
+    
+    # Relación
+    testigo = db.relationship('User', foreign_keys=[testigo_id])
 ```
-User (N) ──────── (1) Location
-     │                  (ubicacion_id)
-     │
-     └── presencia_verificada: Boolean
-     └── presencia_verificada_at: DateTime
-     └── ultima_latitud: Float
-     └── ultima_longitud: Float
-     └── ultima_geolocalizacion_at: DateTime
-     └── precision_geolocalizacion: Float
+
+### 3. ConfiguracionGeolocalizacion
+
+```python
+class ConfiguracionGeolocalizacion(db.Model):
+    __tablename__ = 'configuracion_geolocalizacion'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Parámetros de verificación
+    radio_tolerancia_metros = db.Column(db.Integer, default=500)
+    precision_gps_minima = db.Column(db.Float, default=100.0)
+    
+    # Parámetros de tracking
+    intervalo_tracking_minutos = db.Column(db.Integer, default=15)
+    tiempo_alerta_ausencia_minutos = db.Column(db.Integer, default=30)
+    
+    # Parámetros de retención
+    dias_retencion_historial = db.Column(db.Integer, default=30)
+    max_ubicaciones_offline = db.Column(db.Integer, default=100)
+    
+    # Metadatos
+    actualizado_por = db.Column(db.Integer, db.ForeignKey('users.id'))
+    fecha_actualizacion = db.Column(db.DateTime, default=datetime.utcnow)
+```
+
+### 4. AlertaPresencia
+
+```python
+class AlertaPresencia(db.Model):
+    __tablename__ = 'alertas_presencia'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    testigo_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    coordinador_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    
+    # Tipo y descripción
+    tipo_alerta = db.Column(db.String(50), nullable=False)  # ausencia_prolongada, fuera_rango, sin_ubicacion
+    descripcion = db.Column(db.Text, nullable=False)
+    
+    # Estado
+    estado = db.Column(db.String(20), default='activa')  # activa, revisada, resuelta
+    prioridad = db.Column(db.String(10), default='media')  # baja, media, alta, critica
+    
+    # Timestamps
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_resolucion = db.Column(db.DateTime, nullable=True)
+    resuelto_por = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    
+    # Relaciones
+    testigo = db.relationship('User', foreign_keys=[testigo_id])
+    coordinador = db.relationship('User', foreign_keys=[coordinador_id])
+    resolvio = db.relationship('User', foreign_keys=[resuelto_por])
 ```
 
 ## Correctness Properties
 
 *A property is a characteristic or behavior that should hold true across all valid executions of a system-essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
-### Property 1: Presence Verification Updates Timestamp
-*For any* user who verifies presence, the presencia_verificada_at timestamp should be updated to the current time
-**Validates: Requirements 1.3**
+### Property 1: Cálculo de Distancia Consistente
+*For any* dos pares de coordenadas válidas, el cálculo de distancia usando la fórmula de Haversine debe ser simétrico y producir el mismo resultado independientemente del orden de los puntos
+**Validates: Requirements 2.3, 14.4**
 
-### Property 2: GPS Coordinates Consistency
-*For any* user with GPS coordinates, if ultima_latitud is not null, then ultima_longitud should also not be null, and vice versa
-**Validates: Requirements 2.2, 2.3**
+### Property 2: Validación de Coordenadas GPS
+*For any* coordenadas GPS capturadas, deben estar dentro de los límites geográficos válidos (latitud: -90 a 90, longitud: -180 a 180) y tener precisión menor a 1000 metros
+**Validates: Requirements 14.1, 14.2, 14.3**
 
-### Property 3: Activity State Classification
-*For any* user, if ultimo_acceso is less than 15 minutes ago, determinar_estado_usuario() should return 'activo'; if between 15-60 minutes, should return 'inactivo'; if more than 60 minutes or null, should return 'ausente'
-**Validates: Requirements 4.1, 4.2, 4.3, 4.4**
+### Property 3: Estado de Presencia Determinístico
+*For any* verificación de presencia con coordenadas válidas, el estado resultante debe ser determinístico basado en la distancia calculada y el radio de tolerancia configurado
+**Validates: Requirements 2.4, 2.5, 8.1**
 
-### Property 4: Ping Updates Last Access
-*For any* user who sends a ping, the ultimo_acceso timestamp should be updated to the current time
-**Validates: Requirements 5.2**
+### Property 4: Tracking Automático Consistente
+*For any* testigo con tracking activo, el sistema debe capturar ubicación en intervalos regulares y mantener consistencia en el estado de presencia entre capturas consecutivas
+**Validates: Requirements 3.1, 3.2, 3.4**
 
-### Property 5: Team Filtering by Jurisdiction
-*For any* coordinador_puesto, the estado-equipo endpoint should return only testigos from their puesto, not from other puestos
-**Validates: Requirements 6.1**
+### Property 5: Integridad de Datos de Ubicación
+*For any* ubicación almacenada en la base de datos, debe tener un timestamp válido, coordenadas dentro de rangos válidos, y estar asociada a un testigo existente
+**Validates: Requirements 6.2, 9.2, 14.5**
 
-### Property 6: Geolocation Timestamp Consistency
-*For any* user with GPS coordinates, if ultima_latitud and ultima_longitud are not null, then ultima_geolocalizacion_at should also not be null
-**Validates: Requirements 2.4**
+### Property 6: Sincronización Offline Correcta
+*For any* ubicaciones almacenadas offline, cuando se restaure la conexión, todas deben sincronizarse en el orden correcto sin pérdida de datos
+**Validates: Requirements 10.2, 10.5, 10.7**
 
-### Property 7: Statistics Calculation Accuracy
-*For any* team, the sum of (presentes + inactivos + ausentes) should equal total
-**Validates: Requirements 7.1, 7.2, 7.3, 7.4**
+### Property 7: Generación de Alertas Apropiada
+*For any* testigo que esté fuera de rango por más del tiempo configurado, debe generarse exactamente una alerta activa hasta que se resuelva la situación
+**Validates: Requirements 7.1, 7.2, 7.6**
 
-### Property 8: Map User Filtering
-*For any* coordinador_municipal viewing the map, all returned users should have ubicacion_id within the coordinator's municipio
-**Validates: Requirements 8.3, 8.4**
-
-### Property 9: Coordinate Precision Format
-*For any* displayed coordinates, they should be formatted with exactly 6 decimal places
-**Validates: Requirements 3.5, 9.5**
-
-### Property 10: Presence Verification Idempotence
-*For any* user, calling verificar_presencia() multiple times should always result in presencia_verificada = True, with the timestamp updated to the most recent call
-**Validates: Requirements 1.2, 1.3**
+### Property 8: Privacidad de Datos de Ubicación
+*For any* acceso a datos de ubicación, debe estar autorizado según el rol del usuario y registrado en el log de auditoría
+**Validates: Requirements 9.4, 9.7**
 
 ## Error Handling
 
-### Error Categories
+### 1. Errores de Geolocalización
 
-1. **GPS Permission Errors** (Browser-level)
-   - Permission denied by user
-   - Permission not supported by browser
-   - Geolocation API not available
+**Tipos de Error:**
+- `PERMISSION_DENIED`: Usuario denegó permisos de ubicación
+- `POSITION_UNAVAILABLE`: No se puede determinar ubicación
+- `TIMEOUT`: Tiempo de espera agotado
+- `ACCURACY_INSUFFICIENT`: Precisión GPS insuficiente
 
-2. **GPS Acquisition Errors** (Browser-level)
-   - Timeout (position unavailable within time limit)
-   - Position unavailable (GPS hardware issue)
-   - Low accuracy (precision > 100 meters)
+**Estrategias de Manejo:**
+- Mostrar mensajes específicos por tipo de error
+- Proporcionar instrucciones para habilitar ubicación
+- Permitir reintentos manuales
+- Degradar graciosamente a modo manual
 
-3. **Authorization Errors** (403 Forbidden)
-   - Non-coordinator attempting to view team status
-   - User attempting to view users outside their jurisdiction
+### 2. Errores de Conectividad
 
-4. **Not Found Errors** (404 Not Found)
-   - User ID does not exist
-   - Location ID does not exist
+**Escenarios:**
+- Sin conexión a internet durante captura
+- Falla en envío de datos al servidor
+- Timeout en requests de API
 
-5. **Business Logic Errors** (400 Bad Request)
-   - User without assigned location
-   - Invalid coordinates (latitude not in [-90, 90], longitude not in [-180, 180])
+**Estrategias:**
+- Almacenamiento local automático
+- Reintento automático con backoff exponencial
+- Indicadores visuales de estado de conexión
+- Sincronización diferida cuando se restaure conexión
 
-6. **Server Errors** (500 Internal Server Error)
-   - Database connection failures
-   - Unexpected exceptions
+### 3. Errores de Validación
 
-### Error Response Format
+**Validaciones:**
+- Coordenadas fuera de rangos válidos
+- Precisión GPS insuficiente
+- Cambios de ubicación imposibles (teletransporte)
+- Datos corruptos o incompletos
 
-```json
-{
-  "success": false,
-  "error": "Descriptive error message"
-}
-```
-
-### GPS Error Handling
-
-```javascript
-function manejarErrorGPS(error) {
-    let mensaje = '';
-    
-    switch(error.code) {
-        case error.PERMISSION_DENIED:
-            mensaje = 'Permiso de ubicación denegado. Por favor, habilite la ubicación en su navegador.';
-            break;
-        case error.POSITION_UNAVAILABLE:
-            mensaje = 'GPS no disponible en este dispositivo';
-            break;
-        case error.TIMEOUT:
-            mensaje = 'Tiempo de espera agotado. Intente nuevamente.';
-            break;
-        default:
-            mensaje = 'Error desconocido al obtener ubicación';
-    }
-    
-    mostrarMensajeError(mensaje);
-}
-```
+**Estrategias:**
+- Validación en frontend y backend
+- Rechazo de datos inválidos con mensaje explicativo
+- Logging de intentos de datos inválidos
+- Solicitud de nueva captura para datos sospechosos
 
 ## Testing Strategy
 
-### Unit Testing
+### Unit Tests
+- Validar cálculos de distancia con coordenadas conocidas
+- Probar validaciones de coordenadas GPS
+- Verificar lógica de determinación de estado de presencia
+- Testear manejo de errores de geolocalización
 
-Unit tests will verify specific examples and edge cases:
+### Property-Based Tests
+- Generar coordenadas aleatorias válidas y verificar consistencia de cálculos
+- Probar simetría de cálculo de distancia
+- Verificar que estados de presencia sean determinísticos
+- Validar integridad de datos en operaciones de base de datos
 
-1. **Model Tests**
-   - Test User.verificar_presencia() updates fields correctly
-   - Test User.to_dict() includes geolocation fields
-   - Test coordinate storage with valid values
-   - Test coordinate storage with null values
+### Integration Tests
+- Probar flujo completo de verificación de presencia
+- Verificar sincronización offline-online
+- Testear generación y resolución de alertas
+- Probar actualización de mapas en tiempo real
 
-2. **Business Logic Tests**
-   - Test calcular_minutos_inactivo() with various timestamps
-   - Test calcular_minutos_inactivo() with null ultimo_acceso
-   - Test determinar_estado_usuario() returns 'activo' for recent access
-   - Test determinar_estado_usuario() returns 'inactivo' for 30 min ago
-   - Test determinar_estado_usuario() returns 'ausente' for 90 min ago
-   - Test determinar_estado_usuario() returns 'ausente' for null access
+### Manual Tests
+- Verificar funcionamiento en diferentes dispositivos móviles
+- Probar precisión GPS en ubicaciones reales
+- Validar experiencia de usuario en condiciones de red limitada
+- Verificar mapas interactivos con datos reales
 
-3. **API Tests**
-   - Test POST /presencia with valid coordinates
-   - Test POST /presencia without coordinates
-   - Test POST /ping updates ultimo_acceso
-   - Test GET /estado-equipo for coordinador_puesto
-   - Test GET /estado-equipo for coordinador_municipal
-   - Test GET /usuarios-geolocalizados filters by jurisdiction
-   - Test authorization on protected endpoints
-
-4. **Filtering Tests**
-   - Test coordinador_puesto sees only their testigos
-   - Test coordinador_municipal sees only their coordinadores_puesto
-   - Test coordinador_departamental sees only their coordinadores_municipal
-   - Test super_admin sees all coordinadores_departamental
-
-### Property-Based Testing
-
-Property-based tests will use **Hypothesis** library for Python to verify universal properties across many randomly generated inputs:
-
-1. **Property Test: Presence Verification Updates Timestamp**
-   - Generate random users
-   - Call verificar_presencia()
-   - Verify presencia_verificada_at is updated
-
-2. **Property Test: GPS Coordinates Consistency**
-   - Generate random users with coordinates
-   - Verify if latitud is not null, longitud is also not null
-
-3. **Property Test: Activity State Classification**
-   - Generate random users with various ultimo_acceso values
-   - Verify determinar_estado_usuario() returns correct state
-
-4. **Property Test: Statistics Calculation**
-   - Generate random teams
-   - Calculate statistics
-   - Verify presentes + inactivos + ausentes = total
-
-5. **Property Test: Coordinate Precision**
-   - Generate random coordinates
-   - Format with 6 decimal places
-   - Verify format is correct
-
-### Integration Testing
-
-Integration tests will verify end-to-end workflows:
-
-1. User verifies presence → Coordinates saved → Appears on map
-2. User sends ping → ultimo_acceso updated → Estado changes to 'activo'
-3. Coordinator views team → Sees filtered users → Statistics calculated correctly
-4. User inactive for 20 minutes → Estado changes to 'inactivo'
-5. User inactive for 70 minutes → Estado changes to 'ausente'
-
-### Test Configuration
-
-- **Framework**: pytest
-- **Property Testing**: Hypothesis
-- **Coverage Target**: 90%+
-- **Test Database**: Separate test database
-- **Mock GPS**: Mock browser geolocation for frontend tests
-
-## Security Considerations
-
-### Authentication & Authorization
-
-- All endpoints require JWT authentication
-- Team status endpoints require coordinator roles
-- Users can only verify their own presence
-- Coordinators can only view users in their jurisdiction
-- Role validation using @role_required decorator
-
-### Data Privacy
-
-- GPS coordinates stored securely in database
-- Users can only see their own coordinates
-- Coordinators can only see coordinates of users under supervision
-- HTTPS encryption for all GPS data transmission
-- Location history retained for audit but marked as archived when user deactivated
-
-### Input Validation
-
-- Latitude validation: -90 to 90
-- Longitude validation: -180 to 180
-- Precision validation: positive float
-- Timestamp validation: not in future
-- SQL injection prevention via SQLAlchemy ORM
-
-### GPS Security
-
-- Browser geolocation requires user permission
-- High accuracy mode for better precision
-- Timeout to prevent indefinite waiting
-- Maximum age = 0 to prevent cached locations
-- Error handling for denied permissions
-
-## Performance Considerations
-
-### Database Optimization
-
-- Index on users.presencia_verificada for fast filtering
-- Index on users.ultimo_acceso for activity state queries
-- Composite index on (ultima_latitud, ultima_longitud) for map queries
-- Efficient query: User.query.filter(latitud.isnot(None), longitud.isnot(None))
-
-### Caching Strategy
-
-- Team status can be cached for 1 minute (changes infrequently)
-- Map data can be cached for 2 minutes
-- Cache invalidation on presence verification
-- User estado calculated on-demand (not stored)
-
-### Ping Optimization
-
-- Ping every 5 minutes (not too frequent)
-- Lightweight endpoint (only updates timestamp)
-- No response body needed
-- Automatic retry on failure (max 3 attempts)
-
-### Map Performance
-
-- Load only users with coordinates (filter in database)
-- Limit to 1000 markers maximum
-- Cluster markers when zoomed out
-- Lazy load marker popups
-
-## Deployment Considerations
-
-### Database Migrations
-
-- Add geolocation columns to users table
-- Create indexes for performance
-- Set default values for existing users
-- Backfill presencia_verificada = False
-
-### Browser Compatibility
-
-- Geolocation API supported in all modern browsers
-- Fallback message for unsupported browsers
-- HTTPS required for geolocation (security requirement)
-- Test on mobile browsers (iOS Safari, Chrome Android)
-
-### Mobile Considerations
-
-- GPS more accurate on mobile devices
-- Battery consumption from frequent GPS requests
-- Ping interval optimized for battery life (5 minutes)
-- High accuracy mode may drain battery faster
-
-### Environment Configuration
-
-- GPS timeout configuration (default 10 seconds)
-- Ping interval configuration (default 5 minutes)
-- Activity thresholds configuration (15 min, 60 min)
-- Map provider configuration (Leaflet, Google Maps)
-
-## Future Enhancements
-
-1. **Geofencing**: Automatic alerts when users leave assigned area
-2. **Route Tracking**: Track user movement throughout the day
-3. **Offline Mode**: Queue presence verifications when offline
-4. **Push Notifications**: Real-time alerts for coordinators
-5. **Heatmaps**: Visualize user density on map
-6. **Historical Playback**: Replay user movements over time
-7. **Battery Optimization**: Adaptive ping frequency based on battery level
-8. **Indoor Positioning**: Support for indoor location (WiFi, Bluetooth)
-9. **Location Sharing**: Allow users to share location with specific coordinators
-10. **Proximity Alerts**: Notify when users are near each other
-
+**Configuración de Property Tests:**
+- Mínimo 100 iteraciones por propiedad
+- Generadores de coordenadas dentro de límites de Colombia
+- Simulación de condiciones de red variables
+- Validación de consistencia temporal en tracking automático
