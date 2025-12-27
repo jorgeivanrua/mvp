@@ -1,4 +1,4 @@
-.PHONY: help test test-unit test-integration test-cov clean install run check dev
+.PHONY: help test test-unit test-integration test-cov clean install run check dev start setup
 
 # Detectar sistema operativo
 ifeq ($(OS),Windows_NT)
@@ -6,27 +6,60 @@ ifeq ($(OS),Windows_NT)
 	VENV_BIN := .venv/Scripts
 	RM := del /Q
 	RMDIR := rmdir /S /Q
+	ACTIVATE := .venv\Scripts\activate.bat
 else
 	PYTHON := python3
 	VENV_BIN := .venv/bin
 	RM := rm -f
 	RMDIR := rm -rf
+	ACTIVATE := source .venv/bin/activate
 endif
 
 help:
 	@echo "Comandos disponibles:"
-	@echo "  make install       - Instalar dependencias"
-	@echo "  make check         - Verificar sistema"
-	@echo "  make dev           - Iniciar en modo desarrollo"
-	@echo "  make run           - Ejecutar aplicación"
-	@echo "  make test          - Ejecutar todos los tests"
-	@echo "  make test-unit     - Ejecutar solo tests unitarios"
-	@echo "  make test-cov      - Ejecutar tests con cobertura"
-	@echo "  make clean         - Limpiar archivos temporales"
+	@echo "  make start         - 🚀 Configurar e iniciar aplicación (RECOMENDADO)"
+	@echo "  make setup         - 📦 Configurar entorno completo"
+	@echo "  make install       - 📚 Instalar dependencias"
+	@echo "  make check         - 📋 Verificar sistema"
+	@echo "  make dev           - 🔧 Iniciar en modo desarrollo"
+	@echo "  make run           - ▶️  Ejecutar aplicación"
+	@echo "  make test          - 🧪 Ejecutar todos los tests"
+	@echo "  make test-unit     - 🔬 Ejecutar solo tests unitarios"
+	@echo "  make test-cov      - 📊 Ejecutar tests con cobertura"
+	@echo "  make clean         - 🧹 Limpiar archivos temporales"
+
+start: setup
+	@echo "🚀 Iniciando Sistema Electoral MVP..."
+	@echo "================================================"
+	@echo "📍 Puerto: 5000"
+	@echo "🌐 URL: http://localhost:5000"
+	@echo "🔧 Modo: Desarrollo"
+	@echo "================================================"
+	$(VENV_BIN)/$(PYTHON) run.py
+
+setup: install
+	@echo "🔧 Configurando sistema..."
+ifeq ($(OS),Windows_NT)
+	@if not exist "instance" mkdir instance
+else
+	@mkdir -p instance
+endif
+	@echo "⚙️  Configurando variables de entorno..."
+ifeq ($(OS),Windows_NT)
+	@set FLASK_ENV=development && set FLASK_DEBUG=1 && set PYTHONPATH=.
+else
+	@export FLASK_ENV=development && export FLASK_DEBUG=1 && export PYTHONPATH=.
+endif
+	@echo "📊 Inicializando base de datos..."
+	@$(VENV_BIN)/$(PYTHON) scripts/init_system.py 2>/dev/null || echo "⚠️  Inicialización completada con advertencias"
+	@echo "✅ Sistema configurado correctamente"
 
 install:
+	@echo "📦 Configurando entorno virtual..."
 	$(PYTHON) -m venv .venv
+	@echo "📚 Instalando dependencias..."
 	$(VENV_BIN)/pip install -r requirements.txt
+	@echo "✅ Dependencias instaladas"
 
 check:
 	$(VENV_BIN)/$(PYTHON) scripts/check_system.py

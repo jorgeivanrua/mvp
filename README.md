@@ -2,6 +2,65 @@
 
 Sistema web para la gestión y registro de formularios E-14 (Actas de Escrutinio) por parte de testigos electorales en Colombia.
 
+## 🚀 Inicio Rápido
+
+### Opción 1: Script Universal (Recomendado)
+```bash
+python inicio.py
+```
+
+### Opción 2: Make (Linux/Mac/Windows con Make)
+```bash
+make start
+```
+
+### Opción 3: Scripts Específicos
+
+**Windows PowerShell:**
+```powershell
+.\start.ps1
+```
+
+**Windows CMD:**
+```cmd
+start.bat
+```
+
+### Opción 4: Manual
+```bash
+# 1. Crear entorno virtual
+python -m venv .venv
+
+# 2. Activar entorno virtual
+# Windows: .venv\Scripts\activate
+# Linux/Mac: source .venv/bin/activate
+
+# 3. Instalar dependencias
+pip install -r requirements.txt
+
+# 4. Inicializar sistema
+python scripts/init_system.py
+
+# 5. Ejecutar aplicación
+python run.py
+```
+
+## 🌐 Acceso
+
+Una vez iniciado, accede a:
+- **URL**: http://localhost:5000
+- **Puerto**: 5000 (configurable)
+
+## 👥 Usuarios por Defecto
+
+| Usuario | Contraseña | Rol |
+|---------|------------|-----|
+| admin | admin123 | Super Admin |
+| auditor | auditor123 | Auditor Electoral |
+| coordinador_mun | coord123 | Coordinador Municipal |
+| coordinador_dep | coord123 | Coordinador Departamental |
+| testigo | testigo123 | Testigo Electoral |
+
 ## 🚀 Características Principales
 
 ### ✅ Sistema Completo de Configuración Electoral
@@ -18,14 +77,33 @@ Sistema web para la gestión y registro de formularios E-14 (Actas de Escrutinio
 - Validación por coordinadores y administradores
 
 ### ✅ Dashboards por Rol
-- **Admin**: Configuración electoral completa
-- **Coordinador**: Validación de formularios (en desarrollo)
-- **Testigo**: Registro de formularios E-14
+- **🏛️ Super Admin**: Configuración electoral completa
+- **🔍 Auditor Electoral**: Supervisión y auditoría (85% implementado)
+- **🏢 Coordinador Departamental**: Monitoreo departamental
+- **🏘️ Coordinador Municipal**: Gestión municipal
+- **👁️ Testigo Electoral**: Registro de formularios E-14
+- **📈 Sistema de Monitoreo**: Métricas en tiempo real
 
 ### ✅ Seguridad
 - Autenticación JWT
 - Permisos por rol
 - Validación de datos en backend y frontend
+
+## 🛠️ Comandos Útiles
+
+```bash
+# Ver ayuda
+make help
+
+# Limpiar archivos temporales
+make clean
+
+# Ejecutar tests
+make test
+
+# Solo configurar (sin iniciar)
+make setup
+```
 
 ## 📋 Requisitos
 
