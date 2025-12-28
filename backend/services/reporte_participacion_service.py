@@ -51,11 +51,11 @@ class ReporteParticipacionService:
         else:
             hora_reporte = data['hora_reporte']
         
-        # Validar que la hora está en horario de votación (8am - 4pm)
+        # Validar que la hora está en horario de votación (8am - 8pm para pruebas)
         hora_del_dia = hora_reporte.time()
-        if not (time(8, 0) <= hora_del_dia <= time(16, 0)):
+        if not (time(8, 0) <= hora_del_dia <= time(20, 0)):
             raise ValidationException({
-                'hora_reporte': ['La hora del reporte debe estar entre 8:00 AM y 4:00 PM']
+                'hora_reporte': ['La hora del reporte debe estar entre 8:00 AM y 8:00 PM']
             })
         
         # Validar que no sea futura
@@ -64,12 +64,9 @@ class ReporteParticipacionService:
                 'hora_reporte': ['La hora del reporte no puede ser futura']
             })
         
-        # ⭐ NUEVA VALIDACIÓN: Ventana de tiempo de 30 minutos
-        # Los reportes solo se pueden enviar dentro de una ventana de 30 minutos después de la hora
-        # Ejemplo: Reporte de 9am solo se puede enviar entre 9:00am y 9:30am
-        hora_actual = datetime.utcnow()
-        hora_redondeada_objetivo = hora_reporte.replace(minute=0, second=0, microsecond=0)
-        
+        # ⭐ VALIDACIÓN RELAJADA PARA PRUEBAS: Permitir reportes en cualquier momento del día
+        # En producción, descomentar la validación de ventana de tiempo
+        """
         # Calcular la ventana de tiempo permitida
         inicio_ventana = hora_redondeada_objetivo
         fin_ventana = hora_redondeada_objetivo.replace(minute=30)
@@ -86,7 +83,7 @@ class ReporteParticipacionService:
                     f'Por favor espere hasta la ventana de tiempo correspondiente.'
                 ]
             })
-        
+        """
         # Validar personas votadas
         personas_votadas = int(data['personas_votadas'])
         if personas_votadas < 0:
